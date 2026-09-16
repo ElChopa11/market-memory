@@ -17,7 +17,10 @@ def assess_quality(
     stale_after_seconds: int = 120,
     current_quality: DataQuality = DataQuality.OK,
 ) -> DataQuality:
-    """Flag stale/missing data. Historical series are facts about the past, not stale."""
+    """Flag stale/missing data. Historical series are facts about the past, not stale.
+
+    For snapshot polls, *published_at* is lab capture time (not an exchange event clock).
+    """
     if current_quality in {DataQuality.REJECTED, DataQuality.CONTRADICTED}:
         return current_quality
     if missing_fields:

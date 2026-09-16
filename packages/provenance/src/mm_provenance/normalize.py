@@ -17,6 +17,10 @@ HL_BASE_URL = "https://api.hyperliquid.xyz/info"
 HL_TOS_NOTES = "Public /info endpoint only. ToS-lawful collection. No user-private or signing endpoints."
 
 SNAPSHOT_METRICS = ("mid_px", "mark_px", "oracle_px", "funding", "open_interest")
+# Identity extras for live polls that have no exchange-attested event time.
+# Historical funding/candles/liquidations keep real HL timestamps and omit this.
+SNAPSHOT_CAPTURE_KIND = "lab_snapshot"
+SNAPSHOT_EXTRAS = {"capture_kind": SNAPSHOT_CAPTURE_KIND}
 
 
 def _ctx_value(ctx: dict[str, Any], *keys: str) -> Any:
@@ -79,8 +83,12 @@ def _missing_universe(
         value=None,
         published_at=published_at,
         ingested_at=ingested_at,
-        market_time=published_at,
-        payload={"reason": "instrument missing from Hyperliquid universe"},
+        market_time=None,
+        payload={
+            "reason": "instrument missing from Hyperliquid universe",
+            "capture_kind": SNAPSHOT_CAPTURE_KIND,
+        },
+        extras=dict(SNAPSHOT_EXTRAS),
         missing_fields=("universe",),
         stale_after_seconds=stale_after_seconds,
         confidence=0.2,
@@ -117,8 +125,9 @@ def _snapshot_for_coin(
                 value=normalize_numeric(raw) if raw is not None else None,
                 published_at=published_at,
                 ingested_at=ingested_at,
-                market_time=published_at,
-                payload={"raw": ctx, "hl_type": "metaAndAssetCtxs"},
+                market_time=None,
+                payload={"raw": ctx, "hl_type": "metaAndAssetCtxs", "capture_kind": SNAPSHOT_CAPTURE_KIND},
+                extras=dict(SNAPSHOT_EXTRAS),
                 historical=False,
                 missing_fields=missing,
                 stale_after_seconds=stale_after_seconds,
@@ -150,8 +159,9 @@ def normalize_all_mids(
                 value=normalize_numeric(raw) if raw is not None else None,
                 published_at=published_at,
                 ingested_at=ingested_at,
-                market_time=published_at,
-                payload={"raw": raw, "hl_type": "allMids"},
+                market_time=None,
+                payload={"raw": raw, "hl_type": "allMids", "capture_kind": SNAPSHOT_CAPTURE_KIND},
+                extras=dict(SNAPSHOT_EXTRAS),
                 missing_fields=missing,
                 stale_after_seconds=stale_after_seconds,
             )

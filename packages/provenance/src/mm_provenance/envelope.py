@@ -51,15 +51,13 @@ def build_envelope(
         historical=historical,
         stale_after_seconds=stale_after_seconds,
     )
+    when = market.isoformat() if market is not None else f"lab_capture {published.isoformat()}"
     if missing_fields:
         confidence = min(confidence, 0.2)
-        claim_text = (
-            f"{instrument} perp {metric} missing ({', '.join(missing_fields)})"
-            f" at {(market or published).isoformat()}"
-        )
+        claim_text = f"{instrument} perp {metric} missing ({', '.join(missing_fields)}) at {when}"
     else:
         shown = identity.value if identity.value is not None else "null"
-        claim_text = f"{instrument} perp {metric}={shown} at {(market or published).isoformat()}"
+        claim_text = f"{instrument} perp {metric}={shown} at {when}"
         if quality is DataQuality.STALE:
             claim_text += " [stale]"
 
@@ -69,6 +67,9 @@ def build_envelope(
     payload_out.setdefault("historical", historical)
     payload_out.setdefault("missing_fields", list(missing_fields))
     payload_out.setdefault("value", identity.value)
+    capture_kind = (extras or {}).get("capture_kind")
+    if capture_kind:
+        payload_out.setdefault("capture_kind", capture_kind)
 
     return ObservationEnvelope(
         source_name=source_name,

@@ -17,7 +17,7 @@ from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
 from mm_memory.db import dsn_from_env, session_scope
 from mm_memory.migrate import current_revision, upgrade_head
-from mm_memory.object_store import object_store_from_env
+from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
 from mm_memory.queries import what_did_we_know
 
 
@@ -36,7 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     ingest.add_argument("--no-objects", action="store_true", help="do not write raw payloads to MinIO/S3")
     ingest.add_argument("--dsn", help="Postgres DSN (default POSTGRES_DSN)")
 
-    know = sub.add_parser("what-did-we-know", help="point-in-time observations (ingested_at <= T)")
+    know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
     know.add_argument("--at", required=True, help="UTC instant (ISO-8601)")
     know.add_argument("--instrument", help="filter BTC/ETH")
     know.add_argument("--metric", help="filter metric name")
@@ -132,7 +132,7 @@ def cmd_status() -> int:
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
     print("Ingest: Hyperliquid public /info only (no signing, no private keys).")
-    print("Point-in-time: what_did_we_know(T) uses ingested_at <= T, never published_at alone.")
+    print("Point-in-time: what_did_we_know(T) uses as_of_knowledge <= T (lockstep with ingested_at). published_at and market_time never gate knowledge.")
     print("Theses: lab thesis new | link-evidence | advance ; lab skeptic open | record")
     print("Briefs: lab brief preopen | close | alert-check (alerts require threshold config)")
     print("Backtest: lab backtest run --fixture PATH (same params_hash → same result)")
@@ -159,7 +159,11 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
     dsn = args.dsn or dsn_from_env()
     settings = load_ingest_settings()
-    store = object_store_from_env(enabled=not args.no_objects and bool(settings.get("store_raw_objects", True)))
+    try:
+        store = object_store_from_env(enabled=not args.no_objects and bool(settings.get("store_raw_objects", True)))
+    except ObjectStoreConfigError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     instruments = load_instruments()
     with session_scope(dsn) as session:
         if args.fixture:
@@ -194,6 +198,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
                 "contradicted": stats.contradicted,
                 "envelopes": stats.envelopes,
                 "instruments": stats.instruments,
+                "object_store": stats.object_store,
             }
         )
     )

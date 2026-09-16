@@ -53,6 +53,7 @@ class ObservationRepository:
         return source
 
     def record_raw_object(self, pointer: ObjectPointer) -> RawObject | None:
+        """Persist a durable object pointer. Empty keys (NullObjectStore) are not rows."""
         if not pointer.key:
             return None
         existing = self.session.scalar(
@@ -87,10 +88,13 @@ class ObservationRepository:
         raw_key = envelope.raw_object_key
         raw_checksum = envelope.raw_object_checksum
         if raw_pointer is not None:
-            self.record_raw_object(raw_pointer)
-            if raw_pointer.key:
+            recorded = self.record_raw_object(raw_pointer)
+            if recorded is not None:
                 raw_key = raw_pointer.key
                 raw_checksum = raw_pointer.checksum_sha256
+            else:
+                raw_key = None
+                raw_checksum = None
 
         existing = self.session.scalar(select(Observation).where(Observation.claim_hash == envelope.claim_hash))
         if existing is not None:
@@ -113,7 +117,8 @@ class ObservationRepository:
             "payload_json": envelope.payload,
             "raw_object_key": raw_key,
             "raw_object_checksum": raw_checksum,
-            "as_of_knowledge": envelope.as_of_knowledge or envelope.ingested_at,
+            # Knowledge watermark is lab ingest time. published_at / market_time never gate knowledge.
+            "as_of_knowledge": envelope.ingested_at,
             "instrument": envelope.instrument,
             "metric": envelope.metric,
         }

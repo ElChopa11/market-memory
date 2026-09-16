@@ -8,7 +8,7 @@ This brief freezes the operating philosophy for v1. Implementation proceeds in n
 
 - Every claim is an **observation with provenance**. Theses link observations. Trades link theses.
 - Git holds human review, blame, and promotion history. Postgres (Market Memory) holds queryable facts, analogues, and source scorecards. Artifact content hashes link the two.
-- Point-in-time knowledge is `ingested_at <= T`. Never treat `published_at` alone as “what we knew at T”.
+- Point-in-time knowledge is `as_of_knowledge <= T` (lockstep with `ingested_at`). Never treat `published_at` or `market_time` as “what we knew at T”.
 - Soft-delete never removes audit rows; mark data quality rejected instead.
 - LLMs may research. They may not trade. Risk is deterministic code + config. Execution never sees an unsigned, un-risked intent.
 - No process both authors a thesis and approves risk for that thesis.

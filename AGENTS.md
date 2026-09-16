@@ -42,4 +42,4 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 Before claiming a research stage is done, run `./scripts/check-lifecycle.sh` and meet [docs/research-lifecycle.md](docs/research-lifecycle.md).
 
-Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 4 scope respected (backtest harness + paper ledger; no execution/signing, no risk service, no live path), live still hard-gated, `what_did_we_know` still keyed off `ingested_at`, backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss.
+Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 4 scope respected (backtest harness + paper ledger; no execution/signing, no risk service, no live path), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss.

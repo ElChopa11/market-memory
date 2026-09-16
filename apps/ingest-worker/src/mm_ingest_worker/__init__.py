@@ -12,7 +12,7 @@ from mm_ingest.config import load_ingest_settings, load_instruments
 from mm_ingest.hl_info import HyperliquidInfoClient
 from mm_ingest.pipeline import ingest_from_client, ingest_from_fixture, load_fixture_file
 from mm_memory.db import dsn_from_env, session_scope
-from mm_memory.object_store import object_store_from_env
+from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
 
 __phase__ = 1
 LIVE_TRADING_ENABLED = False
@@ -30,7 +30,11 @@ def main(argv: list[str] | None = None) -> int:
 
     dsn = args.dsn or dsn_from_env()
     settings = load_ingest_settings()
-    store = object_store_from_env(enabled=not args.no_objects and bool(settings.get("store_raw_objects", True)))
+    try:
+        store = object_store_from_env(enabled=not args.no_objects and bool(settings.get("store_raw_objects", True)))
+    except ObjectStoreConfigError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     instruments = load_instruments()
     with session_scope(dsn) as session:
         if args.fixture:
@@ -64,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
                 "contradicted": stats.contradicted,
                 "envelopes": stats.envelopes,
                 "instruments": stats.instruments,
+                "object_store": stats.object_store,
             }
         )
     )

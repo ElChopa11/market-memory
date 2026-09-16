@@ -34,10 +34,29 @@ def test_lab_status_mentions_phase4_and_hard_gate(capsys) -> None:
     assert "Phase 4" in out
     assert "HARD-GATED" in out
     assert "ingested_at" in out
+    assert "as_of_knowledge" in out
+    assert "published_at and market_time never gate knowledge" in out
     assert "Research cannot access trading credentials" in out
     assert "lab brief" in out
     assert "lab backtest" in out
     assert "lab paper" in out
+
+
+def test_lab_ingest_fails_closed_when_object_store_misconfigured(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("MM_OBJECT_STORE", raising=False)
+    monkeypatch.delenv("MINIO_ENDPOINT", raising=False)
+    monkeypatch.delenv("S3_ENDPOINT", raising=False)
+    monkeypatch.delenv("MINIO_ACCESS_KEY", raising=False)
+    monkeypatch.delenv("MINIO_ROOT_USER", raising=False)
+    monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("MINIO_SECRET_KEY", raising=False)
+    monkeypatch.delenv("MINIO_ROOT_PASSWORD", raising=False)
+    monkeypatch.delenv("AWS_SECRET_ACCESS_KEY", raising=False)
+    rc = main(["ingest", "--fixture", str(ROOT / "tests" / "fixtures" / "hl_window.json")])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "Failing closed" in err
+    assert "raw_object" in err
 
 
 def test_lab_thesis_new_and_in_skeptic_gate(tmp_path: Path, capsys) -> None:

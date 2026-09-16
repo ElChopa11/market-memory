@@ -1,7 +1,13 @@
 """Point-in-time Market Memory queries.
 
-Contract: what_did_we_know(ts) = observations where ingested_at <= ts.
-Never use published_at alone (avoids look-ahead from delayed ingest).
+Contract: what_did_we_know(T) = observations where as_of_knowledge <= T.
+
+Writers MUST set as_of_knowledge = ingested_at (lab knowledge time). A database
+check constraint enforces that lockstep. published_at and market_time NEVER gate
+knowledge — they are provenance (lab capture vs exchange event time), not the
+investigator watermark.
+
+Exactly one definition of “what did we know at T?”: as_of_knowledge <= T.
 """
 
 from __future__ import annotations
@@ -24,14 +30,14 @@ def what_did_we_know_statement(
     include_rejected: bool = False,
 ) -> Select[tuple[Observation]]:
     knowledge_time = as_utc(ts)
-    stmt = select(Observation).where(Observation.ingested_at <= knowledge_time)
+    stmt = select(Observation).where(Observation.as_of_knowledge <= knowledge_time)
     if not include_rejected:
         stmt = stmt.where(Observation.data_quality != DataQuality.REJECTED.value)
     if instrument is not None:
         stmt = stmt.where(Observation.instrument == instrument)
     if metric is not None:
         stmt = stmt.where(Observation.metric == metric)
-    return stmt.order_by(Observation.ingested_at.asc(), Observation.id.asc())
+    return stmt.order_by(Observation.as_of_knowledge.asc(), Observation.id.asc())
 
 
 def what_did_we_know(
@@ -42,7 +48,11 @@ def what_did_we_know(
     metric: str | None = None,
     include_rejected: bool = False,
 ) -> list[Observation]:
-    """Observations known at *ts* (ingested_at <= ts)."""
+    """Observations known at *ts* (as_of_knowledge <= ts).
+
+    published_at and market_time are ignored. as_of_knowledge is always equal to
+    ingested_at (lab knowledge time).
+    """
     stmt = what_did_we_know_statement(
         ts,
         instrument=instrument,

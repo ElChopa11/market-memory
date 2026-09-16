@@ -57,7 +57,7 @@ class ObservationEnvelope(BaseModel):
     source_url_or_id: str
     published_at: datetime
     ingested_at: datetime
-    market_time: datetime | None = None
+    market_time: datetime | None = None  # exchange event time; None for lab snapshots
     claim_text: str
     claim_hash: str = ""
     confidence: float = Field(ge=0, le=1)
@@ -66,7 +66,7 @@ class ObservationEnvelope(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
     raw_object_key: str | None = None
     raw_object_checksum: str | None = None
-    as_of_knowledge: datetime | None = None
+    as_of_knowledge: datetime | None = None  # always coerced to ingested_at
     instrument: str
     metric: str
     identity: ClaimIdentity
@@ -80,6 +80,6 @@ class ObservationEnvelope(BaseModel):
     def _fill_defaults(self) -> ObservationEnvelope:
         if not self.claim_hash:
             self.claim_hash = hash_claim(self.identity.hash_payload())
-        if self.as_of_knowledge is None:
-            self.as_of_knowledge = self.ingested_at
+        # Sole knowledge watermark: lab ingest time. Never published_at / market_time.
+        self.as_of_knowledge = self.ingested_at
         return self

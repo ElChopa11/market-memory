@@ -35,6 +35,7 @@ class IngestStats:
     contradicted: int = 0
     envelopes: int = 0
     instruments: list[str] = field(default_factory=list)
+    object_store: str = "null"
 
     def add(self, result: PutResult) -> None:
         if result.created:
@@ -60,8 +61,8 @@ def persist_envelopes(
         trust_tier=4,
         tos_notes=HL_TOS_NOTES,
     )
-    stats = IngestStats(envelopes=len(envelopes))
     store = object_store or NullObjectStore()
+    stats = IngestStats(envelopes=len(envelopes), object_store=getattr(store, "backend", type(store).__name__))
     for envelope in envelopes:
         pointer = _store_raw(store, envelope, raw_payloads=raw_payloads)
         result = repo.put_observation(envelope, source=source, raw_pointer=pointer)
@@ -111,8 +112,10 @@ def ingest_from_client(
         start, end = parse_window(window, now=end or now)
     symbols = instruments or load_instruments()
     start_ms, end_ms = to_unix_ms(start), to_unix_ms(end)
-    snapshot_published = end
+    # Window start/end bound historical series only (fundingHistory, candles).
+    # Snapshot polls have no exchange event time: lab capture is ingested_at / published_at.
     snapshot_ingested = now
+    snapshot_published = now
 
     envelopes: list[ObservationEnvelope] = []
     mids = client.all_mids()
@@ -158,6 +161,7 @@ def ingest_from_fixture(
     envelopes: list[ObservationEnvelope] = []
 
     snapshot_ingested = _dt(fixture.get("snapshot_ingested_at") or fixture.get("ingested_at"))
+    # Lab capture time for the snapshot poll — not an exchange event clock.
     snapshot_published = _dt(fixture.get("snapshot_published_at") or fixture.get("published_at") or snapshot_ingested)
 
     if "all_mids" in fixture or "allMids" in fixture:
