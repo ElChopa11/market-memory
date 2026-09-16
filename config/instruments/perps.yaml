@@ -1,0 +1,8 @@
+# v1 instrument universe — config only; no market ingest in Phase 0.
+venue: hyperliquid
+kind: perpetual
+instruments:
+  - symbol: BTC
+    enabled: true
+  - symbol: ETH
+    enabled: true

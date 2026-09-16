@@ -1,0 +1,3 @@
+# Copy to config/halt.flag on the execution host to halt new orders.
+# Do not commit config/halt.flag.
+# See docs/runbooks/halt.md

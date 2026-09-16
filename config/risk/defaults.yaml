@@ -1,0 +1,18 @@
+# Conservative early-lab risk defaults
+
+# Placeholders only. Live trading is hard-gated.
+schema_version: 1
+live_trading_enabled: false
+risk_budget_usd: 0
+per_thesis_max_loss_bps: 500  # 5% of dedicated risk budget when live exists
+max_leverage: 1.0
+daily_loss_limit_bps: 300
+max_concentration_pct: 50
+max_open_theses: 2
+instruments_allowlist:
+  - BTC
+  - ETH
+require_invalidation: true
+require_max_loss: true
+kill_switch_path: config/halt.flag
+llm_at_order_time: false

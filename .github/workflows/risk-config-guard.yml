@@ -1,0 +1,76 @@
+# PATH REVIEW NOTE — Principal-owned file
+# ========================================
+# File: config/risk/environments/live.yaml
+#
+# This workflow is the labelled review path for live risk config.
+# Autonomous Research / Skeptic / Briefing / Coordinator agents MUST NOT
+# merge changes to live.yaml without the Principal.
+#
+# Required review path for any modification after bootstrap:
+#   1. Pull request MUST carry the GitHub label `principal-review`.
+#   2. PR body SHOULD cite a research/*/promotion-decision.md (or explicit
+#      Principal instruction) plus halt conditions and live size cap.
+#   3. CODEOWNERS assigns @ElChopa11 (Principal).
+#   4. live_trading_enabled stays false until Phase 6 Principal sign-off.
+#   5. Merge only after Principal approval (signed commit or recorded approval).
+#
+# Bootstrap exception: creating this file while live_trading_enabled is false
+# does not require the label (Phase 0 scaffold). Subsequent diffs do.
+#
+# See docs/security-model.md and docs/runbooks/promote-paper-to-live.md.
+
+name: risk-config-guard
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard-live-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard live.yaml changes
+        env:
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          FILE="config/risk/environments/live.yaml"
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1 || true
+          if git cat-file -e "${BASE_SHA}:${FILE}" 2>/dev/null; then
+            STATUS="$(git diff --name-status "${BASE_SHA}" "${HEAD_SHA}" -- "${FILE}" || true)"
+            if [ -z "${STATUS}" ]; then
+              echo "live.yaml unchanged"
+              exit 0
+            fi
+            echo "live.yaml changed: ${STATUS}"
+            echo "labels: ${PR_LABELS}"
+            case ",${PR_LABELS}," in
+              *",principal-review,"*)
+                echo "principal-review label present; path review noted"
+                exit 0
+                ;;
+              *)
+                echo "::error::Changes to ${FILE} require GitHub label 'principal-review' (Principal-owned live risk config)."
+                exit 1
+                ;;
+            esac
+          else
+            echo "live.yaml is new on this branch (bootstrap)."
+            if grep -q 'live_trading_enabled: false' "${FILE}"; then
+              echo "Bootstrap allowed: live_trading_enabled is false."
+              exit 0
+            fi
+            echo "::error::New live.yaml must keep live_trading_enabled: false unless labelled principal-review."
+            case ",${PR_LABELS}," in
+              *",principal-review,"*) exit 0 ;;
+              *) exit 1 ;;
+            esac
+          fi

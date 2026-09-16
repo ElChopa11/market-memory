@@ -1,0 +1,10 @@
+[project]
+name = "mm-unicorn"
+version = "0.1.0"
+description = "Unicorn candidate scoring (stub; later phase)."
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

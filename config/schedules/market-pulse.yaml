@@ -1,0 +1,12 @@
+# Market Pulse schedule stub (Phase 3). Not executed in Phase 0.
+# DST-aware: lab local vs US equity session.
+lab_timezone: Australia/Sydney
+session_timezone: America/New_York
+briefs:
+  pre_open:
+    enabled: false
+  close:
+    enabled: false
+alerts:
+  enabled: false
+  require_threshold_config: true

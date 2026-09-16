@@ -1,0 +1,25 @@
+# Test (Phase 0)
+
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pytest-and-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Sync workspace
+        run: uv sync --all-packages
+      - name: Stub tests
+        run: uv run pytest
+      - name: Lifecycle DoD gates
+        run: bash scripts/check-lifecycle.sh
+      - name: Live remains hard-gated
+        run: uv run python -c "import yaml, pathlib; p=pathlib.Path('config/risk/environments/live.yaml'); d=yaml.safe_load(p.read_text()); assert d.get('live_trading_enabled') is False, 'live trading must stay hard-gated in Phase 0'"

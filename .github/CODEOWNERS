@@ -1,0 +1,3 @@
+# Principal-owned live risk config. Changes require labelled review
+# (see .github/workflows/risk-config-guard.yml).
+config/risk/environments/live.yaml @ElChopa11

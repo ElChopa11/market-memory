@@ -1,0 +1,15 @@
+# Paper / shadow ledger — HL info may exist later; no order submission.
+schema_version: 1
+environment: paper
+live_trading_enabled: false
+risk_budget_usd: 0
+per_thesis_max_loss_bps: 500
+max_leverage: 1.0
+daily_loss_limit_bps: 300
+max_concentration_pct: 50
+instruments_allowlist:
+  - BTC
+  - ETH
+require_invalidation: true
+require_max_loss: true
+kill_switch_path: config/halt.flag
