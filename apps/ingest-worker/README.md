@@ -1,9 +1,10 @@
 # mm-ingest-worker
 
-Phase 0 stub.
-
-Read-only ingest process (stub).
+One-shot read-only ingest process (`ingest-once`). Same pipeline as `lab ingest`.
 
 **Must not:** sign or submit orders.
 
-See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).
+```bash
+uv run ingest-once --fixture tests/fixtures/hl_window.json --no-objects
+uv run ingest-once --window 7d
+```

@@ -1,7 +1,36 @@
-"""Phase 0 stub.
+"""Truth cell: normalize, quality-flag, and envelope observations.
 
-Truth cell: normalize, dedupe, contradict observations (stub). Must not trade or access execution credentials.
+Must not trade or access execution credentials.
 """
 
-__phase__ = 0
+from mm_provenance.envelope import build_envelope
+from mm_provenance.normalize import (
+    HL_BASE_URL,
+    HL_SOURCE_KIND,
+    HL_SOURCE_NAME,
+    HL_TOS_NOTES,
+    normalize_all_mids,
+    normalize_asset_snapshot,
+    normalize_candles,
+    normalize_funding_history,
+    normalize_liquidations,
+)
+from mm_provenance.quality import assess_quality
+
+__phase__ = 1
 LIVE_TRADING_ENABLED = False
+
+__all__ = [
+    "HL_BASE_URL",
+    "HL_SOURCE_KIND",
+    "HL_SOURCE_NAME",
+    "HL_TOS_NOTES",
+    "LIVE_TRADING_ENABLED",
+    "assess_quality",
+    "build_envelope",
+    "normalize_all_mids",
+    "normalize_asset_snapshot",
+    "normalize_candles",
+    "normalize_funding_history",
+    "normalize_liquidations",
+]

@@ -1,4 +1,4 @@
-"""Phase 0 scaffold tests — layout, hard-gates, lifecycle DoD."""
+"""Scaffold tests — layout, hard-gates, lifecycle DoD."""
 
 from __future__ import annotations
 
@@ -53,8 +53,10 @@ def test_core_docs_present() -> None:
         "docs/founding-brief.md",
         "docs/security-model.md",
         "docs/research-lifecycle.md",
+        "docs/runbooks/ingest.md",
         "docker-compose.yml",
         "scripts/check-lifecycle.sh",
+        "config/ingest.yaml",
     ):
         assert (ROOT / rel).exists(), rel
 

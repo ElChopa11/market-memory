@@ -3,7 +3,12 @@ name = "mm-lab-cli"
 version = "0.1.0"
 description = "Coordinator surface (`lab` CLI)."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+  "mm-memory",
+  "mm-ingest",
+  "mm-provenance",
+]
 
 [project.scripts]
 lab = "mm_lab_cli:main"

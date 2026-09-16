@@ -1,3 +1,11 @@
 # Integration tests
 
-Postgres / MinIO / worker wiring. Empty in Phase 0; compose must still boot independently.
+Postgres-backed migrate + fixture ingest + `what_did_we_know` replay.
+
+Requires `POSTGRES_DSN` (CI provides a Postgres 16 service). Tests skip if Postgres is unreachable.
+
+```bash
+docker compose up -d
+export POSTGRES_DSN=postgresql://lab:lab@localhost:5432/market_memory
+uv run pytest tests/integration
+```

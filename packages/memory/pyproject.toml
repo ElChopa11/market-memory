@@ -1,9 +1,15 @@
 [project]
 name = "mm-memory"
 version = "0.1.0"
-description = "Market Memory: DB models, migrations, query API (stub)."
+description = "Market Memory: DB models, migrations, query API."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+  "sqlalchemy>=2.0.36",
+  "alembic>=1.14",
+  "psycopg[binary]>=3.2",
+  "boto3>=1.35",
+]
 
 [build-system]
 requires = ["hatchling"]

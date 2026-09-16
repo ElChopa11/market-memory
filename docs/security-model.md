@@ -1,6 +1,6 @@
 # Security model
 
-Phase 0 documents the credential and environment model. No live keys, wallet material, or order-signing code ships in this repository.
+Phase 1 documents the credential and environment model and implements **read-only public ingest**. No live keys, wallet material, or order-signing code ships in this repository.
 
 ## Separation of capital (Hyperliquid)
 
@@ -48,7 +48,7 @@ Research workers **must not** import the live trading module (`hl_trade` / `mm_e
 | `lab halt` (signed CLI; later phase) | Principal | Same; recorded in Market Memory |
 | `live_trading_enabled: false` | Committed config | Entire live path is inert |
 
-Phase 0: the flag path and config gate exist; no execution loop is implemented. See [runbooks/halt.md](runbooks/halt.md).
+Phase 1: public Hyperliquid `/info` ingest only. The halt flag path and config gate exist; no execution loop is implemented. See [runbooks/halt.md](runbooks/halt.md). Ingest runbook: [runbooks/ingest.md](runbooks/ingest.md).
 
 ## Live risk config guard
 

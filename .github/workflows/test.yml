@@ -1,4 +1,4 @@
-# Test (Phase 0)
+# Test (Phase 1)
 
 name: test
 
@@ -10,6 +10,22 @@ on:
 jobs:
   pytest-and-lifecycle:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lab
+          POSTGRES_PASSWORD: lab
+          POSTGRES_DB: market_memory
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lab -d market_memory"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_DSN: postgresql://lab:lab@localhost:5432/market_memory
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -17,9 +33,14 @@ jobs:
           python-version: "3.12"
       - name: Sync workspace
         run: uv sync --all-packages
-      - name: Stub tests
+      - name: Migrate Market Memory schema
+        run: uv run lab migrate
+      - name: Tests
         run: uv run pytest
       - name: Lifecycle DoD gates
         run: bash scripts/check-lifecycle.sh
       - name: Live remains hard-gated
-        run: uv run python -c "import yaml, pathlib; p=pathlib.Path('config/risk/environments/live.yaml'); d=yaml.safe_load(p.read_text()); assert d.get('live_trading_enabled') is False, 'live trading must stay hard-gated in Phase 0'"
+        run: uv run python -c "import yaml, pathlib; p=pathlib.Path('config/risk/environments/live.yaml'); d=yaml.safe_load(p.read_text()); assert d.get('live_trading_enabled') is False, 'live trading must stay hard-gated'"
+      - name: No signing surface in ingest
+        run: |
+          ! git grep -n -E 'sign_l1_action|hl_trade|private_key|submit_order' -- packages/ingest packages/memory packages/provenance packages/common apps/ingest-worker apps/lab-cli

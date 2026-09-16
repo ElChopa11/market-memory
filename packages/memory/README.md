@@ -1,13 +1,18 @@
 # mm-memory
 
-Phase 0 stub for **Market Memory** (Postgres + object-store pointers).
+Market Memory: Postgres models, Alembic migrations, object-store pointers, and the point-in-time query API.
 
-Implementation starts in Phase 1. Logical tables (from the founding proposal):
+## Schema (Phase 1)
 
-`source`, `observation`, `observation_link`, `regime_label`, `hypothesis`/`thesis`, `thesis_evidence`, `research_run`, `skeptic_review`, `paper_trade`, `live_trade`, `risk_decision`, `post_mortem`, `agent_scorecard`, `unicorn_candidate`.
+- `source` — feed identity and trust tier
+- `observation` — claim + provenance envelope (`published_at`, `ingested_at`, `market_time`, `claim_hash`, quality)
+- `observation_link` — supports / contradicts / duplicate / updates
+- `raw_object` — MinIO/S3 pointer inventory (checksum + key, never secrets)
 
 Point-in-time contract: `what_did_we_know(ts)` is observations with `ingested_at <= ts`. Never use `published_at` alone.
 
+All timestamps are `timestamptz` stored in UTC. Australia/Sydney is an ops timezone only.
+
 **Must not:** execute trades or store private keys.
 
-See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).
+See [../../docs/runbooks/ingest.md](../../docs/runbooks/ingest.md).
