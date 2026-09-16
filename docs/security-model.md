@@ -1,6 +1,6 @@
 # Security model
 
-Phase 1 documents the credential and environment model and implements **read-only public ingest**. No live keys, wallet material, or order-signing code ships in this repository.
+Phase 1 documents the credential and environment model and implements **read-only public ingest**. Phase 2 adds a research workspace that may **read Market Memory and write git artifacts**; it still has no live keys, wallet material, or order-signing code. `mm_research_kit` must not import execution or ingest private keys.
 
 ## Separation of capital (Hyperliquid)
 

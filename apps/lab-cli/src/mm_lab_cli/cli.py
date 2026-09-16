@@ -1,4 +1,4 @@
-"""Coordinator CLI: status, migrate, ingest, what-did-we-know.
+"""Coordinator CLI: status, migrate, ingest, research workspace.
 
 Must not hold trading credentials.
 """
@@ -8,10 +8,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 
 from mm_common.time import parse_utc, utcnow
+from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
 from mm_memory.db import dsn_from_env, session_scope
 from mm_memory.migrate import current_revision, upgrade_head
 from mm_memory.object_store import object_store_from_env
@@ -40,6 +40,54 @@ def main(argv: list[str] | None = None) -> int:
     know.add_argument("--dsn", help="Postgres DSN (default POSTGRES_DSN)")
     know.add_argument("--limit", type=int, default=50)
 
+    thesis = sub.add_parser("thesis", help="create and advance research thesis workspaces")
+    thesis_sub = thesis.add_subparsers(dest="thesis_cmd")
+    new_p = thesis_sub.add_parser("new", help="create a thesis workspace from intent (one command)")
+    new_p.add_argument("--goal", help="intent goal (one sentence); required unless --from-intent")
+    new_p.add_argument("--from-intent", help="path to an existing intent.md")
+    new_p.add_argument("--owner", default="Research")
+    new_p.add_argument("--why-now", default="no observation yet")
+    new_p.add_argument("--out-of-scope", default="live trading; execution; Market Pulse")
+    new_p.add_argument("--instrument", default="BTC")
+    new_p.add_argument("--horizon", default="")
+    new_p.add_argument("--deadline", default="")
+    new_p.add_argument("--hypothesis", default="")
+    _add_research_common(new_p)
+
+    link_p = thesis_sub.add_parser("link-evidence", help="link an observation id to a thesis")
+    link_p.add_argument("slug", help="THESIS-XXXX or workspace path")
+    link_p.add_argument("--observation", required=True, dest="observation")
+    link_p.add_argument("--role", default="supports", help="supports|opposes|context")
+    link_p.add_argument("--notes", default="")
+    _add_research_common(link_p)
+
+    adv = thesis_sub.add_parser("advance", help="advance lifecycle status when DoD is met")
+    adv.add_argument("slug")
+    adv.add_argument("--to", required=True, help="draft|in_research|in_skeptic|rejected|retired")
+    _add_research_common(adv)
+
+    list_p = thesis_sub.add_parser("list", help="list theses (rejected remain queryable)")
+    list_p.add_argument("--status", help="filter status (rejected is a first-class filter)")
+    _add_research_common(list_p)
+
+    show_p = thesis_sub.add_parser("show")
+    show_p.add_argument("slug")
+    _add_research_common(show_p)
+
+    skeptic = sub.add_parser("skeptic", help="open or record an independent skeptic review")
+    skeptic_sub = skeptic.add_subparsers(dest="skeptic_cmd")
+    open_p = skeptic_sub.add_parser("open", help="enter in_skeptic (requires evidence links)")
+    open_p.add_argument("slug")
+    open_p.add_argument("--reviewer", required=True)
+    _add_research_common(open_p)
+
+    rec = skeptic_sub.add_parser("record", help="record verdict: pass|revise|reject")
+    rec.add_argument("slug")
+    rec.add_argument("--verdict", required=True, choices=("pass", "revise", "reject"))
+    rec.add_argument("--reviewer", required=True)
+    rec.add_argument("--findings", default="")
+    _add_research_common(rec)
+
     args = parser.parse_args(argv)
     if args.cmd is None or args.cmd == "status":
         return cmd_status()
@@ -49,16 +97,31 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_ingest(args)
     if args.cmd == "what-did-we-know":
         return cmd_what_did_we_know(args)
+    if args.cmd == "thesis":
+        return run_research_command(dispatch_thesis, args)
+    if args.cmd == "skeptic":
+        return run_research_command(dispatch_skeptic, args)
     parser.print_help()
     return 2
 
 
+def _add_research_common(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--research-root", type=Path, default=Path("research"))
+    parser.add_argument("--templates-root", type=Path, default=Path("templates"))
+    parser.add_argument("--repo-root", type=Path, default=Path("."))
+    parser.add_argument("--dsn", help="Postgres DSN (default POSTGRES_DSN)")
+    parser.add_argument("--no-db", action="store_true", help="git artifacts only (no Market Memory index)")
+
+
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 1 — read-only ingest + Market Memory)")
+    print("market-memory lab CLI (Phase 2 — research workspace)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
+    print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
     print("Ingest: Hyperliquid public /info only (no signing, no private keys).")
     print("Point-in-time: what_did_we_know(T) uses ingested_at <= T, never published_at alone.")
+    print("Theses: lab thesis new | link-evidence | advance ; lab skeptic open | record")
+    print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")
     return 0

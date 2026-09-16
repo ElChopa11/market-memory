@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from mm_common.enums import DataQuality
 from mm_common.time import as_utc
-from mm_memory.models import Observation
+from mm_memory.models import Observation, Thesis
 
 
 def what_did_we_know_statement(
@@ -50,3 +50,19 @@ def what_did_we_know(
         include_rejected=include_rejected,
     )
     return list(session.scalars(stmt).all())
+
+
+def list_theses(
+    session: Session,
+    *,
+    status: str | None = None,
+) -> list[Thesis]:
+    """Return thesis indexes. Rejected rows are included unless *status* filters them in."""
+    stmt = select(Thesis).order_by(Thesis.created_at.asc(), Thesis.slug.asc())
+    if status is not None:
+        stmt = stmt.where(Thesis.status == status)
+    return list(session.scalars(stmt).all())
+
+
+def get_thesis_by_slug(session: Session, slug: str) -> Thesis | None:
+    return session.scalar(select(Thesis).where(Thesis.slug == slug))

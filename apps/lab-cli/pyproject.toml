@@ -8,6 +8,7 @@ dependencies = [
   "mm-memory",
   "mm-ingest",
   "mm-provenance",
+  "mm-research-kit",
 ]
 
 [project.scripts]
