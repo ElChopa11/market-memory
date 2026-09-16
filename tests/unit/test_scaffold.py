@@ -57,6 +57,8 @@ def test_core_docs_present() -> None:
         "docs/runbooks/ingest.md",
         "docs/runbooks/research-workspace.md",
         "docs/runbooks/market-pulse.md",
+        "docs/runbooks/backtest.md",
+        "docs/runbooks/paper-trade.md",
         "config/schedules/market-pulse.yaml",
         "config/briefing/alerts.yaml",
         "docker-compose.yml",

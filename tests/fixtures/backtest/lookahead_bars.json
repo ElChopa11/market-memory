@@ -1,0 +1,27 @@
+{
+  "instrument": "BTC",
+  "interval": "1h",
+  "comment": "Intentional look-ahead: close is known 30m early and future_close is leaked.",
+  "bars": [
+    {
+      "market_time": "2026-09-01T01:00:00+00:00",
+      "available_at": "2026-09-01T00:30:00+00:00",
+      "open": "100",
+      "high": "110",
+      "low": "99",
+      "close": "105",
+      "volume": "10",
+      "future_close": "120",
+      "next_return": "0.14"
+    },
+    {
+      "market_time": "2026-09-01T02:00:00+00:00",
+      "available_at": "2026-09-01T02:00:00+00:00",
+      "open": "105",
+      "high": "121",
+      "low": "104",
+      "close": "120",
+      "volume": "12"
+    }
+  ]
+}

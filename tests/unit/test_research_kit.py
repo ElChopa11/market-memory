@@ -171,12 +171,16 @@ def test_author_cannot_be_sole_skeptic(tmp_path: Path) -> None:
         open_skeptic_review(workspace, reviewer="Research")
 
 
-def test_paper_and_live_blocked(tmp_path: Path) -> None:
+def test_paper_blocked_until_ready_and_live_still_blocked(tmp_path: Path) -> None:
     workspace = _create(tmp_path)
-    with pytest.raises(GateError, match="later phases"):
+    with pytest.raises(GateError, match="cannot advance"):
         advance_status(workspace, "paper")
-    with pytest.raises(GateError, match="later phases"):
+    with pytest.raises(GateError, match="later phase"):
         advance_status(workspace, "live")
+    link_evidence(workspace, observation_id="01ARZ3NDEKTSV4RRFFQ69G5FAV", role="supports")
+    record_skeptic_verdict(workspace, verdict="pass", reviewer="Skeptic")
+    with pytest.raises(GateError, match="invalidation"):
+        advance_status(workspace, "paper")
 
 
 def test_in_skeptic_constants_used() -> None:

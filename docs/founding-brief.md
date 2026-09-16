@@ -2,7 +2,7 @@
 
 Private, Australia-based trading intelligence lab. Hyperliquid perpetuals first. Optimise for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 3 (Market Pulse briefing engine).**
+This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 4 (backtest harness + paper/shadow ledger).**
 
 ## Operating philosophy
 

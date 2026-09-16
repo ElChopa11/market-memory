@@ -2,7 +2,7 @@
 
 Market Memory: Postgres models, Alembic migrations, object-store pointers, and the point-in-time query API.
 
-## Schema (Phase 1 + Phase 2)
+## Schema (Phase 1–4)
 
 - `source` — feed identity and trust tier
 - `observation` — claim + provenance envelope (`published_at`, `ingested_at`, `market_time`, `claim_hash`, quality)
@@ -11,6 +11,11 @@ Market Memory: Postgres models, Alembic migrations, object-store pointers, and t
 - `thesis` — hypothesis index (`slug`, `status`, `artifact_git_path`, `artifact_content_hash`)
 - `thesis_evidence` — thesis ↔ observation id (`supports` / `opposes` / `context`)
 - `skeptic_review` — independent verdict (`pass` / `revise` / `reject`) plus artifact hash
+- `brief` — optional Market Pulse index
+- `research_run` — backtest/scan/manual runs (`params_hash`, artifact paths)
+- `paper_trade` — shadow ledger (invalidation + max loss required)
+
+Git artifacts under `research/` remain the human-review source. Postgres stores indexes and hashes. Rejected theses are **not** deleted.
 
 Git artifacts under `research/` remain the human-review source. Postgres stores indexes and hashes. Rejected theses are **not** deleted.
 

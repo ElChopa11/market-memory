@@ -66,7 +66,19 @@ THESIS_STATUS_VALUES = tuple(kind.value for kind in ThesisStatus)
 EVIDENCE_ROLE_VALUES = tuple(kind.value for kind in EvidenceRole)
 SKEPTIC_VERDICT_VALUES = tuple(kind.value for kind in SkepticVerdict)
 
-# Phase 2 may set these; paper/live remain later-phase promotions.
+
+class ResearchRunKind(StrEnum):
+    SCAN = "scan"
+    BACKTEST = "backtest"
+    MANUAL = "manual"
+
+
+class PaperTradeStatus(StrEnum):
+    OPEN = "open"
+    CLOSED = "closed"
+
+
+# Phase 2 statuses. Phase 4 adds paper; live remains later.
 PHASE2_STATUS_VALUES = (
     ThesisStatus.DRAFT.value,
     ThesisStatus.IN_RESEARCH.value,
@@ -74,8 +86,11 @@ PHASE2_STATUS_VALUES = (
     ThesisStatus.REJECTED.value,
     ThesisStatus.RETIRED.value,
 )
+PHASE4_STATUS_VALUES = PHASE2_STATUS_VALUES + (ThesisStatus.PAPER.value,)
 STATUSES_REQUIRING_EVIDENCE = (
     ThesisStatus.IN_SKEPTIC.value,
     ThesisStatus.PAPER.value,
     ThesisStatus.LIVE.value,
 )
+RESEARCH_RUN_KIND_VALUES = tuple(kind.value for kind in ResearchRunKind)
+PAPER_TRADE_STATUS_VALUES = tuple(kind.value for kind in PaperTradeStatus)

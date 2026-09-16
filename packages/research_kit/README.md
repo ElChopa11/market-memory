@@ -8,9 +8,9 @@ Public helpers:
 
 - `create_thesis_from_intent` — intent → thesis → research-plan → evidence → skeptic-review
 - `link_evidence` — observation ids on the git artifact
-- `advance_status` — DoD gates (no `in_skeptic` without evidence links)
+- `advance_status` — DoD gates (no `in_skeptic` without evidence links; paper needs skeptic pass + invalidation/max loss)
 - `open_skeptic_review` / `record_skeptic_verdict` — `pass` | `revise` | `reject`
 
-Coordinator surface: `uv run lab thesis …` and `uv run lab skeptic …`. Runbook: [../../docs/runbooks/research-workspace.md](../../docs/runbooks/research-workspace.md).
+Coordinator surface: `uv run lab thesis …`, `lab skeptic …`, `lab backtest run`, `lab paper …`. Runbook: [../../docs/runbooks/research-workspace.md](../../docs/runbooks/research-workspace.md).
 
 See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local Phase 3 bootstrap: Postgres + MinIO, uv workspace, migrate, lifecycle check.
+# Local Phase 4 bootstrap: Postgres + MinIO, uv workspace, migrate, lifecycle check.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
@@ -37,11 +37,13 @@ bash "${ROOT}/scripts/migrate.sh"
 echo "Running lifecycle checker..."
 bash "${ROOT}/scripts/check-lifecycle.sh"
 
-echo "Phase 3 local environment ready."
+echo "Phase 4 local environment ready."
 echo "  Postgres: postgresql://lab:lab@localhost:5432/market_memory"
 echo "  MinIO API: http://localhost:9000  console: http://localhost:9001"
 echo "  Migrate + ingest: uv run lab migrate && uv run lab ingest --window 7d"
 echo "  Thesis from intent: uv run lab thesis new --goal '…' --owner Research"
+echo "  Backtest: uv run lab backtest run --fixture tests/fixtures/backtest/clean_bars.json --no-db"
+echo "  Paper: uv run lab paper open THESIS-XXXX --size 0.01 --max-loss '500 USDC' --invalidation '…'"
 echo "  Pre-open brief: uv run lab brief preopen --fixture tests/fixtures/briefing/frozen_day.json --no-db"
 echo "  Point-in-time: uv run lab what-did-we-know --at <UTC-ISO>"
 echo "  Live trading: HARD-GATED"

@@ -1,9 +1,12 @@
 [project]
 name = "mm-paper"
 version = "0.1.0"
-description = "Shadow ledger and fill simulation (stub)."
+description = "Shadow ledger and fill simulation (paper trades bound to theses)."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+  "mm-research-kit",
+]
 
 [build-system]
 requires = ["hatchling"]

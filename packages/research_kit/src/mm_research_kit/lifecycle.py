@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from mm_common.enums import (
-    PHASE2_STATUS_VALUES,
+    PHASE4_STATUS_VALUES,
     STATUSES_REQUIRING_EVIDENCE,
     SKEPTIC_VERDICT_VALUES,
     THESIS_STATUS_VALUES,
@@ -21,7 +21,9 @@ from mm_research_kit.errors import (
     AUTHOR_CANNOT_BE_SOLE_SKEPTIC,
     IN_SKEPTIC_WITHOUT_EVIDENCE,
     NO_INTENT,
+    PAPER_INCOMPLETE,
     PAPER_LIVE_LATER,
+    PAPER_REQUIRES_SKEPTIC_PASS,
     REJECTED_IS_TERMINAL,
     GateError,
 )
@@ -42,7 +44,7 @@ REQUIRED_TEMPLATES = [
 
 SKIP_DIR_NAMES = {".git", "__pycache__", "evidence", "backtests", "paper"}
 
-LATER_PHASE_STATUSES = {ThesisStatus.PAPER.value, ThesisStatus.LIVE.value}
+LATER_PHASE_STATUSES = {ThesisStatus.LIVE.value}
 
 ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     ThesisStatus.DRAFT.value: {
@@ -58,12 +60,18 @@ ALLOWED_TRANSITIONS: dict[str, set[str]] = {
         ThesisStatus.IN_RESEARCH.value,
         ThesisStatus.REJECTED.value,
         ThesisStatus.RETIRED.value,
+        ThesisStatus.PAPER.value,
     },
     ThesisStatus.REJECTED.value: set(),
     ThesisStatus.RETIRED.value: set(),
-    ThesisStatus.PAPER.value: set(),
+    ThesisStatus.PAPER.value: {
+        ThesisStatus.REJECTED.value,
+        ThesisStatus.RETIRED.value,
+    },
     ThesisStatus.LIVE.value: set(),
 }
+
+_PAPER_PLACEHOLDERS = frozenset({"", "-", "n/a", "na", "none", "null", "tbd", "todo", "?", "unknown"})
 
 
 def _exists(workspace: Path, name: str) -> bool:
@@ -83,6 +91,47 @@ def _has_paper(workspace: Path) -> bool:
     if not paper.is_dir():
         return False
     return any(p.is_file() for p in paper.rglob("*"))
+
+
+def _defined_field(value: str | None) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() not in _PAPER_PLACEHOLDERS
+
+
+def _paper_file_complete(path: Path) -> bool:
+    if path.suffix.lower() == ".json":
+        import json
+
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return False
+        invalidation = str(data.get("invalidation") or "")
+        max_loss = str(data.get("max_loss") or "")
+        amount = data.get("max_loss_amount")
+        if not _defined_field(invalidation) or not _defined_field(max_loss):
+            return False
+        try:
+            return float(amount) > 0
+        except (TypeError, ValueError):
+            return any(ch.isdigit() for ch in max_loss) and "0" != max_loss.strip()
+    text = path.read_text(encoding="utf-8")
+    invalidation = get_field(text, "Invalidation")
+    max_loss = get_field(text, "Max loss")
+    return _defined_field(invalidation) and _defined_field(max_loss) and any(
+        ch.isdigit() for ch in (max_loss or "")
+    ) and (max_loss or "").strip() not in {"0", "0.0"}
+
+
+def paper_has_invalidation_and_max_loss(workspace: Path) -> bool:
+    candidates: list[Path] = []
+    if _exists(workspace, "paper-trade.md"):
+        candidates.append(workspace / "paper-trade.md")
+    paper = workspace / "paper"
+    if paper.is_dir():
+        candidates.extend(sorted(p for p in paper.rglob("*") if p.is_file() and p.suffix.lower() in {".md", ".json"}))
+    return any(_paper_file_complete(path) for path in candidates)
 
 
 def _has_promotion(workspace: Path) -> bool:
@@ -200,6 +249,8 @@ def check_workspace(workspace: Path) -> list[str]:
 
     if _has_paper(workspace) and not _exists(workspace, "skeptic-review.md"):
         errors.append(f"{rel}: paper without skeptic-review")
+    if _has_paper(workspace) and not paper_has_invalidation_and_max_loss(workspace):
+        errors.append(f"{rel}: {PAPER_INCOMPLETE}")
 
     if _has_promotion(workspace) and not _has_paper(workspace):
         errors.append(f"{rel}: promotion without paper")
@@ -220,8 +271,8 @@ def assert_can_mark(workspace: Path, target: str) -> None:
         raise GateError(f"unknown status {target!r}")
     if target in LATER_PHASE_STATUSES:
         raise GateError(PAPER_LIVE_LATER)
-    if target not in PHASE2_STATUS_VALUES:
-        raise GateError(f"status {target!r} is not available in Phase 2")
+    if target not in PHASE4_STATUS_VALUES:
+        raise GateError(f"status {target!r} is not available in Phase 4")
     if not _exists(workspace, "intent.md"):
         raise GateError(NO_INTENT)
     current = read_status(workspace) or ThesisStatus.DRAFT.value
@@ -230,6 +281,8 @@ def assert_can_mark(workspace: Path, target: str) -> None:
     if target == current:
         if target == ThesisStatus.IN_SKEPTIC.value and not has_evidence_links(workspace):
             raise GateError(IN_SKEPTIC_WITHOUT_EVIDENCE)
+        if target == ThesisStatus.PAPER.value:
+            _assert_paper_ready(workspace)
         return
     allowed = ALLOWED_TRANSITIONS.get(current, set())
     if target not in allowed:
@@ -245,6 +298,17 @@ def assert_can_mark(workspace: Path, target: str) -> None:
             raise GateError(IN_SKEPTIC_WITHOUT_EVIDENCE)
     if target == ThesisStatus.IN_RESEARCH.value and not _exists(workspace, "thesis.md"):
         raise GateError("cannot mark in_research without thesis.md")
+    if target == ThesisStatus.PAPER.value:
+        _assert_paper_ready(workspace)
+
+
+def _assert_paper_ready(workspace: Path) -> None:
+    if recorded_skeptic_verdict(workspace) != "pass":
+        raise GateError(PAPER_REQUIRES_SKEPTIC_PASS)
+    if not has_evidence_links(workspace):
+        raise GateError(IN_SKEPTIC_WITHOUT_EVIDENCE)
+    if not paper_has_invalidation_and_max_loss(workspace):
+        raise GateError(PAPER_INCOMPLETE)
 
 
 def write_status(workspace: Path, status: str) -> None:

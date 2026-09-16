@@ -2,9 +2,11 @@
 
 Australia/Sydney is the ops timezone for humans (folder year under `research/YYYY/`). **Every timestamp in Postgres is `timestamptz` UTC.** Git artifacts are the source of human review; Market Memory stores thesis indexes, evidence links, and content hashes.
 
-This runbook does **not** enable live trading, wallets, signing, Market Pulse, or backtests.
+This runbook does **not** enable live trading, wallets, or signing.
 
 Research role: read Market Memory + write `research/` artifacts. **No trading credentials. `mm_research_kit` must not import execution or ingest private keys.**
+
+Phase 4 adds `lab backtest run` and `lab paper open|close|list` (see [backtest.md](backtest.md) and [paper-trade.md](paper-trade.md)).
 
 ## Prerequisites
 
@@ -64,7 +66,8 @@ Gates:
 | `in_research` | `intent.md` + `thesis.md` |
 | `in_skeptic` | research-plan **and** at least one evidence link |
 | `rejected` | intent (thesis stays on disk and in DB) |
-| `paper` / `live` | **blocked** in Phase 2 |
+| `paper` | skeptic `pass`, evidence, paper artifact with invalidation + max loss |
+| `live` | **blocked** until Phase 6 |
 
 `./scripts/check-lifecycle.sh` refuses `thesis.md` without `intent.md` and refuses `in_skeptic` without evidence links.
 
@@ -95,7 +98,7 @@ Fill `skeptic-review.md` against the template checklist:
 
 | Verdict | Status |
 |---|---|
-| `pass` | `in_skeptic` (paper is Phase 4) |
+| `pass` | `in_skeptic` (then `lab paper open` for Phase 4) |
 | `revise` | back to `in_research` |
 | `reject` | `rejected` — **kept as a queryable learning record** |
 

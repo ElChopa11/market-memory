@@ -16,4 +16,7 @@ uv run lab thesis list --status rejected
 uv run lab brief preopen --fixture tests/fixtures/briefing/frozen_day.json --no-db
 uv run lab brief close --fixture tests/fixtures/briefing/frozen_day.json --no-db
 uv run lab brief alert-check --fixture tests/fixtures/briefing/frozen_day.json --no-db
+uv run lab backtest run --fixture tests/fixtures/backtest/clean_bars.json --strategy buy_hold --no-db
+uv run lab paper open THESIS-0001 --size 0.01 --max-loss "500 USDC" --invalidation "daily close < 60k" --no-db
+uv run lab paper list --no-db
 ```
