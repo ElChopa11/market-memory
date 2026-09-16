@@ -2,8 +2,6 @@
 
 Coordinator surface (`lab` CLI). Must not hold trading credentials.
 
-Phase 2 commands:
-
 ```bash
 uv run lab status
 uv run lab migrate
@@ -15,4 +13,7 @@ uv run lab thesis advance THESIS-0001 --to in_skeptic
 uv run lab skeptic open THESIS-0001 --reviewer Skeptic
 uv run lab skeptic record THESIS-0001 --verdict reject --reviewer Skeptic
 uv run lab thesis list --status rejected
+uv run lab brief preopen --fixture tests/fixtures/briefing/frozen_day.json --no-db
+uv run lab brief close --fixture tests/fixtures/briefing/frozen_day.json --no-db
+uv run lab brief alert-check --fixture tests/fixtures/briefing/frozen_day.json --no-db
 ```

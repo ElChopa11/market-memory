@@ -1,4 +1,4 @@
-"""Coordinator CLI: status, migrate, ingest, research workspace.
+"""Coordinator CLI: status, migrate, ingest, research workspace, Market Pulse briefs.
 
 Must not hold trading credentials.
 """
@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from mm_common.time import parse_utc, utcnow
+from mm_lab_cli.briefing import add_brief_parser, dispatch_brief
 from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
 from mm_memory.db import dsn_from_env, session_scope
 from mm_memory.migrate import current_revision, upgrade_head
@@ -88,6 +89,8 @@ def main(argv: list[str] | None = None) -> int:
     rec.add_argument("--findings", default="")
     _add_research_common(rec)
 
+    add_brief_parser(sub)
+
     args = parser.parse_args(argv)
     if args.cmd is None or args.cmd == "status":
         return cmd_status()
@@ -101,6 +104,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_research_command(dispatch_thesis, args)
     if args.cmd == "skeptic":
         return run_research_command(dispatch_skeptic, args)
+    if args.cmd == "brief":
+        return dispatch_brief(args)
     parser.print_help()
     return 2
 
@@ -114,16 +119,18 @@ def _add_research_common(parser: argparse.ArgumentParser) -> None:
 
 
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 2 — research workspace)")
+    print("market-memory lab CLI (Phase 3 — Market Pulse)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
     print("Ingest: Hyperliquid public /info only (no signing, no private keys).")
     print("Point-in-time: what_did_we_know(T) uses ingested_at <= T, never published_at alone.")
     print("Theses: lab thesis new | link-evidence | advance ; lab skeptic open | record")
+    print("Briefs: lab brief preopen | close | alert-check (alerts require threshold config)")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")
+    print("US session timezone: America/New_York (DST via zoneinfo).")
     return 0
 
 

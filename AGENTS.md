@@ -2,7 +2,7 @@
 
 This file is the permission constitution for humans and LLM agents working in `market-memory`. It is stricter than convenience.
 
-**Phase 2:** research workspace. Create theses from intent, link observation ids as evidence, advance lifecycle only when DoD is met, record independent skeptic verdicts. No live trading, no wallet code, no `hl_trade` / signing. Do not implement Market Pulse, backtest harnesses, risk/execution services, or live paths in this phase.
+**Phase 3:** Market Pulse. Generate US pre-open and close briefs; DST-correct `America/New_York` ↔ `Australia/Sydney` schedules; threshold-gated intraday alerts. Hyperliquid conditions come from Market Memory observations. No live trading, no wallet code, no `hl_trade` / signing. Do not implement backtest harnesses, risk/execution services, or live paths in this phase.
 
 ## Non-negotiables
 
@@ -25,7 +25,7 @@ This file is the permission constitution for humans and LLM agents working in `m
 | **Risk** | Deterministic allow/block from config; explain `rule_id` + `config_version` | Call LLMs at decision time; submit orders; silently change live.yaml | Config only |
 | **Execution** | (Later) submit Risk-allowed intents; check halt before every order; log intent hash | Run inside research workers; sign without Risk id; bypass halt; touch treasury | API/agent wallet in **live env only** |
 | **Intel / ingest** | Read-only public feeds into observations (`hl_info` only) | Sign orders; scrape in violation of ToS; call user-private info types | Public / info endpoints |
-| **Briefing** | (Later) Market Pulse from memory | Alert without thresholds; execute | Read-only |
+| **Briefing** | Market Pulse from memory + public macro fixtures | Alert without thresholds; execute | Read-only |
 | **Unicorn** | (Later) score overlooked candidates | Auto-promote to paper/live | Research-class |
 
 ## Escalation
@@ -42,4 +42,4 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 Before claiming a research stage is done, run `./scripts/check-lifecycle.sh` and meet [docs/research-lifecycle.md](docs/research-lifecycle.md).
 
-Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 2 scope respected (research workspace only; no execution/signing, no Market Pulse engine, no backtest harness beyond stubs), live still hard-gated, `what_did_we_know` still keyed off `ingested_at`, rejected theses still queryable.
+Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 3 scope respected (Market Pulse engine; no execution/signing, no backtest harness beyond stubs), live still hard-gated, `what_did_we_know` still keyed off `ingested_at`, alerts still require numeric thresholds, rejected theses still queryable.

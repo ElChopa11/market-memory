@@ -1,12 +1,18 @@
-# Market Pulse schedule stub (Phase 3). Not executed in Phase 0.
-# DST-aware: lab local vs US equity session.
+# Market Pulse schedule (Phase 3).
+# Fire times are wall-clock in session_timezone. zoneinfo handles DST.
+# lab_timezone is display-only (Australia/Sydney). Storage remains UTC.
 lab_timezone: Australia/Sydney
 session_timezone: America/New_York
 briefs:
   pre_open:
-    enabled: false
+    enabled: true
+    local_time: "08:00"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
   close:
-    enabled: false
+    enabled: true
+    local_time: "16:15"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
 alerts:
-  enabled: false
+  enabled: true
   require_threshold_config: true
+  interval_minutes: 15

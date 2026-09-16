@@ -1,0 +1,29 @@
+# Explicit cross-asset rules. No LLM. Thresholds in percent unless noted.
+rules:
+  equity_vol:
+    enabled: true
+    es_abs_pct: 0.30
+    vix_abs_pct: 3.0
+    require_opposite_sign: true
+  crypto_equity:
+    enabled: true
+    btc_abs_pct: 0.80
+    es_abs_pct: 0.30
+    require_opposite_sign: true
+  usd_equity:
+    enabled: true
+    dxy_abs_pct: 0.25
+    es_abs_pct: 0.30
+    # Both up is the unusual case (USD bid with risk-on).
+    require_same_sign: true
+  yields_equity:
+    enabled: true
+    us10y_abs_bp: 5.0
+    es_abs_pct: 0.30
+    # Yields up + ES up is the unusual case.
+    require_yields_up_and_es_up: true
+  oil_usd:
+    enabled: true
+    cl_abs_pct: 1.0
+    dxy_abs_pct: 0.25
+    require_same_sign: true

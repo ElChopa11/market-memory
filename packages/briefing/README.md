@@ -1,9 +1,7 @@
 # mm-briefing
 
-Phase 0 stub.
+Phase 3 Market Pulse engine: US pre-open and close briefs, threshold-gated intraday alerts.
 
-Market Pulse briefing (stub; Phase 3).
+**Must not:** execute trades, or push alerts without numeric threshold config.
 
-**Must not:** execute or alert without threshold config.
-
-See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).
+See [../../docs/runbooks/market-pulse.md](../../docs/runbooks/market-pulse.md).

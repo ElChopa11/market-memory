@@ -35,8 +35,9 @@ def test_migrate_creates_core_tables(postgres_dsn: str) -> None:
         "thesis",
         "thesis_evidence",
         "skeptic_review",
+        "brief",
     } <= tables
-    assert current_revision(postgres_dsn) == "0002_phase2"
+    assert current_revision(postgres_dsn) == "0003_phase3"
     columns = {col["name"] for col in inspector.get_columns("observation")}
     assert "ingested_at" in columns
     assert "published_at" in columns

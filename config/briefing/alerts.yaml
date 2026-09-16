@@ -1,0 +1,13 @@
+# Thresholds are required for any alert push.
+# If this file is missing, types are empty, or a type has no numeric threshold,
+# alert-check must not push (no noisy commentary).
+require_threshold_config: true
+types:
+  liquidation_spike:
+    enabled: true
+    window_minutes: 60
+    min_size: 1.0
+  funding_oi_divergence:
+    enabled: true
+    min_abs_funding: 0.0003
+    min_oi_change_pct: 5.0

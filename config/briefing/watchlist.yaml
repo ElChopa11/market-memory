@@ -1,0 +1,17 @@
+# Small pre-open watchlist. Engine attaches observation ids from Market Memory.
+# Keep this short: why-now, levels, invalidation, no-trade.
+items:
+  - instrument: BTC
+    why_now: "Funding elevated while open interest expands — crowding into the US cash open"
+    invalidation: "Funding mean-reverts below 0.00005 without an OI drop, or daily close below support"
+    no_trade: "OI or funding data_quality is not ok; VIX > 25 with ES gap > 1%"
+    levels:
+      support: "64000"
+      resistance: "66000"
+  - instrument: ETH
+    why_now: "ETH/BTC catch-up risk if BTC squeeze continues into the cash session"
+    invalidation: "ETH lags while BTC funding remains bid; lose support without OI confirmation"
+    no_trade: "ETH open_interest is missing or partial"
+    levels:
+      support: "3400"
+      resistance: "3650"

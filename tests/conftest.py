@@ -41,7 +41,11 @@ def db_session(postgres_dsn: str):
     engine = make_engine(postgres_dsn)
     factory = make_session_factory(engine)
     session = factory()
-    session.execute(text("TRUNCATE skeptic_review, thesis_evidence, thesis, observation_link, observation, raw_object, source RESTART IDENTITY CASCADE"))
+    session.execute(
+        text(
+            "TRUNCATE brief, skeptic_review, thesis_evidence, thesis, observation_link, observation, raw_object, source RESTART IDENTITY CASCADE"
+        )
+    )
     session.commit()
     try:
         yield session

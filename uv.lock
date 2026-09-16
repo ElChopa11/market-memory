@@ -244,6 +244,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "mm-backtest" },
     { name = "mm-briefing" },
+    { name = "mm-briefing-worker" },
     { name = "mm-common" },
     { name = "mm-execution" },
     { name = "mm-ingest" },
@@ -267,6 +268,7 @@ dev = [
 requires-dist = [
     { name = "mm-backtest", editable = "packages/backtest" },
     { name = "mm-briefing", editable = "packages/briefing" },
+    { name = "mm-briefing-worker", editable = "apps/briefing-worker" },
     { name = "mm-common", editable = "packages/common" },
     { name = "mm-execution", editable = "packages/execution" },
     { name = "mm-ingest", editable = "packages/ingest" },
@@ -358,11 +360,37 @@ source = { editable = "packages/backtest" }
 name = "mm-briefing"
 version = "0.1.0"
 source = { editable = "packages/briefing" }
+dependencies = [
+    { name = "httpx" },
+    { name = "mm-common" },
+    { name = "mm-memory" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "mm-common", editable = "packages/common" },
+    { name = "mm-memory", editable = "packages/memory" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
 
 [[package]]
 name = "mm-briefing-worker"
 version = "0.1.0"
 source = { editable = "apps/briefing-worker" }
+dependencies = [
+    { name = "mm-briefing" },
+    { name = "mm-common" },
+    { name = "mm-memory" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mm-briefing", editable = "packages/briefing" },
+    { name = "mm-common", editable = "packages/common" },
+    { name = "mm-memory", editable = "packages/memory" },
+]
 
 [[package]]
 name = "mm-common"
@@ -431,6 +459,7 @@ name = "mm-lab-cli"
 version = "0.1.0"
 source = { editable = "apps/lab-cli" }
 dependencies = [
+    { name = "mm-briefing" },
     { name = "mm-common" },
     { name = "mm-ingest" },
     { name = "mm-memory" },
@@ -440,6 +469,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "mm-briefing", editable = "packages/briefing" },
     { name = "mm-common", editable = "packages/common" },
     { name = "mm-ingest", editable = "packages/ingest" },
     { name = "mm-memory", editable = "packages/memory" },
