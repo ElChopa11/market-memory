@@ -1,9 +1,16 @@
 [project]
 name = "mm-briefing-worker"
 version = "0.1.0"
-description = "Market Pulse worker (stub)."
+description = "Market Pulse worker (Phase 3)."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-briefing",
+  "mm-common",
+  "mm-memory",
+]
+
+[project.scripts]
+briefing-worker = "mm_briefing_worker:main"
 
 [build-system]
 requires = ["hatchling"]

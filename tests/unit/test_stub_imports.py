@@ -19,7 +19,8 @@ import mm_unicorn
 
 ROOT = Path(__file__).resolve().parents[2]
 PHASE1 = {mm_ingest, mm_provenance}
-PHASE2 = {mm_common, mm_memory, mm_research_kit, mm_lab_cli}
+PHASE2 = {mm_common, mm_research_kit}
+PHASE3 = {mm_memory, mm_briefing, mm_lab_cli}
 FORBIDDEN_SNIPPETS = (
     "sign_l1_action",
     "private_key",
@@ -46,7 +47,14 @@ def test_stubs_import_and_are_hard_gated() -> None:
         mm_lab_cli,
     ):
         assert mod.LIVE_TRADING_ENABLED is False
-        expected_phase = 2 if mod in PHASE2 else 1 if mod in PHASE1 else 0
+        if mod in PHASE3:
+            expected_phase = 3
+        elif mod in PHASE2:
+            expected_phase = 2
+        elif mod in PHASE1:
+            expected_phase = 1
+        else:
+            expected_phase = 0
         assert mod.__phase__ == expected_phase, mod.__name__
 
 

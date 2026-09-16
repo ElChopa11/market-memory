@@ -59,7 +59,7 @@ def test_phase2_tables_exist(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     tables = set(inspect(engine).get_table_names())
     assert {"thesis", "thesis_evidence", "skeptic_review"} <= tables
-    assert current_revision(postgres_dsn) == "0002_phase2"
+    assert current_revision(postgres_dsn) == "0003_phase3"
 
 
 def test_thesis_evidence_and_rejected_retention(db_session, tmp_path: Path) -> None:

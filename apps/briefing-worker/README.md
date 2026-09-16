@@ -1,9 +1,12 @@
 # mm-briefing-worker
 
-Phase 0 stub.
+Phase 3 Market Pulse worker: `briefing-worker once|next|run`.
 
-Market Pulse worker (stub).
+**Must not:** execute trades. Alert pushes require threshold config.
 
-**Must not:** execute trades.
+```bash
+uv run briefing-worker once --kind preopen --fixture tests/fixtures/briefing/frozen_day.json --no-db
+uv run briefing-worker next --from 2026-03-06T00:00:00Z --days 5
+```
 
-See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).
+See [../../docs/runbooks/market-pulse.md](../../docs/runbooks/market-pulse.md).

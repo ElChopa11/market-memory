@@ -1,0 +1,30 @@
+# Cross-asset / macro snapshot. Live HTTP is opt-in and degrades without keys.
+# Never put API keys in this file; inject via env (see .env.example).
+mode: off
+fixture_path: tests/fixtures/briefing/frozen_day.json
+live:
+  enabled: false
+  stooq:
+    enabled: false
+    # Public CSV quotes (no key). https://stooq.com
+    base_url: https://stooq.com/q/l/
+    symbols:
+      ES: es.f
+      NQ: nq.f
+      DXY: dx.f
+      CL: cl.f
+      VIX: ^vix
+  fred:
+    enabled: false
+    # https://fred.stlouisfed.org — key from FRED_API_KEY
+    api_key_env: FRED_API_KEY
+    base_url: https://api.stlouisfed.org/fred/series/observations
+    series:
+      US10Y: DGS10
+  coingecko:
+    enabled: false
+    # Public market snapshot; no key required for this endpoint.
+    base_url: https://api.coingecko.com/api/v3/simple/price
+    ids:
+      BTC: bitcoin
+      ETH: ethereum

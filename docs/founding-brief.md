@@ -2,7 +2,7 @@
 
 Private, Australia-based trading intelligence lab. Hyperliquid perpetuals first. Optimise for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 1 (read-only ingest + Market Memory).**
+This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 3 (Market Pulse briefing engine).**
 
 ## Operating philosophy
 
@@ -24,7 +24,7 @@ This brief freezes the operating philosophy for v1. Implementation proceeds in n
 | **Intel (ingest)** | Read-only feeds into Market Memory | Public / read-only only |
 | **Research** | Hypotheses, artifact chain, evidence links | Market Memory read + artifact write. **No trading credentials** |
 | **Skeptic** | Adversarial review of theses | Same as Research; cannot approve risk or submit orders |
-| **Briefing** | Market Pulse (later phase) | Read-only |
+| **Briefing** | Market Pulse (pre-open / close / threshold-gated alerts) | Read-only |
 | **Risk** | Deterministic allow/block from versioned config | No LLM at order time; no order submission |
 | **Paper** | Shadow ledger bound to theses | No live keys |
 | **Execution** | Typed `OrderIntent` after Risk allow (live later) | API/agent wallet in live env only; isolated deploy |

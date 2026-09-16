@@ -1,0 +1,18 @@
+# Macro calendar. v1 is a fixture file; swap source: to a pluggable fetcher later.
+source: fixture
+events:
+  - when: "2026-03-10T12:30:00+00:00"
+    name: "CPI YoY"
+    importance: high
+    region: US
+    notes: "Frozen fixture day. Consensus 2.4% (fixture)."
+  - when: "2026-03-10T14:00:00+00:00"
+    name: "10Y auction"
+    importance: medium
+    region: US
+    notes: "Watch for a stop-through vs overnight yield backup."
+  - when: "2026-03-11T18:00:00+00:00"
+    name: "FOMC speaker"
+    importance: medium
+    region: US
+    notes: "Into next US session / Europe overlap."

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -196,3 +196,30 @@ class SkepticReview(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     thesis: Mapped[Thesis] = relationship(back_populates="skeptic_reviews")
+
+
+class Brief(Base):
+    """Optional Market Pulse index. Markdown under briefs/YYYY/MM/DD/ is the artifact."""
+
+    __tablename__ = "brief"
+    __table_args__ = (
+        CheckConstraint("kind IN ('preopen','close','alert')", name="brief_kind_check"),
+        CheckConstraint(
+            "data_quality IN ('" + "','".join(DATA_QUALITY_VALUES) + "')",
+            name="brief_data_quality_check",
+        ),
+        UniqueConstraint("kind", "session_date", "content_hash", name="brief_kind_session_hash_uidx"),
+        Index("brief_session_date_idx", "session_date"),
+        Index("brief_kind_idx", "kind"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    session_date: Mapped[date] = mapped_column(Date, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    as_of_knowledge: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    artifact_git_path: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    data_quality: Mapped[str] = mapped_column(String(32), nullable=False)
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

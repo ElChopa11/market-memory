@@ -1,0 +1,169 @@
+{
+  "session_date": "2026-03-10",
+  "kind_times": {
+    "preopen": "2026-03-10T12:00:00+00:00",
+    "close": "2026-03-10T20:15:00+00:00"
+  },
+  "as_of": "2026-03-10T12:00:00+00:00",
+  "prior_us_close": "2026-03-09T20:00:00+00:00",
+  "macro": {
+    "source": "fixture",
+    "data_quality": "ok",
+    "assets": [
+      {"symbol": "ES", "name": "S&P 500 futures", "last": 5750.0, "prior_close": 5720.0, "unit": "pts"},
+      {"symbol": "NQ", "name": "Nasdaq 100 futures", "last": 20500.0, "prior_close": 20400.0, "unit": "pts"},
+      {"symbol": "US10Y", "name": "US 10Y yield", "last": 4.28, "prior_close": 4.22, "unit": "%"},
+      {"symbol": "DXY", "name": "US Dollar Index", "last": 103.80, "prior_close": 104.20, "unit": "idx"},
+      {"symbol": "CL", "name": "WTI crude", "last": 78.50, "prior_close": 77.20, "unit": "usd"},
+      {"symbol": "VIX", "name": "CBOE Volatility Index", "last": 16.20, "prior_close": 17.80, "unit": "idx"},
+      {"symbol": "BTC", "name": "Bitcoin", "last": 65500.0, "prior_close": 64800.0, "unit": "usd"},
+      {"symbol": "ETH", "name": "Ether", "last": 3550.0, "prior_close": 3480.0, "unit": "usd"}
+    ]
+  },
+  "session": {
+    "source": "fixture",
+    "data_quality": "ok",
+    "assets": [
+      {"symbol": "ES", "name": "S&P 500 futures", "last": 5780.0, "prior_close": 5720.0, "open": 5750.0, "unit": "pts"},
+      {"symbol": "NQ", "name": "Nasdaq 100 futures", "last": 20620.0, "prior_close": 20400.0, "open": 20500.0, "unit": "pts"},
+      {"symbol": "US10Y", "name": "US 10Y yield", "last": 4.31, "prior_close": 4.22, "unit": "%"},
+      {"symbol": "DXY", "name": "US Dollar Index", "last": 103.55, "prior_close": 104.20, "unit": "idx"},
+      {"symbol": "CL", "name": "WTI crude", "last": 79.10, "prior_close": 77.20, "unit": "usd"},
+      {"symbol": "VIX", "name": "CBOE Volatility Index", "last": 15.40, "prior_close": 17.80, "unit": "idx"},
+      {"symbol": "BTC", "name": "Bitcoin", "last": 66100.0, "prior_close": 64800.0, "unit": "usd"},
+      {"symbol": "ETH", "name": "Ether", "last": 3520.0, "prior_close": 3480.0, "unit": "usd"}
+    ]
+  },
+  "hyperliquid": {
+    "as_of_knowledge": "2026-03-10T12:00:00+00:00",
+    "instruments": [
+      {
+        "instrument": "BTC",
+        "data_quality": "ok",
+        "metrics": {
+          "funding": {
+            "value": "0.0004",
+            "observation_id": "01FROZENBTCFUNDING00000001",
+            "claim_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T08:00:00+00:00"
+          },
+          "open_interest": {
+            "value": "1200.5",
+            "observation_id": "01FROZENBTCOI0000000000001",
+            "claim_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          },
+          "prior_open_interest": {
+            "value": "1000.0",
+            "observation_id": "01FROZENBTCOIPRIOR00000001",
+            "claim_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "data_quality": "ok",
+            "market_time": "2026-03-09T20:00:00+00:00"
+          },
+          "mid_px": {
+            "value": "65500",
+            "observation_id": "01FROZENBTCMID000000000001",
+            "claim_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          },
+          "mark_px": {
+            "value": "65510",
+            "observation_id": "01FROZENBTCMARK00000000001",
+            "claim_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          },
+          "oracle_px": {
+            "value": "65400",
+            "observation_id": "01FROZENBTCORACLE000000001",
+            "claim_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          }
+        },
+        "liquidations": [
+          {
+            "value": "2.50",
+            "observation_id": "01FROZENBTCLIQ000000000001",
+            "claim_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:40:00+00:00"
+          }
+        ],
+        "levels": {
+          "session_high": "65800",
+          "session_low": "64600",
+          "basis_mark_minus_oracle": "110"
+        }
+      },
+      {
+        "instrument": "ETH",
+        "data_quality": "partial",
+        "metrics": {
+          "funding": {
+            "value": "-0.0001",
+            "observation_id": "01FROZENETHFUNDING00000001",
+            "claim_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T08:00:00+00:00"
+          },
+          "open_interest": {
+            "value": null,
+            "observation_id": "01FROZENETHOI0000000000001",
+            "claim_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+            "data_quality": "partial",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          },
+          "mid_px": {
+            "value": "3550",
+            "observation_id": "01FROZENETHMID000000000001",
+            "claim_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          },
+          "mark_px": {
+            "value": "3551",
+            "observation_id": "01FROZENETHMARK00000000001",
+            "claim_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          },
+          "oracle_px": {
+            "value": "3548",
+            "observation_id": "01FROZENETHORACLE000000001",
+            "claim_hash": "6666666666666666666666666666666666666666666666666666666666666666",
+            "data_quality": "ok",
+            "market_time": "2026-03-10T11:55:00+00:00"
+          }
+        },
+        "liquidations": [],
+        "levels": {
+          "session_high": "3580",
+          "session_low": "3460",
+          "basis_mark_minus_oracle": "3"
+        }
+      }
+    ]
+  },
+  "theses": [
+    {
+      "slug": "THESIS-0001",
+      "status": "paper",
+      "instrument": "BTC",
+      "invalidation_summary": "Daily close below 64000",
+      "expected_direction": "short",
+      "hypothesis": "Funding fade after crowding"
+    },
+    {
+      "slug": "THESIS-0002",
+      "status": "in_research",
+      "instrument": "ETH",
+      "invalidation_summary": "ETH underperforms BTC by 3% on a US session close",
+      "expected_direction": "long",
+      "hypothesis": "ETH catch-up vs BTC"
+    }
+  ]
+}
