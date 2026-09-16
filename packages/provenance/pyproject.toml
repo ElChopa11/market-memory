@@ -1,9 +1,11 @@
 [project]
 name = "mm-provenance"
 version = "0.1.0"
-description = "Truth cell: normalize, dedupe, contradict observations (stub)."
+description = "Truth cell: normalize, dedupe, contradict observations."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+]
 
 [build-system]
 requires = ["hatchling"]

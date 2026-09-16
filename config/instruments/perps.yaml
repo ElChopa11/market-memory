@@ -1,4 +1,4 @@
-# v1 instrument universe — config only; no market ingest in Phase 0.
+# v1 instrument universe — BTC/ETH perps for read-only Hyperliquid info ingest.
 venue: hyperliquid
 kind: perpetual
 instruments:

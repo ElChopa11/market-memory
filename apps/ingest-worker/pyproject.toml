@@ -1,9 +1,15 @@
 [project]
 name = "mm-ingest-worker"
 version = "0.1.0"
-description = "Read-only ingest process (stub)."
+description = "Read-only ingest process."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-ingest",
+  "mm-memory",
+]
+
+[project.scripts]
+ingest-once = "mm_ingest_worker:main"
 
 [build-system]
 requires = ["hatchling"]

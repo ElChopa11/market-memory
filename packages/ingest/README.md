@@ -1,9 +1,9 @@
 # mm-ingest
 
-Phase 0 stub.
+Read-only Hyperliquid **info** ingest (mids, funding, open interest, candles, liquidations when the public `/info` API provides them).
 
-Read-only Hyperliquid and public feed ingest (stub).
+**Must not:** sign orders, import an exchange/signing module, hold API wallets, or call user-private info types.
 
-**Must not:** sign orders or use API/agent wallets. Phase 0: no live ingest.
+Default instruments: BTC and ETH perps from `config/instruments/perps.yaml`.
 
-See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).
+See [../../docs/runbooks/ingest.md](../../docs/runbooks/ingest.md).

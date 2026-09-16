@@ -1,8 +1,6 @@
 # mm-common
 
-Phase 0 stub.
-
-IDs, time, money, hashing, and shared schemas.
+Shared IDs (ULID), UTC time helpers, canonical hashing, and the observation envelope schema.
 
 **Must not:** hold secrets, place orders, or talk to Hyperliquid.
 

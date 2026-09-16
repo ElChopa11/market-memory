@@ -3,7 +3,9 @@ name = "mm-common"
 version = "0.1.0"
 description = "IDs, time, money, hashing, and shared schemas."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "pydantic>=2.9",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,118 @@
+{
+  "instruments": ["BTC", "ETH"],
+  "snapshot_published_at": "2026-09-10T00:00:00+00:00",
+  "snapshot_ingested_at": "2026-09-10T00:05:00+00:00",
+  "allMids": {
+    "BTC": "65000.0",
+    "ETH": "3500.00"
+  },
+  "metaAndAssetCtxs": [
+    {
+      "universe": [
+        {"name": "BTC", "szDecimals": 5, "maxLeverage": 50},
+        {"name": "ETH", "szDecimals": 4, "maxLeverage": 50}
+      ]
+    },
+    [
+      {
+        "dayNtlVlm": "1000.0",
+        "funding": "0.0001",
+        "markPx": "65010.0",
+        "midPx": "65000.0",
+        "openInterest": "1000.5",
+        "oraclePx": "64990.0",
+        "premium": "0.0001",
+        "prevDayPx": "64000.0"
+      },
+      {
+        "dayNtlVlm": "800.0",
+        "funding": "0.00005",
+        "markPx": "3501.0",
+        "midPx": "3500.0",
+        "openInterest": null,
+        "oraclePx": "3499.0",
+        "premium": "0.0002",
+        "prevDayPx": "3400.0"
+      }
+    ]
+  ],
+  "fundingHistory": {
+    "BTC": [
+      {
+        "coin": "BTC",
+        "fundingRate": "0.0001",
+        "premium": "0.0",
+        "time": 1788912000000,
+        "ingested_at": "2026-09-09T00:00:00+00:00"
+      },
+      {
+        "coin": "BTC",
+        "fundingRate": "0.0001",
+        "premium": "0.0",
+        "time": 1788912000000,
+        "ingested_at": "2026-09-09T00:01:00+00:00"
+      },
+      {
+        "coin": "BTC",
+        "fundingRate": "0.0002",
+        "premium": "0.0",
+        "time": 1788955200000,
+        "ingested_at": "2026-09-09T12:00:00+00:00"
+      }
+    ],
+    "ETH": [
+      {
+        "coin": "ETH",
+        "fundingRate": "-0.0001",
+        "premium": "0.0",
+        "time": 1788912000000,
+        "ingested_at": "2026-09-09T00:00:00+00:00"
+      }
+    ]
+  },
+  "candles": {
+    "BTC": [
+      {
+        "s": "BTC",
+        "t": 1788912000000,
+        "T": 1788915599999,
+        "i": "1h",
+        "o": "64000.0",
+        "c": "64100.0",
+        "h": "64200.0",
+        "l": "63900.0",
+        "v": "10.0",
+        "n": 3,
+        "ingested_at": "2026-09-09T00:00:00+00:00"
+      }
+    ]
+  },
+  "recentTrades": {
+    "BTC": [
+      {
+        "coin": "BTC",
+        "side": "A",
+        "px": "60000.0",
+        "sz": "0.5",
+        "time": 1788955200000,
+        "hash": "0xabc0000000000000000000000000000000000000000000000000000000000001",
+        "tid": 1,
+        "liquidation": {
+          "liquidatedUser": "0x0000000000000000000000000000000000000001",
+          "markPx": "60010.0",
+          "method": "market"
+        },
+        "ingested_at": "2026-09-09T12:00:00+00:00"
+      },
+      {
+        "coin": "BTC",
+        "side": "B",
+        "px": "65000.0",
+        "sz": "0.01",
+        "time": 1788955200000,
+        "hash": "0xdef0000000000000000000000000000000000000000000000000000000000002",
+        "tid": 2
+      }
+    ]
+  }
+}

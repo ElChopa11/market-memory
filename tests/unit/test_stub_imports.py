@@ -1,6 +1,8 @@
-"""Stub packages import and stay inert."""
+"""Phase 1 packages stay hard-gated; no signing surface."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import mm_backtest
 import mm_briefing
@@ -14,6 +16,17 @@ import mm_provenance
 import mm_research_kit
 import mm_risk
 import mm_unicorn
+
+ROOT = Path(__file__).resolve().parents[2]
+PHASE1 = {mm_common, mm_memory, mm_ingest, mm_provenance, mm_lab_cli}
+FORBIDDEN_SNIPPETS = (
+    "sign_l1_action",
+    "private_key",
+    "API_WALLET",
+    "hl_trade",
+    "submit_order",
+    "wallet.json",
+)
 
 
 def test_stubs_import_and_are_hard_gated() -> None:
@@ -31,11 +44,22 @@ def test_stubs_import_and_are_hard_gated() -> None:
         mm_unicorn,
         mm_lab_cli,
     ):
-        assert mod.__phase__ == 0
         assert mod.LIVE_TRADING_ENABLED is False
+        expected_phase = 1 if mod in PHASE1 else 0
+        assert mod.__phase__ == expected_phase, mod.__name__
 
 
 def test_execution_stub_has_no_signing_surface() -> None:
     assert not hasattr(mm_execution, "sign")
     assert not hasattr(mm_execution, "submit_order")
     assert not hasattr(mm_execution, "private_key")
+
+
+def test_ingest_has_no_exchange_or_signing_module() -> None:
+    ingest_root = ROOT / "packages" / "ingest"
+    assert not (ingest_root / "src" / "mm_ingest" / "hl_trade.py").exists()
+    assert not (ingest_root / "src" / "mm_ingest" / "exchange.py").exists()
+    blob = "\n".join(path.read_text(encoding="utf-8") for path in ingest_root.rglob("*.py"))
+    for snippet in FORBIDDEN_SNIPPETS:
+        assert snippet not in blob, snippet
+    assert "FORBIDDEN_INFO_TYPES" in blob

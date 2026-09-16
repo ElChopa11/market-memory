@@ -1,8 +1,9 @@
-# Local Market Memory dependencies only (Phase 0).
+# Local Market Memory dependencies (Phase 1).
 # Postgres 16 = queryable institutional memory.
 # MinIO = S3-compatible object store for raw evidence blobs (official images on quay.io).
 # Default users/passwords are local-dev conveniences, not production secrets.
 # Do not point these services at live trading credentials.
+# Ingest is read-only Hyperliquid /info; no signing containers.
 
 name: market-memory
 

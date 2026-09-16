@@ -1,0 +1,9 @@
+# Phase 1 read-only ingest (no secrets).
+venue: hyperliquid
+info_url: https://api.hyperliquid.xyz/info
+candle_interval: 1h
+# Snapshot rows older than this at ingest time are flagged stale.
+# Historical series (fundingHistory, candles, liquidations) are never stale merely for being in the past.
+stale_after_seconds: 120
+store_raw_objects: true
+source_trust_tier: 4
