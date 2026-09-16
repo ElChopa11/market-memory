@@ -8,7 +8,7 @@ Artifacts live under `research/YYYY/THESIS-XXXX/` and are copied from `templates
 
 Any stage may go to `rejected`. **Rejected theses stay queryable learning records** (git workspace retained; `lab thesis list --status rejected`). Revival requires a new intent, not a silent reopen.
 
-Phase 2 implements through skeptic. `paper` and `live` are later phases and the CLI refuses them.
+Phase 4 implements through paper. `live` remains later and the CLI refuses it.
 
 ## Artifact chain and definition of done
 
@@ -58,11 +58,11 @@ uv run lab thesis new --goal "…" --owner Research --instrument BTC
 
 **Requires:** `research-plan.md` if any evidence or backtest files are present.
 
-**DoD (Phase 2)**
+**DoD (Phase 4)**
 
 - Evidence files cite observation ids (`evidence/links.md` plus Market Memory `thesis_evidence`).
 - Link via `lab thesis link-evidence THESIS-XXXX --observation <id> --role supports|opposes|context`.
-- Backtests record `params_hash` in Phase 4. No look-ahead: knowledge watermark is `ingested_at`.
+- Backtests record `params_hash` (`lab backtest run`). No look-ahead: bar knowledge watermark is `available_at`; observations use `ingested_at`.
 
 ### 5. Skeptic review (`skeptic-review.md`) — enter `in_skeptic`
 
@@ -80,17 +80,26 @@ uv run lab skeptic record THESIS-XXXX --verdict pass|revise|reject --reviewer Sk
 - Required fixes before paper if not `pass`.
 - Author of the thesis is not the sole skeptic of record.
 
-Cannot mark paper without a `pass` verdict (paper is Phase 4). Runbook: [runbooks/research-workspace.md](runbooks/research-workspace.md).
+Cannot mark paper without a `pass` verdict. Runbook: [runbooks/research-workspace.md](runbooks/research-workspace.md).
 
 ### 6. Paper trade (`paper/` or `paper-trade.md`) — enter `paper`
 
-**Requires:** `skeptic-review.md`
+**Requires:** `skeptic-review.md` with verdict `pass`, evidence links, **invalidation**, and **max loss**.
+
+```bash
+uv run lab paper open THESIS-XXXX \
+  --size 0.01 \
+  --max-loss "500 USDC" \
+  --invalidation "BTC daily close < 60000"
+```
 
 **DoD**
 
 - Thesis id + entry snapshot hash.
-- Size, max loss, invalidation (paper **cannot** open without these — Phase 4).
+- Size, max loss, invalidation (paper **cannot** open without these).
 - Expected path checkpoints; fills / slippage / marks; exit reason.
+
+`live` remains **hard-gated**. Runbook: [runbooks/paper-trade.md](runbooks/paper-trade.md). Backtest runbook: [runbooks/backtest.md](runbooks/backtest.md).
 
 ### 7. Promotion (`promotion-decision.md` or `promotion.md`)
 
@@ -133,7 +142,7 @@ Unusual / overlooked candidates. Independent evidence (≥2 types), disproof, ca
 - Fails if status is `in_skeptic` (or `paper`/`live`) without rows in `evidence/links.md`.
 - Empty `research/` is valid. Rejected workspaces must remain and still pass predecessor checks.
 
-Coordinator CLI: `lab thesis new|link-evidence|advance|list` and `lab skeptic open|record`. See [runbooks/research-workspace.md](runbooks/research-workspace.md).
+Coordinator CLI: `lab thesis new|link-evidence|advance|list`, `lab skeptic open|record`, `lab backtest run`, `lab paper open|close|list`. See [runbooks/research-workspace.md](runbooks/research-workspace.md).
 
 ## Control-plane reminders
 

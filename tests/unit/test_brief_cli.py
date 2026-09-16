@@ -13,10 +13,10 @@ FIXTURE = ROOT / "tests" / "fixtures" / "briefing" / "frozen_day.json"
 EXPECTED_PREOPEN = (ROOT / "tests" / "fixtures" / "briefing" / "frozen_preopen.sha256").read_text().strip()
 
 
-def test_lab_status_mentions_phase3_and_hard_gate(capsys) -> None:
+def test_lab_status_mentions_phase4_and_hard_gate(capsys) -> None:
     assert main(["status"]) == 0
     out = capsys.readouterr().out
-    assert "Phase 3" in out
+    assert "Phase 4" in out
     assert "HARD-GATED" in out
     assert "alert-check" in out
     assert "America/New_York" in out

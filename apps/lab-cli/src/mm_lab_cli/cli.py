@@ -1,4 +1,4 @@
-"""Coordinator CLI: status, migrate, ingest, research workspace, Market Pulse briefs.
+"""Coordinator CLI: status, migrate, ingest, research, briefs, backtest, paper ledger.
 
 Must not hold trading credentials.
 """
@@ -11,7 +11,9 @@ import sys
 from pathlib import Path
 
 from mm_common.time import parse_utc, utcnow
+from mm_lab_cli.backtest import add_backtest_parser, dispatch_backtest
 from mm_lab_cli.briefing import add_brief_parser, dispatch_brief
+from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
 from mm_memory.db import dsn_from_env, session_scope
 from mm_memory.migrate import current_revision, upgrade_head
@@ -64,7 +66,7 @@ def main(argv: list[str] | None = None) -> int:
 
     adv = thesis_sub.add_parser("advance", help="advance lifecycle status when DoD is met")
     adv.add_argument("slug")
-    adv.add_argument("--to", required=True, help="draft|in_research|in_skeptic|rejected|retired")
+    adv.add_argument("--to", required=True, help="draft|in_research|in_skeptic|paper|rejected|retired")
     _add_research_common(adv)
 
     list_p = thesis_sub.add_parser("list", help="list theses (rejected remain queryable)")
@@ -90,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
     _add_research_common(rec)
 
     add_brief_parser(sub)
+    add_backtest_parser(sub)
+    add_paper_parser(sub)
 
     args = parser.parse_args(argv)
     if args.cmd is None or args.cmd == "status":
@@ -106,6 +110,10 @@ def main(argv: list[str] | None = None) -> int:
         return run_research_command(dispatch_skeptic, args)
     if args.cmd == "brief":
         return dispatch_brief(args)
+    if args.cmd == "backtest":
+        return dispatch_backtest(args)
+    if args.cmd == "paper":
+        return dispatch_paper(args)
     parser.print_help()
     return 2
 
@@ -119,7 +127,7 @@ def _add_research_common(parser: argparse.ArgumentParser) -> None:
 
 
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 3 — Market Pulse)")
+    print("market-memory lab CLI (Phase 4 — backtest + paper ledger)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
@@ -127,6 +135,8 @@ def cmd_status() -> int:
     print("Point-in-time: what_did_we_know(T) uses ingested_at <= T, never published_at alone.")
     print("Theses: lab thesis new | link-evidence | advance ; lab skeptic open | record")
     print("Briefs: lab brief preopen | close | alert-check (alerts require threshold config)")
+    print("Backtest: lab backtest run --fixture PATH (same params_hash → same result)")
+    print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")

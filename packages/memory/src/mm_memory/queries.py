@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from mm_common.enums import DataQuality
 from mm_common.time import as_utc
-from mm_memory.models import Observation, Thesis
+from mm_memory.models import Observation, PaperTrade, ResearchRun, Thesis
 
 
 def what_did_we_know_statement(
@@ -66,3 +66,34 @@ def list_theses(
 
 def get_thesis_by_slug(session: Session, slug: str) -> Thesis | None:
     return session.scalar(select(Thesis).where(Thesis.slug == slug))
+
+
+def list_research_runs(
+    session: Session,
+    *,
+    thesis_id: str | None = None,
+    kind: str | None = None,
+    params_hash: str | None = None,
+) -> list[ResearchRun]:
+    stmt = select(ResearchRun).order_by(ResearchRun.started_at.asc(), ResearchRun.id.asc())
+    if thesis_id is not None:
+        stmt = stmt.where(ResearchRun.thesis_id == thesis_id)
+    if kind is not None:
+        stmt = stmt.where(ResearchRun.kind == kind)
+    if params_hash is not None:
+        stmt = stmt.where(ResearchRun.params_hash == params_hash)
+    return list(session.scalars(stmt).all())
+
+
+def list_paper_trades(
+    session: Session,
+    *,
+    thesis_id: str | None = None,
+    status: str | None = None,
+) -> list[PaperTrade]:
+    stmt = select(PaperTrade).order_by(PaperTrade.opened_at.asc(), PaperTrade.id.asc())
+    if thesis_id is not None:
+        stmt = stmt.where(PaperTrade.thesis_id == thesis_id)
+    if status is not None:
+        stmt = stmt.where(PaperTrade.status == status)
+    return list(session.scalars(stmt).all())

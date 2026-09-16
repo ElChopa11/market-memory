@@ -28,14 +28,16 @@ def test_lab_thesis_new_requires_intent(tmp_path: Path, capsys) -> None:
     assert "cannot create/mark thesis without intent" in capsys.readouterr().out
 
 
-def test_lab_status_mentions_phase3_and_hard_gate(capsys) -> None:
+def test_lab_status_mentions_phase4_and_hard_gate(capsys) -> None:
     assert main(["status"]) == 0
     out = capsys.readouterr().out
-    assert "Phase 3" in out
+    assert "Phase 4" in out
     assert "HARD-GATED" in out
     assert "ingested_at" in out
     assert "Research cannot access trading credentials" in out
     assert "lab brief" in out
+    assert "lab backtest" in out
+    assert "lab paper" in out
 
 
 def test_lab_thesis_new_and_in_skeptic_gate(tmp_path: Path, capsys) -> None:

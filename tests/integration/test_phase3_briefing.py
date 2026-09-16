@@ -27,7 +27,7 @@ def test_brief_table_migrated(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     tables = set(inspect(engine).get_table_names())
     assert "brief" in tables
-    assert current_revision(postgres_dsn) == "0003_phase3"
+    assert current_revision(postgres_dsn) == "0004_phase4"
 
 
 def test_frozen_brief_indexes_in_memory(db_session, tmp_path: Path) -> None:

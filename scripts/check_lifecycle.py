@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Refuse advancing research artifacts without required predecessors.
 
-Phase 2 DoD: a thesis without intent is an error; in_skeptic requires
-evidence links. Rejected theses remain on disk as learning records.
+Phase 4 DoD: a thesis without intent is an error; in_skeptic requires
+evidence links; paper artifacts require invalidation + max loss.
+Rejected theses remain on disk as learning records.
 """
 
 from __future__ import annotations

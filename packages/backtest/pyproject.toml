@@ -1,9 +1,12 @@
 [project]
 name = "mm-backtest"
 version = "0.1.0"
-description = "Reproducible evaluation harness (stub)."
+description = "Reproducible evaluation harness (event/bar replay, params_hash)."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+  "pyarrow>=17.0",
+]
 
 [build-system]
 requires = ["hatchling"]

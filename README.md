@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 3 — Market Pulse.** US pre-open and close briefs, DST-correct New York ↔ Sydney schedules, threshold-gated intraday alerts. Phase 1 ingest + `what_did_we_know(T)` and Phase 2 thesis workspaces remain. **No live trading, no order signing, no wallet code.**
+**Status: Phase 4 — backtest + paper ledger.** Reproducible fixture replay (`params_hash`), adversarial look-ahead tests, and a shadow paper ledger bound to theses. Phase 1 ingest, Phase 2 thesis workspaces, and Phase 3 Market Pulse remain. **No live trading, no order signing, no wallet code.**
 
 ## Start here
 
@@ -13,13 +13,15 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [docs/research-lifecycle.md](docs/research-lifecycle.md) | Artifact chain and definition-of-done gates |
 | [docs/runbooks/ingest.md](docs/runbooks/ingest.md) | Phase 1 how-to: compose, migrate, ingest, query |
 | [docs/runbooks/research-workspace.md](docs/runbooks/research-workspace.md) | Phase 2 how-to: create thesis, link evidence, skeptic checklist |
-| [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md) | **Phase 3 how-to:** generate pre-open/close briefs, alert-check, DST schedule |
+| [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md) | Phase 3 how-to: generate pre-open/close briefs, alert-check, DST schedule |
+| [docs/runbooks/backtest.md](docs/runbooks/backtest.md) | **Phase 4 how-to:** reproducible fixture backtest |
+| [docs/runbooks/paper-trade.md](docs/runbooks/paper-trade.md) | **Phase 4 how-to:** open/close shadow paper trades |
 | [AGENTS.md](AGENTS.md) | Role permissions (Research **cannot** access trading credentials) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
 
 Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). Default instruments: **BTC and ETH perps**. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 
-## Boot local dev (Phase 3)
+## Boot local dev (Phase 4)
 
 Requires Docker Compose and [uv](https://docs.astral.sh/uv/) (Python 3.12).
 
@@ -52,7 +54,10 @@ uv run lab brief preopen --fixture tests/fixtures/briefing/frozen_day.json --no-
 uv run lab brief close --fixture tests/fixtures/briefing/frozen_day.json --no-db
 uv run lab brief alert-check --fixture tests/fixtures/briefing/frozen_day.json --no-db
 
-# 8. Lifecycle DoD gates + tests
+# 8. Reproducible backtest (paper open needs skeptic pass — see docs/runbooks/paper-trade.md)
+uv run lab backtest run --fixture tests/fixtures/backtest/clean_bars.json --strategy buy_hold --no-db
+
+# 9. Lifecycle DoD gates + tests
 ./scripts/check-lifecycle.sh
 uv run pytest
 
@@ -87,10 +92,10 @@ scripts/          bootstrap + lifecycle checker
 0. Foundations (merged)
 1. Read-only ingest + Market Memory (merged)
 2. Research workspace (merged)
-3. Market Pulse **(this tree)**
-4. Backtest + paper ledger
+3. Market Pulse (merged)
+4. Backtest + paper ledger **(this tree)**
 5. Deterministic risk + simulated execution
 6. Tiny manually approved live (optional)
 7. Learning loop
 
-Out of scope for Phase 3: backtest harness beyond stubs, risk/execution services, dashboards, Unicorn Hunter logic, live keys, alert spam without thresholds.
+Out of scope for Phase 4: risk/execution services, dashboards, Unicorn Hunter logic, live keys, alert spam without thresholds.

@@ -15,6 +15,8 @@ from mm_common.enums import (
     EVIDENCE_ROLE_VALUES,
     EVIDENCE_TYPE_VALUES,
     OBSERVATION_RELATION_VALUES,
+    PAPER_TRADE_STATUS_VALUES,
+    RESEARCH_RUN_KIND_VALUES,
     SKEPTIC_VERDICT_VALUES,
     SOURCE_KIND_VALUES,
     THESIS_STATUS_VALUES,
@@ -153,6 +155,8 @@ class Thesis(Base):
 
     evidence_links: Mapped[list["ThesisEvidence"]] = relationship(back_populates="thesis")
     skeptic_reviews: Mapped[list["SkepticReview"]] = relationship(back_populates="thesis")
+    research_runs: Mapped[list["ResearchRun"]] = relationship(back_populates="thesis")
+    paper_trades: Mapped[list["PaperTrade"]] = relationship(back_populates="thesis")
 
 
 class ThesisEvidence(Base):
@@ -196,6 +200,74 @@ class SkepticReview(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     thesis: Mapped[Thesis] = relationship(back_populates="skeptic_reviews")
+
+
+class ResearchRun(Base):
+    """Reproducible research/backtest run. params_hash identifies the experiment."""
+
+    __tablename__ = "research_run"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('" + "','".join(RESEARCH_RUN_KIND_VALUES) + "')",
+            name="research_run_kind_check",
+        ),
+        Index("research_run_thesis_id_idx", "thesis_id"),
+        Index("research_run_params_hash_idx", "params_hash"),
+        Index("research_run_kind_idx", "kind"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    thesis_id: Mapped[str | None] = mapped_column(ForeignKey("thesis.id"), nullable=True, index=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    params_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    result_summary: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    artifact_paths: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    thesis: Mapped[Thesis | None] = relationship(back_populates="research_runs")
+
+
+class PaperTrade(Base):
+    """Shadow/paper ledger row. Cannot open without invalidation + max loss."""
+
+    __tablename__ = "paper_trade"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('" + "','".join(PAPER_TRADE_STATUS_VALUES) + "')",
+            name="paper_trade_status_check",
+        ),
+        CheckConstraint("length(btrim(invalidation)) > 0", name="paper_trade_invalidation_check"),
+        CheckConstraint("length(btrim(max_loss)) > 0", name="paper_trade_max_loss_check"),
+        CheckConstraint("max_loss_amount > 0", name="paper_trade_max_loss_amount_check"),
+        Index("paper_trade_thesis_id_idx", "thesis_id"),
+        Index("paper_trade_status_idx", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    thesis_id: Mapped[str] = mapped_column(ForeignKey("thesis.id"), nullable=False, index=True)
+    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="open")
+    instrument: Mapped[str] = mapped_column(Text, nullable=False)
+    size: Mapped[str] = mapped_column(Text, nullable=False)
+    invalidation: Mapped[str] = mapped_column(Text, nullable=False)
+    max_loss: Mapped[str] = mapped_column(Text, nullable=False)
+    max_loss_amount: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
+    intent_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    fills_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    expected_path: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    realised_path: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    pnl: Mapped[Decimal | None] = mapped_column(Numeric(20, 8), nullable=True)
+    slippage_bps: Mapped[Decimal | None] = mapped_column(Numeric(12, 4), nullable=True)
+    exit_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    artifact_git_path: Mapped[str] = mapped_column(Text, nullable=False)
+    entry_thesis_snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    thesis: Mapped[Thesis] = relationship(back_populates="paper_trades")
 
 
 class Brief(Base):
