@@ -1,0 +1,10 @@
+[project]
+name = "mm-risk-service"
+version = "0.1.0"
+description = "Allow/block service only (stub)."
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

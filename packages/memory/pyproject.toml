@@ -1,0 +1,10 @@
+[project]
+name = "mm-memory"
+version = "0.1.0"
+description = "Market Memory: DB models, migrations, query API (stub)."
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

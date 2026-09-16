@@ -1,0 +1,13 @@
+[project]
+name = "mm-lab-cli"
+version = "0.1.0"
+description = "Coordinator surface (`lab` CLI)."
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+lab = "mm_lab_cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

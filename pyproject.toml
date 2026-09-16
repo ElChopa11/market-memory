@@ -1,0 +1,56 @@
+[project]
+name = "market-memory"
+version = "0.1.0"
+description = "Private AI-native trading intelligence lab (Hyperliquid-first). Phase 0 scaffold."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "mm-common",
+  "mm-memory",
+  "mm-ingest",
+  "mm-provenance",
+  "mm-research-kit",
+  "mm-backtest",
+  "mm-risk",
+  "mm-paper",
+  "mm-execution",
+  "mm-briefing",
+  "mm-unicorn",
+  "mm-lab-cli",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "pyyaml>=6.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*", "apps/*"]
+
+[tool.uv.sources]
+mm-common = { workspace = true }
+mm-memory = { workspace = true }
+mm-ingest = { workspace = true }
+mm-provenance = { workspace = true }
+mm-research-kit = { workspace = true }
+mm-backtest = { workspace = true }
+mm-risk = { workspace = true }
+mm-paper = { workspace = true }
+mm-execution = { workspace = true }
+mm-briefing = { workspace = true }
+mm-unicorn = { workspace = true }
+mm-lab-cli = { workspace = true }
+mm-ingest-worker = { workspace = true }
+mm-briefing-worker = { workspace = true }
+mm-risk-service = { workspace = true }
+mm-execution-service = { workspace = true }
+mm-dashboard = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
+addopts = "-q"

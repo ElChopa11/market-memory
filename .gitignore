@@ -1,0 +1,39 @@
+# Secrets and credentials — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+vault/
+**/wallet.json
+**/*private*key*
+config/halt.flag
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# uv
+.uv-cache/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local object-store / DB volumes (if bind-mounted)
+.local-data/

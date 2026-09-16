@@ -1,0 +1,10 @@
+[project]
+name = "mm-ingest"
+version = "0.1.0"
+description = "Read-only Hyperliquid and public feed ingest (stub)."
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

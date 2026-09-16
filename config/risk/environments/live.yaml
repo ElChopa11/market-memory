@@ -1,0 +1,28 @@
+# PRINCIPAL-OWNED live risk config.
+# Autonomous agents must not edit this file.
+#
+# Review path (required for any change after bootstrap):
+#   1. Pull request carries GitHub label `principal-review`.
+#   2. PR body references a promotion-decision artifact and halt conditions.
+#   3. CODEOWNERS: Principal (@ElChopa11).
+#   4. CI: .github/workflows/risk-config-guard.yml
+#   5. Merge only after Principal approval (signed commit or recorded approval).
+#
+# Bootstrap: live_trading_enabled must remain false until Phase 6 sign-off.
+schema_version: 1
+environment: live
+live_trading_enabled: false
+risk_budget_usd: 0
+per_thesis_max_loss_bps: 500
+max_leverage: 1.0
+daily_loss_limit_bps: 300
+max_concentration_pct: 50
+max_open_theses: 1
+instruments_allowlist:
+  - BTC
+  - ETH
+require_invalidation: true
+require_max_loss: true
+require_principal_promotion: true
+kill_switch_path: config/halt.flag
+llm_at_order_time: false

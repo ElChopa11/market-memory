@@ -1,0 +1,10 @@
+[project]
+name = "mm-ingest-worker"
+version = "0.1.0"
+description = "Read-only ingest process (stub)."
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

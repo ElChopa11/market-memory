@@ -1,0 +1,62 @@
+# Local Market Memory dependencies only (Phase 0).
+# Postgres 16 = queryable institutional memory.
+# MinIO = S3-compatible object store for raw evidence blobs (official images on quay.io).
+# Default users/passwords are local-dev conveniences, not production secrets.
+# Do not point these services at live trading credentials.
+
+name: market-memory
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: market-memory-postgres
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab
+      POSTGRES_DB: market_memory
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab -d market_memory"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: market-memory-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: market-memory-minio-init
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        i=0
+        until mc alias set local http://minio:9000 minioadmin minioadmin; do
+          i=$$((i+1))
+          if [ "$$i" -gt 30 ]; then
+            echo "MinIO did not become ready" >&2
+            exit 1
+          fi
+          sleep 1
+        done
+        mc mb --ignore-existing local/market-memory
+        echo "MinIO bucket market-memory ready"
+
+volumes:
+  postgres_data:
+  minio_data:
