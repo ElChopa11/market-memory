@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Definition-of-done gates between research artifact stages.
-# Refuses a thesis without intent (and later-stage predecessor gaps).
+# Refuses a thesis without intent and in_skeptic without evidence links.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"

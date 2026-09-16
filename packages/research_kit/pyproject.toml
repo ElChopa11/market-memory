@@ -3,7 +3,9 @@ name = "mm-research-kit"
 version = "0.1.0"
 description = "Helpers to write research artifacts. No secrets."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+]
 
 [build-system]
 requires = ["hatchling"]

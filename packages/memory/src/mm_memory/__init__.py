@@ -12,10 +12,11 @@ from mm_memory.object_store import (
     S3ObjectStore,
     object_store_from_env,
 )
-from mm_memory.queries import what_did_we_know, what_did_we_know_statement
+from mm_memory.queries import get_thesis_by_slug, list_theses, what_did_we_know, what_did_we_know_statement
 from mm_memory.repository import ObservationRepository, PutResult
+from mm_memory.thesis_repository import ThesisRecord, ThesisRepository, UnknownObservationError
 
-__phase__ = 1
+__phase__ = 2
 LIVE_TRADING_ENABLED = False
 
 __all__ = [
@@ -26,7 +27,12 @@ __all__ = [
     "ObservationRepository",
     "PutResult",
     "S3ObjectStore",
+    "ThesisRecord",
+    "ThesisRepository",
+    "UnknownObservationError",
     "dsn_from_env",
+    "get_thesis_by_slug",
+    "list_theses",
     "make_engine",
     "object_store_from_env",
     "session_scope",

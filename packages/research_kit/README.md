@@ -1,9 +1,16 @@
 # mm-research-kit
 
-Phase 0 stub.
+Helpers to write research artifacts under `research/YYYY/THESIS-XXXX/`. No secrets.
 
-Helpers to write research artifacts. No secrets.
+**Must not:** access trading credentials, ingest private keys, or import live signing / `mm_execution`.
 
-**Must not:** access trading credentials or import live signing.
+Public helpers:
+
+- `create_thesis_from_intent` — intent → thesis → research-plan → evidence → skeptic-review
+- `link_evidence` — observation ids on the git artifact
+- `advance_status` — DoD gates (no `in_skeptic` without evidence links)
+- `open_skeptic_review` / `record_skeptic_verdict` — `pass` | `revise` | `reject`
+
+Coordinator surface: `uv run lab thesis …` and `uv run lab skeptic …`. Runbook: [../../docs/runbooks/research-workspace.md](../../docs/runbooks/research-workspace.md).
 
 See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).

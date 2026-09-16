@@ -17,6 +17,7 @@ REQUIRED_TEMPLATES = [
     "paper-trade.md",
     "promotion-decision.md",
     "post-mortem.md",
+    "evidence-links.md",
 ]
 
 REQUIRED_PACKAGES = [
@@ -54,6 +55,7 @@ def test_core_docs_present() -> None:
         "docs/security-model.md",
         "docs/research-lifecycle.md",
         "docs/runbooks/ingest.md",
+        "docs/runbooks/research-workspace.md",
         "docker-compose.yml",
         "scripts/check-lifecycle.sh",
         "config/ingest.yaml",

@@ -2,11 +2,11 @@
 
 This file is the permission constitution for humans and LLM agents working in `market-memory`. It is stricter than convenience.
 
-**Phase 1:** read-only Hyperliquid `/info` ingest into Market Memory. No live trading, no wallet code, no `hl_trade` / signing. Do not implement execution or live paths in this phase.
+**Phase 2:** research workspace. Create theses from intent, link observation ids as evidence, advance lifecycle only when DoD is met, record independent skeptic verdicts. No live trading, no wallet code, no `hl_trade` / signing. Do not implement Market Pulse, backtest harnesses, risk/execution services, or live paths in this phase.
 
 ## Non-negotiables
 
-1. **Research cannot access trading credentials.** No API wallet keys, no agent-wallet secrets, no treasury material, no `.env` live keys, no vault paths for execution. Research tools are Market Memory read + artifact write.
+1. **Research cannot access trading credentials.** No API wallet keys, no agent-wallet secrets, no treasury material, no `.env` live keys, no vault paths for execution. Research tools are Market Memory read + artifact write. `packages/research_kit` must not import `mm_execution`, ingest private keys, or grow a signing surface.
 2. Risk is **code + versioned config**. No LLM at order time.
 3. Execution accepts only a typed `OrderIntent` that already passed Risk (when Execution exists).
 4. No process both **authors a thesis** and **approves risk** for that thesis.
@@ -19,8 +19,8 @@ This file is the permission constitution for humans and LLM agents working in `m
 | Role | May | Must not | Credentials |
 |---|---|---|---|
 | **Principal** | Set mandate and risk budget; approve promotion; halt; change `live.yaml`; own treasury | Place treasury keys on servers or in git | Hardware wallet (offline); vault admin |
-| **Coordinator** | Queue work; run DoD / `check-lifecycle`; decompose tasks; open PRs for research; run `lab migrate` / `lab ingest` | Hold or inject trading credentials; promote to live; waive skeptic | None for trading |
-| **Research** | Read Market Memory; write `research/` artifacts from templates; propose tests | Read trading secrets; import live signing; edit live.yaml; approve own risk; submit orders | Read-only / none |
+| **Coordinator** | Queue work; run DoD / `check-lifecycle`; `lab thesis` / `lab skeptic`; decompose tasks; open PRs for research; run `lab migrate` / `lab ingest` | Hold or inject trading credentials; promote to live; waive skeptic | None for trading |
+| **Research** | Read Market Memory; write `research/` artifacts from templates via `lab thesis` / `mm_research_kit`; propose tests | Read trading secrets; import live signing or `mm_execution`; edit live.yaml; approve own risk; submit orders | Read-only / none |
 | **Skeptic** | Adversarial review; fail leakage/look-ahead; demand fixes | Rubber-stamp own thesis; approve risk; access live keys; skip invalidation quality | Read-only / none |
 | **Risk** | Deterministic allow/block from config; explain `rule_id` + `config_version` | Call LLMs at decision time; submit orders; silently change live.yaml | Config only |
 | **Execution** | (Later) submit Risk-allowed intents; check halt before every order; log intent hash | Run inside research workers; sign without Risk id; bypass halt; touch treasury | API/agent wallet in **live env only** |
@@ -42,4 +42,4 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 Before claiming a research stage is done, run `./scripts/check-lifecycle.sh` and meet [docs/research-lifecycle.md](docs/research-lifecycle.md).
 
-Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 1 scope respected (no execution/signing), live still hard-gated, `what_did_we_know` still keyed off `ingested_at`.
+Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 2 scope respected (research workspace only; no execution/signing, no Market Pulse engine, no backtest harness beyond stubs), live still hard-gated, `what_did_we_know` still keyed off `ingested_at`, rejected theses still queryable.

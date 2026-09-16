@@ -1,16 +1,18 @@
 # Research lifecycle
 
-Artifacts live under `research/YYYY/THESIS-XXXX/` and are copied from `templates/`. Market Memory (later phase) stores content hashes so git and Postgres stay linked.
+Artifacts live under `research/YYYY/THESIS-XXXX/` and are copied from `templates/`. Market Memory stores content hashes, thesis indexes, and `thesis_evidence` links so git and Postgres stay joined. Git remains the human-review source.
 
 ## Status machine
 
 `draft` → `in_research` → `in_skeptic` → `paper` → `live` (Principal only) → `retired`
 
-Any stage may go to `rejected`. Rejected theses stay queryable learning records.
+Any stage may go to `rejected`. **Rejected theses stay queryable learning records** (git workspace retained; `lab thesis list --status rejected`). Revival requires a new intent, not a silent reopen.
+
+Phase 2 implements through skeptic. `paper` and `live` are later phases and the CLI refuses them.
 
 ## Artifact chain and definition of done
 
-`scripts/check-lifecycle.sh` enforces predecessor gates. It **refuses to advance** (exits non-zero) when a later artifact exists without its required earlier artifacts.
+`scripts/check-lifecycle.sh` enforces predecessor gates. It **refuses to advance** (exits non-zero) when a later artifact exists without its required earlier artifacts, and when status is `in_skeptic` (or `paper`/`live`) without evidence links.
 
 ### 1. Intent (`intent.md`) — enter `draft`
 
@@ -22,16 +24,22 @@ Any stage may go to `rejected`. Rejected theses stay queryable learning records.
 - Definition of done for moving to thesis.
 - Owner, `opened_at`, deadline.
 
-Without intent, **thesis is forbidden**.
+Without intent, **thesis is forbidden**. `lab thesis new` always writes intent first.
 
 ### 2. Thesis (`thesis.md`) — enter `in_research`
 
 **Requires:** `intent.md`
 
+Create from intent in one command:
+
+```bash
+uv run lab thesis new --goal "…" --owner Research --instrument BTC
+```
+
 **DoD**
 
 - Hypothesis, why now, why the market may be wrong or late.
-- Evidence list (observation ids + links; may be empty only while still draft — Phase 2 will require links before skeptic).
+- Evidence list (observation ids + links; may be empty only while still `draft`/`in_research`).
 - Expected path, catalyst, instrument (BTC or ETH perp in v1), time horizon.
 - Invalidation, risks / alternative explanations, what would change our mind.
 - Status / version.
@@ -50,15 +58,20 @@ Without intent, **thesis is forbidden**.
 
 **Requires:** `research-plan.md` if any evidence or backtest files are present.
 
-**DoD (Phase 2+; recorded now)**
+**DoD (Phase 2)**
 
-- Evidence files cite observation ids.
-- Backtests record `params_hash`. Same hash must reproduce the same result (Phase 4).
-- No look-ahead: knowledge watermark is `ingested_at`.
+- Evidence files cite observation ids (`evidence/links.md` plus Market Memory `thesis_evidence`).
+- Link via `lab thesis link-evidence THESIS-XXXX --observation <id> --role supports|opposes|context`.
+- Backtests record `params_hash` in Phase 4. No look-ahead: knowledge watermark is `ingested_at`.
 
 ### 5. Skeptic review (`skeptic-review.md`) — enter `in_skeptic`
 
-**Requires:** `research-plan.md`
+**Requires:** `research-plan.md` **and at least one evidence link**. Cannot mark `in_skeptic` without evidence links.
+
+```bash
+uv run lab skeptic open THESIS-XXXX --reviewer Skeptic
+uv run lab skeptic record THESIS-XXXX --verdict pass|revise|reject --reviewer Skeptic
+```
 
 **DoD**
 
@@ -67,7 +80,7 @@ Without intent, **thesis is forbidden**.
 - Required fixes before paper if not `pass`.
 - Author of the thesis is not the sole skeptic of record.
 
-Cannot mark paper without a `pass` verdict (enforced in later phases; file presence gated now).
+Cannot mark paper without a `pass` verdict (paper is Phase 4). Runbook: [runbooks/research-workspace.md](runbooks/research-workspace.md).
 
 ### 6. Paper trade (`paper/` or `paper-trade.md`) — enter `paper`
 
@@ -114,10 +127,13 @@ Unusual / overlooked candidates. Independent evidence (≥2 types), disproof, ca
 ./scripts/check-lifecycle.sh
 ```
 
-- Verifies `templates/` are present.
+- Verifies `templates/` are present (including `evidence-links.md`).
 - Walks `research/` thesis workspaces.
 - Fails if `thesis.md` exists without `intent.md` (and similarly for later stages).
-- Empty `research/` is valid in Phase 0.
+- Fails if status is `in_skeptic` (or `paper`/`live`) without rows in `evidence/links.md`.
+- Empty `research/` is valid. Rejected workspaces must remain and still pass predecessor checks.
+
+Coordinator CLI: `lab thesis new|link-evidence|advance|list` and `lab skeptic open|record`. See [runbooks/research-workspace.md](runbooks/research-workspace.md).
 
 ## Control-plane reminders
 

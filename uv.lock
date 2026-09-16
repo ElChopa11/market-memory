@@ -435,6 +435,7 @@ dependencies = [
     { name = "mm-ingest" },
     { name = "mm-memory" },
     { name = "mm-provenance" },
+    { name = "mm-research-kit" },
 ]
 
 [package.metadata]
@@ -443,6 +444,7 @@ requires-dist = [
     { name = "mm-ingest", editable = "packages/ingest" },
     { name = "mm-memory", editable = "packages/memory" },
     { name = "mm-provenance", editable = "packages/provenance" },
+    { name = "mm-research-kit", editable = "packages/research_kit" },
 ]
 
 [[package]]
@@ -486,6 +488,12 @@ requires-dist = [{ name = "mm-common", editable = "packages/common" }]
 name = "mm-research-kit"
 version = "0.1.0"
 source = { editable = "packages/research_kit" }
+dependencies = [
+    { name = "mm-common" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "mm-common", editable = "packages/common" }]
 
 [[package]]
 name = "mm-risk"

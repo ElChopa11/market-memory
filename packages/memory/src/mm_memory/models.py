@@ -10,7 +10,15 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Numeric, St
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from mm_common.enums import DATA_QUALITY_VALUES, EVIDENCE_TYPE_VALUES, OBSERVATION_RELATION_VALUES, SOURCE_KIND_VALUES
+from mm_common.enums import (
+    DATA_QUALITY_VALUES,
+    EVIDENCE_ROLE_VALUES,
+    EVIDENCE_TYPE_VALUES,
+    OBSERVATION_RELATION_VALUES,
+    SKEPTIC_VERDICT_VALUES,
+    SOURCE_KIND_VALUES,
+    THESIS_STATUS_VALUES,
+)
 
 
 class Base(DeclarativeBase):
@@ -92,6 +100,7 @@ class Observation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     source: Mapped[Source] = relationship(back_populates="observations")
+    thesis_links: Mapped[list["ThesisEvidence"]] = relationship(back_populates="observation")
 
 
 class ObservationLink(Base):
@@ -115,3 +124,75 @@ class ObservationLink(Base):
     related_observation_id: Mapped[str] = mapped_column(ForeignKey("observation.id"), nullable=False, index=True)
     relation: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class Thesis(Base):
+    """Hypothesis / thesis index. Git artifacts remain the human-review source."""
+
+    __tablename__ = "thesis"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('" + "','".join(THESIS_STATUS_VALUES) + "')",
+            name="thesis_status_check",
+        ),
+        Index("thesis_status_idx", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    author_role: Mapped[str] = mapped_column(Text, nullable=False, default="Research")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    artifact_git_path: Mapped[str] = mapped_column(Text, nullable=False)
+    artifact_content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    instrument: Mapped[str | None] = mapped_column(Text, nullable=True)
+    horizon: Mapped[str | None] = mapped_column(Text, nullable=True)
+    invalidation_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    risk_budget_bps: Mapped[int | None] = mapped_column(nullable=True)
+
+    evidence_links: Mapped[list["ThesisEvidence"]] = relationship(back_populates="thesis")
+    skeptic_reviews: Mapped[list["SkepticReview"]] = relationship(back_populates="thesis")
+
+
+class ThesisEvidence(Base):
+    __tablename__ = "thesis_evidence"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('" + "','".join(EVIDENCE_ROLE_VALUES) + "')",
+            name="thesis_evidence_role_check",
+        ),
+        UniqueConstraint("thesis_id", "observation_id", "role", name="thesis_evidence_unique"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    thesis_id: Mapped[str] = mapped_column(ForeignKey("thesis.id"), nullable=False, index=True)
+    observation_id: Mapped[str] = mapped_column(ForeignKey("observation.id"), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(32), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    thesis: Mapped[Thesis] = relationship(back_populates="evidence_links")
+    observation: Mapped[Observation] = relationship(back_populates="thesis_links")
+
+
+class SkepticReview(Base):
+    __tablename__ = "skeptic_review"
+    __table_args__ = (
+        CheckConstraint(
+            "verdict IN ('" + "','".join(SKEPTIC_VERDICT_VALUES) + "')",
+            name="skeptic_review_verdict_check",
+        ),
+        Index("skeptic_review_thesis_id_idx", "thesis_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    thesis_id: Mapped[str] = mapped_column(ForeignKey("thesis.id"), nullable=False, index=True)
+    reviewer_id_or_role: Mapped[str] = mapped_column(Text, nullable=False)
+    verdict: Mapped[str] = mapped_column(String(32), nullable=False)
+    findings_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    artifact_git_path: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    thesis: Mapped[Thesis] = relationship(back_populates="skeptic_reviews")

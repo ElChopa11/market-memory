@@ -2,7 +2,7 @@
 
 from mm_lab_cli.cli import main
 
-__phase__ = 1
+__phase__ = 2
 LIVE_TRADING_ENABLED = False
 
 __all__ = ["LIVE_TRADING_ENABLED", "main"]

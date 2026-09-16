@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
+OPS_TZ = ZoneInfo("Australia/Sydney")
 
 
 def utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+def in_ops_tz(value: datetime | None = None) -> datetime:
+    """Display/ops timezone (Australia/Sydney). Storage remains UTC timestamptz."""
+    return as_utc(value or utcnow()).astimezone(OPS_TZ)
 
 
 def as_utc(value: datetime) -> datetime:

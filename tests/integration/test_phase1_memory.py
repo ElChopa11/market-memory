@@ -27,8 +27,16 @@ def test_migrate_creates_core_tables(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     inspector = inspect(engine)
     tables = set(inspector.get_table_names())
-    assert {"source", "observation", "observation_link", "raw_object"} <= tables
-    assert current_revision(postgres_dsn) == "0001_phase1"
+    assert {
+        "source",
+        "observation",
+        "observation_link",
+        "raw_object",
+        "thesis",
+        "thesis_evidence",
+        "skeptic_review",
+    } <= tables
+    assert current_revision(postgres_dsn) == "0002_phase2"
     columns = {col["name"] for col in inspector.get_columns("observation")}
     assert "ingested_at" in columns
     assert "published_at" in columns
