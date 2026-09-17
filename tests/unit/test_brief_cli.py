@@ -42,8 +42,13 @@ def test_lab_brief_preopen_writes_markdown(tmp_path: Path, capsys) -> None:
     assert payload["session_date"] == "2026-03-10"
     assert payload["content_hash"] == EXPECTED_PREOPEN
     written = tmp_path / "briefs" / "2026" / "03" / "10" / "preopen.md"
+    dod = tmp_path / "briefs" / "2026-03-10" / "us-pre-market.md"
     assert written.is_file()
-    assert "US Pre-Open Brief" in written.read_text(encoding="utf-8")
+    assert dod.is_file()
+    text = written.read_text(encoding="utf-8")
+    assert text == dod.read_text(encoding="utf-8")
+    assert "US Pre-Market Brief" in text
+    assert "Informational only" in text
 
 
 def test_lab_alert_check_without_thresholds_does_not_push(tmp_path: Path, capsys) -> None:

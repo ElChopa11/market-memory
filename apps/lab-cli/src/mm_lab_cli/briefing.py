@@ -24,10 +24,15 @@ def add_brief_parser(sub) -> None:
         p = brief_sub.add_parser(name, help=help_text)
         p.add_argument("--as-of", help="UTC instant (ISO-8601)")
         p.add_argument("--fixture", type=Path, help="frozen JSON/YAML briefing fixture")
-        p.add_argument("--out", type=Path, help="repo root to write briefs/YYYY/MM/DD/")
+        p.add_argument("--out", type=Path, help="repo root to write briefs/")
         p.add_argument("--repo-root", type=Path, default=Path("."))
         p.add_argument("--dsn")
         p.add_argument("--no-db", action="store_true")
+        p.add_argument(
+            "--live",
+            action="store_true",
+            help="fetch public macro + Hyperliquid /info (degrade to unavailable; never invent)",
+        )
         p.add_argument(
             "--no-thresholds",
             action="store_true",
@@ -45,6 +50,8 @@ def dispatch_brief(args: Namespace) -> int:
     settings = load_briefing_settings(root)
     fixture = load_fixture_file(args.fixture) if args.fixture else None
     as_of = parse_utc(args.as_of) if args.as_of else utcnow()
+    live = bool(getattr(args, "live", False)) and fixture is None
+    generated_at = utcnow() if live else None
     fetcher = default_macro_fetcher(settings, fixture)
     alert_settings = None
     if kind == "alert" and getattr(args, "no_thresholds", False):
@@ -70,7 +77,9 @@ def dispatch_brief(args: Namespace) -> int:
             macro_fetcher=fetcher,
             session=session,
             fixture=fixture,
+            generated_at=generated_at,
             alert_settings=alert_settings,
+            live=live,
         )
     finally:
         if session_cm is not None:
@@ -93,18 +102,20 @@ def dispatch_brief(args: Namespace) -> int:
 
     assert doc is not None
     path = _persist(doc, args, root)
-    print(
-        json.dumps(
-            {
-                "kind": doc.kind,
-                "session_date": doc.session_date.isoformat(),
-                "path": str(path),
-                "content_hash": doc.content_hash,
-                "data_quality": doc.data_quality,
-            },
-            indent=2,
-        )
-    )
+    from mm_briefing.store import artifact_relpath, dod_relpath
+
+    payload = {
+        "kind": doc.kind,
+        "session_date": doc.session_date.isoformat(),
+        "path": str(path),
+        "legacy_path": str((Path(args.out).resolve() if args.out else root) / artifact_relpath(doc)),
+        "content_hash": doc.content_hash,
+        "data_quality": doc.data_quality,
+    }
+    dod = dod_relpath(doc)
+    if dod is not None:
+        payload["dod_path"] = str((Path(args.out).resolve() if args.out else root) / dod)
+    print(json.dumps(payload, indent=2))
     return 0
 
 

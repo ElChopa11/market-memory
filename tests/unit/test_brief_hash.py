@@ -26,12 +26,14 @@ def test_frozen_preopen_hash_is_deterministic() -> None:
     assert len(first.content_hash) == 64
     expected = EXPECTED_PREOPEN.read_text(encoding="utf-8").strip()
     assert first.content_hash == expected
-    assert "US Pre-Open Brief — 2026-03-10" in first.markdown
+    assert "US Pre-Market Brief — 2026-03-10" in first.markdown
     assert "01FROZENBTCFUNDING00000001" in first.markdown
     assert "CPI YoY" in first.markdown
     assert "Watchlist" in first.markdown
     assert "Invalidation" in first.markdown
-    assert first.data_quality in {"ok", "partial"}
+    assert "Informational only" in first.markdown
+    assert "no decision" in first.markdown.lower()
+    assert first.data_quality in {"ok", "partial", "fresh", "unavailable", "stale"}
 
 
 def test_frozen_close_hash_is_deterministic() -> None:

@@ -1,7 +1,11 @@
-"""Hyperliquid conditions from Market Memory observations (or a frozen fixture)."""
+"""Hyperliquid conditions from Market Memory observations (or a frozen fixture).
+
+Live fallback uses the read-only public /info allowlist only — no wallet/user types.
+"""
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -9,11 +13,14 @@ from sqlalchemy.orm import Session
 
 from mm_common.hashing import normalize_numeric
 from mm_common.time import as_utc, parse_utc
+from mm_ingest.hl_info import HyperliquidInfoClient, HyperliquidInfoError
 from mm_memory.models import Observation
 from mm_memory.queries import what_did_we_know
-from mm_briefing.models import HLInstrumentState, HLMetric, worst_quality
+from mm_provenance.normalize import HL_BASE_URL, normalize_asset_snapshot, normalize_liquidations
+from mm_briefing.models import HL_BRIEF_INSTRUMENTS, HLInstrumentState, HLMetric, worst_quality
 
 SNAPSHOT_METRICS = ("funding", "open_interest", "mid_px", "mark_px", "oracle_px")
+LIVE_INFO_SOURCE = "hyperliquid.info /info"
 
 
 def hl_from_payload(payload: dict[str, Any]) -> tuple[HLInstrumentState, ...]:
@@ -40,6 +47,17 @@ def hl_from_payload(payload: dict[str, Any]) -> tuple[HLInstrumentState, ...]:
         quality = str(row.get("data_quality") or "ok")
         for metric in metrics.values():
             quality = worst_quality(quality, metric.data_quality)
+        as_of_raw = row.get("as_of_knowledge") or payload.get("as_of_knowledge")
+        as_of = parse_utc(str(as_of_raw)) if as_of_raw else None
+        if as_of is not None:
+            metrics = {
+                name: metric if metric.as_of_knowledge is not None else replace(metric, as_of_knowledge=as_of)
+                for name, metric in metrics.items()
+            }
+            liqs = tuple(
+                metric if metric.as_of_knowledge is not None else replace(metric, as_of_knowledge=as_of)
+                for metric in liqs
+            )
         out.append(
             HLInstrumentState(
                 instrument=symbol,
@@ -47,6 +65,8 @@ def hl_from_payload(payload: dict[str, Any]) -> tuple[HLInstrumentState, ...]:
                 liquidations=liqs,
                 levels=level_pairs,
                 data_quality=quality,
+                as_of_knowledge=as_of,
+                source=str(row.get("source") or payload.get("source") or "hyperliquid.info"),
             )
         )
     return tuple(sorted(out, key=lambda row: row.instrument))
@@ -56,7 +76,7 @@ def hl_from_memory(
     session: Session,
     as_of: datetime,
     *,
-    instruments: tuple[str, ...] = ("BTC", "ETH"),
+    instruments: tuple[str, ...] = HL_BRIEF_INSTRUMENTS,
     lookback: timedelta = timedelta(hours=18),
 ) -> tuple[HLInstrumentState, ...]:
     knowledge = as_utc(as_of)
@@ -84,11 +104,11 @@ def hl_from_memory(
             if row.metric == "liquidation" and _obs_time(row) >= window_start
         )
         levels = _levels_from_obs(obs, metrics)
-        quality = "ok" if obs else "partial"
+        quality = "ok" if obs else "unavailable"
         for metric in metrics.values():
             quality = worst_quality(quality, metric.data_quality)
-        if not obs:
-            quality = "partial"
+        if not metrics:
+            quality = worst_quality(quality, "unavailable")
         out.append(
             HLInstrumentState(
                 instrument=symbol,
@@ -96,6 +116,138 @@ def hl_from_memory(
                 liquidations=liqs,
                 levels=levels,
                 data_quality=quality,
+                as_of_knowledge=knowledge,
+                source="market_memory",
+            )
+        )
+    return tuple(out)
+
+
+def hl_has_metrics(states: tuple[HLInstrumentState, ...]) -> bool:
+    return any(state.metrics for state in states)
+
+
+def ensure_hl_instruments(
+    states: tuple[HLInstrumentState, ...],
+    *,
+    instruments: tuple[str, ...] = HL_BRIEF_INSTRUMENTS,
+    as_of: datetime | None = None,
+    source: str = "none",
+) -> tuple[HLInstrumentState, ...]:
+    by_inst = {row.instrument: row for row in states}
+    out: list[HLInstrumentState] = []
+    for symbol in instruments:
+        if symbol in by_inst:
+            out.append(by_inst[symbol])
+            continue
+        out.append(
+            HLInstrumentState(
+                instrument=symbol,
+                metrics={},
+                liquidations=(),
+                levels=(),
+                data_quality="unavailable",
+                as_of_knowledge=as_of,
+                source=source,
+            )
+        )
+    extras = [row for row in states if row.instrument not in instruments]
+    return tuple(out + extras)
+
+
+def hl_from_live_info(
+    client: HyperliquidInfoClient,
+    *,
+    instruments: tuple[str, ...] = HL_BRIEF_INSTRUMENTS,
+    captured_at: datetime,
+) -> tuple[HLInstrumentState, ...]:
+    """Snapshot via allowlisted public /info types. Does not invent missing fields."""
+    wanted = tuple(symbol.upper() for symbol in instruments)
+    captured = as_utc(captured_at)
+    try:
+        ctxs = client.meta_and_asset_ctxs()
+    except HyperliquidInfoError as exc:
+        return ensure_hl_instruments(
+            (),
+            instruments=wanted,
+            as_of=captured,
+            source=f"{LIVE_INFO_SOURCE} unavailable ({exc.__class__.__name__})",
+        )
+    envelopes = normalize_asset_snapshot(
+        ctxs,
+        instruments=wanted,
+        ingested_at=captured,
+        published_at=captured,
+    )
+    grouped: dict[str, dict[str, HLMetric]] = {symbol: {} for symbol in wanted}
+    qualities: dict[str, str] = {symbol: "unavailable" for symbol in wanted}
+    for envelope in envelopes:
+        symbol = envelope.instrument.upper()
+        if symbol not in grouped:
+            continue
+        if envelope.metric not in SNAPSHOT_METRICS:
+            continue
+        value = envelope.identity.value
+        if value is None:
+            value = envelope.payload.get("value")
+        metric = HLMetric(
+            instrument=symbol,
+            metric=envelope.metric,
+            value=None if value is None else str(value),
+            observation_id=None,
+            claim_hash=envelope.claim_hash,
+            data_quality=envelope.data_quality.value,
+            market_time=envelope.market_time,
+            as_of_knowledge=envelope.as_of_knowledge or envelope.ingested_at,
+            source_url=f"{HL_BASE_URL} type={envelope.source_url_or_id}",
+        )
+        grouped[symbol][envelope.metric] = metric
+        if value is not None:
+            qualities[symbol] = worst_quality(qualities[symbol] if qualities[symbol] != "unavailable" else "ok", metric.data_quality)
+        else:
+            qualities[symbol] = worst_quality(qualities[symbol], "partial" if grouped[symbol] else "unavailable")
+
+    liquidations: dict[str, list[HLMetric]] = {symbol: [] for symbol in wanted}
+    for coin in wanted:
+        try:
+            trades = client.recent_trades(coin)
+        except HyperliquidInfoError:
+            continue
+        for envelope in normalize_liquidations(trades, ingested_at=captured):
+            if envelope.instrument.upper() != coin:
+                continue
+            value = envelope.identity.value
+            liquidations[coin].append(
+                HLMetric(
+                    instrument=coin,
+                    metric="liquidation",
+                    value=None if value is None else str(value),
+                    observation_id=None,
+                    claim_hash=envelope.claim_hash,
+                    data_quality=envelope.data_quality.value,
+                    market_time=envelope.market_time,
+                    as_of_knowledge=envelope.as_of_knowledge or envelope.ingested_at,
+                    source_url=f"{HL_BASE_URL} type=recentTrades",
+                )
+            )
+
+    out: list[HLInstrumentState] = []
+    for symbol in wanted:
+        metrics = grouped[symbol]
+        quality = qualities[symbol]
+        for metric in metrics.values():
+            quality = worst_quality(quality, metric.data_quality)
+        if not metrics:
+            quality = "unavailable"
+        out.append(
+            HLInstrumentState(
+                instrument=symbol,
+                metrics=metrics,
+                liquidations=tuple(liquidations[symbol]),
+                levels=_levels_from_obs([], metrics),
+                data_quality=quality,
+                as_of_knowledge=captured,
+                source=LIVE_INFO_SOURCE,
             )
         )
     return tuple(out)
@@ -152,6 +304,8 @@ def basis_mark_oracle(state: HLInstrumentState) -> float | None:
 def _metric_from_dict(instrument: str, metric: str, spec: dict[str, Any]) -> HLMetric:
     market_time = spec.get("market_time")
     parsed = parse_utc(str(market_time)) if market_time else None
+    as_of_raw = spec.get("as_of_knowledge") or spec.get("ingested_at")
+    as_of = parse_utc(str(as_of_raw)) if as_of_raw else None
     value = spec.get("value")
     return HLMetric(
         instrument=instrument,
@@ -161,6 +315,8 @@ def _metric_from_dict(instrument: str, metric: str, spec: dict[str, Any]) -> HLM
         claim_hash=str(spec["claim_hash"]) if spec.get("claim_hash") else None,
         data_quality=str(spec.get("data_quality") or "ok"),
         market_time=parsed,
+        as_of_knowledge=as_of,
+        source_url=str(spec["source_url"]) if spec.get("source_url") else None,
     )
 
 
@@ -169,6 +325,7 @@ def _metric_from_observation(row: Observation) -> HLMetric:
     value = payload.get("value")
     if value is None:
         value = normalize_numeric(payload.get("raw")) if isinstance(payload.get("raw"), (int, float, str)) else None
+    source_url = row.source_url_or_id
     return HLMetric(
         instrument=row.instrument,
         metric=row.metric,
@@ -177,6 +334,8 @@ def _metric_from_observation(row: Observation) -> HLMetric:
         claim_hash=row.claim_hash,
         data_quality=row.data_quality,
         market_time=row.market_time,
+        as_of_knowledge=row.as_of_knowledge,
+        source_url=source_url,
     )
 
 

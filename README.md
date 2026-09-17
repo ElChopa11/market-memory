@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 4 — backtest + paper ledger.** Reproducible fixture replay (`params_hash`), adversarial look-ahead tests, and a shadow paper ledger bound to theses. Phase 1 ingest, Phase 2 thesis workspaces, and Phase 3 Market Pulse remain. **No live trading, no order signing, no wallet code.**
+**Status: Phase 4 — backtest + paper ledger.** Reproducible fixture replay (`params_hash`), adversarial look-ahead tests, and a shadow paper ledger bound to theses. Phase 1 ingest, Phase 2 thesis workspaces, and Phase 3 Market Pulse remain (Principal Phase 2 US pre-market DoD lives on that pulse substrate). **No live trading, no order signing, no wallet code.**
 
 ## Start here
 
@@ -13,7 +13,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [docs/research-lifecycle.md](docs/research-lifecycle.md) | Artifact chain and definition-of-done gates |
 | [docs/runbooks/ingest.md](docs/runbooks/ingest.md) | Phase 1 how-to: compose, migrate, ingest, query |
 | [docs/runbooks/research-workspace.md](docs/runbooks/research-workspace.md) | Phase 2 how-to: create thesis, link evidence, skeptic checklist |
-| [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md) | Phase 3 how-to: generate pre-open/close briefs, alert-check, DST schedule |
+| [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md) | Market Pulse: US pre-market (`briefs/YYYY-MM-DD/us-pre-market.md`), close, alert-check, DST |
 | [docs/runbooks/backtest.md](docs/runbooks/backtest.md) | **Phase 4 how-to:** reproducible fixture backtest |
 | [docs/runbooks/paper-trade.md](docs/runbooks/paper-trade.md) | **Phase 4 how-to:** open/close shadow paper trades |
 | [AGENTS.md](AGENTS.md) | Role permissions (Research **cannot** access trading credentials) |
@@ -53,6 +53,8 @@ uv run lab thesis new --goal "BTC funding fade after crowding" --owner Research 
 uv run lab brief preopen --fixture tests/fixtures/briefing/frozen_day.json --no-db
 uv run lab brief close --fixture tests/fixtures/briefing/frozen_day.json --no-db
 uv run lab brief alert-check --fixture tests/fixtures/briefing/frozen_day.json --no-db
+# Live public slice (degrades without keys; never invents):
+# uv run lab brief preopen --live --no-db
 
 # 8. Reproducible backtest (paper open needs skeptic pass — see docs/runbooks/paper-trade.md)
 uv run lab backtest run --fixture tests/fixtures/backtest/clean_bars.json --strategy buy_hold --no-db
