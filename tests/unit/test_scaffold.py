@@ -14,6 +14,8 @@ REQUIRED_TEMPLATES = [
     "research-plan.md",
     "skeptic-review.md",
     "unicorn-card.md",
+    "quant-card.md",
+    "quant-review-board.md",
     "paper-trade.md",
     "promotion-decision.md",
     "post-mortem.md",
@@ -65,7 +67,10 @@ def test_core_docs_present() -> None:
         "scripts/check-lifecycle.sh",
         "config/ingest.yaml",
         "config/universe.yaml",
+        "config/quant_review_universe.yaml",
         "config/instruments/perps.yaml",
+        "ops/improvement-queue.md",
+        "ops/plans/IMP-001-quant-review-board.md",
     ):
         assert (ROOT / rel).exists(), rel
 

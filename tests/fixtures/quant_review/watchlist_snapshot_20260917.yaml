@@ -1,0 +1,47 @@
+# Frozen IMP-001 watchlist snapshot transcribed from Principal-approved
+# TradingView screenshots (crypto USDC.P + cross-asset/US). Image has no
+# printed capture clock. as_of_knowledge is when this fixture was read
+# into the lab (lockstep with ingest/read time — not published_at).
+as_of_knowledge: "2026-09-17T02:42:00Z"
+source: principal_watchlist_screenshot
+capture: "IMP-001 screenshots; clock_on_image=false"
+notes:
+  - "Prints are last/chg/chg% as shown. Do not treat as a multi-session structure regime."
+  - "Clocks are not mixed with QUANT-20260917 overlay (separate evidence rows)."
+prints:
+  - {raw: BTCUSDC.P, last: 76399.0, chg: 219.0, chg_pct: 0.29, evidence_confidence: 0.45}
+  - {raw: ETHUSDC.P, last: 2430.80, chg: 13.30, chg_pct: 0.55, evidence_confidence: 0.45}
+  - {raw: SOLUSDC.P, last: 99.6240, chg: 1.0120, chg_pct: 1.03, evidence_confidence: 0.40}
+  - {raw: HYPEUSDC.P, last: 79.2360, chg: 1.0610, chg_pct: 1.36, evidence_confidence: 0.40}
+  - {raw: VVVUSDC.P, last: 24.3750, chg: 0.6580, chg_pct: 2.77, evidence_confidence: 0.35}
+  - {raw: ZECUSDC.P, last: 1379.100, chg: 41.700, chg_pct: 3.12, evidence_confidence: 0.35}
+  - {raw: XMRUSDC.P, last: 501.700, chg: 2.870, chg_pct: 0.58, evidence_confidence: 0.40}
+  - {raw: NEARUSDC.P, last: 2.63310, chg: 0.01120, chg_pct: 0.43, evidence_confidence: 0.40}
+  - {raw: LITUSDC.P, last: 4.741600, chg: 0.132000, chg_pct: 2.86, evidence_confidence: 0.35}
+  - {raw: CASHCATUSDC.P, last: 0.189990, chg: 0.005180, chg_pct: 2.81, evidence_confidence: 0.30}
+  - {raw: PONSUSDC.P, last: 0.623920, chg: 0.054100, chg_pct: 9.41, evidence_confidence: 0.30}
+  - {raw: XRPUSDC.P, last: 1.304000, chg: 0.005300, chg_pct: 0.40, evidence_confidence: 0.40}
+  - {raw: SKRUSDC.P, last: 0.018666, chg: -0.000199, chg_pct: -1.05, evidence_confidence: 0.30}
+  - {raw: CHIPUSDC.P, last: 0.036221, chg: -0.000413, chg_pct: -1.13, evidence_confidence: 0.30}
+  - {raw: DOGEUSDC.P, last: 0.081062, chg: 0.000180, chg_pct: 0.22, evidence_confidence: 0.40}
+  - {raw: SPX, last: 7551.82, chg: -33.92, chg_pct: -0.45, evidence_confidence: 0.45}
+  - {raw: "NQ1!", last: 29417.00, chg: 160.25, chg_pct: 0.55, evidence_confidence: 0.45}
+  - {raw: QQQ, last: 704.72, chg: 0.18, chg_pct: 0.03, evidence_confidence: 0.45}
+  - {raw: "CL1!", last: 102.19, chg: -0.24, chg_pct: -0.23, evidence_confidence: 0.40}
+  - {raw: CRCL, last: 80.45, chg: -5.85, chg_pct: -6.78, evidence_confidence: 0.40}
+  - {raw: TSLA, last: 358.08, chg: 1.50, chg_pct: 0.42, evidence_confidence: 0.45}
+  - {raw: SPCX, last: 150.88, chg: 7.39, chg_pct: 5.15, evidence_confidence: 0.35}
+  - {raw: NVDA, last: 213.90, chg: 1.73, chg_pct: 0.82, evidence_confidence: 0.45}
+  - {raw: SAMSUNGUSDT.F, last: 183.77, chg: -2.59, chg_pct: -1.39, evidence_confidence: 0.35}
+  - {raw: BB, last: 10.70, chg: -0.15, chg_pct: -1.38, evidence_confidence: 0.35}
+  - {raw: GLXY, last: 22.07, chg: -0.02, chg_pct: -0.09, evidence_confidence: 0.35}
+  - {raw: IBIT, last: 43.24, chg: -0.07, chg_pct: -0.16, evidence_confidence: 0.40}
+  - {raw: BMNR, last: 22.81, chg: -0.79, chg_pct: -3.35, evidence_confidence: 0.35}
+  - {raw: PURR, last: 11.44, chg: 0.24, chg_pct: 2.14, evidence_confidence: 0.30}
+  - {raw: MRNA, last: 145.62, chg: 1.85, chg_pct: 1.29, evidence_confidence: 0.40}
+  - {raw: "BTC1!", last: 76155, chg: 70, chg_pct: 0.09, evidence_confidence: 0.40}
+  - {raw: KOSDAQ, last: 820.73, chg: 4.75, chg_pct: 0.58, evidence_confidence: 0.40}
+  - {raw: GOOG, last: 339.36, chg: -2.07, chg_pct: -0.61, evidence_confidence: 0.45}
+  - {raw: HOOD, last: 104.42, chg: -6.03, chg_pct: -5.47, evidence_confidence: 0.40}
+  - {raw: NOW, last: 139.82, chg: -2.08, chg_pct: -1.46, evidence_confidence: 0.40}
+  - {raw: CBRS, last: 190.47, chg: 6.44, chg_pct: 3.50, evidence_confidence: 0.30}

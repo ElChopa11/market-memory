@@ -23,6 +23,15 @@ research/
 
 Coordinator queue snapshots (not thesis workspaces) live under `research/queue/`. They are not lifecycle-gated.
 
+Quant Review Board (IMP-001; not a call generator) lives under `research/quant/YYYY-MM-DD/`:
+
+```bash
+uv run lab quant-review \
+  --fixture tests/fixtures/quant_review/watchlist_snapshot_20260917.yaml \
+  --quant-pack research/queue/quant-20260917 \
+  --no-db
+```
+
 `./scripts/check-lifecycle.sh` refuses a thesis without intent and refuses `in_skeptic` without evidence links. Rejected workspaces stay here as learning records.
 
 See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md).

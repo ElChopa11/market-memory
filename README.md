@@ -57,7 +57,10 @@ uv run lab brief alert-check --fixture tests/fixtures/briefing/frozen_day.json -
 # 8. Reproducible backtest (paper open needs skeptic pass — see docs/runbooks/paper-trade.md)
 uv run lab backtest run --fixture tests/fixtures/backtest/clean_bars.json --strategy buy_hold --no-db
 
-# 9. Lifecycle DoD gates + tests
+# 9. Quant Review Board (read-only; not a call generator)
+uv run lab quant-review --fixture tests/fixtures/quant_review/watchlist_snapshot_20260917.yaml --no-db
+
+# 10. Lifecycle DoD gates + tests
 ./scripts/check-lifecycle.sh
 uv run pytest
 
@@ -80,7 +83,8 @@ docs/             founding brief, security, lifecycle, runbooks
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
-config/           risk / universe / instruments / ingest / schedules / briefing
+config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe
+ops/              continuous-improvement queue + IMP plans
 packages/         common, memory, ingest, provenance, briefing, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)
