@@ -34,4 +34,12 @@ uv run lab quant-review \
 
 `./scripts/check-lifecycle.sh` refuses a thesis without intent and refuses `in_skeptic` without evidence links. Rejected workspaces stay here as learning records.
 
+Post-IPO / reclaim screen (IMP-006; Equities desk; not a trading decision) lives under `research/screens/post-ipo-reclaim/`:
+
+```bash
+uv run lab equities reclaim-screen \
+  --fixture tests/fixtures/equities/post_ipo_reclaim_snapshot.yaml \
+  --no-db
+```
+
 See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md).

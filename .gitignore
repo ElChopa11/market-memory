@@ -49,3 +49,9 @@ ops/reports/source-health/**
 !ops/reports/source-health/README.md
 !ops/reports/source-health/*.md
 !ops/reports/source-health/*.sha256
+
+# Generated Post-IPO reclaim screens (keep README and committed dated samples)
+research/screens/post-ipo-reclaim/**
+!research/screens/post-ipo-reclaim/README.md
+!research/screens/post-ipo-reclaim/*.md
+!research/screens/post-ipo-reclaim/*.meta.json

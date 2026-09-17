@@ -136,8 +136,28 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | No merge of #34; no Pulse/Stooq/FRED code; no universe expansion (ticker set stays the same); no Quant Board rewrite; no MAKE/buy/sell recommendations; no sizing; no execution; no live.yaml; no secrets; no paid data; no Telegram; no invented market prints. |
 | **Dependencies** | IMP-001 DONE (#31). |
 | **Risk level** | Low (rename/docs). Process risk if operators still read membership as a call. |
-| **Status** | IN_PROGRESS |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/35 |
+| **Lesson learned** | Merged to `main` (#35). Canonical membership keys are `in_universe` / `watch_only`. Ticker sets unchanged. There is no `active_calls` key. Historical pack filenames that contain `active-calls` stay as evidence ids. |
+
+### IMP-006 — Post-IPO reclaim screen product
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-006 |
+| **Priority** | P1 |
+| **Type** | Desk product / research screen |
+| **Desk** | Equities & Post-IPO Desk |
+| **Owner** | Don/Equities |
+| **Problem** | Charters name a post-IPO reclaim screen, but no generator exists. Quant Board Track C is a one-line list, not a standing Equities product with provenance, freshness, and honest unavailable metrics. Language rules (IMP-001) and membership vocab (IMP-005) are done; this screen was blocked on those. |
+| **Evidence** | [desk-charters.md](desk-charters.md) Equities artifacts; Quant Board `## Post-IPO reclaim list`; this queue’s former Gap row; IMP-001 closed verdicts; IMP-005 membership keys. |
+| **Proposed outcome** | Repeatable read-only `lab equities reclaim-screen` writes a versioned triage screen of Post-IPO / reclaim **candidates** (relative-value framing) with source + freshness. Closed Quant verdicts only. Not a trading decision. |
+| **Definition of done** | Queue hygiene (IMP-005 DONE #35; IMP-004 PARKED #34; this item IN_PROGRESS); plan file; screen-only config (does not expand `in_universe`); CLI writes `research/screens/post-ipo-reclaim/YYYY-MM-DD.md`; each row has instrument, as-of, reclaim/relative metrics with source + freshness, `fresh\|stale\|partial\|unavailable`, Quant verdict + reason code; informational footer + Principal gate; never invent prints; runbook + charter link; tests + committed fixture sample; `uv run pytest` + lifecycle. |
+| **Non-goals** | No merge of #34; no Pulse/Stooq/FRED; no execution/signing/`live.yaml`/risk-limit edits; no paid data; no ToS-violating scrapes; no Principal membership rename or ticker expansion; no Telegram; no secrets; no MAKE/buy/sell/sizing. |
+| **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-004 stays PARKED (#34). |
+| **Risk level** | Medium (language and drawdowns can be misread as calls). |
+| **Status** | IN_PROGRESS |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/36 |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -151,9 +171,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-002 | Macro & Cross-Asset Desk | Don | DONE | [#32](https://github.com/ElChopa11/market-memory/pull/32) merged |
 | IMP-003 | Data & Market Memory Desk | Don/Data | DONE | [#33](https://github.com/ElChopa11/market-memory/pull/33) merged |
 | IMP-004 | Data & Market Memory Desk + Macro | Don/Data | PARKED | [#34](https://github.com/ElChopa11/market-memory/pull/34) — not this thread |
-| IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | [#35](https://github.com/ElChopa11/market-memory/pull/35) — only active implementation |
+| IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
+| IMP-006 | Equities & Post-IPO Desk | Don/Equities | IN_PROGRESS | [#36](https://github.com/ElChopa11/market-memory/pull/36) — only active implementation |
 
-`IN_PROGRESS` count: **1** (IMP-005 membership vocabulary). IMP-000–IMP-003 are `DONE`. IMP-004 is `PARKED`.
+`IN_PROGRESS` count: **1** (IMP-006 Post-IPO reclaim screen). IMP-000–IMP-003 and IMP-005 are `DONE`. IMP-004 is `PARKED`.
 
 ---
 
@@ -165,7 +186,7 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 |---|---|---|
 | Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory Desk | Data desk (unassigned human; Coordinator until named) |
 | Crypto thesis / HL structure research | Crypto Desk | Research (Coordinator assigns per card) |
-| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Research (Coordinator assigns per card) |
+| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Equities (IMP-006 IN_PROGRESS) |
 | US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE) |
 | Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
@@ -180,7 +201,6 @@ These are identified so they are not silently treated as existing desks. They ar
 
 | Gap | Desk that would own | Why not queued now |
 |---|---|---|
-| Post-IPO reclaim screen product | Equities & Post-IPO Desk | Needs Quant language rules (IMP-001 DONE); not this PR |
 | Dedicated crypto / equity thesis-card templates | Crypto Desk; Equities & Post-IPO Desk | Generic `templates/thesis.md` suffices until a later intake |
 | Equity-feed ingest; on-chain ingest | Data & Market Memory Desk | Mandate/paid-data/ToS — Principal gate |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
@@ -191,7 +211,9 @@ These are identified so they are not silently treated as existing desks. They ar
 
 Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 PARKED** (#34) — not active, not this thread.
 
-Historical “active calls” language debt was a Gap; it is now **IMP-005 IN_PROGRESS**.
+Historical “active calls” language debt was a Gap; it is now **IMP-005 DONE** (#35).
+
+Post-IPO reclaim screen product was a Gap; it is now **IMP-006 IN_PROGRESS**.
 
 ## Reconciliation notes
 
@@ -199,4 +221,5 @@ Historical “active calls” language debt was a Gap; it is now **IMP-005 IN_PR
 - `origin/cursor/ops-scan-proposals-2158` has `ops/README.md` plus proposal/draft playbooks. Those are **not** this queue; they were not used as the base. Fresh branch from `main`.
 - `research/queue/` remains artifact storage for research packs. It is not an improvement backlog. New implementation work is IMP-* here, then artifacts there if the owning desk produces them.
 - IMP-003 merged as #33 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-005.
+- IMP-005 merged as #35 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-006.
 - IMP-004 (#34) stays PARKED; do not continue Pulse/source-health code on this thread.

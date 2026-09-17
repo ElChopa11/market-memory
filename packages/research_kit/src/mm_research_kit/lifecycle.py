@@ -42,7 +42,7 @@ REQUIRED_TEMPLATES = [
     "evidence-links.md",
 ]
 
-SKIP_DIR_NAMES = {".git", "__pycache__", "evidence", "backtests", "paper", "quant", "cards", "queue"}
+SKIP_DIR_NAMES = {".git", "__pycache__", "evidence", "backtests", "paper", "quant", "cards", "queue", "screens"}
 
 LATER_PHASE_STATUSES = {ThesisStatus.LIVE.value}
 

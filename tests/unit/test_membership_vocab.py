@@ -68,6 +68,24 @@ def test_quant_language_gate_still_bans_active_call() -> None:
     assert "active-call language" in hits
 
 
+def test_post_ipo_screen_config_is_not_membership_and_has_no_active_calls() -> None:
+    path = ROOT / "config" / "equities" / "post_ipo_reclaim.yaml"
+    text = path.read_text(encoding="utf-8")
+    data = yaml.safe_load(text)
+    assert data["kind"] == "post_ipo_reclaim_screen"
+    assert data["status"] == "screen_only"
+    assert "active_calls" not in data
+    for key in _walk_keys(data):
+        lowered = str(key).lower()
+        for fragment in FORBIDDEN_KEY_FRAGMENTS:
+            assert fragment not in lowered, f"{path} key {key!r} contains {fragment}"
+    assert not re.search(r"^active_calls:", text, re.MULTILINE)
+    symbols = {str(row["symbol"]).upper() for row in data["instruments"]}
+    universe = yaml.safe_load((ROOT / "config" / "universe.yaml").read_text(encoding="utf-8"))
+    membership = set(universe["crypto_perps"]) | set(universe["equities"])
+    assert symbols.isdisjoint(membership)
+
+
 def _walk_keys(node: object) -> list[str]:
     keys: list[str] = []
     if isinstance(node, dict):

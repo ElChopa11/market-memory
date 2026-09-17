@@ -1,0 +1,17 @@
+# Frozen IMP-006 screen snapshot — subset of the IMP-001 Principal-approved
+# TradingView watchlist fixture. Prints copied as shown; no invented last/chg.
+# as_of_knowledge is the lab read clock of the parent fixture (lockstep with
+# ingest/read time — not published_at). Image has no printed capture clock.
+as_of_knowledge: "2026-09-17T02:42:00Z"
+source: principal_watchlist_screenshot_subset
+capture: "IMP-001 screenshots subset for IMP-006; clock_on_image=false"
+notes:
+  - "Subset of tests/fixtures/quant_review/watchlist_snapshot_20260917.yaml. Same prints. No new market data."
+  - "CRCL and HOOD are screen candidates. QQQ/SPX/GLXY are relative-value context only."
+  - "No series overlay in this fixture; drawdown vs reference high is unavailable (not fabricated)."
+prints:
+  - {raw: SPX, last: 7551.82, chg: -33.92, chg_pct: -0.45, evidence_confidence: 0.45}
+  - {raw: QQQ, last: 704.72, chg: 0.18, chg_pct: 0.03, evidence_confidence: 0.45}
+  - {raw: CRCL, last: 80.45, chg: -5.85, chg_pct: -6.78, evidence_confidence: 0.40}
+  - {raw: GLXY, last: 22.07, chg: -0.02, chg_pct: -0.09, evidence_confidence: 0.35}
+  - {raw: HOOD, last: 104.42, chg: -6.03, chg_pct: -5.47, evidence_confidence: 0.40}

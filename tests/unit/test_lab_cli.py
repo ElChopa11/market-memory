@@ -42,6 +42,7 @@ def test_lab_status_mentions_phase4_and_hard_gate(capsys) -> None:
     assert "lab paper" in out
     assert "lab quant-review" in out
     assert "lab data source-health" in out
+    assert "lab equities reclaim-screen" in out
 
 
 def test_lab_ingest_fails_closed_when_object_store_misconfigured(monkeypatch, capsys) -> None:
