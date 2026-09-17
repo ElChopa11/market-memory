@@ -14,6 +14,7 @@ from mm_common.time import parse_utc, utcnow
 from mm_lab_cli.backtest import add_backtest_parser, dispatch_backtest
 from mm_lab_cli.briefing import add_brief_parser, dispatch_brief
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
+from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_review
 from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
 from mm_memory.db import dsn_from_env, session_scope
 from mm_memory.migrate import current_revision, upgrade_head
@@ -94,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     add_brief_parser(sub)
     add_backtest_parser(sub)
     add_paper_parser(sub)
+    add_quant_review_parser(sub)
 
     args = parser.parse_args(argv)
     if args.cmd is None or args.cmd == "status":
@@ -114,6 +116,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_backtest(args)
     if args.cmd == "paper":
         return dispatch_paper(args)
+    if args.cmd == "quant-review":
+        return dispatch_quant_review(args)
     parser.print_help()
     return 2
 
@@ -137,6 +141,7 @@ def cmd_status() -> int:
     print("Briefs: lab brief preopen | close | alert-check (alerts require threshold config)")
     print("Backtest: lab backtest run --fixture PATH (same params_hash → same result)")
     print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
+    print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")

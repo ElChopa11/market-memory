@@ -1,0 +1,117 @@
+# Quant Review Board universe — NOT the locked ingest/thesis universe.
+# Provenance: Principal-approved TradingView watchlists attached to IMP-001
+# (crypto USDC.P perps + cross-asset/US list). Capture clock is NOT printed
+# on the screenshots; prints are session snapshots, not as_of_knowledge.
+# Do not add names for popularity. Do not copy this list into config/universe.yaml.
+version: "2026-09-17"
+status: approved_watchlist
+kind: quant_review
+locked_ingest_universe: config/universe.yaml
+provenance:
+  - id: screenshot-crypto-usdc-perps
+    kind: screenshot
+    description: Principal-approved TradingView crypto perps watchlist (USDC.P)
+    captured_for: IMP-001
+    clock_on_image: false
+  - id: screenshot-cross-asset-us
+    kind: screenshot
+    description: Principal-approved TradingView cross-asset / US watchlist
+    captured_for: IMP-001
+    clock_on_image: false
+notes:
+  - Separate from locked ingest/thesis membership in config/universe.yaml.
+  - Review-board membership is not ingest expansion and not thesis priority.
+  - Sector labels are operational peer groups for Track B, not fundamental research.
+  - BTC1! normalizes to BTC_FUT so it does not collide with BTC perp.
+  - Post-IPO flag on CRCL is a track hint only; listing date is not in Market Memory.
+
+symbol_map:
+  BTCUSDC.P: BTC
+  ETHUSDC.P: ETH
+  SOLUSDC.P: SOL
+  HYPEUSDC.P: HYPE
+  VVVUSDC.P: VVV
+  ZECUSDC.P: ZEC
+  XMRUSDC.P: XMR
+  NEARUSDC.P: NEAR
+  LITUSDC.P: LIT
+  CASHCATUSDC.P: CASHCAT
+  PONSUSDC.P: PONS
+  XRPUSDC.P: XRP
+  SKRUSDC.P: SKR
+  CHIPUSDC.P: CHIP
+  DOGEUSDC.P: DOGE
+  SPX: SPX
+  "NQ1!": NQ
+  QQQ: QQQ
+  "CL1!": CL
+  CRCL: CRCL
+  TSLA: TSLA
+  SPCX: SPCX
+  NVDA: NVDA
+  SAMSUNGUSDT.F: SAMSUNG
+  BB: BB
+  GLXY: GLXY
+  IBIT: IBIT
+  BMNR: BMNR
+  PURR: PURR
+  MRNA: MRNA
+  "BTC1!": BTC_FUT
+  KOSDAQ: KOSDAQ
+  GOOG: GOOG
+  HOOD: HOOD
+  NOW: NOW
+  CBRS: CBRS
+
+peer_groups:
+  crypto_perp: [BTC, ETH, SOL, HYPE, VVV, ZEC, XMR, NEAR, LIT, CASHCAT, PONS, XRP, SKR, CHIP, DOGE]
+  crypto_major: [BTC, ETH, SOL, XRP, DOGE]
+  us_index: [SPX, NQ, QQQ]
+  us_mega: [NVDA, TSLA, GOOG, NOW]
+  crypto_equity: [CRCL, GLXY, IBIT, BMNR, PURR, HOOD]
+  kr_complex: [KOSDAQ, SAMSUNG]
+  btc_complex: [BTC, BTC_FUT, IBIT]
+  energy_fut: [CL]
+  other_us: [BB, SPCX, CBRS, MRNA]
+
+arb_pairs:
+  - {left: BTC, right: BTC_FUT, note: "HL USDC perp last vs BTC futures last — convertibility not established"}
+  - {left: NQ, right: QQQ, note: "Nasdaq future vs QQQ ETF — convertibility not established"}
+
+instruments:
+  - {symbol: BTC, raw_symbols: [BTCUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [ETH, SOL, XRP, DOGE], tracks: [A, B, D], post_ipo: false}
+  - {symbol: ETH, raw_symbols: [ETHUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, SOL, XRP], tracks: [A, B], post_ipo: false}
+  - {symbol: SOL, raw_symbols: [SOLUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH, XRP], tracks: [A, B], post_ipo: false}
+  - {symbol: HYPE, raw_symbols: [HYPEUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH, SOL], tracks: [A, B], post_ipo: false}
+  - {symbol: VVV, raw_symbols: [VVVUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH, SOL], tracks: [A, B], post_ipo: false}
+  - {symbol: ZEC, raw_symbols: [ZECUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, XMR], tracks: [A, B], post_ipo: false}
+  - {symbol: XMR, raw_symbols: [XMRUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ZEC], tracks: [A, B], post_ipo: false}
+  - {symbol: NEAR, raw_symbols: [NEARUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH, SOL], tracks: [A, B], post_ipo: false}
+  - {symbol: LIT, raw_symbols: [LITUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH], tracks: [A, B], post_ipo: false}
+  - {symbol: CASHCAT, raw_symbols: [CASHCATUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [DOGE, CHIP, PONS], tracks: [A, B], post_ipo: false}
+  - {symbol: PONS, raw_symbols: [PONSUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [DOGE, CHIP, CASHCAT], tracks: [A, B], post_ipo: false}
+  - {symbol: XRP, raw_symbols: [XRPUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH, SOL], tracks: [A, B], post_ipo: false}
+  - {symbol: SKR, raw_symbols: [SKRUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [DOGE, CHIP], tracks: [A, B], post_ipo: false}
+  - {symbol: CHIP, raw_symbols: [CHIPUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [DOGE, CASHCAT, PONS], tracks: [A, B], post_ipo: false}
+  - {symbol: DOGE, raw_symbols: [DOGEUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, SOL, XRP], tracks: [A, B], post_ipo: false}
+  - {symbol: SPX, raw_symbols: [SPX], asset_class: index, venue: unknown, sector: us_index, benchmark: SPX, peers: [NQ, QQQ], tracks: [A, B], post_ipo: false, role: benchmark}
+  - {symbol: NQ, raw_symbols: ["NQ1!"], asset_class: future, venue: unknown, sector: us_index, benchmark: SPX, peers: [SPX, QQQ], tracks: [A, B, D], post_ipo: false}
+  - {symbol: QQQ, raw_symbols: [QQQ], asset_class: etf, venue: unknown, sector: us_index, benchmark: SPX, peers: [SPX, NQ], tracks: [A, B, D], post_ipo: false}
+  - {symbol: CL, raw_symbols: ["CL1!"], asset_class: future, venue: unknown, sector: energy_fut, benchmark: CL, peers: [], tracks: [A], post_ipo: false}
+  - {symbol: CRCL, raw_symbols: [CRCL], asset_class: equity, venue: unknown, sector: crypto_equity, benchmark: SPX, peers: [GLXY, IBIT, HOOD], tracks: [A, B, C], post_ipo: true, listing_date: null}
+  - {symbol: TSLA, raw_symbols: [TSLA], asset_class: equity, venue: unknown, sector: us_mega, benchmark: SPX, peers: [NVDA, GOOG, QQQ], tracks: [A, B], post_ipo: false}
+  - {symbol: SPCX, raw_symbols: [SPCX], asset_class: equity, venue: unknown, sector: other_us, benchmark: SPX, peers: [CBRS, BB], tracks: [A, B], post_ipo: false}
+  - {symbol: NVDA, raw_symbols: [NVDA], asset_class: equity, venue: unknown, sector: us_mega, benchmark: SPX, peers: [QQQ, GOOG, TSLA], tracks: [A, B], post_ipo: false}
+  - {symbol: SAMSUNG, raw_symbols: [SAMSUNGUSDT.F], asset_class: future, venue: unknown, sector: kr_complex, benchmark: KOSDAQ, peers: [KOSDAQ], tracks: [A, B], post_ipo: false}
+  - {symbol: BB, raw_symbols: [BB], asset_class: equity, venue: unknown, sector: other_us, benchmark: SPX, peers: [QQQ, HOOD], tracks: [A, B], post_ipo: false}
+  - {symbol: GLXY, raw_symbols: [GLXY], asset_class: equity, venue: unknown, sector: crypto_equity, benchmark: SPX, peers: [IBIT, CRCL, HOOD], tracks: [A, B], post_ipo: false}
+  - {symbol: IBIT, raw_symbols: [IBIT], asset_class: etf, venue: unknown, sector: crypto_equity, benchmark: BTC, peers: [BTC, BTC_FUT, GLXY], tracks: [A, B], post_ipo: false}
+  - {symbol: BMNR, raw_symbols: [BMNR], asset_class: equity, venue: unknown, sector: crypto_equity, benchmark: SPX, peers: [IBIT, GLXY, CRCL], tracks: [A, B], post_ipo: false}
+  - {symbol: PURR, raw_symbols: [PURR], asset_class: equity, venue: unknown, sector: crypto_equity, benchmark: SPX, peers: [IBIT, GLXY], tracks: [A, B], post_ipo: false}
+  - {symbol: MRNA, raw_symbols: [MRNA], asset_class: equity, venue: unknown, sector: other_us, benchmark: SPX, peers: [SPX], tracks: [A, B], post_ipo: false}
+  - {symbol: BTC_FUT, raw_symbols: ["BTC1!"], asset_class: future, venue: unknown, sector: btc_complex, benchmark: BTC, peers: [BTC, IBIT], tracks: [A, B, D], post_ipo: false}
+  - {symbol: KOSDAQ, raw_symbols: [KOSDAQ], asset_class: index, venue: unknown, sector: kr_complex, benchmark: KOSDAQ, peers: [SAMSUNG], tracks: [A, B], post_ipo: false, role: benchmark}
+  - {symbol: GOOG, raw_symbols: [GOOG], asset_class: equity, venue: unknown, sector: us_mega, benchmark: SPX, peers: [NVDA, TSLA, QQQ], tracks: [A, B], post_ipo: false}
+  - {symbol: HOOD, raw_symbols: [HOOD], asset_class: equity, venue: unknown, sector: crypto_equity, benchmark: SPX, peers: [CRCL, GLXY, IBIT], tracks: [A, B], post_ipo: false}
+  - {symbol: NOW, raw_symbols: [NOW], asset_class: equity, venue: unknown, sector: us_mega, benchmark: SPX, peers: [NVDA, GOOG, QQQ], tracks: [A, B], post_ipo: false}
+  - {symbol: CBRS, raw_symbols: [CBRS], asset_class: equity, venue: unknown, sector: other_us, benchmark: SPX, peers: [SPCX, BB], tracks: [A, B], post_ipo: false}

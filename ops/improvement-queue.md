@@ -36,9 +36,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Quant Review Board generator; risk/execution services; live.yaml edits; new ingest; fund ops. |
 | **Dependencies** | None (docs on current `main`). |
 | **Risk level** | Low (documentation). Process risk if desks ignore the pipeline after merge. |
-| **Status** | IN_REVIEW |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/28 |
-| **Lesson learned** | *(fill at close)* Parked-agent `ops/` on `cursor/ops-scan-proposals-2158` had proposal drafts, not an improvement queue — rebased from `main` rather than that branch. |
+| **Lesson learned** | Merged to `main` (#28). Desk charters, decision rights, and this queue are source of truth. Quant Board was explicitly out of scope and is IMP-001. |
 
 ### IMP-001 — Quant Review Board
 
@@ -52,12 +52,12 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Problem** | Opportunity triage is ad-hoc queue packs that use Principal “active call” language. There is no daily Board, no instrument Quant Card, and no closed verdict set. |
 | **Evidence** | `research/queue/QUANT-20260917-active-calls.md`; `config/universe.yaml` `active_calls` / `watch_only` (Principal membership, not a Quant verdict); desk charter Quant section. |
 | **Proposed outcome** | A Quant Review Board that emits **one verdict + reason code per instrument**: `RESEARCH_PRIORITY` \| `MONITOR` \| `DEFER` \| `REJECT` \| `INSUFFICIENT_DATA`. Forbidden language: “active call,” “make,” “buy,” “sell,” “high confidence.” Relative-value/reclaim candidate unless executable-arb criteria are fully met. |
-| **Definition of done** | Board + Quant Card templates; verdict/reason-code vocabulary; arb vs non-arb divergence rule; wired to Data DQ + research cards; still not a trading decision. Separate implementation PR after this docs PR merges. |
-| **Non-goals** | **Do not implement in IMP-000.** No order path, no sizing, no live.yaml, no renaming Principal universe fields in the same change as the Board unless Principal asks. |
-| **Dependencies** | IMP-000 (charter + language rules). Data freshness for any live-looking inputs. |
+| **Definition of done** | `lab quant-review` generator; Board + one Quant Card per reviewed name; closed verdicts `RESEARCH_PRIORITY \| MONITOR \| DEFER \| REJECT \| INSUFFICIENT_DATA` with reason codes; relative-value/reclaim unless Track D executable-arb is complete; language gate (no active call / make / buy / sell / high confidence / sizing); tests + sample board artifact; still not a trading decision. |
+| **Non-goals** | No Market Pulse work (IMP-002). No order path, no sizing, no live.yaml, no risk-limit edits, no renaming Principal universe `active_calls` fields unless Principal asks. |
+| **Dependencies** | IMP-000 (charter + language rules) — **DONE** (#28). Data freshness for any live-looking inputs. |
 | **Risk level** | Medium (language and process can be misread as calls). |
-| **Status** | READY |
-| **PR** | — |
+| **Status** | IN_PROGRESS |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/31 |
 | **Lesson learned** | *(fill at close)* Historical packs remain evidence; they are not the Board. |
 
 ### IMP-002 — US Market Pulse vertical slice
@@ -86,11 +86,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
-| IMP-000 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | [#28](https://github.com/ElChopa11/market-memory/pull/28) |
-| IMP-001 | Quant & Market Structure Desk | Don/Quant | READY | Parked; not implementing in this PR |
-| IMP-002 | Macro & Cross-Asset Desk | Don | BACKLOG | After Board/charter usage is real |
+| IMP-000 | Chief of Staff / Hive Coordinator | Don | DONE | [#28](https://github.com/ElChopa11/market-memory/pull/28) merged |
+| IMP-001 | Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | [#31](https://github.com/ElChopa11/market-memory/pull/31) — only active implementation |
+| IMP-002 | Macro & Cross-Asset Desk | Don | BACKLOG | Parked; do not start while IMP-001 is in flight |
 
-`IN_PROGRESS` count: **0** (IMP-000 is `IN_REVIEW`). Next implementation candidate after IMP-000 closes: IMP-001, still only if Chief of Staff moves it to `IN_PROGRESS`.
+`IN_PROGRESS` count: **1** (IMP-001 Quant Review Board). IMP-000 is `DONE`. IMP-002 stays `BACKLOG`.
 
 ---
 
@@ -122,7 +122,7 @@ These are identified so they are not silently treated as existing desks. They ar
 | Post-IPO reclaim screen product | Equities & Post-IPO Desk | Needs Quant language rules (IMP-001) first |
 | Equity-feed ingest; on-chain ingest | Data & Market Memory Desk | Mandate/paid-data/ToS — Principal gate |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
-| Quant Board generator + Quant Cards | Quant & Market Structure Desk | **IMP-001 READY, parked** |
+| Quant Board generator + Quant Cards | Quant & Market Structure Desk | **IMP-001 IN_PROGRESS** |
 | Cross-asset regime note cadence | Macro & Cross-Asset Desk | Covered by IMP-002 scope |
 | Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
 | Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |

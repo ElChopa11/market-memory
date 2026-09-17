@@ -1,0 +1,439 @@
+{
+  "as_of_knowledge": "2026-09-17T02:42:00+00:00",
+  "engine": "imp-001.1",
+  "footer": "Research only. Not a trade instruction, allocation decision, or execution approval.",
+  "generated_at": "2026-09-17T02:42:00+00:00",
+  "params_hash": "d82c77aa2e3c1bbe4698b3f640d97b8a535d64ae5d751eed58d98c6219a4dacb",
+  "review_date": "2026-09-17",
+  "universe_version": "2026-09-17",
+  "verdicts": {
+    "BB": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "BMNR": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "BTC": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "NO_MISPRICING",
+        "UNEXECUTABLE_ARB",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "DEFER"
+    },
+    "BTC_FUT": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "UNEXECUTABLE_ARB",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "CASHCAT": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "CBRS": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "CHIP": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "CL": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "CRCL": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "DILUTION_OR_LOCKUP_RISK",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE"
+      ],
+      "verdict": "DEFER"
+    },
+    "DOGE": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "ETH": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "GLXY": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "GOOG": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "HOOD": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "HYPE": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "IBIT": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "KOSDAQ": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "NO_MISPRICING"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "LIT": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "MRNA": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "NEAR": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "NOW": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "NQ": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "UNEXECUTABLE_ARB",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "NVDA": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "NO_MISPRICING",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "DEFER"
+    },
+    "PONS": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "PURR": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "QQQ": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "UNEXECUTABLE_ARB",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "SAMSUNG": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "SKR": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "SOL": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "SPCX": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "SPX": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "NO_MISPRICING"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "TSLA": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "VVV": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "XMR": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "XRP": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_MISPRICING",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "ZEC": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "INADEQUATE_LIQUIDITY",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    }
+  }
+}
