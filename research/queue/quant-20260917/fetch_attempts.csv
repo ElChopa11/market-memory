@@ -1,0 +1,15 @@
+started_at,finished_at,source,action,status,ok,error,bytes,attempt,elapsed_ms,url
+2026-09-17T01:22:17.638Z,2026-09-17T01:22:17.725Z,yahoo.finance.chart,chart:NVDA,200,true,,62425,1,86,https://query1.finance.yahoo.com/v8/finance/chart/NVDA?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:18.076Z,2026-09-17T01:22:18.209Z,yahoo.finance.chart,chart:AVGO,200,true,,60775,1,132,https://query1.finance.yahoo.com/v8/finance/chart/AVGO?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:18.561Z,2026-09-17T01:22:18.703Z,yahoo.finance.chart,chart:MSFT,200,true,,60367,1,142,https://query1.finance.yahoo.com/v8/finance/chart/MSFT?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:19.054Z,2026-09-17T01:22:19.116Z,yahoo.finance.chart,chart:META,200,true,,57741,1,62,https://query1.finance.yahoo.com/v8/finance/chart/META?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:19.469Z,2026-09-17T01:22:19.625Z,yahoo.finance.chart,chart:JPM,200,true,,60036,1,156,https://query1.finance.yahoo.com/v8/finance/chart/JPM?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:19.977Z,2026-09-17T01:22:20.065Z,yahoo.finance.chart,chart:XLF,200,true,,61584,1,87,https://query1.finance.yahoo.com/v8/finance/chart/XLF?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:20.416Z,2026-09-17T01:22:20.552Z,yahoo.finance.chart,chart:XOM,200,true,,62799,1,135,https://query1.finance.yahoo.com/v8/finance/chart/XOM?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:20.903Z,2026-09-17T01:22:20.991Z,yahoo.finance.chart,chart:SPY,200,true,,60272,1,88,https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1=1720488137&period2=1789608137&interval=1d&events=div%2Csplits&includeAdjustedClose=true
+2026-09-17T01:22:21.343Z,2026-09-17T01:22:21.653Z,hyperliquid.info,allMids,200,true,,18877,1,310,https://api.hyperliquid.xyz/info
+2026-09-17T01:22:21.654Z,2026-09-17T01:22:22.117Z,hyperliquid.info,metaAndAssetCtxs,200,true,,72026,1,462,https://api.hyperliquid.xyz/info
+2026-09-17T01:22:22.117Z,2026-09-17T01:22:22.293Z,hyperliquid.info,candleSnapshot,200,true,,57237,1,176,https://api.hyperliquid.xyz/info
+2026-09-17T01:22:22.295Z,2026-09-17T01:22:22.471Z,hyperliquid.info,fundingHistory,200,true,,6383,1,176,https://api.hyperliquid.xyz/info
+2026-09-17T01:22:22.472Z,2026-09-17T01:22:22.788Z,hyperliquid.info,candleSnapshot,200,true,,55509,1,316,https://api.hyperliquid.xyz/info
+2026-09-17T01:22:22.790Z,2026-09-17T01:22:22.964Z,hyperliquid.info,fundingHistory,200,true,,6433,1,173,https://api.hyperliquid.xyz/info
