@@ -1,0 +1,84 @@
+name,metric,n,unit,end,start,ann_factor,note
+BTC,RV20,20,native_return_bars,2026-09-17,,365,dashboard default; start date not stored (native index not in pack CSVs)
+BTC,RV60,60,native_return_bars,2026-09-17,,365,dashboard default; start date not stored
+BTC,MDD,365,native_price_bars,2026-09-17,,365,dashboard default; start date not stored
+BTC,ret_short,30,native_price_steps,2026-09-17,,365,bar count not calendar month; start date not stored
+BTC,ret_long,90,native_price_steps,2026-09-17,,365,bar count not calendar quarter; start date not stored
+BTC,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-17,,365,calendar-year post-selection descriptive only; start date not stored
+ETH,RV20,20,native_return_bars,2026-09-17,,365,dashboard default; start date not stored
+ETH,RV60,60,native_return_bars,2026-09-17,,365,dashboard default; start date not stored
+ETH,MDD,365,native_price_bars,2026-09-17,,365,dashboard default; start date not stored
+ETH,ret_short,30,native_price_steps,2026-09-17,,365,bar count not calendar month; start date not stored
+ETH,ret_long,90,native_price_steps,2026-09-17,,365,bar count not calendar quarter; start date not stored
+ETH,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-17,,365,calendar-year post-selection descriptive only; start date not stored
+ETH,raw_vs_bench_NOT_alpha,30/90/YTD,simple_diff_name_minus_BTC,2026-09-17,,365,NOT alpha; not beta-adjusted; contemporaneous with BTC asof 2026-09-17
+NVDA,RV20,20,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+NVDA,RV60,60,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+NVDA,MDD,252,native_price_bars,2026-09-16,,252,dashboard default; start date not stored
+NVDA,ret_short,21,native_price_steps,2026-09-16,,252,bar count not calendar month; start date not stored
+NVDA,ret_long,63,native_price_steps,2026-09-16,,252,bar count not calendar quarter; start date not stored
+NVDA,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-16,,252,calendar-year post-selection descriptive only; start date not stored
+NVDA,raw_vs_bench_NOT_alpha,21/63/YTD,simple_diff_name_minus_SPY,2026-09-16,,252,NOT alpha; not beta-adjusted
+AVGO,RV20,20,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+AVGO,RV60,60,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+AVGO,MDD,252,native_price_bars,2026-09-16,,252,dashboard default; start date not stored
+AVGO,ret_short,21,native_price_steps,2026-09-16,,252,bar count not calendar month; start date not stored
+AVGO,ret_long,63,native_price_steps,2026-09-16,,252,bar count not calendar quarter; start date not stored
+AVGO,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-16,,252,calendar-year post-selection descriptive only; start date not stored
+AVGO,raw_vs_bench_NOT_alpha,21/63/YTD,simple_diff_name_minus_SPY,2026-09-16,,252,NOT alpha; not beta-adjusted
+MSFT,RV20,20,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+MSFT,RV60,60,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+MSFT,MDD,252,native_price_bars,2026-09-16,,252,dashboard default; start date not stored
+MSFT,ret_short,21,native_price_steps,2026-09-16,,252,bar count not calendar month; start date not stored
+MSFT,ret_long,63,native_price_steps,2026-09-16,,252,bar count not calendar quarter; start date not stored
+MSFT,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-16,,252,calendar-year post-selection descriptive only; start date not stored
+MSFT,raw_vs_bench_NOT_alpha,21/63/YTD,simple_diff_name_minus_SPY,2026-09-16,,252,NOT alpha; not beta-adjusted
+META,RV20,20,native_return_bars,2026-09-15,,252,FLAG asof lag vs equity peers; start date not stored
+META,RV60,60,native_return_bars,2026-09-15,,252,FLAG asof lag vs equity peers; start date not stored
+META,MDD,252,native_price_bars,2026-09-15,,252,FLAG asof lag vs equity peers; start date not stored
+META,ret_short,21,native_price_steps,2026-09-15,,252,FLAG asof lag vs equity peers; start date not stored
+META,ret_long,63,native_price_steps,2026-09-15,,252,FLAG asof lag vs equity peers; start date not stored
+META,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-15,,252,FLAG asof lag; calendar-year post-selection descriptive only
+META,raw_vs_bench_NOT_alpha,21/63/YTD,simple_diff_name_minus_SPY,2026-09-15,,252,NOT alpha; SPY asof 2026-09-16 so windows are NOT contemporaneous
+JPM,RV20,20,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+JPM,RV60,60,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+JPM,MDD,252,native_price_bars,2026-09-16,,252,dashboard default; start date not stored
+JPM,ret_short,21,native_price_steps,2026-09-16,,252,bar count not calendar month; start date not stored
+JPM,ret_long,63,native_price_steps,2026-09-16,,252,bar count not calendar quarter; start date not stored
+JPM,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-16,,252,calendar-year post-selection descriptive only; start date not stored
+JPM,raw_vs_bench_NOT_alpha,21/63/YTD,simple_diff_name_minus_SPY,2026-09-16,,252,NOT alpha; not beta-adjusted
+XLF,RV20,20,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+XLF,RV60,60,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+XLF,MDD,252,native_price_bars,2026-09-16,,252,dashboard default; start date not stored
+XLF,ret_short,21,native_price_steps,2026-09-16,,252,bar count not calendar month; start date not stored
+XLF,ret_long,63,native_price_steps,2026-09-16,,252,bar count not calendar quarter; start date not stored
+XLF,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-16,,252,calendar-year post-selection descriptive only; start date not stored
+XLF,raw_vs_bench_NOT_alpha,21/63/YTD,simple_diff_name_minus_SPY,2026-09-16,,252,NOT alpha; not beta-adjusted
+XOM,RV20,20,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+XOM,RV60,60,native_return_bars,2026-09-16,,252,dashboard default; start date not stored
+XOM,MDD,252,native_price_bars,2026-09-16,,252,dashboard default; start date not stored
+XOM,ret_short,21,native_price_steps,2026-09-16,,252,bar count not calendar month; start date not stored
+XOM,ret_long,63,native_price_steps,2026-09-16,,252,bar count not calendar quarter; start date not stored
+XOM,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-16,,252,calendar-year post-selection descriptive only; start date not stored
+XOM,raw_vs_bench_NOT_alpha,21/63/YTD,simple_diff_name_minus_SPY,2026-09-16,,252,NOT alpha; not beta-adjusted
+UNI,RV20,20,native_return_bars,2026-09-17,,365,watch; Kraken sample starts 2024-09-27 vs peers 2024-09-17
+UNI,RV60,60,native_return_bars,2026-09-17,,365,watch; shorter sample vs yfinance crypto peers
+UNI,MDD,365,native_price_bars,2026-09-17,,365,watch; do not compare MDD to longer yfinance crypto histories without alignment
+UNI,ret_short,30,native_price_steps,2026-09-17,,365,watch; 30d includes bounce from ~$3.20 on 2026-08-14 — not a thesis
+UNI,ret_long,90,native_price_steps,2026-09-17,,365,watch; bar count not calendar quarter
+UNI,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-17,,365,watch; post-selection descriptive only
+AAVE,RV20,20,native_return_bars,2026-09-17,,365,watch; start date not stored
+AAVE,RV60,60,native_return_bars,2026-09-17,,365,watch; start date not stored
+AAVE,MDD,365,native_price_bars,2026-09-17,,365,watch; start date not stored
+AAVE,ret_short,30,native_price_steps,2026-09-17,,365,watch; bar count not calendar month
+AAVE,ret_long,90,native_price_steps,2026-09-17,,365,watch; bar count not calendar quarter
+AAVE,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-17,,365,watch; post-selection descriptive only
+SMH,RV20,20,native_return_bars,2026-09-16,,252,watch; start date not stored
+SMH,RV60,60,native_return_bars,2026-09-16,,252,watch; start date not stored
+SMH,MDD,252,native_price_bars,2026-09-16,,252,watch; start date not stored
+SMH,ret_short,21,native_price_steps,2026-09-16,,252,watch; bar count not calendar month
+SMH,ret_long,63,native_price_steps,2026-09-16,,252,watch; bar count not calendar quarter
+SMH,YTD,,first_native_bar_ge_2026-01-01_to_asof,2026-09-16,,252,watch; post-selection descriptive only — not a promotion argument
+ACTIVE9,corr_pearson_pre_FOMC,60,aligned_panel_complete_rows,2026-09-15,2026-05-28,,last 60 of 387 inner-join dates 2024-09-18..2026-09-15; truncated by META asof 2026-09-15 (drops 2026-09-16 equity session); FOMC 2026-09-16 is AFTER this window; point estimate only; not native-series RV
+Yahoo_ADV,adv_5d_shares,,yahoo_chart_v8_5d,2026-09-17T00:49:39Z,,,"NOT yfinance asof; scan last ≠ series last; equities only"
+HL_lab,metaAndAssetCtxs_stale,,lab_json_not_in_repo,2026-09-17T00:28:03Z,,,"APPENDIX ONLY; live refresh HTTP 429; DO NOT SIZE"

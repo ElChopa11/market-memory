@@ -1,0 +1,137 @@
+{
+  "run_ts_aest": "2026-09-17T11:15:47.495030+10:00",
+  "run_ts_utc": "2026-09-17T01:15:47.495057+00:00",
+  "as_of_knowledge": "2026-09-17T11:15:47.495030+10:00",
+  "yfinance_version": "1.7.0",
+  "pandas_version": "3.0.5",
+  "numpy_version": "2.2.4",
+  "methodology": {
+    "as_of_knowledge": "2026-09-17T11:15:47.495030+10:00",
+    "window_policy": "arbitrary dashboard defaults (20/60/21/63/30/90/252/365) — not a registered research design",
+    "returns": "simple daily P_t/P_{t-1}-1 on auto-adjusted Close (NaNs dropped) on each name's native series",
+    "rv_equity": "std(ddof=1)*sqrt(252) — NOT comparable to rv_crypto",
+    "rv_crypto": "std(ddof=1)*sqrt(365) — NOT comparable to rv_equity",
+    "corr_window": "last 60 overlapping dates with all 9 names non-null on ALIGNED-PANEL pct_change (not native-series RV)",
+    "corr_title": "pre-FOMC 60d dependence (ends 2026-09-15)",
+    "corr_vs_fomc": "corr.end 2026-09-15 is BEFORE FOMC 2026-09-16; no allocation implication",
+    "mdd": "min peak-to-trough over lookback bars (252 equity / 365 crypto)",
+    "rel_returns": "simple difference name total return minus benchmark total return — NOT alpha, NOT beta-adjusted",
+    "ret_bars": "equities 21/63 price steps; crypto 30/90 price steps; do not label as calendar months",
+    "ytd": "first native bar with date >= 2026-01-01 through asof; post-selection descriptive only",
+    "UNI_source": "Kraken public OHLC UNIUSD interval=1440",
+    "hl": "NOT fetched by this script; stale lab snapshot is appendix-only (HTTP 429 on live refresh)"
+  },
+  "tickers": {
+    "BTC": {
+      "source": "yfinance:BTC-USD",
+      "n_bars": 730,
+      "start": "2024-09-17",
+      "end": "2026-09-17",
+      "last_close": 76201.0234375
+    },
+    "ETH": {
+      "source": "yfinance:ETH-USD",
+      "n_bars": 730,
+      "start": "2024-09-17",
+      "end": "2026-09-17",
+      "last_close": 2415.419921875
+    },
+    "NVDA": {
+      "source": "yfinance:NVDA",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 213.89999389648438
+    },
+    "AVGO": {
+      "source": "yfinance:AVGO",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 339.510009765625
+    },
+    "MSFT": {
+      "source": "yfinance:MSFT",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 490.29998779296875
+    },
+    "META": {
+      "source": "yfinance:META",
+      "n_bars": 500,
+      "start": "2024-09-17",
+      "end": "2026-09-15",
+      "last_close": 670.239990234375,
+      "asof_flag": "LAG_vs_equity_peers — yfinance auto-adjust Close NaN on 2026-09-16; truncates 9-name corr end to 2026-09-15"
+    },
+    "JPM": {
+      "source": "yfinance:JPM",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 348.9200134277344
+    },
+    "XLF": {
+      "source": "yfinance:XLF",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 55.93000030517578
+    },
+    "XOM": {
+      "source": "yfinance:XOM",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 163.32000732421875
+    },
+    "AAVE": {
+      "source": "yfinance:AAVE-USD",
+      "n_bars": 730,
+      "start": "2024-09-17",
+      "end": "2026-09-17",
+      "last_close": 120.01000213623047
+    },
+    "SMH": {
+      "source": "yfinance:SMH",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 545.5599975585938
+    },
+    "SPY": {
+      "source": "yfinance:SPY",
+      "n_bars": 501,
+      "start": "2024-09-17",
+      "end": "2026-09-16",
+      "last_close": 754.0499877929688
+    },
+    "UNI": {
+      "source": "kraken:UNIUSD",
+      "n_bars": 721,
+      "start": "2024-09-27",
+      "end": "2026-09-17",
+      "last_close": 6.7085,
+      "sample_note": "shorter than yfinance crypto peers (2024-09-17); do not compare MDD/YTD without alignment"
+    }
+  },
+  "errors": [],
+  "corr": {
+    "window_bars": 60,
+    "start": "2026-05-28",
+    "end": "2026-09-15",
+    "n_obs": 60,
+    "alignment": "inner-join dates with non-null returns for all 9 on aligned-panel pct_change",
+    "title": "pre-FOMC 60d dependence (ends 2026-09-15)",
+    "fomc_date": "2026-09-16",
+    "pre_fomc": true,
+    "meta_truncation": "META asof 2026-09-15; 2026-09-16 equity session present for NVDA/SPY but dropped from 9-name inner join (only NVDA date missing from inner)",
+    "inner_join_complete_rows": 387,
+    "inner_join_span": "2024-09-18 → 2026-09-15",
+    "btc_weekend_return_bars_in_panel": 208,
+    "point_estimate_only": true,
+    "no_hedge_ratio": true,
+    "not_native_series_rv": true
+  }
+}
