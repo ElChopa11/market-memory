@@ -137,7 +137,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-001 DONE (#31). |
 | **Risk level** | Low (rename/docs). Process risk if operators still read membership as a call. |
 | **Status** | IN_PROGRESS |
-| **PR** | this PR |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/35 |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -151,7 +151,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-002 | Macro & Cross-Asset Desk | Don | DONE | [#32](https://github.com/ElChopa11/market-memory/pull/32) merged |
 | IMP-003 | Data & Market Memory Desk | Don/Data | DONE | [#33](https://github.com/ElChopa11/market-memory/pull/33) merged |
 | IMP-004 | Data & Market Memory Desk + Macro | Don/Data | PARKED | [#34](https://github.com/ElChopa11/market-memory/pull/34) — not this thread |
-| IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | this PR — only active implementation |
+| IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | [#35](https://github.com/ElChopa11/market-memory/pull/35) — only active implementation |
 
 `IN_PROGRESS` count: **1** (IMP-005 membership vocabulary). IMP-000–IMP-003 are `DONE`. IMP-004 is `PARKED`.
 
