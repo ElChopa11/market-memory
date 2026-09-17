@@ -43,3 +43,9 @@ briefs/**
 !briefs/README.md
 !briefs/*/
 !briefs/*/us-pre-market.md
+
+# Generated source-health reports (keep README and committed dated samples)
+ops/reports/source-health/**
+!ops/reports/source-health/README.md
+!ops/reports/source-health/*.md
+!ops/reports/source-health/*.sha256

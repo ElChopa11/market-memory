@@ -1,0 +1,39 @@
+"""Load inventory config (YAML only). Never read secret values from files."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from mm_ingest.hl_info import DEFAULT_INFO_URL
+
+
+def repo_root(start: Path | None = None) -> Path:
+    here = (start or Path.cwd()).resolve()
+    for candidate in [here, *here.parents]:
+        if (candidate / "pyproject.toml").is_file() and (candidate / "packages").is_dir():
+            return candidate
+    return here
+
+
+def load_yaml(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {}
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return data if isinstance(data, dict) else {}
+
+
+def load_inventory_config(root: Path) -> dict[str, Any]:
+    ingest = load_yaml(root / "config" / "ingest.yaml")
+    macro = load_yaml(root / "config" / "briefing" / "macro.yaml")
+    live = macro.get("live") if isinstance(macro.get("live"), dict) else {}
+    calendar_path = root / "config" / "briefing" / "calendar.yaml"
+    return {
+        "hl_info_url": str(ingest.get("info_url") or DEFAULT_INFO_URL),
+        "stooq": live.get("stooq") if isinstance(live.get("stooq"), dict) else {},
+        "fred": live.get("fred") if isinstance(live.get("fred"), dict) else {},
+        "coingecko": live.get("coingecko") if isinstance(live.get("coingecko"), dict) else {},
+        "calendar_path": calendar_path,
+    }

@@ -1,4 +1,4 @@
-"""Coordinator CLI: status, migrate, ingest, research, briefs, backtest, paper ledger.
+"""Coordinator CLI: status, migrate, ingest, research, briefs, backtest, paper ledger, source-health.
 
 Must not hold trading credentials.
 """
@@ -16,6 +16,7 @@ from mm_lab_cli.briefing import add_brief_parser, dispatch_brief
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_review
 from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
+from mm_lab_cli.source_health import add_source_health_parser, dispatch_source_health
 from mm_memory.db import dsn_from_env, session_scope
 from mm_memory.migrate import current_revision, upgrade_head
 from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
@@ -96,6 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     add_backtest_parser(sub)
     add_paper_parser(sub)
     add_quant_review_parser(sub)
+    add_source_health_parser(sub)
 
     args = parser.parse_args(argv)
     if args.cmd is None or args.cmd == "status":
@@ -118,6 +120,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_paper(args)
     if args.cmd == "quant-review":
         return dispatch_quant_review(args)
+    if args.cmd in {"data", "dq"}:
+        return dispatch_source_health(args)
     parser.print_help()
     return 2
 
@@ -142,6 +146,7 @@ def cmd_status() -> int:
     print("Backtest: lab backtest run --fixture PATH (same params_hash → same result)")
     print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
+    print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")

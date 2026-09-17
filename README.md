@@ -14,6 +14,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [docs/runbooks/ingest.md](docs/runbooks/ingest.md) | Phase 1 how-to: compose, migrate, ingest, query |
 | [docs/runbooks/research-workspace.md](docs/runbooks/research-workspace.md) | Phase 2 how-to: create thesis, link evidence, skeptic checklist |
 | [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md) | Market Pulse: US pre-market (`briefs/YYYY-MM-DD/us-pre-market.md`), close, alert-check, DST |
+| [docs/runbooks/source-health.md](docs/runbooks/source-health.md) | Standing DQ / source-health report (`ops/reports/source-health/YYYY-MM-DD.md`) |
 | [docs/runbooks/backtest.md](docs/runbooks/backtest.md) | **Phase 4 how-to:** reproducible fixture backtest |
 | [docs/runbooks/paper-trade.md](docs/runbooks/paper-trade.md) | **Phase 4 how-to:** open/close shadow paper trades |
 | [AGENTS.md](AGENTS.md) | Role permissions (Research **cannot** access trading credentials) |
@@ -65,7 +66,11 @@ uv run lab backtest run --fixture tests/fixtures/backtest/clean_bars.json --stra
 # 9. Quant Review Board (read-only; not a call generator)
 uv run lab quant-review --fixture tests/fixtures/quant_review/watchlist_snapshot_20260917.yaml --no-db
 
-# 10. Lifecycle DoD gates + tests
+# 10. Source health / data-quality (read-only; not a market brief)
+uv run lab data source-health --no-db
+# alias: uv run lab dq report --no-db
+
+# 11. Lifecycle DoD gates + tests
 ./scripts/check-lifecycle.sh
 uv run pytest
 
@@ -85,7 +90,7 @@ uv run briefing-worker next --from 2026-03-06T00:00:00Z --days 5
 ```text
 ADR/              architecture decisions
 docs/             founding brief, security, lifecycle, runbooks
-ops/              desk charters, decision rights, improvement queue
+ops/              desk charters, decision rights, improvement queue, source-health reports
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)

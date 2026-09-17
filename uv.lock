@@ -21,6 +21,7 @@ members = [
     "mm-research-kit",
     "mm-risk",
     "mm-risk-service",
+    "mm-source-health",
     "mm-unicorn",
 ]
 
@@ -255,6 +256,7 @@ dependencies = [
     { name = "mm-provenance" },
     { name = "mm-research-kit" },
     { name = "mm-risk" },
+    { name = "mm-source-health" },
     { name = "mm-unicorn" },
 ]
 
@@ -279,6 +281,7 @@ requires-dist = [
     { name = "mm-provenance", editable = "packages/provenance" },
     { name = "mm-research-kit", editable = "packages/research_kit" },
     { name = "mm-risk", editable = "packages/risk" },
+    { name = "mm-source-health", editable = "packages/source_health" },
     { name = "mm-unicorn", editable = "packages/unicorn" },
 ]
 
@@ -481,6 +484,7 @@ dependencies = [
     { name = "mm-paper" },
     { name = "mm-provenance" },
     { name = "mm-research-kit" },
+    { name = "mm-source-health" },
 ]
 
 [package.metadata]
@@ -493,6 +497,7 @@ requires-dist = [
     { name = "mm-paper", editable = "packages/paper" },
     { name = "mm-provenance", editable = "packages/provenance" },
     { name = "mm-research-kit", editable = "packages/research_kit" },
+    { name = "mm-source-health", editable = "packages/source_health" },
 ]
 
 [[package]]
@@ -562,6 +567,27 @@ source = { editable = "packages/risk" }
 name = "mm-risk-service"
 version = "0.1.0"
 source = { editable = "apps/risk-service" }
+
+[[package]]
+name = "mm-source-health"
+version = "0.1.0"
+source = { editable = "packages/source_health" }
+dependencies = [
+    { name = "httpx" },
+    { name = "mm-common" },
+    { name = "mm-ingest" },
+    { name = "mm-memory" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "mm-common", editable = "packages/common" },
+    { name = "mm-ingest", editable = "packages/ingest" },
+    { name = "mm-memory", editable = "packages/memory" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
 
 [[package]]
 name = "mm-unicorn"

@@ -90,3 +90,8 @@ Raw payloads in MinIO/S3 (or an explicit filesystem root) store **checksum + obj
 ## Compose credentials
 
 Local compose uses `lab`/`lab` for Postgres and `minioadmin` for MinIO. Those are **dev conveniences**, not production secrets, and they are not Hyperliquid keys.
+
+## Source health
+
+Standing Data desk report (not a brief): `uv run lab data source-health`. See [source-health.md](source-health.md).
+

@@ -15,6 +15,7 @@ dependencies = [
   "mm-paper",
   "mm-execution",
   "mm-briefing",
+  "mm-source-health",
   "mm-unicorn",
   "mm-lab-cli",
   "mm-ingest-worker",
@@ -44,6 +45,7 @@ mm-risk = { workspace = true }
 mm-paper = { workspace = true }
 mm-execution = { workspace = true }
 mm-briefing = { workspace = true }
+mm-source-health = { workspace = true }
 mm-unicorn = { workspace = true }
 mm-lab-cli = { workspace = true }
 mm-ingest-worker = { workspace = true }

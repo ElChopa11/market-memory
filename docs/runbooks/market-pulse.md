@@ -88,3 +88,6 @@ Every market-data section has an as-of timestamp. Pulse display quality is `fres
 ## Optional DB index
 
 If Postgres is up and you omit `--no-db`, a `brief` row is written (kind, session_date, content_hash, artifact path). Markdown under `briefs/` remains the human artifact. Generated dated files are gitignored except an explicit committed sample on the DoD path.
+
+Standing source-health (Data desk, not this brief): [source-health.md](source-health.md).
+

@@ -76,9 +76,29 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Turning macro into allocation; enabling live FRED as a silent default; dashboard product; Quant Board rewrite; watchlist MAKE/active-call loops; live.yaml / risk-limit edits; execution/signing. |
 | **Dependencies** | IMP-000 DONE (#28). IMP-001 DONE (#31) — do not reopen. Benefits from Data DQ reports (not blocking). |
 | **Risk level** | Low–medium (partial macro data can be over-read). |
-| **Status** | IN_PROGRESS |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/32 |
-| **Lesson learned** | *(fill at close)* Standing cross-asset regime note is **deferred** (not in this slice). |
+| **Lesson learned** | Merged to `main` (#32). Live `lab brief preopen --live --no-db` ran `data_quality=partial` with honest unavailable slots: Stooq failed for all five symbols in the agent environment; FRED stayed unavailable without `FRED_API_KEY` (not committed). CoinGecko + allowlisted HL `/info` were fresh. Dual-write DoD path `briefs/YYYY-MM-DD/us-pre-market.md` plus legacy `preopen.md`. Standing DQ/source-health was a named benefit, not blocking — now IMP-003. |
+
+### IMP-003 — Standing data-quality / source-health report
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-003 |
+| **Priority** | P1 |
+| **Type** | Desk product / data quality |
+| **Desk** | Data & Market Memory Desk |
+| **Owner** | Don/Data |
+| **Problem** | Charters name a standing DQ / source-health artifact, but no generator exists. IMP-002 Pulse ran `data_quality=partial` with Stooq and FRED honestly unavailable and no desk product to re-check sources independently of a market brief. |
+| **Evidence** | [desk-charters.md](desk-charters.md) Data desk artifacts; IMP-002 sample `briefs/2026-09-16/us-pre-market.md`; this queue’s former Gap row. |
+| **Proposed outcome** | Repeatable read-only `lab data source-health` writes a versioned health/provenance report for configured Memory and Pulse sources. Never invents prints. |
+| **Definition of done** | Command writes `ops/reports/source-health/YYYY-MM-DD.md`; inventory always listed (HL `/info`, CoinGecko, Stooq, FRED, calendar YAML, Postgres, object store); per source `ok\|degraded\|unavailable` plus latency/error class, last success when known, credentials/env missing without printing secrets, Pulse required vs optional; missing env does not crash; forbidden HL types still blocked; tests + sample from a real read-only run; short runbook. |
+| **Non-goals** | Paid-data purchases; committing FRED secrets; ToS-violating Stooq scrape fixes; Quant Board; watchlist MAKE/active-call loops; execution; live.yaml; risk limits; post-IPO reclaim product. |
+| **Dependencies** | IMP-002 DONE (#32) — evidence, not a blocker. |
+| **Risk level** | Low (read-only probes). Process risk if operators treat health copy as a brief. |
+| **Status** | IN_PROGRESS |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/33 |
+| **Lesson learned** | *(fill at close)* |
 
 ---
 
@@ -88,9 +108,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 |---|---|---|---|---|
 | IMP-000 | Chief of Staff / Hive Coordinator | Don | DONE | [#28](https://github.com/ElChopa11/market-memory/pull/28) merged |
 | IMP-001 | Quant & Market Structure Desk | Don/Quant | DONE | [#31](https://github.com/ElChopa11/market-memory/pull/31) merged |
-| IMP-002 | Macro & Cross-Asset Desk | Don | IN_PROGRESS | [#32](https://github.com/ElChopa11/market-memory/pull/32) — only active implementation |
+| IMP-002 | Macro & Cross-Asset Desk | Don | DONE | [#32](https://github.com/ElChopa11/market-memory/pull/32) merged |
+| IMP-003 | Data & Market Memory Desk | Don/Data | IN_PROGRESS | [#33](https://github.com/ElChopa11/market-memory/pull/33) — only active implementation |
 
-`IN_PROGRESS` count: **1** (IMP-002 US Market Pulse). IMP-000 and IMP-001 are `DONE`.
+`IN_PROGRESS` count: **1** (IMP-003 source-health). IMP-000, IMP-001, and IMP-002 are `DONE`.
 
 ---
 
@@ -103,7 +124,7 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 | Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory Desk | Data desk (unassigned human; Coordinator until named) |
 | Crypto thesis / HL structure research | Crypto Desk | Research (Coordinator assigns per card) |
 | Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Research (Coordinator assigns per card) |
-| US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002) |
+| US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE) |
 | Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
 | `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
@@ -117,16 +138,16 @@ These are identified so they are not silently treated as existing desks. They ar
 
 | Gap | Desk that would own | Why not queued now |
 |---|---|---|
-| Standing DQ / source-health report | Data & Market Memory Desk | Charter names the artifact; no generator this cycle |
-| Dedicated crypto / equity thesis-card templates | Crypto Desk; Equities & Post-IPO Desk | Generic `templates/thesis.md` suffices until Board exists |
-| Post-IPO reclaim screen product | Equities & Post-IPO Desk | Needs Quant language rules (IMP-001) first |
+| Post-IPO reclaim screen product | Equities & Post-IPO Desk | Needs Quant language rules (IMP-001 DONE); not this PR |
+| Pulse source hardening (Stooq timeout/ToS class; FRED key ops) | Data & Market Memory Desk + Macro | IMP-003 reports failure class; do not scrape around ToS or commit secrets |
+| Rename historical “active calls” in universe/queue files (language debt) | Principal + Quant & Market Structure Desk | Membership language vs Quant vocabulary; not this PR |
+| Dedicated crypto / equity thesis-card templates | Crypto Desk; Equities & Post-IPO Desk | Generic `templates/thesis.md` suffices until a later intake |
 | Equity-feed ingest; on-chain ingest | Data & Market Memory Desk | Mandate/paid-data/ToS — Principal gate |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
-| Quant Board generator + Quant Cards | Quant & Market Structure Desk | **IMP-001 DONE** (#31) |
-| Cross-asset regime note cadence | Macro & Cross-Asset Desk | Covered by IMP-002 scope |
+| Quant pack rewrite (templates / pack workflow) | Quant & Market Structure Desk | IMP-001 plan placeholder; **not** assigned IMP-003 (source-health took that ID) |
+| Cross-asset regime note cadence | Macro & Cross-Asset Desk | Deferred from IMP-002 |
 | Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
 | Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |
-| Rename historical “active calls” in universe/queue files | Principal + Quant & Market Structure Desk | Membership language vs Quant vocabulary; not this PR |
 
 ## Reconciliation notes
 
