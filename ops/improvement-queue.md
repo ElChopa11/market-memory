@@ -157,7 +157,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-004 stays PARKED (#34). |
 | **Risk level** | Medium (language and drawdowns can be misread as calls). |
 | **Status** | IN_PROGRESS |
-| **PR** | *(this PR)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/36 |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -172,7 +172,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-003 | Data & Market Memory Desk | Don/Data | DONE | [#33](https://github.com/ElChopa11/market-memory/pull/33) merged |
 | IMP-004 | Data & Market Memory Desk + Macro | Don/Data | PARKED | [#34](https://github.com/ElChopa11/market-memory/pull/34) — not this thread |
 | IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
-| IMP-006 | Equities & Post-IPO Desk | Don/Equities | IN_PROGRESS | this PR — only active implementation |
+| IMP-006 | Equities & Post-IPO Desk | Don/Equities | IN_PROGRESS | [#36](https://github.com/ElChopa11/market-memory/pull/36) — only active implementation |
 
 `IN_PROGRESS` count: **1** (IMP-006 Post-IPO reclaim screen). IMP-000–IMP-003 and IMP-005 are `DONE`. IMP-004 is `PARKED`.
 
