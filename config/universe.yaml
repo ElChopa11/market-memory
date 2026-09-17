@@ -2,6 +2,9 @@
 # Skeptic PR #11 must-cuts archived. Full survivor membership kept for ingest.
 # Principal 2026-09-17: KEEP membership; DEMOTE UNI, AAVE, SMH to watch-only
 # (no active call / no thesis priority). Cite call cards PR #13 and Skeptic PR #14.
+# Principal 2026-09-17: ADD IBIT to watch_only.equities (BTC equity proxy; BTC
+# adjacency to RQ-20260917-A). Not an active call. MU/SNDK/SK Hynix stay
+# intent-research only pending Skeptic — not universe membership.
 version: "2026-09-17"
 status: locked
 crypto_perps:  # Hyperliquid ingest membership (not call priority)
@@ -18,6 +21,7 @@ equities:  # US liquid stocks/ETFs — briefing / future equity-feed membership
   - JPM
   - XLF
   - XOM
+  - IBIT
 # Call tiers partition membership. Watch-only names stay in the lists above.
 # Survivors are not equal priority: thesis work follows active_calls only.
 active_calls:
@@ -25,7 +29,7 @@ active_calls:
   equities: [NVDA, AVGO, MSFT, META, JPM, XLF, XOM]
 watch_only:
   crypto_perps: [UNI, AAVE]
-  equities: [SMH]
+  equities: [SMH, IBIT]
 deferred_must_cut:  # learning records — not universe membership
   crypto: [HYPE, SOL, XRP, ARB, NEAR, LINK]
   equities: [GLD, LLY]
@@ -33,8 +37,10 @@ notes:
   - Intent-level watchlist only; not orders.
   - "Full locked membership kept after Skeptic PR #11; not all survivors are equal priority."
   - "Active calls (revise keepers, thesis priority): BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM."
-  - "Watch-only (still ingested / still in universe; no active call / no thesis priority): UNI, AAVE, SMH."
+  - "Watch-only (still ingested / still in universe; no active call / no thesis priority): UNI, AAVE, SMH, IBIT."
   - "Demotion follows Skeptic PR #14 rejects vs call cards PR #13 (UNI event-gated with no dated event; AAVE liquidity/causation; SMH redundant vs NVDA+AVGO)."
+  - "Principal 2026-09-17: ADD IBIT to watch_only.equities as BTC equity proxy (BTC adjacency to RQ-20260917-A). Not an active call."
+  - "MU/SNDK/SK Hynix remain intent-research only pending Skeptic — not universe membership."
   - Must-cuts remain archived learning records (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY).
   - "Cite research/queue/UNIVERSE-20260917-shortlist.md (PR #10), UNIVERSE-20260917-skeptic-review.md (PR #11), UNIVERSE-20260917-call-cards.md (PR #13), UNIVERSE-20260917-call-cards-skeptic.md (PR #14)."
   - Equities are Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest.

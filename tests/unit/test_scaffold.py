@@ -83,11 +83,12 @@ def test_controlled_universe_is_locked_2026_09_17() -> None:
     assert universe["version"] == "2026-09-17"
     assert universe["status"] == "locked"
     assert universe["crypto_perps"] == ["BTC", "ETH", "UNI", "AAVE"]
-    assert universe["equities"] == ["NVDA", "AVGO", "SMH", "MSFT", "META", "JPM", "XLF", "XOM"]
+    assert universe["equities"] == ["NVDA", "AVGO", "SMH", "MSFT", "META", "JPM", "XLF", "XOM", "IBIT"]
     assert universe["active_calls"]["crypto_perps"] == ["BTC", "ETH"]
     assert universe["active_calls"]["equities"] == ["NVDA", "AVGO", "MSFT", "META", "JPM", "XLF", "XOM"]
     assert universe["watch_only"]["crypto_perps"] == ["UNI", "AAVE"]
-    assert universe["watch_only"]["equities"] == ["SMH"]
+    assert universe["watch_only"]["equities"] == ["SMH", "IBIT"]
+    assert "IBIT" not in universe["active_calls"]["equities"]
     assert universe["deferred_must_cut"]["crypto"] == ["HYPE", "SOL", "XRP", "ARB", "NEAR", "LINK"]
     assert universe["deferred_must_cut"]["equities"] == ["GLD", "LLY"]
     notes = "\n".join(universe.get("notes") or [])
@@ -99,10 +100,15 @@ def test_controlled_universe_is_locked_2026_09_17() -> None:
     assert "PR #13" in notes
     assert "UNIVERSE-20260917-call-cards-skeptic.md" in notes
     assert "PR #14" in notes
+    assert "Principal 2026-09-17" in notes
+    assert "IBIT" in notes and "BTC equity proxy" in notes
+    assert "RQ-20260917-A" in notes
+    assert "MU/SNDK/SK Hynix" in notes
     membership = set(universe["crypto_perps"]) | set(universe["equities"])
     active_calls = set(universe["active_calls"]["crypto_perps"]) | set(universe["active_calls"]["equities"])
     watch_only = set(universe["watch_only"]["crypto_perps"]) | set(universe["watch_only"]["equities"])
     deferred = set(universe["deferred_must_cut"]["crypto"]) | set(universe["deferred_must_cut"]["equities"])
+    assert "MU" not in membership and "SNDK" not in membership
     assert active_calls.isdisjoint(watch_only)
     assert active_calls | watch_only == membership
     assert set(universe["active_calls"]["crypto_perps"]) | set(universe["watch_only"]["crypto_perps"]) == set(
