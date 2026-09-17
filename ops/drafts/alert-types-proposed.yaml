@@ -1,0 +1,43 @@
+# DRAFT — proposed briefing alert types
+# Status: not wired. Do NOT copy into config/briefing/alerts.yaml without Principal review.
+# Current live-ish briefing thresholds remain config/briefing/alerts.yaml (liquidation_spike + funding_oi_divergence only).
+# Not for live until reviewed. No execution, no risk-service calls.
+
+# Evidence for why these are proposed: ops/proposals/2026-09-17-outcome-scan.md P4
+# Frozen-day references: tests/fixtures/briefing/frozen_day.json (session 2026-03-10)
+
+require_threshold_config: true  # keep fail-closed; never push without numeric thresholds
+
+types:
+  # Existing (do not change here). Listed for contrast only.
+  # liquidation_spike: min_size 1.0  — WOULD fire on frozen BTC liq 2.50 (obs 01FROZENBTCLIQ000000000001)
+  # funding_oi_divergence: opposite-sign only — correctly does NOT fire on frozen BTC funding +0.0004 with OI +20.05%
+
+  # Proposed: same-sign funding + OI expansion (crowding). Frozen BTC would have crossed this.
+  crowding_funding_oi:
+    enabled: false  # draft; Principal must opt in
+    min_abs_funding: 0.0003
+    min_oi_change_pct: 5.0
+    note: "Fire when funding and OI change have the SAME sign and both exceed thresholds."
+
+  # Proposed: data-quality hole on an allowlisted instrument.
+  # Frozen ETH open_interest value=null, data_quality=partial, obs 01FROZENETHOI0000000000001
+  # Watchlist already says no_trade when ETH OI is missing/partial — there is no alert.
+  instrument_data_partial:
+    enabled: false
+    min_partial_instruments: 1
+    note: "Fire when any BTC/ETH HL state is partial/stale, citing observation ids."
+
+  # Proposed: thesis expected-path break on close brief ("lab wrong so far").
+  # Frozen close: THESIS-0001 expected short BTC, session +2.01% at 2026-03-10T20:15:00Z
+  thesis_path_break:
+    enabled: false
+    min_abs_session_move_pct: 1.0
+    note: "Fire when a paper thesis expected_direction disagrees with session print beyond threshold."
+
+  # Proposed: invalidation proximity for open paper (price vs stated level).
+  # Requires structured invalidation (P2); do not parse free text in v1 of this alert.
+  invalidation_proximity:
+    enabled: false
+    proximity_bps: 50
+    note: "Blocked until invalidation is a typed condition, not a string."
