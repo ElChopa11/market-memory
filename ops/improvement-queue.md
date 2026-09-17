@@ -56,9 +56,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | No Market Pulse work (IMP-002). No order path, no sizing, no live.yaml, no risk-limit edits, no renaming Principal universe `active_calls` fields unless Principal asks. |
 | **Dependencies** | IMP-000 (charter + language rules) — **DONE** (#28). Data freshness for any live-looking inputs. |
 | **Risk level** | Medium (language and process can be misread as calls). |
-| **Status** | IN_PROGRESS |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/31 |
-| **Lesson learned** | *(fill at close)* Historical packs remain evidence; they are not the Board. |
+| **Lesson learned** | Merged to `main` (#31). Board + Quant Cards use a closed verdict set and a language gate. Historical `research/queue/` packs remain evidence; they are not the Board. |
 
 ### IMP-002 — US Market Pulse vertical slice
 
@@ -69,16 +69,16 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Desk product / briefing |
 | **Desk** | Macro & Cross-Asset Desk |
 | **Owner** | Don |
-| **Problem** | Phase 3 Pulse exists as code and runbook, but it is not operated as a Macro desk vertical slice with the reporting template, regime note, and explicit “macro ≠ allocation” cadence. |
-| **Evidence** | `packages/briefing`, `docs/runbooks/market-pulse.md`, `config/briefing/*`, `config/schedules/market-pulse.yaml`; charter gap: no standing cross-asset regime note. |
-| **Proposed outcome** | One vertical slice: US pre-open/open/close context → Pulse brief + optional regime note; desk report fields only; threshold-gated alerts unchanged. |
-| **Definition of done** | Documented desk cadence on top of existing Pulse; regime-note artifact (or explicit deferral); DQ/partial macro quality visible in the report; no new execution or alert-without-threshold path. |
-| **Non-goals** | Turning macro into allocation; enabling live FRED as a silent default; dashboard product; Quant Board. |
-| **Dependencies** | IMP-000. Benefits from Data DQ reports (not blocking). |
+| **Problem** | Phase 3 Pulse exists as code and runbook, but it is not operated as a Macro desk vertical slice with NY/Sydney clocks, DST session status, always-listed cross-asset slots, per-source quality, and an explicit no-decision footer. |
+| **Evidence** | `packages/briefing`, `docs/runbooks/market-pulse.md`, `config/briefing/*`, `config/schedules/market-pulse.yaml`; closed PR #29; charter gap: Pulse not yet a standing desk product. |
+| **Proposed outcome** | One versioned US pre-market brief from retained Market Memory / approved read-only sources. Dual-write DoD path `briefs/YYYY-MM-DD/us-pre-market.md` plus legacy `preopen.md`. Regime note explicitly deferred. |
+| **Definition of done** | Manual `lab brief preopen` produces one versioned US pre-market brief: NY + Sydney generation time; DST-aware US session status; as-of on every market-data section; per-source `fresh\|stale\|partial\|unavailable`; slots always listed (crypto, equity-index proxy, rates, USD, oil, vol); attributable calendar; HL via allowlisted `/info` only; what changed since prior US close from recorded observations when available; informational / no-decision footer; provenance + memory watermark; never invent missing data; tests + committed sample. |
+| **Non-goals** | Turning macro into allocation; enabling live FRED as a silent default; dashboard product; Quant Board rewrite; watchlist MAKE/active-call loops; live.yaml / risk-limit edits; execution/signing. |
+| **Dependencies** | IMP-000 DONE (#28). IMP-001 DONE (#31) — do not reopen. Benefits from Data DQ reports (not blocking). |
 | **Risk level** | Low–medium (partial macro data can be over-read). |
-| **Status** | BACKLOG |
-| **PR** | — |
-| **Lesson learned** | *(fill at close)* |
+| **Status** | IN_PROGRESS |
+| **PR** | *(set on open)* |
+| **Lesson learned** | *(fill at close)* Standing cross-asset regime note is **deferred** (not in this slice). |
 
 ---
 
@@ -87,10 +87,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
 | IMP-000 | Chief of Staff / Hive Coordinator | Don | DONE | [#28](https://github.com/ElChopa11/market-memory/pull/28) merged |
-| IMP-001 | Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | [#31](https://github.com/ElChopa11/market-memory/pull/31) — only active implementation |
-| IMP-002 | Macro & Cross-Asset Desk | Don | BACKLOG | Parked; do not start while IMP-001 is in flight |
+| IMP-001 | Quant & Market Structure Desk | Don/Quant | DONE | [#31](https://github.com/ElChopa11/market-memory/pull/31) merged |
+| IMP-002 | Macro & Cross-Asset Desk | Don | IN_PROGRESS | only active implementation — PR set on open |
 
-`IN_PROGRESS` count: **1** (IMP-001 Quant Review Board). IMP-000 is `DONE`. IMP-002 stays `BACKLOG`.
+`IN_PROGRESS` count: **1** (IMP-002 US Market Pulse). IMP-000 and IMP-001 are `DONE`.
 
 ---
 
@@ -104,7 +104,7 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 | Crypto thesis / HL structure research | Crypto Desk | Research (Coordinator assigns per card) |
 | Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Research (Coordinator assigns per card) |
 | US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002) |
-| Quant packs / future Board | Quant & Market Structure Desk | Don/Quant (IMP-001) |
+| Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
 | `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
 | Paper ledger `lab paper` | Principal-gated lab control | Principal enables; Coordinator operates CLI |
@@ -122,7 +122,7 @@ These are identified so they are not silently treated as existing desks. They ar
 | Post-IPO reclaim screen product | Equities & Post-IPO Desk | Needs Quant language rules (IMP-001) first |
 | Equity-feed ingest; on-chain ingest | Data & Market Memory Desk | Mandate/paid-data/ToS — Principal gate |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
-| Quant Board generator + Quant Cards | Quant & Market Structure Desk | **IMP-001 IN_PROGRESS** |
+| Quant Board generator + Quant Cards | Quant & Market Structure Desk | **IMP-001 DONE** (#31) |
 | Cross-asset regime note cadence | Macro & Cross-Asset Desk | Covered by IMP-002 scope |
 | Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
 | Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |

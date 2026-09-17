@@ -10,6 +10,19 @@ from typing import Any
 ASSET_ORDER = ("ES", "NQ", "US10Y", "DXY", "CL", "VIX", "BTC", "ETH")
 HL_BRIEF_INSTRUMENTS = ("BTC", "ETH")
 
+# Principal Phase 2 required snapshot slots. Symbols are proxies; missing stays listed.
+REQUIRED_SLOTS = ("crypto", "equity-index proxy", "rates", "USD", "oil", "vol")
+SLOT_FOR_SYMBOL = {
+    "ES": "equity-index proxy",
+    "NQ": "equity-index proxy",
+    "US10Y": "rates",
+    "DXY": "USD",
+    "CL": "oil",
+    "VIX": "vol",
+    "BTC": "crypto",
+    "ETH": "crypto",
+}
+
 # Display vocabulary for Market Pulse (Principal Phase 2). Storage/DB stays ok|stale|…
 PULSE_QUALITY = ("fresh", "stale", "partial", "unavailable")
 
@@ -85,6 +98,10 @@ def overall_pulse_quality(*values: str | None) -> str:
     return "partial"
 
 
+def slot_label(symbol: str) -> str:
+    return SLOT_FOR_SYMBOL.get(symbol.upper(), "other")
+
+
 @dataclass(frozen=True)
 class AssetPrint:
     symbol: str
@@ -120,6 +137,10 @@ class AssetPrint:
         if self.unit == "%":
             return delta * 100.0
         return None
+
+    @property
+    def slot(self) -> str:
+        return SLOT_FOR_SYMBOL.get(self.symbol, "other")
 
 
 @dataclass(frozen=True)

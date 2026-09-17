@@ -9,27 +9,27 @@ Data quality: partial
 
 ## What moved
 
-| Symbol | Last | Prior close | Change | prior US close (session) | Source | As-of | Quality |
-|---|---:|---:|---:|---|---|---|---|
-| ES | 5780.00 | 5720.00 | +1.05% | S&P 500 futures | fixture | 2026-03-10T20:15:00+00:00 | fresh |
-| NQ | 20620.00 | 20400.00 | +1.08% | Nasdaq 100 futures | fixture | 2026-03-10T20:15:00+00:00 | fresh |
-| US10Y | 4.31 | 4.22 | +9.0bp | US 10Y yield | fixture | 2026-03-10T20:15:00+00:00 | fresh |
-| DXY | 103.55 | 104.20 | -0.62% | US Dollar Index | fixture | 2026-03-10T20:15:00+00:00 | fresh |
-| CL | 79.10 | 77.20 | +2.46% | WTI crude | fixture | 2026-03-10T20:15:00+00:00 | fresh |
-| VIX | 15.40 | 17.80 | -13.48% | CBOE Volatility Index | fixture | 2026-03-10T20:15:00+00:00 | fresh |
-| BTC | 66100.00 | 64800.00 | +2.01% | Bitcoin | fixture | 2026-03-10T20:15:00+00:00 | fresh |
-| ETH | 3520.00 | 3480.00 | +1.15% | Ether | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| Slot | Symbol | Last | Prior close | Change | prior US close (session) | Source | As-of | Quality |
+|---|---|---:|---:|---:|---|---|---|---|
+| equity-index proxy | ES | 5780.00 | 5720.00 | +1.05% | S&P 500 futures | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| equity-index proxy | NQ | 20620.00 | 20400.00 | +1.08% | Nasdaq 100 futures | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| rates | US10Y | 4.31 | 4.22 | +9.0bp | US 10Y yield | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| USD | DXY | 103.55 | 104.20 | -0.62% | US Dollar Index | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| oil | CL | 79.10 | 77.20 | +2.46% | WTI crude | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| vol | VIX | 15.40 | 17.80 | -13.48% | CBOE Volatility Index | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| crypto | BTC | 66100.00 | 64800.00 | +2.01% | Bitcoin | fixture | 2026-03-10T20:15:00+00:00 | fresh |
+| crypto | ETH | 3520.00 | 3480.00 | +1.15% | Ether | fixture | 2026-03-10T20:15:00+00:00 | fresh |
 
 Overnight reference:
 
-- ES (S&P 500 futures): last 5750.00 / +0.52% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
-- NQ (Nasdaq 100 futures): last 20500.00 / +0.49% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
-- US10Y (US 10Y yield): last 4.28 / +6.0bp [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
-- DXY (US Dollar Index): last 103.80 / -0.38% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
-- CL (WTI crude): last 78.50 / +1.68% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
-- VIX (CBOE Volatility Index): last 16.20 / -8.99% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
-- BTC (Bitcoin): last 65500.00 / +1.08% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
-- ETH (Ether): last 3550.00 / +2.01% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- ES [equity-index proxy] (S&P 500 futures): last 5750.00 / +0.52% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- NQ [equity-index proxy] (Nasdaq 100 futures): last 20500.00 / +0.49% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- US10Y [rates] (US 10Y yield): last 4.28 / +6.0bp [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- DXY [USD] (US Dollar Index): last 103.80 / -0.38% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- CL [oil] (WTI crude): last 78.50 / +1.68% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- VIX [vol] (CBOE Volatility Index): last 16.20 / -8.99% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- BTC [crypto] (Bitcoin): last 65500.00 / +1.08% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
+- ETH [crypto] (Ether): last 3550.00 / +2.01% [quality=fresh; source=fixture; as-of=2026-03-10T20:15:00+00:00; obs none]
 
 ## What was unexpected
 

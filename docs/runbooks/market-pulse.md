@@ -4,7 +4,7 @@ Australia/Sydney is the ops timezone for humans. **US session wall-clock is `Ame
 
 This runbook does **not** enable live trading, wallets, or signing. Briefing is read-only.
 
-Plan: [docs/plans/phase2-us-market-pulse.md](../plans/phase2-us-market-pulse.md).
+Plan: [ops/plans/IMP-002-us-market-pulse.md](../../ops/plans/IMP-002-us-market-pulse.md).
 
 ## What it produces
 

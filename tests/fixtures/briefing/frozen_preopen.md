@@ -21,34 +21,35 @@ HL origin: hyperliquid.info
 ## Cross-asset snapshot
 
 Section as-of: 2026-03-10T12:00:00+00:00 (capture/quote time — not an exchange-event clock unless the source says so)
+Required slots (always listed): crypto, equity-index proxy, rates, USD, oil, vol. Unavailable is shown, never invented.
 
-| Symbol | Last | Prior close | Change | Name | Source | As-of | Quality |
-|---|---:|---:|---:|---|---|---|---|
-| ES | 5750.00 | 5720.00 | +0.52% | S&P 500 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| NQ | 20500.00 | 20400.00 | +0.49% | Nasdaq 100 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| US10Y | 4.28 | 4.22 | +6.0bp | US 10Y yield | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| DXY | 103.80 | 104.20 | -0.38% | US Dollar Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| CL | 78.50 | 77.20 | +1.68% | WTI crude | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| VIX | 16.20 | 17.80 | -8.99% | CBOE Volatility Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| BTC | 65500.00 | 64800.00 | +1.08% | Bitcoin | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| ETH | 3550.00 | 3480.00 | +2.01% | Ether | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| Slot | Symbol | Last | Prior close | Change | Name | Source | As-of | Quality |
+|---|---|---:|---:|---:|---|---|---|---|
+| equity-index proxy | ES | 5750.00 | 5720.00 | +0.52% | S&P 500 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| equity-index proxy | NQ | 20500.00 | 20400.00 | +0.49% | Nasdaq 100 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| rates | US10Y | 4.28 | 4.22 | +6.0bp | US 10Y yield | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| USD | DXY | 103.80 | 104.20 | -0.38% | US Dollar Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| oil | CL | 78.50 | 77.20 | +1.68% | WTI crude | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| vol | VIX | 16.20 | 17.80 | -8.99% | CBOE Volatility Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| crypto | BTC | 65500.00 | 64800.00 | +1.08% | Bitcoin | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| crypto | ETH | 3550.00 | 3480.00 | +2.01% | Ether | fixture | 2026-03-10T12:00:00+00:00 | fresh |
 
 ## What changed since prior US close
 
 Prior US close watermark: 2026-03-09T20:00:00+00:00
 Figures below are recorded prints vs that close; missing slots stay unavailable (not invented).
 
-- ES (S&P 500 futures): last 5750.00 / +0.52% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- NQ (Nasdaq 100 futures): last 20500.00 / +0.49% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- US10Y (US 10Y yield): last 4.28 / +6.0bp [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- DXY (US Dollar Index): last 103.80 / -0.38% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- CL (WTI crude): last 78.50 / +1.68% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- VIX (CBOE Volatility Index): last 16.20 / -8.99% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- BTC (Bitcoin): last 65500.00 / +1.08% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- ETH (Ether): last 3550.00 / +2.01% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- HL comparison vs prior US close 2026-03-09T20:00:00+00:00:
-  - BTC: OI +20.05% vs prior print; funding 0.000400; mid 65500 [quality=fresh; source=hyperliquid.info]
-  - ETH: funding -0.000100; mid 3550 [quality=partial; source=hyperliquid.info]
+- ES [equity-index proxy] (S&P 500 futures): last 5750.00 / +0.52% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- NQ [equity-index proxy] (Nasdaq 100 futures): last 20500.00 / +0.49% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- US10Y [rates] (US 10Y yield): last 4.28 / +6.0bp [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- DXY [USD] (US Dollar Index): last 103.80 / -0.38% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- CL [oil] (WTI crude): last 78.50 / +1.68% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- VIX [vol] (CBOE Volatility Index): last 16.20 / -8.99% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- BTC [crypto] (Bitcoin): last 65500.00 / +1.08% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- ETH [crypto] (Ether): last 3550.00 / +2.01% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- HL vs prior US close 2026-03-09T20:00:00+00:00 (close-to-close change only when a prior observation exists; current snapshot is labeled, not invented as a move):
+  - BTC: OI +20.05% vs prior print; current funding 0.000400 (snapshot, not a close-to-close delta); current mid 65500 (snapshot, not a close-to-close delta) [quality=fresh; source=hyperliquid.info]
+  - ETH: OI change unavailable (no retained observation at/before prior US close); current funding -0.000100 (snapshot, not a close-to-close delta); current mid 3550 (snapshot, not a close-to-close delta) [quality=partial; source=hyperliquid.info]
 
 ## Today's market-event calendar
 

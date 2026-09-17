@@ -12,7 +12,7 @@ from mm_briefing.config import load_briefing_settings
 from mm_briefing.engine import generate_from_fixture, generate_preopen, load_fixture_file
 from mm_briefing.fetchers import LiveMacroFetcher, complete_cross_asset, empty_snapshot, snapshot_from_payload
 from mm_briefing.hl import hl_from_live_info, hl_from_payload
-from mm_briefing.models import pulse_quality
+from mm_briefing.models import REQUIRED_SLOTS, pulse_quality
 from mm_briefing.render import NO_DECISION_FOOTER
 from mm_briefing.store import dod_relpath, write_brief
 from mm_ingest.hl_info import ALLOWED_INFO_TYPES, HyperliquidInfoClient
@@ -29,6 +29,7 @@ def test_missing_cross_asset_slots_are_unavailable_not_omitted() -> None:
     snap = complete_cross_asset(empty_snapshot(AS_OF, PRIOR, reason="off", source="off"))
     symbols = [row.symbol for row in snap.assets]
     assert symbols[:8] == ["ES", "NQ", "US10Y", "DXY", "CL", "VIX", "BTC", "ETH"]
+    assert {row.slot for row in snap.assets} >= set(REQUIRED_SLOTS)
     assert all(row.data_quality == "unavailable" for row in snap.assets)
     assert snap.by_symbol()["US10Y"].source == "fred"
     assert snap.by_symbol()["ES"].source == "stooq"
@@ -56,6 +57,7 @@ def test_stale_and_unavailable_appear_in_markdown() -> None:
     doc = generate_preopen(as_of=AS_OF, settings=settings, macro=macro, hl=hl, generated_at=AS_OF)
     assert "| ES |" in doc.markdown
     assert "| US10Y |" in doc.markdown
+    assert "equity-index proxy" in doc.markdown
     assert "unavailable" in doc.markdown
     assert "stale" in doc.markdown
     assert "n/a" in doc.markdown
@@ -76,6 +78,33 @@ def test_provenance_links_and_watermark() -> None:
     assert "null (snapshot; capture is as_of_knowledge / ingested_at)" in doc.markdown or "market_time" in doc.markdown
     assert "As-of knowledge:" in doc.markdown
     assert all(line in doc.markdown for line in NO_DECISION_FOOTER)
+    for slot in REQUIRED_SLOTS:
+        assert slot in doc.markdown
+
+
+def test_required_slots_listed_when_macro_off() -> None:
+    settings = load_briefing_settings(ROOT)
+    fixture = load_fixture_file(FIXTURE)
+    hl = hl_from_payload(fixture["hyperliquid"])
+    macro = complete_cross_asset(empty_snapshot(AS_OF, PRIOR, reason="off", source="off"))
+    doc = generate_preopen(as_of=AS_OF, settings=settings, macro=macro, hl=hl, generated_at=AS_OF)
+    for slot in REQUIRED_SLOTS:
+        assert slot in doc.markdown
+    assert "unavailable" in doc.markdown
+    assert "n/a" in doc.markdown
+
+
+def test_briefing_tree_has_no_execution_or_signing_surface() -> None:
+    briefing_root = ROOT / "packages" / "briefing"
+    extra = [
+        ROOT / "apps" / "lab-cli" / "src" / "mm_lab_cli" / "briefing.py",
+        ROOT / "apps" / "briefing-worker" / "src" / "mm_briefing_worker" / "__init__.py",
+    ]
+    for path in list(briefing_root.rglob("*.py")) + extra:
+        text = path.read_text(encoding="utf-8")
+        assert "mm_execution" not in text
+        assert "hl_trade" not in text
+        assert "from mm_execution" not in text
 
 
 def test_no_trading_language_in_preopen() -> None:

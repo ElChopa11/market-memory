@@ -20,6 +20,7 @@ from mm_briefing.models import (
     ThesisHook,
     WatchItem,
     pulse_quality,
+    slot_label,
 )
 from mm_briefing.schedule import NY_TZ, SYDNEY_TZ, session_date_for, us_session_status
 
@@ -89,6 +90,7 @@ def render_preopen(
             "## Cross-asset snapshot",
             "",
             f"Section as-of: {iso(macro.as_of)} (capture/quote time — not an exchange-event clock unless the source says so)",
+            "Required slots (always listed): crypto, equity-index proxy, rates, USD, oil, vol. Unavailable is shown, never invented.",
             "",
         ]
     )
@@ -311,8 +313,8 @@ def _asset_table(assets: tuple[AssetPrint, ...], *, vs: str) -> list[str]:
     if not assets:
         return ["- No prints (macro snapshot empty or degraded)."]
     lines = [
-        f"| Symbol | Last | Prior close | Change | {vs} | Source | As-of | Quality |",
-        "|---|---:|---:|---:|---|---|---|---|",
+        f"| Slot | Symbol | Last | Prior close | Change | {vs} | Source | As-of | Quality |",
+        "|---|---|---:|---:|---:|---|---|---|---|",
     ]
     for row in assets:
         if row.unit == "%":
@@ -321,7 +323,7 @@ def _asset_table(assets: tuple[AssetPrint, ...], *, vs: str) -> list[str]:
             change = fmt_pct(row.change_pct)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
         lines.append(
-            f"| {row.symbol} | {fmt_px(row.last)} | {fmt_px(row.prior_close)} | {change} "
+            f"| {slot_label(row.symbol)} | {row.symbol} | {fmt_px(row.last)} | {fmt_px(row.prior_close)} | {change} "
             f"| {row.name} | {row.source} | {as_of} | {pulse_quality(row.data_quality)} |"
         )
     return lines
@@ -339,7 +341,7 @@ def _since_close_bullets(assets: tuple[AssetPrint, ...]) -> list[str]:
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
         obs = row.observation_id or "none"
         lines.append(
-            f"- {row.symbol} ({row.name}): last {fmt_px(row.last)} / {delta} "
+            f"- {row.symbol} [{slot_label(row.symbol)}] ({row.name}): last {fmt_px(row.last)} / {delta} "
             f"[quality={pulse_quality(row.data_quality)}; source={row.source}; as-of={as_of}; obs {obs}]"
         )
     return lines
@@ -348,8 +350,11 @@ def _since_close_bullets(assets: tuple[AssetPrint, ...]) -> list[str]:
 def _hl_since_close(hl: tuple[HLInstrumentState, ...], *, prior_close: datetime) -> list[str]:
     if not hl:
         return ["- Hyperliquid prior-close comparison unavailable (no retained observations)."]
-    lines = [f"- HL comparison vs prior US close {iso(prior_close)}:"]
-    any_metric = False
+    lines = [
+        f"- HL vs prior US close {iso(prior_close)} "
+        "(close-to-close change only when a prior observation exists; current snapshot is labeled, not invented as a move):"
+    ]
+    any_change = False
     for state in hl:
         oi_chg = oi_change_pct(state)
         funding = funding_value(state)
@@ -357,13 +362,13 @@ def _hl_since_close(hl: tuple[HLInstrumentState, ...], *, prior_close: datetime)
         bits: list[str] = []
         if oi_chg is not None:
             bits.append(f"OI {oi_chg:+.2f}% vs prior print")
-            any_metric = True
+            any_change = True
+        else:
+            bits.append("OI change unavailable (no retained observation at/before prior US close)")
         if funding is not None:
-            bits.append(f"funding {funding:.6f}")
-            any_metric = True
+            bits.append(f"current funding {funding:.6f} (snapshot, not a close-to-close delta)")
         if mid and mid.value:
-            bits.append(f"mid {mid.value}")
-            any_metric = True
+            bits.append(f"current mid {mid.value} (snapshot, not a close-to-close delta)")
         if not bits:
             lines.append(
                 f"  - {state.instrument}: unavailable "
@@ -374,7 +379,7 @@ def _hl_since_close(hl: tuple[HLInstrumentState, ...], *, prior_close: datetime)
                 f"  - {state.instrument}: {'; '.join(bits)} "
                 f"[quality={pulse_quality(state.data_quality)}; source={state.source}]"
             )
-    if not any_metric:
+    if not any_change and not any(state.metrics for state in hl):
         lines.append("- HL prior-close comparison unavailable (no retained observation before prior US close).")
     return lines
 

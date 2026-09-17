@@ -16,4 +16,4 @@ uv run lab brief preopen --fixture tests/fixtures/briefing/frozen_day.json --no-
 uv run lab brief preopen --live --no-db
 ```
 
-See [docs/runbooks/market-pulse.md](../docs/runbooks/market-pulse.md) and [docs/plans/phase2-us-market-pulse.md](../docs/plans/phase2-us-market-pulse.md).
+See [docs/runbooks/market-pulse.md](../docs/runbooks/market-pulse.md) and [ops/plans/IMP-002-us-market-pulse.md](../ops/plans/IMP-002-us-market-pulse.md).

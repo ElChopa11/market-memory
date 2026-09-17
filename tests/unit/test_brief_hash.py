@@ -33,6 +33,8 @@ def test_frozen_preopen_hash_is_deterministic() -> None:
     assert "Invalidation" in first.markdown
     assert "Informational only" in first.markdown
     assert "no decision" in first.markdown.lower()
+    assert "equity-index proxy" in first.markdown
+    assert "Required slots" in first.markdown
     assert first.data_quality in {"ok", "partial", "fresh", "unavailable", "stale"}
 
 
