@@ -11,7 +11,9 @@ research/
   YYYY/
     THESIS-XXXX/
       intent.md              # required before thesis
-      thesis.md
+      thesis.md              # lifecycle spine
+      crypto-thesis-card.md  # Crypto Desk card when instrument is a locked crypto perp (IMP-007)
+      equities-thesis-card.md  # Equities desk card when instrument is a locked equity (IMP-007)
       research-plan.md
       evidence/links.md      # observation ids; required before in_skeptic
       backtests/             # Phase 4
@@ -42,4 +44,4 @@ uv run lab equities reclaim-screen \
   --no-db
 ```
 
-See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md).
+See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md). Dedicated desk cards (IMP-007; Crypto / Equities): [docs/runbooks/thesis-cards.md](../docs/runbooks/thesis-cards.md).

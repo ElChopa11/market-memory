@@ -160,9 +160,30 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | https://github.com/ElChopa11/market-memory/pull/36 |
 | **Lesson learned** | Merged to `main` (#36). `lab equities reclaim-screen` writes a screen-only Post-IPO/reclaim triage (`config/equities/post_ipo_reclaim.yaml`); closed Quant verdicts; does not expand `in_universe`. Fixture sample CRCL/HOOD `DEFER` / `partial`. Not a trading decision. |
 
+### IMP-007 — Dedicated crypto + equities thesis-card templates
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-007 |
+| **Priority** | P1 |
+| **Type** | Docs / desk product (templates) |
+| **Desk** | Crypto Desk + Equities & Post-IPO Desk |
+| **Owner** | Don/Research |
+| **Problem** | Charters name crypto and equity thesis cards, but only generic `templates/thesis.md` exists. Cards lack IMP-001 closed verdicts, IMP-005 membership vocabulary, provenance fields, and an Independent Skeptic stub. Queue packs are not reusable desk cards. |
+| **Evidence** | [desk-charters.md](desk-charters.md) Crypto / Equities artifacts; this queue’s former Gap row; generic `templates/thesis.md`; IMP-001 closed verdicts; IMP-005 `in_universe` / `watch_only`. |
+| **Proposed outcome** | Dedicated `templates/crypto-thesis-card.md` and `templates/equities-thesis-card.md`. Generic `thesis.md` stays the lifecycle spine. `lab thesis new` copies the matching desk card for locked membership names. |
+| **Definition of done** | Queue hygiene: IMP-004/005/006 DONE; this item `IN_PROGRESS` (only one). Plan file; two templates with closed verdicts, membership keys, provenance, Skeptic stub, explicit non-goals; short runbook; language lint + unit tests; `uv run pytest` + lifecycle; non-draft PR to main; do not merge. |
+| **Non-goals** | No Pulse/Stooq/FRED; no execution/signing/`live.yaml`/risk-limit edits; no paid data; no ToS-violating scrapes; no universe expansion; no Telegram; no secrets; no MAKE/buy/sell/sizing; no replacing `thesis.md`; no Quant Board rewrite. |
+| **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-006 DONE (#36) for Equities screen vs card boundary. |
+| **Risk level** | Low (templates). Process risk if operators treat a desk card as a call or skip Skeptic. |
+| **Status** | IN_PROGRESS |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
+
 ---
 
 ## Status board
+
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
@@ -173,8 +194,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-004 | Data & Market Memory Desk + Macro & Cross-Asset Desk | Don/Data+Macro | DONE | [#34](https://github.com/ElChopa11/market-memory/pull/34) — Pulse source hardening |
 | IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
 | IMP-006 | Equities & Post-IPO Desk | Don/Equities | DONE | [#36](https://github.com/ElChopa11/market-memory/pull/36) merged |
+| IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | IN_PROGRESS | this PR — dedicated thesis-card templates |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-006 are `DONE`. Next Gap is unseeded.
+`IN_PROGRESS` count: **1** (IMP-007 thesis-card templates). IMP-000–IMP-006 are `DONE`.
+
 
 ---
 
@@ -185,8 +208,8 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 | Area | Desk | Owner (accountable) |
 |---|---|---|
 | Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory Desk | Data desk (unassigned human; Coordinator until named) |
-| Crypto thesis / HL structure research | Crypto Desk | Research (Coordinator assigns per card) |
-| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Equities (IMP-006 DONE) |
+| Crypto thesis / HL structure research | Crypto Desk | Don/Research (IMP-007 thesis cards) |
+| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Research (IMP-006 screen DONE; IMP-007 thesis cards) |
 | US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE; IMP-004 DONE) |
 | Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
@@ -201,7 +224,6 @@ These are identified so they are not silently treated as existing desks. They ar
 
 | Gap | Desk that would own | Why not queued now |
 |---|---|---|
-| Dedicated crypto / equity thesis-card templates | Crypto Desk; Equities & Post-IPO Desk | Generic `templates/thesis.md` suffices until a later intake |
 | Equity-feed ingest; on-chain ingest | Data & Market Memory Desk | Mandate/paid-data/ToS — Principal gate |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
 | Quant pack rewrite (templates / pack workflow) | Quant & Market Structure Desk | IMP-001 plan placeholder; **not** assigned IMP-003 (source-health took that ID) |
@@ -215,6 +237,8 @@ Historical “active calls” language debt was a Gap; it is now **IMP-005 DONE*
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
+Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-007 IN_PROGRESS**. Generic `thesis.md` stays the lifecycle spine.
+
 ## Reconciliation notes
 
 - No `ops/improvement-queue.md` existed on `main` or on parked agent branches.
@@ -224,3 +248,4 @@ Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do 
 - IMP-005 merged as #35 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-006.
 - IMP-006 merged as #36 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-004 rebase onto `main`.
 - IMP-004 (#34) rebased onto `main` after #35/#36; Pulse/source-health hardening lands here. Membership vocab stays `in_universe` / `watch_only`.
+- IMP-007 intakes the former thesis-template Gap. Single-threaded: only this item is `IN_PROGRESS`.

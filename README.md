@@ -16,6 +16,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md) | Market Pulse: US pre-market (`briefs/YYYY-MM-DD/us-pre-market.md`), close, alert-check, DST |
 | [docs/runbooks/source-health.md](docs/runbooks/source-health.md) | Standing DQ / source-health report (`ops/reports/source-health/YYYY-MM-DD.md`) |
 | [docs/runbooks/post-ipo-reclaim.md](docs/runbooks/post-ipo-reclaim.md) | Equities Post-IPO / reclaim screen (`research/screens/post-ipo-reclaim/YYYY-MM-DD.md`) |
+| [docs/runbooks/thesis-cards.md](docs/runbooks/thesis-cards.md) | Crypto / Equities thesis cards (`templates/crypto-thesis-card.md`, `templates/equities-thesis-card.md`) |
 | [docs/runbooks/backtest.md](docs/runbooks/backtest.md) | **Phase 4 how-to:** reproducible fixture backtest |
 | [docs/runbooks/paper-trade.md](docs/runbooks/paper-trade.md) | **Phase 4 how-to:** open/close shadow paper trades |
 | [AGENTS.md](AGENTS.md) | Role permissions (Research **cannot** access trading credentials) |
@@ -51,7 +52,7 @@ uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
 # 5. Point-in-time query (as_of_knowledge <= T — never published_at / market_time)
 uv run lab what-did-we-know --at 2026-09-10T00:00:00Z
 
-# 6. Thesis workspace from intent
+# 6. Thesis workspace from intent (desk card copied for locked crypto/equity names)
 uv run lab thesis new --goal "BTC funding fade after crowding" --owner Research --instrument BTC --no-db
 
 # 7. Frozen-day Market Pulse brief (deterministic content hash)

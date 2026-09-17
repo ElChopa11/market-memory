@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 REQUIRED_TEMPLATES = [
     "intent.md",
     "thesis.md",
+    "crypto-thesis-card.md",
+    "equities-thesis-card.md",
     "research-plan.md",
     "skeptic-review.md",
     "unicorn-card.md",
@@ -74,8 +76,10 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-001-quant-review-board.md",
         "ops/plans/IMP-005-active-call-language-debt.md",
         "ops/plans/IMP-006-post-ipo-reclaim-screen.md",
+        "ops/plans/IMP-007-thesis-card-templates.md",
         "config/equities/post_ipo_reclaim.yaml",
         "docs/runbooks/post-ipo-reclaim.md",
+        "docs/runbooks/thesis-cards.md",
     ):
         assert (ROOT / rel).exists(), rel
 

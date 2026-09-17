@@ -160,11 +160,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 - Treat Quant `RESEARCH_PRIORITY` or universe `in_universe` membership as an order.
 - Author and Skeptic-approve the same thesis.
 
-**Artifacts.** Crypto thesis card; crypto market-pulse contribution.
+**Artifacts.** Crypto thesis card (`templates/crypto-thesis-card.md`; IMP-007); crypto market-pulse contribution.
 
-**Exists today.** HL public `/info` ingest (BTC, ETH, UNI, AAVE perps); generic `templates/thesis.md` + `research/` workspaces; queue cards under `research/queue/` (e.g. QUANT-20260917, UNIVERSE-20260917). UNI/AAVE/ETH are watch-only for thesis-priority membership; BTC remains the crypto in-universe name in `config/universe.yaml` (Principal membership language — not a Quant Board verdict).
+**Exists today.** HL public `/info` ingest (BTC, ETH, UNI, AAVE perps); generic `templates/thesis.md` + dedicated `templates/crypto-thesis-card.md`; `research/` workspaces; queue cards under `research/queue/` (e.g. QUANT-20260917, UNIVERSE-20260917). UNI/AAVE/ETH are watch-only for thesis-priority membership; BTC remains the crypto in-universe name in `config/universe.yaml` (Principal membership language — not a Quant Board verdict).
 
-**Gap.** No dedicated crypto thesis-card template; no on-chain ingest; no funding/OI/basis desk product with a standing cadence; live HL refresh can be rate-limited (DQ, not a trading signal).
+**Gap.** No on-chain ingest; no funding/OI/basis desk product with a standing cadence; live HL refresh can be rate-limited (DQ, not a trading signal). Dedicated crypto thesis-card template is IMP-007.
 
 ---
 
@@ -185,11 +185,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 - Invent catalysts, skip liquidity, or skip invalidation.
 - Access execution. Author and approve the same thesis.
 
-**Artifacts.** Equity thesis card; post-IPO reclaim screen (`lab equities reclaim-screen`; IMP-006).
+**Artifacts.** Equity thesis card (`templates/equities-thesis-card.md`; IMP-007); post-IPO reclaim screen (`lab equities reclaim-screen`; IMP-006).
 
-**Exists today.** Equity names on `config/universe.yaml` as Phase 3 briefing / future equity-feed watchlist (not Hyperliquid); queue cards (UNIVERSE call cards, WATCHLIST-DD, EXPECTATIONS scorecard); generic thesis template; screen-only Post-IPO / reclaim universe `config/equities/post_ipo_reclaim.yaml` (not membership).
+**Exists today.** Equity names on `config/universe.yaml` as Phase 3 briefing / future equity-feed watchlist (not Hyperliquid); queue cards (UNIVERSE call cards, WATCHLIST-DD, EXPECTATIONS scorecard); generic thesis template plus dedicated `templates/equities-thesis-card.md`; screen-only Post-IPO / reclaim universe `config/equities/post_ipo_reclaim.yaml` (not membership).
 
-**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline; no dedicated equity thesis-card template. Post-IPO reclaim screen product is IMP-006 (**DONE** #36). Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
+**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline. Dedicated equity thesis-card template is IMP-007. Post-IPO reclaim screen product is IMP-006 (**DONE** #36). Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
 
 ---
 
@@ -347,7 +347,7 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 | `config/ingest.yaml`, `config/instruments/perps.yaml` | Data & Market Memory Desk | Exists |
 | Equity names on `config/universe.yaml` | Equities & Post-IPO Desk (watchlist) + Data & Market Memory Desk (future feed) | Membership exists; **no equity ingest** |
 | `lab equities reclaim-screen` / `config/equities/post_ipo_reclaim.yaml` / `research/screens/post-ipo-reclaim/` | Equities & Post-IPO Desk | IMP-006 DONE (screen-only; not membership) |
-| `lab thesis` / `templates/{intent,thesis,research-plan,evidence-links}` / `research/YYYY/` | Crypto Desk / Equities & Post-IPO Desk / Macro & Cross-Asset Desk | Exists (generic, not desk-specific cards) |
+| `lab thesis` / `templates/{intent,thesis,crypto-thesis-card,equities-thesis-card,research-plan,evidence-links}` / `research/YYYY/` | Crypto Desk / Equities & Post-IPO Desk / Macro & Cross-Asset Desk | Exists (IMP-007 desk cards + generic spine) |
 | `research/queue/` cards | Research desks + Quant & Market Structure Desk (ad-hoc) | Exists; not the Board |
 | Market Pulse preopen/close/alert-check | Macro & Cross-Asset Desk | Exists (Phase 3) |
 | `config/briefing/macro.yaml`, calendar, divergences, alerts | Macro & Cross-Asset Desk | Exists; live macro opt-in |
