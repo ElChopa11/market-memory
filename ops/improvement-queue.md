@@ -97,7 +97,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-002 DONE (#32) — evidence, not a blocker. |
 | **Risk level** | Low (read-only probes). Process risk if operators treat health copy as a brief. |
 | **Status** | IN_PROGRESS |
-| **PR** | *(this PR — fill URL on open)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/33 |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -109,7 +109,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-000 | Chief of Staff / Hive Coordinator | Don | DONE | [#28](https://github.com/ElChopa11/market-memory/pull/28) merged |
 | IMP-001 | Quant & Market Structure Desk | Don/Quant | DONE | [#31](https://github.com/ElChopa11/market-memory/pull/31) merged |
 | IMP-002 | Macro & Cross-Asset Desk | Don | DONE | [#32](https://github.com/ElChopa11/market-memory/pull/32) merged |
-| IMP-003 | Data & Market Memory Desk | Don/Data | IN_PROGRESS | standing source-health report — only active implementation |
+| IMP-003 | Data & Market Memory Desk | Don/Data | IN_PROGRESS | [#33](https://github.com/ElChopa11/market-memory/pull/33) — only active implementation |
 
 `IN_PROGRESS` count: **1** (IMP-003 source-health). IMP-000, IMP-001, and IMP-002 are `DONE`.
 
