@@ -84,15 +84,36 @@ def test_controlled_universe_is_locked_2026_09_17() -> None:
     assert universe["status"] == "locked"
     assert universe["crypto_perps"] == ["BTC", "ETH", "UNI", "AAVE"]
     assert universe["equities"] == ["NVDA", "AVGO", "SMH", "MSFT", "META", "JPM", "XLF", "XOM"]
+    assert universe["active_calls"]["crypto_perps"] == ["BTC", "ETH"]
+    assert universe["active_calls"]["equities"] == ["NVDA", "AVGO", "MSFT", "META", "JPM", "XLF", "XOM"]
+    assert universe["watch_only"]["crypto_perps"] == ["UNI", "AAVE"]
+    assert universe["watch_only"]["equities"] == ["SMH"]
     assert universe["deferred_must_cut"]["crypto"] == ["HYPE", "SOL", "XRP", "ARB", "NEAR", "LINK"]
     assert universe["deferred_must_cut"]["equities"] == ["GLD", "LLY"]
     notes = "\n".join(universe.get("notes") or [])
     assert "Intent-level watchlist only" in notes
+    assert "not all survivors are equal priority" in notes
     assert "UNIVERSE-20260917-shortlist.md" in notes
     assert "UNIVERSE-20260917-skeptic-review.md" in notes
-    active = set(universe["crypto_perps"]) | set(universe["equities"])
+    assert "UNIVERSE-20260917-call-cards.md" in notes
+    assert "PR #13" in notes
+    assert "UNIVERSE-20260917-call-cards-skeptic.md" in notes
+    assert "PR #14" in notes
+    membership = set(universe["crypto_perps"]) | set(universe["equities"])
+    active_calls = set(universe["active_calls"]["crypto_perps"]) | set(universe["active_calls"]["equities"])
+    watch_only = set(universe["watch_only"]["crypto_perps"]) | set(universe["watch_only"]["equities"])
     deferred = set(universe["deferred_must_cut"]["crypto"]) | set(universe["deferred_must_cut"]["equities"])
-    assert not (active & deferred)
+    assert active_calls.isdisjoint(watch_only)
+    assert active_calls | watch_only == membership
+    assert set(universe["active_calls"]["crypto_perps"]) | set(universe["watch_only"]["crypto_perps"]) == set(
+        universe["crypto_perps"]
+    )
+    assert set(universe["active_calls"]["equities"]) | set(universe["watch_only"]["equities"]) == set(
+        universe["equities"]
+    )
+    assert not (membership & deferred)
+    assert not (active_calls & deferred)
+    assert not (watch_only & deferred)
 
 
 def test_hl_perps_match_locked_universe() -> None:
@@ -102,6 +123,8 @@ def test_hl_perps_match_locked_universe() -> None:
     assert enabled == universe["crypto_perps"]
     assert data["kind"] == "perpetual"
     assert data["venue"] == "hyperliquid"
+    # Watch-only crypto still ingest; demotion is research/call priority, not membership.
+    assert set(universe["watch_only"]["crypto_perps"]).issubset(set(enabled))
     equity_names = set(universe["equities"]) | set(universe["deferred_must_cut"]["equities"])
     assert not (set(enabled) & equity_names), "equities are briefing/future-feed watchlist, not HL ingest"
     deferred_crypto = set(universe["deferred_must_cut"]["crypto"])

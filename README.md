@@ -19,7 +19,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [AGENTS.md](AGENTS.md) | Role permissions (Research **cannot** access trading credentials) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
 
-Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17): Hyperliquid ingest is **BTC, ETH, UNI, AAVE** perps; equities (NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM) are a Phase 3 briefing / future equity-feed watchlist, not HL. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
+Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17). Ingest membership stays full: Hyperliquid **BTC, ETH, UNI, AAVE** perps; equities **NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM** are a Phase 3 briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority** — **active calls** (thesis priority): BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM; **watch-only** (no active call): UNI, AAVE, SMH (Skeptic PR #14 / call cards PR #13). Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY) stay archived. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 
 ## Boot local dev (Phase 4)
 

@@ -52,4 +52,4 @@ Definition-of-done gates: [research-lifecycle.md](research-lifecycle.md). Role p
 
 **Out (this repo phase and several after):** autonomous live trading, multi-venue execution, wallet automation, always-on multi-agent hive, Unicorn as a product surface, social scraping at scale.
 
-Default Hyperliquid instruments: **BTC, ETH, UNI, AAVE perps** (Principal lock 2026-09-17 in `config/universe.yaml`). Equities on that file are a briefing / future equity-feed watchlist, not HL. Live trading is **hard-gated** until the Principal explicitly promotes after later-phase acceptance.
+Default Hyperliquid **ingest** instruments: **BTC, ETH, UNI, AAVE perps** (Principal lock 2026-09-17 in `config/universe.yaml` — full membership kept). Equities on that file are a briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority**: active calls (thesis work) are BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM; UNI, AAVE, and SMH are watch-only (no active call) after Skeptic PR #14 vs call cards PR #13. Live trading is **hard-gated** until the Principal explicitly promotes after later-phase acceptance.
