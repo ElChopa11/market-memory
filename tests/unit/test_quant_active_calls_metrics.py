@@ -66,7 +66,6 @@ def test_naive_funding_annualization() -> None:
 
 
 def test_windowed_cross_corr_uses_trailing_pairs() -> None:
-    sys.path.insert(0, str(PACK))
     import run_pack as pack
 
     dates_aligned = {
@@ -79,6 +78,9 @@ def test_windowed_cross_corr_uses_trailing_pairs() -> None:
     assert n_w == 2
     assert matrix_full["A"]["B"] is not None
     assert matrix_w["A"]["A"] == 1.0
+
+
+def test_quant_pack_is_not_a_thesis_workspace() -> None:
     from mm_research_kit.lifecycle import discover_workspaces, is_thesis_workspace
 
     assert PACK.is_dir()
