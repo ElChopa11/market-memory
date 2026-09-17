@@ -149,7 +149,7 @@ def main() -> int:
         stats = _persist(dsn, envelopes, store)
         summary["steps"].append({"feed": "snapshots", **stats})
 
-        # BTC historical first; ETH historical only if BTC succeeds (cheap follow-on).
+        # BTC historical first; ETH is a cheap follow-on (partial success if a later call 429s).
         historical_coins = ["BTC", "ETH"] if "ETH" in instruments else ["BTC"]
         for coin in historical_coins:
             try:
