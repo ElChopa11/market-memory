@@ -150,3 +150,4 @@ Coordinator CLI: `lab thesis new|link-evidence|advance|list`, `lab skeptic open|
 - Risk never uses an LLM at order time.
 - Execution (later) accepts only typed intents that already passed Risk.
 - All promotions are git-reviewed + Principal-signed.
+- Desk pipeline and Principal-only gates: [ops/desk-charters.md](../ops/desk-charters.md), [ops/decision-rights.md](../ops/decision-rights.md).

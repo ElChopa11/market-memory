@@ -17,6 +17,9 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [docs/runbooks/backtest.md](docs/runbooks/backtest.md) | **Phase 4 how-to:** reproducible fixture backtest |
 | [docs/runbooks/paper-trade.md](docs/runbooks/paper-trade.md) | **Phase 4 how-to:** open/close shadow paper trades |
 | [AGENTS.md](AGENTS.md) | Role permissions (Research **cannot** access trading credentials) |
+| [ops/desk-charters.md](ops/desk-charters.md) | Desk operating model (private research lab, not a fund) |
+| [ops/decision-rights.md](ops/decision-rights.md) | Propose / challenge / veto / approve — Principal-only gates |
+| [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
 
 Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17). Ingest membership stays full: Hyperliquid **BTC, ETH, UNI, AAVE** perps; equities **NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM** are a Phase 3 briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority** — **active calls** (thesis priority): BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM; **watch-only** (no active call): UNI, AAVE, SMH (Skeptic PR #14 / call cards PR #13). Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY) stay archived. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
@@ -77,6 +80,7 @@ uv run briefing-worker next --from 2026-03-06T00:00:00Z --days 5
 ```text
 ADR/              architecture decisions
 docs/             founding brief, security, lifecycle, runbooks
+ops/              desk charters, decision rights, improvement queue
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
