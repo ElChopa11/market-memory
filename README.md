@@ -88,7 +88,6 @@ templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
 config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe
-ops/              continuous-improvement queue + IMP plans
 packages/         common, memory, ingest, provenance, briefing, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)

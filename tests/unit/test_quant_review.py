@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import re
 
 import pytest
 import yaml
@@ -291,6 +292,9 @@ def test_output_has_no_call_sizing_or_order_language() -> None:
     assert "active-call" not in lowered
     assert "MAKE" not in blob
     assert "buy now" not in lowered
+    assert re.search(r"\bbuy\b", lowered) is None
+    assert re.search(r"\bsell\b", lowered) is None
+    assert "high confidence" not in lowered
     assert "position size" not in lowered
     for card in result.cards:
         if LABEL_RELATIVE_VALUE in card.labels:
@@ -380,6 +384,8 @@ def test_priority_cap_demotes_extras(tmp_path: Path) -> None:
 def test_language_gate_rejects_make() -> None:
     with pytest.raises(GateError, match="forbidden language"):
         assert_language_clean("MAKE BTC into an active call with position size 2 contracts of ETH")
+    with pytest.raises(GateError, match="forbidden language"):
+        assert_language_clean("buy the dip; sell the rip; high confidence")
 
 
 def test_skeptic_pass_is_not_faked_on_promotion_path() -> None:

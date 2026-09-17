@@ -1,8 +1,8 @@
 # PLAN — IMP-001 Quant Review Board
 
-**Report status:** PLAN  
-**Owner:** Don/cloud  
-**Scope:** read-only research artifacts + `lab quant-review`. No orders, wallets, live keys, or strategy promotion.
+**Report status:** PLAN (implementation)  
+**Owner:** Don/Quant (Quant & Market Structure Desk)  
+**Scope:** read-only Quant Review Board + `lab quant-review`. No orders, wallets, live keys, Market Pulse, desk-doc rewrite, or strategy promotion.
 
 ## Why
 
@@ -43,7 +43,7 @@ All required: fresh attributable data; defined benchmark/peers; specific anomaly
 
 - Relative-value ≠ arbitrage. Word `ARBITRAGE` only if Track D is complete (two venues, same/convertible exposure, gross spread, all costs, fill size/liquidity, latency/ops risk, positive net). Else `UNEXECUTABLE_ARB` or `RELATIVE_VALUE`.
 - Reclaim ≠ one-day bounce.
-- Forbidden in output: MAKE, active-call language, confidence-as-verdict, trade sizing, order language.
+- Forbidden in output: active call, make, buy, sell, high confidence, trade sizing, allocation/order language.
 
 ## Tests
 

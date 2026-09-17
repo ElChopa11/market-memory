@@ -40,6 +40,8 @@ def test_lab_quant_review_writes_board(tmp_path: Path, capsys) -> None:
     assert "Research only. Not a trade instruction, allocation decision, or execution approval." in text
     assert "MAKE" not in text
     assert "active call" not in text.lower()
+    assert "buy" not in text.lower().split()
+    assert "sell" not in text.lower().split()
     assert payload["card_count"] == 36
     assert (research / "quant" / "2026-09-17" / "cards" / "BTC.md").is_file()
     assert (research / "quant" / "2026-09-17" / "cards" / "CRCL.md").is_file()

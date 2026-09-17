@@ -9,13 +9,15 @@ from mm_research_kit.quant_review.models import LABEL_ARBITRAGE, QuantCard
 
 # Patterns must not include CI-forbidden signing tokens.
 _FORBIDDEN: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("MAKE call-language", re.compile(r"\bMAKE\b")),
+    ("MAKE call-language", re.compile(r"\bmake\b", re.IGNORECASE)),
     ("active-call language", re.compile(r"\bactive[-\s_]?calls?\b", re.IGNORECASE)),
-    ("confidence-as-verdict", re.compile(r"\b(high|low|medium)\s+confidence\s+(verdict|call)\b", re.IGNORECASE)),
+    ("high confidence", re.compile(r"\bhigh\s+confidence\b", re.IGNORECASE)),
+    ("buy language", re.compile(r"\bbuy\b", re.IGNORECASE)),
+    ("sell language", re.compile(r"\bsell\b", re.IGNORECASE)),
     ("trade sizing", re.compile(r"\b(position\s+size|size\s+the\s+position|% of portfolio|contracts?\s+of)\b", re.IGNORECASE)),
     ("notional sizing", re.compile(r"\b(notional|allocate|allocation\s+of)\b", re.IGNORECASE)),
     ("order language", re.compile(r"\b(place\s+an?\s+order|market\s+order|limit\s+order|submit\s+order)\b", re.IGNORECASE)),
-    ("order language", re.compile(r"\b(buy\s+now|sell\s+now|go\s+long|go\s+short)\b", re.IGNORECASE)),
+    ("direction instruction", re.compile(r"\bgo\s+(long|short)\b", re.IGNORECASE)),
     ("execution instruction", re.compile(r"\b(entry\s+at|take\s+profit|stop\s+loss)\b", re.IGNORECASE)),
 )
 
