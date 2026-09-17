@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
 from sqlalchemy import func, inspect, select
 
 from mm_common.enums import DataQuality, ObservationRelation
@@ -37,13 +38,18 @@ def test_migrate_creates_core_tables(postgres_dsn: str) -> None:
         "skeptic_review",
         "brief",
     } <= tables
-    assert current_revision(postgres_dsn) == "0004_phase4"
+    assert current_revision(postgres_dsn) == "0005_knowledge_lockstep"
     columns = {col["name"] for col in inspector.get_columns("observation")}
     assert "ingested_at" in columns
     assert "published_at" in columns
     assert "claim_hash" in columns
     assert "identity_hash" in columns
     assert "raw_object_checksum" in columns
+    assert "as_of_knowledge" in columns
+    check_names = {c["name"] for c in inspector.get_check_constraints("observation")}
+    assert "observation_as_of_knowledge_eq_ingested_at" in check_names
+    indexes = {idx["name"] for idx in inspector.get_indexes("observation")}
+    assert "observation_as_of_knowledge_idx" in indexes
 
 
 def test_fixture_ingest_dedupe_quality_and_pit(db_session, fixture_window: dict) -> None:
@@ -106,6 +112,29 @@ def test_fixture_ingest_dedupe_quality_and_pit(db_session, fixture_window: dict)
     assert all(len(row.checksum_sha256) == 64 for row in raw_rows)
     assert store.objects
 
+    snapshot_mids = [
+        row
+        for row in known_after_snapshot
+        if row.metric == "mid_px"
+    ]
+    assert snapshot_mids
+    assert all(row.market_time is None for row in snapshot_mids)
+    assert all(row.as_of_knowledge == row.ingested_at for row in snapshot_mids)
+    assert all(row.as_of_knowledge == AFTER_SNAPSHOT for row in snapshot_mids)
+    assert all((row.payload_json or {}).get("capture_kind") == "lab_snapshot" for row in snapshot_mids)
+
+    historical_funding = db_session.scalar(
+        select(Observation).where(
+            Observation.instrument == "BTC",
+            Observation.metric == "funding",
+            Observation.market_time == WINDOW_START,
+        )
+    )
+    assert historical_funding is not None
+    assert historical_funding.market_time == WINDOW_START
+    assert historical_funding.as_of_knowledge == historical_funding.ingested_at
+
+
     # Re-ingest the same fixture: duplicates collapse, row count unchanged.
     first_count = db_session.scalar(select(func.count()).select_from(Observation))
     again = ingest_from_fixture(db_session, fixture_window, object_store=store)
@@ -149,3 +178,105 @@ def test_contradictory_mids_are_linked(db_session) -> None:
 
 def test_fixture_file_exists() -> None:
     assert (ROOT / "tests" / "fixtures" / "hl_window.json").is_file()
+
+
+def test_null_store_does_not_create_raw_object_rows(db_session, fixture_window: dict) -> None:
+    stats = ingest_from_fixture(db_session, fixture_window)
+    db_session.commit()
+    assert stats.object_store == "null"
+    assert db_session.scalar(select(func.count()).select_from(RawObject)) == 0
+    rows = list(db_session.scalars(select(Observation)).all())
+    assert rows
+    assert all(not row.raw_object_key for row in rows)
+
+
+def test_misconfigured_object_store_does_not_create_orphan_pointers(
+    db_session, monkeypatch
+) -> None:
+    from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
+
+    monkeypatch.delenv("MM_OBJECT_STORE", raising=False)
+    monkeypatch.delenv("MINIO_ENDPOINT", raising=False)
+    monkeypatch.delenv("S3_ENDPOINT", raising=False)
+    monkeypatch.delenv("MINIO_ACCESS_KEY", raising=False)
+    monkeypatch.delenv("MINIO_ROOT_USER", raising=False)
+    monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("MINIO_SECRET_KEY", raising=False)
+    monkeypatch.delenv("MINIO_ROOT_PASSWORD", raising=False)
+    monkeypatch.delenv("AWS_SECRET_ACCESS_KEY", raising=False)
+    with pytest.raises(ObjectStoreConfigError, match="Failing closed"):
+        object_store_from_env(enabled=True)
+    assert db_session.scalar(select(func.count()).select_from(RawObject)) == 0
+    assert db_session.scalar(select(func.count()).select_from(Observation)) == 0
+
+
+def test_durable_filesystem_bytes_survive_store_restart(db_session, fixture_window: dict, tmp_path: Path) -> None:
+    from mm_memory.object_store import FilesystemObjectStore
+
+    store = FilesystemObjectStore(root=tmp_path)
+    ingest_from_fixture(db_session, fixture_window, object_store=store)
+    db_session.commit()
+    raw_rows = list(db_session.scalars(select(RawObject)).all())
+    assert raw_rows
+    restarted = FilesystemObjectStore(root=tmp_path, bucket=store.bucket)
+    for row in raw_rows:
+        payload = restarted.get_bytes(row.object_key)
+        assert payload
+        assert len(row.checksum_sha256) == 64
+
+
+def test_knowledge_watermark_ignores_published_at_and_market_time(db_session) -> None:
+    """PIT uses as_of_knowledge. Envelope construction keeps it locked to ingested_at."""
+    from mm_common.enums import SourceKind
+    from mm_memory.repository import ObservationRepository
+    from mm_provenance.envelope import build_envelope
+
+    repo = ObservationRepository(db_session)
+    early_knowledge = datetime(2026, 9, 10, 0, 0, tzinfo=timezone.utc)
+    late_stamp = datetime(2026, 9, 10, 12, 0, tzinfo=timezone.utc)
+    late_knowledge = datetime(2026, 9, 11, 0, 0, tzinfo=timezone.utc)
+    early_stamp = datetime(2026, 9, 9, 0, 0, tzinfo=timezone.utc)
+    mid = datetime(2026, 9, 10, 6, 0, tzinfo=timezone.utc)
+
+    visible = build_envelope(
+        source_name="hyperliquid.info",
+        source_kind=SourceKind.EXCHANGE,
+        source_url_or_id="fundingHistory:BTC:early",
+        instrument="BTC",
+        metric="funding",
+        value="0.0001",
+        published_at=late_stamp,
+        ingested_at=early_knowledge,
+        market_time=late_stamp,
+        payload={"hl_type": "fundingHistory"},
+        historical=True,
+    )
+    hidden = build_envelope(
+        source_name="hyperliquid.info",
+        source_kind=SourceKind.EXCHANGE,
+        source_url_or_id="fundingHistory:ETH:late",
+        instrument="ETH",
+        metric="funding",
+        value="0.0002",
+        published_at=early_stamp,
+        ingested_at=late_knowledge,
+        market_time=early_stamp,
+        payload={"hl_type": "fundingHistory"},
+        historical=True,
+    )
+    assert visible.as_of_knowledge == early_knowledge
+    assert hidden.as_of_knowledge == late_knowledge
+    repo.put_observation(visible)
+    repo.put_observation(hidden)
+    db_session.commit()
+
+    known = what_did_we_know(db_session, mid)
+    instruments = {row.instrument for row in known}
+    assert "BTC" in instruments
+    assert "ETH" not in instruments
+    btc = next(row for row in known if row.instrument == "BTC")
+    assert btc.published_at == late_stamp
+    assert btc.market_time == late_stamp
+    assert btc.as_of_knowledge == early_knowledge
+    assert btc.as_of_knowledge == btc.ingested_at
+

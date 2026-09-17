@@ -43,7 +43,7 @@ uv run lab migrate
 uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
 # uv run lab ingest --window 7d
 
-# 5. Point-in-time query (ingested_at <= T — never published_at alone)
+# 5. Point-in-time query (as_of_knowledge <= T — never published_at / market_time)
 uv run lab what-did-we-know --at 2026-09-10T00:00:00Z
 
 # 6. Thesis workspace from intent

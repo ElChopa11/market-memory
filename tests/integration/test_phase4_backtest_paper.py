@@ -63,7 +63,7 @@ def test_phase4_tables_exist(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     tables = set(inspect(engine).get_table_names())
     assert {"research_run", "paper_trade"} <= tables
-    assert current_revision(postgres_dsn) == "0004_phase4"
+    assert current_revision(postgres_dsn) == "0005_knowledge_lockstep"
 
 
 def test_research_run_and_paper_trade_persist(db_session, tmp_path: Path) -> None:

@@ -6,9 +6,11 @@ Must not execute trades or store private keys.
 from mm_memory.db import dsn_from_env, make_engine, session_scope
 from mm_memory.migrate import upgrade_head
 from mm_memory.object_store import (
+    FilesystemObjectStore,
     InMemoryObjectStore,
     NullObjectStore,
     ObjectPointer,
+    ObjectStoreConfigError,
     S3ObjectStore,
     object_store_from_env,
 )
@@ -31,10 +33,12 @@ LIVE_TRADING_ENABLED = False
 
 __all__ = [
     "BriefRepository",
+    "FilesystemObjectStore",
     "InMemoryObjectStore",
     "LIVE_TRADING_ENABLED",
     "NullObjectStore",
     "ObjectPointer",
+    "ObjectStoreConfigError",
     "ObservationRepository",
     "PaperRepository",
     "PutResult",

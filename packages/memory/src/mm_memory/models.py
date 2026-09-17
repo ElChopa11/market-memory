@@ -74,8 +74,13 @@ class Observation(Base):
             name="observation_data_quality_check",
         ),
         CheckConstraint("confidence >= 0 AND confidence <= 1", name="observation_confidence_check"),
+        CheckConstraint(
+            "as_of_knowledge = ingested_at",
+            name="observation_as_of_knowledge_eq_ingested_at",
+        ),
         UniqueConstraint("claim_hash", name="observation_claim_hash_uidx"),
         Index("observation_ingested_at_idx", "ingested_at"),
+        Index("observation_as_of_knowledge_idx", "as_of_knowledge"),
         Index("observation_market_time_idx", "market_time"),
         Index("observation_identity_hash_idx", "identity_hash"),
         Index("observation_identity_idx", "source_id", "instrument", "metric", "market_time"),

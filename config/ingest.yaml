@@ -2,7 +2,7 @@
 venue: hyperliquid
 info_url: https://api.hyperliquid.xyz/info
 candle_interval: 1h
-# Snapshot rows older than this at ingest time are flagged stale.
+# Snapshot rows whose lab-capture published_at is older than this at ingest time are flagged stale.
 # Historical series (fundingHistory, candles, liquidations) are never stale merely for being in the past.
 stale_after_seconds: 120
 store_raw_objects: true
