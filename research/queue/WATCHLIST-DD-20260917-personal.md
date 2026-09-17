@@ -10,7 +10,7 @@
 | **Lab lock** | `config/universe.yaml` **main** · version `2026-09-17` · status `locked` |
 | **QUANT** | `research/queue/quant-20260917/` (PR **#19**) · scorecard PR **#22** · FAIL patch PR **#23** |
 | **Appendix** | `research/queue/INVALIDATION-20260917-fail-pairs-quant.md` (demoted FAIL pairs) |
-| **Skeptic** | Cut-review **REVISE** (PR **#25**): AMD, CRCL, GLXY WATCH→CUT; BTC/SLV pair **CUT**. Board **MAKE 2 / WATCH 25 / CUT 36**. MAKE BTC/NVDA **unchanged**. Memory-semi stays killed. |
+| **Skeptic** | Cut-review **REVISE** (PR **#26**, `research/queue/WATCHLIST-DD-20260917-personal-skeptic.md`): AMD, CRCL, GLXY WATCH→CUT; BTC/SLV pair **CUT**. Board **MAKE 2 / WATCH 25 / CUT 36**. MAKE BTC/NVDA **unchanged**. Memory-semi stays killed. |
 | **Hard rules** | rel≠α · HL stale not primary · corr≠causation · memory-semi **killed** · must-cuts = learning · prefer rejection |
 
 **What MAKE/WATCH/CUT means here:** research-queue disposition for the **personal TV inventory**, not orders.
