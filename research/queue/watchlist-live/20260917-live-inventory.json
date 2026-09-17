@@ -1,0 +1,40 @@
+{
+  "scraped_at_aest": "2026-09-17T12:26:44+10:00",
+  "lists": [
+    {
+      "url": "https://www.tradingview.com/watchlists/194324969/",
+      "title": "Base List",
+      "scrape_timestamp_aest": "2026-09-17T12:26:13+10:00",
+      "login_blocked": false,
+      "symbols": [
+        "ASTERUSDT.P", "DOGEUSDT", "NEARUSDT.P", "UNIUSDT.P", "XMRUSDT.P",
+        "HYPEUSDT.P", "SOLUSDT.P", "ETHUSDT.P", "LITUSDT.P", "ZECUSDT.P",
+        "XRPUSD", "SPXUSDT.P", "XLMUSDT", "BNBUSD", "SPX", "NQ1!", "QQQ",
+        "CL1!", "CRCL", "TSLA", "SPCX", "NVDA", "SAMSUNGUSDT.P", "BB", "GLXY",
+        "IBIT", "BMNR", "PURR", "MRNA", "BTC1!", "KOSDAQ", "GOOG", "HOOD",
+        "NOW", "CBRS", "MSTR", "STRC", "AMD", "USDT.D", "BTC.D", "BTC/GOLD",
+        "BTC/SLV", "GOLD/BTC", "HYPE/BNB", "HYPE/HOOD", "LIT/HYPE", "ETHBTC",
+        "GOLD", "SILVER", "COPPER1!", "UXJ2026", "NG1!", "DXY", "TOTAL", "OTHERSBTC",
+        "TOTAL2", "STABLE.C", "TOTAL3", "NEARUSDC.P", "TNX", "IWM", "VIX", "CASHCATUSDC.P"
+      ]
+    },
+    {
+      "url": "https://www.tradingview.com/watchlists/343370615/",
+      "title": "Racksor Capital",
+      "scrape_timestamp_aest": "2026-09-17T12:26:29+10:00",
+      "login_blocked": false,
+      "symbols": ["IBIT", "PURR", "SNDK", "MU", "SKHYNIXUSDC.P", "RBLX"]
+    },
+    {
+      "url": "https://www.tradingview.com/watchlists/330128831/",
+      "title": "Crypto",
+      "scrape_timestamp_aest": "2026-09-17T12:26:44+10:00",
+      "login_blocked": false,
+      "symbols": [
+        "BTCUSDC.P", "ETHUSDC.P", "SOLUSDC.P", "HYPEUSDC.P", "VVVUSDC.P",
+        "ZECUSDC.P", "XMRUSDC.P", "NEARUSDC.P", "LITUSDC.P", "CASHCATUSDC.P",
+        "PONSUSDC.P", "XRPUSDC.P", "SKRUSDC.P", "CHIPUSDC.P", "DOGEUSDC.P"
+      ]
+    }
+  ]
+}
