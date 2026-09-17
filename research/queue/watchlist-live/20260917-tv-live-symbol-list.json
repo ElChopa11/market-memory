@@ -1,0 +1,457 @@
+{
+  "kind": "tv_live_scrape",
+  "scraped_at_aest": "2026-09-17 12:27:33 AEST",
+  "scraped_at_utc": "2026-09-17T02:27:33Z",
+  "login_required": false,
+  "method": "live browser scrape of public watchlist URLs",
+  "lists": [
+    {
+      "list_id": "194324969",
+      "title": "Base List",
+      "url": "https://www.tradingview.com/watchlists/194324969/",
+      "ui_count_label": 63,
+      "note": "UI labeled 63 symbols; 62 ticker texts rendered \u2014 no 63rd invented",
+      "symbol_count_rendered": 62,
+      "symbols": [
+        "ASTERUSDT.P",
+        "DOGEUSDT",
+        "NEARUSDT.P",
+        "UNIUSDT.P",
+        "XMRUSDT.P",
+        "HYPEUSDT.P",
+        "SOLUSDT.P",
+        "ETHUSDT.P",
+        "LITUSDT.P",
+        "ZECUSDT.P",
+        "XRPUSD",
+        "SPXUSDT.P",
+        "XLMUSDT",
+        "BNBUSD",
+        "SPX",
+        "NQ1!",
+        "QQQ",
+        "CL1!",
+        "CRCL",
+        "TSLA",
+        "SPCX",
+        "NVDA",
+        "SAMSUNGUSDT.P",
+        "BB",
+        "GLXY",
+        "IBIT",
+        "BMNR",
+        "PURR",
+        "MRNA",
+        "BTC1!",
+        "KOSDAQ",
+        "GOOG",
+        "HOOD",
+        "NOW",
+        "CBRS",
+        "MSTR",
+        "STRC",
+        "AMD",
+        "USDT.D",
+        "BTC.D",
+        "BTC/GOLD",
+        "BTC/SLV",
+        "GOLD/BTC",
+        "HYPE/BNB",
+        "HYPE/HOOD",
+        "LIT/HYPE",
+        "ETHBTC",
+        "GOLD",
+        "SILVER",
+        "COPPER1!",
+        "UXJ2026",
+        "NG1!",
+        "DXY",
+        "TOTAL",
+        "OTHERSBTC",
+        "TOTAL2",
+        "STABLE.C",
+        "TOTAL3",
+        "NEARUSDC.P",
+        "TNX",
+        "IWM",
+        "VIX"
+      ]
+    },
+    {
+      "list_id": "343370615",
+      "title": "Racksor Capital",
+      "url": "https://www.tradingview.com/watchlists/343370615/",
+      "ui_count_label": 6,
+      "note": null,
+      "symbol_count_rendered": 6,
+      "symbols": [
+        "IBIT",
+        "PURR",
+        "SNDK",
+        "MU",
+        "SKHYNIXUSDC.P",
+        "RBLX"
+      ]
+    },
+    {
+      "list_id": "330128831",
+      "title": "Crypto",
+      "url": "https://www.tradingview.com/watchlists/330128831/",
+      "ui_count_label": 15,
+      "note": null,
+      "symbol_count_rendered": 15,
+      "symbols": [
+        "BTCUSDC.P",
+        "ETHUSDC.P",
+        "SOLUSDC.P",
+        "HYPEUSDC.P",
+        "VVVUSDC.P",
+        "ZECUSDC.P",
+        "XMRUSDC.P",
+        "NEARUSDC.P",
+        "LITUSDC.P",
+        "CASHCATUSDC.P",
+        "PONSUSDC.P",
+        "XRPUSDC.P",
+        "SKRUSDC.P",
+        "CHIPUSDC.P",
+        "DOGEUSDC.P"
+      ]
+    }
+  ],
+  "unique_symbols": [
+    "AMD",
+    "ASTERUSDT.P",
+    "BB",
+    "BMNR",
+    "BNBUSD",
+    "BTC.D",
+    "BTC/GOLD",
+    "BTC/SLV",
+    "BTC1!",
+    "BTCUSDC.P",
+    "CASHCATUSDC.P",
+    "CBRS",
+    "CHIPUSDC.P",
+    "CL1!",
+    "COPPER1!",
+    "CRCL",
+    "DOGEUSDC.P",
+    "DOGEUSDT",
+    "DXY",
+    "ETHBTC",
+    "ETHUSDC.P",
+    "ETHUSDT.P",
+    "GLXY",
+    "GOLD",
+    "GOLD/BTC",
+    "GOOG",
+    "HOOD",
+    "HYPE/BNB",
+    "HYPE/HOOD",
+    "HYPEUSDC.P",
+    "HYPEUSDT.P",
+    "IBIT",
+    "IWM",
+    "KOSDAQ",
+    "LIT/HYPE",
+    "LITUSDC.P",
+    "LITUSDT.P",
+    "MRNA",
+    "MSTR",
+    "MU",
+    "NEARUSDC.P",
+    "NEARUSDT.P",
+    "NG1!",
+    "NOW",
+    "NQ1!",
+    "NVDA",
+    "OTHERSBTC",
+    "PONSUSDC.P",
+    "PURR",
+    "QQQ",
+    "RBLX",
+    "SAMSUNGUSDT.P",
+    "SILVER",
+    "SKHYNIXUSDC.P",
+    "SKRUSDC.P",
+    "SNDK",
+    "SOLUSDC.P",
+    "SOLUSDT.P",
+    "SPCX",
+    "SPX",
+    "SPXUSDT.P",
+    "STABLE.C",
+    "STRC",
+    "TNX",
+    "TOTAL",
+    "TOTAL2",
+    "TOTAL3",
+    "TSLA",
+    "UNIUSDT.P",
+    "USDT.D",
+    "UXJ2026",
+    "VIX",
+    "VVVUSDC.P",
+    "XLMUSDT",
+    "XMRUSDC.P",
+    "XMRUSDT.P",
+    "XRPUSD",
+    "XRPUSDC.P",
+    "ZECUSDC.P",
+    "ZECUSDT.P"
+  ],
+  "unique_count": 80,
+  "per_symbol_membership": {
+    "AMD": [
+      "194324969"
+    ],
+    "ASTERUSDT.P": [
+      "194324969"
+    ],
+    "BB": [
+      "194324969"
+    ],
+    "BMNR": [
+      "194324969"
+    ],
+    "BNBUSD": [
+      "194324969"
+    ],
+    "BTC.D": [
+      "194324969"
+    ],
+    "BTC/GOLD": [
+      "194324969"
+    ],
+    "BTC/SLV": [
+      "194324969"
+    ],
+    "BTC1!": [
+      "194324969"
+    ],
+    "BTCUSDC.P": [
+      "330128831"
+    ],
+    "CASHCATUSDC.P": [
+      "330128831"
+    ],
+    "CBRS": [
+      "194324969"
+    ],
+    "CHIPUSDC.P": [
+      "330128831"
+    ],
+    "CL1!": [
+      "194324969"
+    ],
+    "COPPER1!": [
+      "194324969"
+    ],
+    "CRCL": [
+      "194324969"
+    ],
+    "DOGEUSDC.P": [
+      "330128831"
+    ],
+    "DOGEUSDT": [
+      "194324969"
+    ],
+    "DXY": [
+      "194324969"
+    ],
+    "ETHBTC": [
+      "194324969"
+    ],
+    "ETHUSDC.P": [
+      "330128831"
+    ],
+    "ETHUSDT.P": [
+      "194324969"
+    ],
+    "GLXY": [
+      "194324969"
+    ],
+    "GOLD": [
+      "194324969"
+    ],
+    "GOLD/BTC": [
+      "194324969"
+    ],
+    "GOOG": [
+      "194324969"
+    ],
+    "HOOD": [
+      "194324969"
+    ],
+    "HYPE/BNB": [
+      "194324969"
+    ],
+    "HYPE/HOOD": [
+      "194324969"
+    ],
+    "HYPEUSDC.P": [
+      "330128831"
+    ],
+    "HYPEUSDT.P": [
+      "194324969"
+    ],
+    "IBIT": [
+      "194324969",
+      "343370615"
+    ],
+    "IWM": [
+      "194324969"
+    ],
+    "KOSDAQ": [
+      "194324969"
+    ],
+    "LIT/HYPE": [
+      "194324969"
+    ],
+    "LITUSDC.P": [
+      "330128831"
+    ],
+    "LITUSDT.P": [
+      "194324969"
+    ],
+    "MRNA": [
+      "194324969"
+    ],
+    "MSTR": [
+      "194324969"
+    ],
+    "MU": [
+      "343370615"
+    ],
+    "NEARUSDC.P": [
+      "194324969",
+      "330128831"
+    ],
+    "NEARUSDT.P": [
+      "194324969"
+    ],
+    "NG1!": [
+      "194324969"
+    ],
+    "NOW": [
+      "194324969"
+    ],
+    "NQ1!": [
+      "194324969"
+    ],
+    "NVDA": [
+      "194324969"
+    ],
+    "OTHERSBTC": [
+      "194324969"
+    ],
+    "PONSUSDC.P": [
+      "330128831"
+    ],
+    "PURR": [
+      "194324969",
+      "343370615"
+    ],
+    "QQQ": [
+      "194324969"
+    ],
+    "RBLX": [
+      "343370615"
+    ],
+    "SAMSUNGUSDT.P": [
+      "194324969"
+    ],
+    "SILVER": [
+      "194324969"
+    ],
+    "SKHYNIXUSDC.P": [
+      "343370615"
+    ],
+    "SKRUSDC.P": [
+      "330128831"
+    ],
+    "SNDK": [
+      "343370615"
+    ],
+    "SOLUSDC.P": [
+      "330128831"
+    ],
+    "SOLUSDT.P": [
+      "194324969"
+    ],
+    "SPCX": [
+      "194324969"
+    ],
+    "SPX": [
+      "194324969"
+    ],
+    "SPXUSDT.P": [
+      "194324969"
+    ],
+    "STABLE.C": [
+      "194324969"
+    ],
+    "STRC": [
+      "194324969"
+    ],
+    "TNX": [
+      "194324969"
+    ],
+    "TOTAL": [
+      "194324969"
+    ],
+    "TOTAL2": [
+      "194324969"
+    ],
+    "TOTAL3": [
+      "194324969"
+    ],
+    "TSLA": [
+      "194324969"
+    ],
+    "UNIUSDT.P": [
+      "194324969"
+    ],
+    "USDT.D": [
+      "194324969"
+    ],
+    "UXJ2026": [
+      "194324969"
+    ],
+    "VIX": [
+      "194324969"
+    ],
+    "VVVUSDC.P": [
+      "330128831"
+    ],
+    "XLMUSDT": [
+      "194324969"
+    ],
+    "XMRUSDC.P": [
+      "330128831"
+    ],
+    "XMRUSDT.P": [
+      "194324969"
+    ],
+    "XRPUSD": [
+      "194324969"
+    ],
+    "XRPUSDC.P": [
+      "330128831"
+    ],
+    "ZECUSDC.P": [
+      "330128831"
+    ],
+    "ZECUSDT.P": [
+      "194324969"
+    ]
+  },
+  "delta_vs_prior_research_extract_base_list": {
+    "in_research_extract_not_in_live_base": [
+      "CASHCATUSDC.P"
+    ],
+    "in_live_base_not_in_research_extract": []
+  },
+  "disclaimer": "Live scrape inventory only \u2014 not trade ideas; no observation_ids invented."
+}
