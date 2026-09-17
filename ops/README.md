@@ -17,7 +17,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Quant Review Board (IMP-001) is **DONE** (#31). Do not rewrite the board in a Pulse or DQ PR.
 - US Market Pulse vertical slice (IMP-002) is **DONE** (#32).
 - Standing source-health report (IMP-003) is **DONE** (#33).
-- Pulse source hardening (IMP-004) is **PARKED** (#34) — not this thread.
+- Pulse source hardening (IMP-004) is **DONE** (#34). Read-only; no execution.
 - Membership vocabulary (IMP-005) is **DONE** (#35). Keys are `in_universe` / `watch_only`.
-- Post-IPO reclaim screen (IMP-006) is the active implementation item. Equities desk product; not a trading decision.
+- Post-IPO reclaim screen (IMP-006) is **DONE** (#36). Equities desk product; not a trading decision.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

@@ -17,6 +17,14 @@ import yaml
 from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
+from mm_common.http import (
+    DEFAULT_MAX_ATTEMPTS,
+    DEFAULT_TIMEOUT,
+    classify_exception as classify_transport,
+    classify_http_status,
+    http_get,
+    missing_env_notes,
+)
 from mm_common.time import utcnow
 from mm_ingest.hl_info import (
     ALLOWED_INFO_TYPES,
@@ -42,7 +50,6 @@ from mm_source_health.redact import exception_class, redact_secrets
 
 HL_PROBE_TYPE = "meta"
 HL_GATE_TYPE = "clearinghouseState"
-DEFAULT_TIMEOUT = 8.0
 COINGECKO_PING_PATH = "/api/v3/ping"
 
 
@@ -59,6 +66,8 @@ class ProbeContext:
         skip_db: bool = False,
         dsn: str | None = None,
         last_success: Mapping[str, datetime] | None = None,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        sleep: Any | None = None,
     ) -> None:
         self.repo_root = repo_root
         self._custom_env = env is not None
@@ -73,12 +82,30 @@ class ProbeContext:
         self.config = load_inventory_config(repo_root)
         self._owns_http = http_client is None
         self._http = http_client or httpx.Client(timeout=timeout)
+        self.max_attempts = max_attempts
+        self.sleep = sleep if sleep is not None else time.sleep
 
     def getenv(self, name: str) -> str | None:
         value = self.env.get(name)
         if value is None or str(value).strip() == "":
             return None
         return str(value)
+
+    def http_get(
+        self,
+        url: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        parse_json: bool = False,
+    ):
+        return http_get(
+            self._http,
+            url,
+            params=params,
+            max_attempts=self.max_attempts,
+            sleep=self.sleep,
+            parse_json=parse_json,
+        )
 
     def close(self) -> None:
         if self._owns_http:
@@ -248,43 +275,36 @@ def probe_coingecko(ctx: ProbeContext) -> SourceHealth:
     spec = ctx.config["coingecko"]
     ping_url = _coingecko_ping_url(spec)
     started = time.perf_counter()
-    try:
-        response = ctx._http.get(ping_url)
-        latency = _ms(started)
-        if response.status_code == 200:
-            # Do not copy gecko_says / any payload text into the report.
-            return _row(
-                "coingecko",
-                status=STATUS_OK,
-                latency_ms=latency,
-                last_success_at=ctx.captured_at,
-                credentials_present="n/a",
-                notes=("ping HTTP 200; no price payload requested",),
-                endpoint=ping_url,
-                probe="GET /api/v3/ping",
-            )
+    result = ctx.http_get(ping_url)
+    latency = result.latency_ms if result.latency_ms else _ms(started)
+    if result.ok:
+        # Do not copy gecko_says / any payload text into the report.
         return _row(
             "coingecko",
-            status=STATUS_UNAVAILABLE,
-            error_class=_http_error_class(response.status_code),
+            status=STATUS_OK,
             latency_ms=latency,
-            last_success_at=None,
+            last_success_at=ctx.captured_at,
             credentials_present="n/a",
-            notes=(f"ping HTTP {response.status_code}",),
+            notes=("ping HTTP 200; no price payload requested",),
             endpoint=ping_url,
             probe="GET /api/v3/ping",
         )
-    except Exception as exc:  # noqa: BLE001
-        return _row(
-            "coingecko",
-            status=STATUS_UNAVAILABLE,
-            error_class=_classify_exception(exc),
-            latency_ms=_ms(started),
-            credentials_present="n/a",
-            notes=(redact_secrets(exception_class(exc)),),
-            endpoint=ping_url,
-            probe="GET /api/v3/ping",
-        )
+    extra = f"attempts={result.attempts}"
+    if result.status_code is not None:
+        detail = f"ping HTTP {result.status_code} (error_class={result.error_class})"
+    else:
+        detail = redact_secrets(result.exception_name or result.error_class)
+    return _row(
+        "coingecko",
+        status=STATUS_UNAVAILABLE,
+        error_class=result.error_class,
+        latency_ms=latency,
+        last_success_at=None,
+        credentials_present="n/a",
+        notes=(detail, extra),
+        endpoint=ping_url,
+        probe="GET /api/v3/ping",
+    )
 
 
 def probe_stooq(ctx: ProbeContext) -> SourceHealth:
@@ -296,69 +316,69 @@ def probe_stooq(ctx: ProbeContext) -> SourceHealth:
     base = str(spec.get("base_url") or "https://stooq.com/q/l/").rstrip("/") + "/"
     query = urlencode({"s": canary_ticker, "f": "sd2t2ohlcv", "h": "", "e": "csv"})
     url = f"{base}?{query}"
-    started = time.perf_counter()
-    try:
-        response = ctx._http.get(url)
-        latency = _ms(started)
-        if response.status_code != 200:
-            return _row(
-                "stooq",
-                status=STATUS_UNAVAILABLE,
-                error_class=_http_error_class(response.status_code),
-                latency_ms=latency,
-                credentials_present="n/a",
-                notes=(
-                    f"canary {canary_symbol} HTTP {response.status_code}",
-                    f"configured symbols: {', '.join(str(s) for s in symbols)}",
-                    "no quote values recorded",
-                ),
-                endpoint=_stooq_endpoint_label(base),
-                probe=f"GET canary CSV ({canary_symbol})",
-            )
-        parsed_ok = _stooq_csv_has_close(response.text)
-        if not parsed_ok:
-            return _row(
-                "stooq",
-                status=STATUS_UNAVAILABLE,
-                error_class="parse_error",
-                latency_ms=latency,
-                credentials_present="n/a",
-                notes=(
-                    f"canary {canary_symbol} CSV empty, N/D, or unparseable",
-                    f"configured symbols: {', '.join(str(s) for s in symbols)}",
-                    "no quote values recorded",
-                ),
-                endpoint=_stooq_endpoint_label(base),
-                probe=f"GET canary CSV ({canary_symbol})",
-            )
-        return _row(
-            "stooq",
-            status=STATUS_OK,
-            latency_ms=latency,
-            last_success_at=ctx.captured_at,
-            credentials_present="n/a",
-            notes=(
-                f"canary {canary_symbol} CSV parsed (Close present; value not copied)",
-                f"configured symbols: {', '.join(str(s) for s in symbols)}",
-            ),
-            endpoint=_stooq_endpoint_label(base),
-            probe=f"GET canary CSV ({canary_symbol})",
-        )
-    except Exception as exc:  # noqa: BLE001
+    result = ctx.http_get(url)
+    shared_notes = (
+        f"configured symbols: {', '.join(str(s) for s in symbols)}",
+        "no quote values recorded; no scrape fallback (ToS)",
+        f"attempts={result.attempts} (retry only timeout/5xx/429; 404 is terminal)",
+    )
+    if result.status_code is not None and result.status_code != 200:
         return _row(
             "stooq",
             status=STATUS_UNAVAILABLE,
-            error_class=_classify_exception(exc),
-            latency_ms=_ms(started),
+            error_class=result.error_class,
+            latency_ms=result.latency_ms,
             credentials_present="n/a",
             notes=(
-                redact_secrets(exception_class(exc)),
-                f"configured symbols: {', '.join(str(s) for s in symbols)}",
-                "no quote values recorded",
+                f"canary {canary_symbol} HTTP {result.status_code} (error_class={result.error_class})",
+                *shared_notes,
             ),
             endpoint=_stooq_endpoint_label(base),
             probe=f"GET canary CSV ({canary_symbol})",
         )
+    if not result.ok:
+        return _row(
+            "stooq",
+            status=STATUS_UNAVAILABLE,
+            error_class=result.error_class,
+            latency_ms=result.latency_ms,
+            credentials_present="n/a",
+            notes=(
+                redact_secrets(result.exception_name or result.error_class),
+                *shared_notes,
+            ),
+            endpoint=_stooq_endpoint_label(base),
+            probe=f"GET canary CSV ({canary_symbol})",
+        )
+    parsed_ok = _stooq_csv_has_close(result.text or "")
+    if not parsed_ok:
+        return _row(
+            "stooq",
+            status=STATUS_UNAVAILABLE,
+            error_class="parse_error",
+            latency_ms=result.latency_ms,
+            credentials_present="n/a",
+            notes=(
+                f"canary {canary_symbol} CSV empty, N/D, or unparseable",
+                *shared_notes,
+            ),
+            endpoint=_stooq_endpoint_label(base),
+            probe=f"GET canary CSV ({canary_symbol})",
+        )
+    return _row(
+        "stooq",
+        status=STATUS_OK,
+        latency_ms=result.latency_ms,
+        last_success_at=ctx.captured_at,
+        credentials_present="n/a",
+        notes=(
+            f"canary {canary_symbol} CSV parsed (Close present; value not copied)",
+            f"configured symbols: {', '.join(str(s) for s in symbols)}",
+            f"attempts={result.attempts}",
+        ),
+        endpoint=_stooq_endpoint_label(base),
+        probe=f"GET canary CSV ({canary_symbol})",
+    )
 
 
 def probe_fred(ctx: ProbeContext) -> SourceHealth:
@@ -376,7 +396,7 @@ def probe_fred(ctx: ProbeContext) -> SourceHealth:
             status=STATUS_UNAVAILABLE,
             error_class="missing_env",
             credentials_present="no",
-            notes=(f"missing env {env_name}; FRED unavailable", "key value not printed"),
+            notes=missing_env_notes(env_name, source="FRED"),
             endpoint=base,
             probe=f"GET series_id={series_id} limit=1",
         )
@@ -387,66 +407,61 @@ def probe_fred(ctx: ProbeContext) -> SourceHealth:
         "sort_order": "desc",
         "limit": 1,
     }
-    started = time.perf_counter()
-    try:
-        response = ctx._http.get(base, params=params)
-        latency = _ms(started)
-        if response.status_code in {401, 400, 403}:
-            return _row(
-                "fred",
-                status=STATUS_UNAVAILABLE,
-                error_class="http_error",
-                latency_ms=latency,
-                credentials_present="yes",
-                notes=(f"HTTP {response.status_code} (key present, not printed)",),
-                endpoint=base,
-                probe=f"GET series_id={series_id} limit=1",
-            )
-        if response.status_code != 200:
-            return _row(
-                "fred",
-                status=STATUS_UNAVAILABLE,
-                error_class=_http_error_class(response.status_code),
-                latency_ms=latency,
-                credentials_present="yes",
-                notes=(f"HTTP {response.status_code}",),
-                endpoint=base,
-                probe=f"GET series_id={series_id} limit=1",
-            )
-        payload = response.json()
-        observations = payload.get("observations") if isinstance(payload, dict) else None
-        if not observations:
-            return _row(
-                "fred",
-                status=STATUS_DEGRADED,
-                error_class="parse_error",
-                latency_ms=latency,
-                credentials_present="yes",
-                notes=("HTTP 200 but no observations in payload; no yield recorded",),
-                endpoint=base,
-                probe=f"GET series_id={series_id} limit=1",
-            )
-        return _row(
-            "fred",
-            status=STATUS_OK,
-            latency_ms=latency,
-            last_success_at=ctx.captured_at,
-            credentials_present="yes",
-            notes=("observations endpoint HTTP 200; yield not copied into this report",),
-            endpoint=base,
-            probe=f"GET series_id={series_id} limit=1",
-        )
-    except Exception as exc:  # noqa: BLE001
+    result = ctx.http_get(base, params=params, parse_json=True)
+    if result.status_code in {401, 400, 403} or (
+        not result.ok and result.status_code is not None and result.status_code != 200
+    ):
         return _row(
             "fred",
             status=STATUS_UNAVAILABLE,
-            error_class=_classify_exception(exc),
-            latency_ms=_ms(started),
+            error_class=result.error_class,
+            latency_ms=result.latency_ms,
             credentials_present="yes",
-            notes=(redact_secrets(exception_class(exc)),),
+            notes=(
+                f"HTTP {result.status_code} (error_class={result.error_class}; key present, not printed)",
+                f"attempts={result.attempts}",
+            ),
             endpoint=base,
             probe=f"GET series_id={series_id} limit=1",
         )
+    if not result.ok:
+        return _row(
+            "fred",
+            status=STATUS_UNAVAILABLE,
+            error_class=result.error_class,
+            latency_ms=result.latency_ms,
+            credentials_present="yes",
+            notes=(
+                redact_secrets(result.exception_name or result.error_class),
+                "key value not printed",
+                f"attempts={result.attempts}",
+            ),
+            endpoint=base,
+            probe=f"GET series_id={series_id} limit=1",
+        )
+    payload = result.json_payload if isinstance(result.json_payload, dict) else {}
+    observations = payload.get("observations") if isinstance(payload, dict) else None
+    if not observations:
+        return _row(
+            "fred",
+            status=STATUS_DEGRADED,
+            error_class="parse_error",
+            latency_ms=result.latency_ms,
+            credentials_present="yes",
+            notes=("HTTP 200 but no observations in payload; no yield recorded",),
+            endpoint=base,
+            probe=f"GET series_id={series_id} limit=1",
+        )
+    return _row(
+        "fred",
+        status=STATUS_OK,
+        latency_ms=result.latency_ms,
+        last_success_at=ctx.captured_at,
+        credentials_present="yes",
+        notes=("observations endpoint HTTP 200; yield not copied into this report",),
+        endpoint=base,
+        probe=f"GET series_id={series_id} limit=1",
+    )
 
 
 def probe_calendar(ctx: ProbeContext) -> SourceHealth:
@@ -802,24 +817,10 @@ def _ms(started: float) -> float:
 
 
 def _http_error_class(status_code: int) -> str:
-    if status_code in {401, 403, 451}:
-        return "tos_or_blocked"
-    if status_code == 429:
-        return "rate_limited"
-    if status_code >= 500:
-        return "http_error"
-    if status_code >= 400:
-        return "http_error"
-    return "http_error"
+    return classify_http_status(status_code)
 
 
 def _classify_exception(exc: BaseException) -> str:
-    name = exception_class(exc)
-    text = f"{name} {exc}".lower()
-    if isinstance(exc, httpx.TimeoutException) or "timeout" in name.lower():
-        return "timeout"
-    if isinstance(exc, httpx.ConnectError) or "connect" in name.lower() or "refused" in text:
-        return "unreachable"
     if isinstance(exc, HyperliquidInfoError):
         msg = str(exc).lower()
         if "refusing" in msg or "allowlist" in msg:
@@ -827,13 +828,9 @@ def _classify_exception(exc: BaseException) -> str:
         if "failed:" in msg:
             return "http_error"
         return "http_error"
-    if "timeout" in text:
-        return "timeout"
-    if "operational" in name.lower() or "unreachable" in text:
-        return "unreachable"
     if isinstance(exc, ObjectStoreConfigError):
         return "missing_env"
-    return "error"
+    return classify_transport(exc)
 
 
 _PROBES = {

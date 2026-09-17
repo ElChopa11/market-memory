@@ -15,8 +15,8 @@ NO_DECISION_FOOTER = (
 )
 
 LIMITATIONS = (
-    "No paid-data purchases; FRED stays unavailable without env FRED_API_KEY (never committed).",
-    "Stooq failures are classified (timeout / HTTP / parse / blocked). No ToS-violating scrape workaround.",
+    "No paid-data purchases; FRED stays unavailable without env FRED_API_KEY (set locally or in CI secrets; never committed).",
+    "Stooq failures are classified (timeout / http_404 / http_5xx / parse / tos_or_blocked). Bounded GET retry on timeout/5xx/429 only; 404 is terminal. No ToS-violating scrape workaround.",
     "CoinGecko/Stooq/FRED are not written into Market Memory; last success for those is this probe or unknown.",
     "Calendar health is YAML presence (no live economic-calendar API).",
     "This report never copies mids, marks, yields, or CSV Close values into the artifact.",

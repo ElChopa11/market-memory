@@ -12,6 +12,7 @@ from mm_common.time import utcnow
 from mm_ingest.hl_info import HyperliquidInfoClient
 from mm_source_health.models import HealthReport
 from mm_source_health.probes import (
+    DEFAULT_MAX_ATTEMPTS,
     DEFAULT_TIMEOUT,
     ProbeContext,
     load_last_success_from_memory,
@@ -31,6 +32,8 @@ def generate_source_health(
     skip_db: bool = False,
     dsn: str | None = None,
     command: str = "lab data source-health",
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    sleep=None,
 ) -> HealthReport:
     generated_at = captured_at or utcnow()
     last_success: dict = {}
@@ -57,6 +60,8 @@ def generate_source_health(
         skip_db=skip_db,
         dsn=dsn,
         last_success=last_success,
+        max_attempts=max_attempts,
+        sleep=sleep,
     ) as ctx:
         sources = probe_all(ctx)
     return render_report(generated_at=generated_at, sources=sources, command=command)

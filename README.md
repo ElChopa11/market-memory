@@ -82,7 +82,7 @@ uv run pytest
 ./scripts/bootstrap-dev.sh
 ```
 
-Copy `.env.example` to `.env` only if you need local overrides. **Never put Hyperliquid keys or FRED keys in git.** Phase 3 live macro fetchers read `FRED_API_KEY` from the environment and degrade to `data_quality=partial` when it is missing.
+Copy `.env.example` to `.env` only if you need local overrides. **Never put Hyperliquid keys or FRED keys in git.** Phase 3 live macro fetchers read `FRED_API_KEY` from the environment (or CI repository secrets) and mark FRED `unavailable` / `error_class=missing_env` when it is missing. See [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md).
 
 ```bash
 uv run lab status

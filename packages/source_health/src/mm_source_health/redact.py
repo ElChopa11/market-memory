@@ -12,12 +12,18 @@ _ASSIGNED_SECRETS = re.compile(
     r"AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|POSTGRES_DSN)\s*[:=]\s*\S+",
     re.IGNORECASE,
 )
+# Query-string key leaks (FRED `api_key=` on observations URLs)
+_QUERY_SECRETS = re.compile(
+    r"([?&](?:api_key|apikey|access_key|secret|password|token)=)[^&\s]+",
+    re.IGNORECASE,
+)
 
 
 def redact_secrets(text: str) -> str:
     cleaned = _DSN_PW.sub(r"\1***@", text)
     cleaned = _AWS_KEY.sub("AKIA***", cleaned)
     cleaned = _ASSIGNED_SECRETS.sub(lambda m: f"{m.group(1)}=***", cleaned)
+    cleaned = _QUERY_SECRETS.sub(r"\1***", cleaned)
     return cleaned
 
 

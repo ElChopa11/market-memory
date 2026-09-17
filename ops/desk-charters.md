@@ -140,7 +140,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** `packages/memory`, `packages/ingest`, `packages/provenance`, `packages/common`, `packages/source_health`, `apps/ingest-worker`, `config/ingest.yaml`, `config/instruments/perps.yaml`, `docs/runbooks/ingest.md`, `docs/runbooks/source-health.md`. PIT query: `lab what-did-we-know`. Source health: `lab data source-health`.
 
-**Gap.** Equity and on-chain feeds are not ingest (equities are briefing/watchlist only); contradiction workflows are schema-level (`observation_link`), not an operating cadence. Standing DQ / source-health generator is IMP-003.
+**Gap.** Equity and on-chain feeds are not ingest (equities are briefing/watchlist only); contradiction workflows are schema-level (`observation_link`), not an operating cadence. Standing DQ / source-health generator is IMP-003 (**DONE** #33). Pulse source hardening (Stooq/FRED clients) is IMP-004 (**DONE** #34).
 
 ---
 
@@ -189,7 +189,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** Equity names on `config/universe.yaml` as Phase 3 briefing / future equity-feed watchlist (not Hyperliquid); queue cards (UNIVERSE call cards, WATCHLIST-DD, EXPECTATIONS scorecard); generic thesis template; screen-only Post-IPO / reclaim universe `config/equities/post_ipo_reclaim.yaml` (not membership).
 
-**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline; no dedicated equity thesis-card template. Post-IPO reclaim screen product is IMP-006. Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
+**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline; no dedicated equity thesis-card template. Post-IPO reclaim screen product is IMP-006 (**DONE** #36). Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
 
 ---
 
@@ -212,7 +212,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** `packages/briefing`, `apps/briefing-worker`, `briefs/` (dated output gitignored), `config/briefing/*`, `config/schedules/market-pulse.yaml`, `docs/runbooks/market-pulse.md`. Macro live fetchers are opt-in and degrade without keys.
 
-**Gap.** No standing cross-asset **regime note** distinct from Pulse (explicitly deferred on IMP-002). US Market Pulse vertical slice is IMP-002 (`DONE` #32): pre-market brief DoD on the existing Phase 3 Pulse substrate.
+**Gap.** No standing cross-asset **regime note** distinct from Pulse (explicitly deferred on IMP-002). US Market Pulse vertical slice is IMP-002 (**DONE** #32): pre-market brief DoD on the existing Phase 3 Pulse substrate. Pulse source hardening is IMP-004 (**DONE** #34).
 
 ---
 
@@ -343,10 +343,10 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 | Market Memory (Postgres models, PIT, object pointers) | Data & Market Memory Desk | Exists |
 | Ingest worker + `hl_info` (mids, funding, OI, candles, liquidations when public) | Data & Market Memory Desk | Exists (crypto perps in universe) |
 | Provenance / claim hash / stale flags | Data & Market Memory Desk | Exists (package); standing DQ report is IMP-003 (`lab data source-health`) |
-| `lab data source-health` / `ops/reports/source-health/` | Data & Market Memory Desk | IMP-003 |
+| `lab data source-health` / `ops/reports/source-health/` | Data & Market Memory Desk | IMP-003 / IMP-004 |
 | `config/ingest.yaml`, `config/instruments/perps.yaml` | Data & Market Memory Desk | Exists |
 | Equity names on `config/universe.yaml` | Equities & Post-IPO Desk (watchlist) + Data & Market Memory Desk (future feed) | Membership exists; **no equity ingest** |
-| `lab equities reclaim-screen` / `config/equities/post_ipo_reclaim.yaml` / `research/screens/post-ipo-reclaim/` | Equities & Post-IPO Desk | IMP-006 (screen-only; not membership) |
+| `lab equities reclaim-screen` / `config/equities/post_ipo_reclaim.yaml` / `research/screens/post-ipo-reclaim/` | Equities & Post-IPO Desk | IMP-006 DONE (screen-only; not membership) |
 | `lab thesis` / `templates/{intent,thesis,research-plan,evidence-links}` / `research/YYYY/` | Crypto Desk / Equities & Post-IPO Desk / Macro & Cross-Asset Desk | Exists (generic, not desk-specific cards) |
 | `research/queue/` cards | Research desks + Quant & Market Structure Desk (ad-hoc) | Exists; not the Board |
 | Market Pulse preopen/close/alert-check | Macro & Cross-Asset Desk | Exists (Phase 3) |

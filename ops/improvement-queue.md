@@ -98,27 +98,27 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Risk level** | Low (read-only probes). Process risk if operators treat health copy as a brief. |
 | **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/33 |
-| **Lesson learned** | Merged to `main` (#33). `lab data source-health` writes versioned health/provenance reports; Pulse required vs optional inventory is always listed. Stooq/FRED failures are classified without scrape workarounds or committed secrets. Pulse source hardening (retries / failure-class ops) was split out as IMP-004 and remains PARKED (#34) — not this thread. |
+| **Lesson learned** | Merged to `main` (#33). `lab data source-health` (alias `lab dq report`) writes `ops/reports/source-health/YYYY-MM-DD.md`. Honest degraded sample: overall=`degraded`; Stooq canary HTTP 404 (`http_error`); FRED `missing_env` without `FRED_API_KEY`; Postgres `unreachable`; object_store `missing_env`; HL `/info` + CoinGecko + `calendar.yaml` `ok`. Pulse-required sources stayed up so overall was degraded, not unavailable. Inventory always listed; no prints/secrets. Retry/timeout/`http_404` hardening is IMP-004 (#34). |
 
-### IMP-004 — Pulse source hardening (Stooq/FRED)
+### IMP-004 — Pulse source hardening
 
 | Field | Value |
 |---|---|
 | **ID** | IMP-004 |
-| **Priority** | P2 |
-| **Type** | Desk product / data quality |
+| **Priority** | P1 |
+| **Type** | Reliability / read-only client hardening |
 | **Desk** | Data & Market Memory Desk + Macro & Cross-Asset Desk |
-| **Owner** | Don/Data |
-| **Problem** | IMP-002/IMP-003 honestly report Stooq timeout/ToS-class failures and FRED missing-key unavailability. Pulse still has no bounded retry / failure-class hardening, and FRED key ops are not a standing procedure. |
-| **Evidence** | IMP-002 sample `briefs/2026-09-16/us-pre-market.md`; IMP-003 report `ops/reports/source-health/2026-09-17.md`; former Gap row “Pulse source hardening”. |
-| **Proposed outcome** | Classify Stooq/FRED failure classes; bounded retries where lawful; FRED key ops without committing secrets. |
-| **Definition of done** | See open PR #34. Not active on this thread. |
-| **Non-goals** | ToS-violating Stooq scrapes; committing `FRED_API_KEY`; Quant Board rewrite; universe expansion; execution; live.yaml. |
-| **Dependencies** | IMP-003 DONE (#33). |
-| **Risk level** | Low–medium (network/ToS). |
-| **Status** | PARKED |
+| **Owner** | Don/Data+Macro |
+| **Problem** | IMP-002 Pulse and IMP-003 source-health both observed honest unavailability: Stooq canary/CSV HTTP 404 and timeouts, FRED `missing_env` without `FRED_API_KEY`. Failure classes were coarse (404 lumped as `http_error`), Pulse used a 20s timeout with no bounded retry, and operators lacked a runbook for setting FRED locally/CI without committing the key. |
+| **Evidence** | IMP-002 lesson (#32) live brief `data_quality=partial`; IMP-003 sample [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) (Stooq HTTP 404, FRED missing_env, Postgres unreachable, object_store missing_env); former Gaps row “Pulse source hardening”. |
+| **Proposed outcome** | Shared GET helper for Pulse + source-health: closed error classes (`timeout`, `http_404`, `http_5xx`, …), 8s timeout, one idempotent retry only on timeout/connect/429/5xx, clearer FRED missing-env copy, ops notes. Reports and briefs stay honest (`ok\|degraded\|unavailable` / `fresh\|stale\|partial\|unavailable`). Dual-write briefs unchanged. |
+| **Definition of done** | Queue: IMP-003 DONE #33 with lesson; this item closed on #34. Plan `ops/plans/IMP-004-pulse-source-hardening.md`. Shared helper used by briefing + source_health. Stooq: classify timeout/404/5xx; bounded GET retry; **no** scrape URLs. FRED: env-only key; missing_env operator hint; never commit. Tests for classification/retry. Runbook updates. No secrets, no invented prints. |
+| **Non-goals** | Paid data; committing `FRED_API_KEY`; Stooq ToS-violating scrape alternatives; Quant Board rewrite; watchlist recommendation loops; `live.yaml` / risk-limit edits / execution / signing / wallet HL endpoints; post-IPO reclaim product; universe membership rename (IMP-005). |
+| **Dependencies** | IMP-003 DONE (#33). IMP-002 DONE (#32). |
+| **Risk level** | Low (read-only). Residual: Stooq 404 from cloud IPs stays unavailable; FRED stays unavailable until operators set the env. |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/34 |
-| **Lesson learned** | Open PR, CI green, **not this thread**. Do not continue IMP-004 here. |
+| **Lesson learned** | Shared GET helper (`mm_common.http`) classifies `timeout` / `http_404` / `http_5xx`; 8s timeout; one idempotent retry on timeout/5xx/429 only; 404 is terminal. FRED stays env-only with clearer `missing_env` operator copy. No Stooq scrape fallbacks or committed secrets. |
 
 ### IMP-005 — Active-call language debt (membership vocabulary)
 
@@ -152,13 +152,13 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Problem** | Charters name a post-IPO reclaim screen, but no generator exists. Quant Board Track C is a one-line list, not a standing Equities product with provenance, freshness, and honest unavailable metrics. Language rules (IMP-001) and membership vocab (IMP-005) are done; this screen was blocked on those. |
 | **Evidence** | [desk-charters.md](desk-charters.md) Equities artifacts; Quant Board `## Post-IPO reclaim list`; this queue’s former Gap row; IMP-001 closed verdicts; IMP-005 membership keys. |
 | **Proposed outcome** | Repeatable read-only `lab equities reclaim-screen` writes a versioned triage screen of Post-IPO / reclaim **candidates** (relative-value framing) with source + freshness. Closed Quant verdicts only. Not a trading decision. |
-| **Definition of done** | Queue hygiene (IMP-005 DONE #35; IMP-004 PARKED #34; this item IN_PROGRESS); plan file; screen-only config (does not expand `in_universe`); CLI writes `research/screens/post-ipo-reclaim/YYYY-MM-DD.md`; each row has instrument, as-of, reclaim/relative metrics with source + freshness, `fresh\|stale\|partial\|unavailable`, Quant verdict + reason code; informational footer + Principal gate; never invent prints; runbook + charter link; tests + committed fixture sample; `uv run pytest` + lifecycle. |
-| **Non-goals** | No merge of #34; no Pulse/Stooq/FRED; no execution/signing/`live.yaml`/risk-limit edits; no paid data; no ToS-violating scrapes; no Principal membership rename or ticker expansion; no Telegram; no secrets; no MAKE/buy/sell/sizing. |
-| **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-004 stays PARKED (#34). |
+| **Definition of done** | Plan file; screen-only config (does not expand `in_universe`); CLI writes `research/screens/post-ipo-reclaim/YYYY-MM-DD.md`; each row has instrument, as-of, reclaim/relative metrics with source + freshness, `fresh\|stale\|partial\|unavailable`, Quant verdict + reason code; informational footer + Principal gate; never invent prints; runbook + charter link; tests + committed fixture sample; `uv run pytest` + lifecycle. |
+| **Non-goals** | No Pulse/Stooq/FRED; no execution/signing/`live.yaml`/risk-limit edits; no paid data; no ToS-violating scrapes; no Principal membership rename or ticker expansion; no Telegram; no secrets; no MAKE/buy/sell/sizing. |
+| **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). |
 | **Risk level** | Medium (language and drawdowns can be misread as calls). |
-| **Status** | IN_PROGRESS |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/36 |
-| **Lesson learned** | *(fill at close)* |
+| **Lesson learned** | Merged to `main` (#36). `lab equities reclaim-screen` writes a screen-only Post-IPO/reclaim triage (`config/equities/post_ipo_reclaim.yaml`); closed Quant verdicts; does not expand `in_universe`. Fixture sample CRCL/HOOD `DEFER` / `partial`. Not a trading decision. |
 
 ---
 
@@ -170,11 +170,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-001 | Quant & Market Structure Desk | Don/Quant | DONE | [#31](https://github.com/ElChopa11/market-memory/pull/31) merged |
 | IMP-002 | Macro & Cross-Asset Desk | Don | DONE | [#32](https://github.com/ElChopa11/market-memory/pull/32) merged |
 | IMP-003 | Data & Market Memory Desk | Don/Data | DONE | [#33](https://github.com/ElChopa11/market-memory/pull/33) merged |
-| IMP-004 | Data & Market Memory Desk + Macro | Don/Data | PARKED | [#34](https://github.com/ElChopa11/market-memory/pull/34) — not this thread |
+| IMP-004 | Data & Market Memory Desk + Macro & Cross-Asset Desk | Don/Data+Macro | DONE | [#34](https://github.com/ElChopa11/market-memory/pull/34) — Pulse source hardening |
 | IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
-| IMP-006 | Equities & Post-IPO Desk | Don/Equities | IN_PROGRESS | [#36](https://github.com/ElChopa11/market-memory/pull/36) — only active implementation |
+| IMP-006 | Equities & Post-IPO Desk | Don/Equities | DONE | [#36](https://github.com/ElChopa11/market-memory/pull/36) merged |
 
-`IN_PROGRESS` count: **1** (IMP-006 Post-IPO reclaim screen). IMP-000–IMP-003 and IMP-005 are `DONE`. IMP-004 is `PARKED`.
+`IN_PROGRESS` count: **0**. IMP-000–IMP-006 are `DONE`. Next Gap is unseeded.
 
 ---
 
@@ -186,8 +186,8 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 |---|---|---|
 | Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory Desk | Data desk (unassigned human; Coordinator until named) |
 | Crypto thesis / HL structure research | Crypto Desk | Research (Coordinator assigns per card) |
-| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Equities (IMP-006 IN_PROGRESS) |
-| US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE) |
+| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Equities (IMP-006 DONE) |
+| US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE; IMP-004 DONE) |
 | Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
 | `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
@@ -209,11 +209,11 @@ These are identified so they are not silently treated as existing desks. They ar
 | Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
 | Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |
 
-Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 PARKED** (#34) — not active, not this thread.
+Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 DONE** (#34).
 
-Historical “active calls” language debt was a Gap; it is now **IMP-005 DONE** (#35).
+Historical “active calls” language debt was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen.
 
-Post-IPO reclaim screen product was a Gap; it is now **IMP-006 IN_PROGRESS**.
+Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
 ## Reconciliation notes
 
@@ -222,4 +222,5 @@ Post-IPO reclaim screen product was a Gap; it is now **IMP-006 IN_PROGRESS**.
 - `research/queue/` remains artifact storage for research packs. It is not an improvement backlog. New implementation work is IMP-* here, then artifacts there if the owning desk produces them.
 - IMP-003 merged as #33 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-005.
 - IMP-005 merged as #35 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-006.
-- IMP-004 (#34) stays PARKED; do not continue Pulse/source-health code on this thread.
+- IMP-006 merged as #36 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-004 rebase onto `main`.
+- IMP-004 (#34) rebased onto `main` after #35/#36; Pulse/source-health hardening lands here. Membership vocab stays `in_universe` / `watch_only`.

@@ -1,4 +1,7 @@
-"""IDs, time, hashing, and shared schemas. Must not hold secrets or talk to Hyperliquid."""
+"""IDs, time, hashing, shared schemas, and read-only HTTP GET classification.
+
+Must not hold secrets, place orders, or talk to Hyperliquid.
+"""
 
 from mm_common.enums import (
     DATA_QUALITY_VALUES,
