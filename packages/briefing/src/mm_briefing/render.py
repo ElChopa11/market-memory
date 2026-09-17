@@ -30,6 +30,17 @@ NO_DECISION_FOOTER = (
     "This brief does not change universe membership, size a trade, submit an order, or approve risk.",
 )
 
+SOURCE_HEALTH_POINTER = (
+    "Standing source-health (Data desk, not this brief): `lab data source-health` → "
+    "`ops/reports/source-health/` (latest dated file). Pointer only — this brief does not embed a health report."
+)
+
+
+def _no_decision_footer(*, live_macro: bool = False) -> tuple[str, ...]:
+    if live_macro:
+        return (*NO_DECISION_FOOTER, SOURCE_HEALTH_POINTER)
+    return NO_DECISION_FOOTER
+
 
 def brief_hash(markdown: str) -> str:
     return sha256_hex(markdown.replace("\r\n", "\n"))
@@ -166,7 +177,7 @@ def render_preopen(
     else:
         lines.append("- Watchlist empty.")
         lines.append("")
-    lines.extend(["", *NO_DECISION_FOOTER])
+    lines.extend(["", *_no_decision_footer(live_macro=macro.source == "live")])
     markdown = "\n".join(lines).rstrip() + "\n"
     return BriefDocument(
         kind="preopen",

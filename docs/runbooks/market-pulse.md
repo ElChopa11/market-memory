@@ -76,7 +76,29 @@ Those instants shift by one UTC hour across US DST. Tests cover the 2026-03-08 s
 - **Live** (`--live` or `config/briefing/macro.yaml` mode: live): Stooq public CSV, FRED (key from `FRED_API_KEY`), CoinGecko public price. Missing keys or HTTP errors set `unavailable`/`partial` and keep going. **Never invent missing prints. Never commit secrets.**
 - Calendar is `config/briefing/calendar.yaml` (the approved attributable source). There is no live calendar API; an empty window is printed honestly.
 
+Shared GET helper (`mm_common.http`, also used by `lab data source-health`): default timeout **8s**; **one** retry only on `timeout` / `unreachable` / `429` / `5xx`. HTTP **404 is terminal** (no retry, no scrape fallback).
+
 Every market-data section has an as-of timestamp. Pulse display quality is `fresh | stale | partial | unavailable` (`ok` maps to `fresh` in markdown). Snapshot HL fields label capture/`ingested_at`; they do not disguise capture time as exchange `market_time`.
+
+### Hardened failure modes (live)
+
+| Source | Typical class | What operators see | What not to do |
+|---|---|---|---|
+| Stooq CSV `https://stooq.com/q/l/` | `http_404`, `timeout`, `http_5xx`, `parse_error`, `tos_or_blocked` | Slot stays **unavailable**; note includes `error_class=…`; no Close invented | Do **not** add HTML scrapers, country mirrors, or Yahoo/investing.com fallbacks (ToS). Treat cloud-IP 404 as unavailability. |
+| FRED | `missing_env` if `FRED_API_KEY` unset; else `timeout` / `http_5xx` / `tos_or_blocked` / `parse_error` | Rates slot **unavailable**; note names the env, never the value | Do **not** commit the key. Do not paste it into git, briefs, or tickets. |
+| CoinGecko | `timeout` / `http_5xx` / `rate_limited` | Crypto slot unavailable if the public price call fails | Do not invent last/prior. |
+| Hyperliquid `/info` | allowlist only | Memory first; `--live` fallback still refuses wallet/user types | No `hl_trade` / signing. |
+
+Live pre-market footer points at `lab data source-health` → `ops/reports/source-health/` (pointer only; the brief does not embed a health report). Fixture briefs omit that line so frozen hashes stay pinned.
+
+### FRED_API_KEY (operators)
+
+1. Request a personal API key from FRED (St. Louis Fed) — the lab does not buy or vendor a shared key in git.
+2. **Local:** `export FRED_API_KEY=…` in the shell, or set it in gitignored `.env` (see `.env.example`). Never commit `.env`.
+3. **CI:** add a repository secret named `FRED_API_KEY` if a workflow needs live FRED. Current `test.yml` does **not** require it; unit tests mock HTTP and assert missing-env degrades.
+4. Confirm with `uv run lab data source-health --no-db` (FRED row `credentials_present=yes`, no key in the markdown) and/or `uv run lab brief preopen --live --no-db` (US10Y listed, not invented).
+
+Standing source-health (Data desk, not this brief): [source-health.md](source-health.md). Plan: [ops/plans/IMP-004-pulse-source-hardening.md](../../ops/plans/IMP-004-pulse-source-hardening.md).
 
 ## Config that must stay true
 
@@ -88,6 +110,4 @@ Every market-data section has an as-of timestamp. Pulse display quality is `fres
 ## Optional DB index
 
 If Postgres is up and you omit `--no-db`, a `brief` row is written (kind, session_date, content_hash, artifact path). Markdown under `briefs/` remains the human artifact. Generated dated files are gitignored except an explicit committed sample on the DoD path.
-
-Standing source-health (Data desk, not this brief): [source-health.md](source-health.md).
 

@@ -9,6 +9,6 @@ uv run lab data source-health
 
 Path: `ops/reports/source-health/YYYY-MM-DD.md` (UTC date). Health/provenance only — no market prints.
 
-Committed sample from a real read-only run in this PR: [2026-09-17.md](2026-09-17.md).
+Committed sample from a real read-only run (IMP-003): [2026-09-17.md](2026-09-17.md). That sample predates IMP-004 classification (`http_error` for Stooq 404); new runs emit `http_404`.
 
-Dated output is gitignored except this README and explicit committed samples. See [docs/runbooks/source-health.md](../../docs/runbooks/source-health.md) and [ops/plans/IMP-003-source-health.md](../plans/IMP-003-source-health.md).
+Dated output is gitignored except this README and explicit committed samples. See [docs/runbooks/source-health.md](../../docs/runbooks/source-health.md), [ops/plans/IMP-003-source-health.md](../plans/IMP-003-source-health.md), and [ops/plans/IMP-004-pulse-source-hardening.md](../plans/IMP-004-pulse-source-hardening.md).

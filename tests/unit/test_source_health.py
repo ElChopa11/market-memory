@@ -78,6 +78,7 @@ def test_missing_fred_env_is_unavailable_not_crash() -> None:
     assert fred.error_class == "missing_env"
     assert fred.credentials_present == "no"
     assert any("FRED_API_KEY" in note for note in fred.notes)
+    assert any("never commit" in note for note in fred.notes)
     assert "sk-secret" not in report.markdown
 
 
@@ -166,6 +167,7 @@ def test_inventory_always_listed_when_sources_down() -> None:
         http_client=httpx.Client(transport=transport, timeout=2.0),
         hl_client=HyperliquidInfoClient(transport=transport, timeout=2.0),
         skip_db=True,
+        sleep=lambda _: None,
     )
     assert report.source_ids() == SOURCE_INVENTORY
     assert report.by_id()["hyperliquid.info"].pulse_role == "required"
@@ -204,6 +206,13 @@ def test_redact_dsn_password() -> None:
     assert "hunter2" not in text
     assert "abc" not in text
     assert "FRED_API_KEY=***" in text
+
+
+def test_redact_fred_query_api_key() -> None:
+    leaked = "GET https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=super-secret-fred"
+    cleaned = redact_secrets(leaked)
+    assert "super-secret-fred" not in cleaned
+    assert "api_key=***" in cleaned
 
 
 def _patch_generate(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -324,3 +333,60 @@ def test_allowlist_gate_uses_forbidden_constant() -> None:
     fred = probe_fred(ctx)
     assert fred.status == "unavailable"
     assert fred.error_class == "missing_env"
+    assert any("never commit" in note for note in fred.notes)
+
+
+def test_stooq_404_classified_not_retried() -> None:
+    stooq_calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if "stooq.com" in url:
+            stooq_calls["n"] += 1
+            return httpx.Response(404, text="no")
+        return _handler(request)
+
+    transport = httpx.MockTransport(handler)
+    report = generate_source_health(
+        repo_root=ROOT,
+        captured_at=AS_OF,
+        env=_empty_env(),
+        http_client=httpx.Client(transport=transport, timeout=2.0),
+        hl_client=HyperliquidInfoClient(transport=transport, timeout=2.0),
+        skip_db=True,
+        sleep=lambda _: None,
+    )
+    stooq = report.by_id()["stooq"]
+    assert stooq.status == "unavailable"
+    assert stooq.error_class == "http_404"
+    assert stooq_calls["n"] == 1
+    assert any("http_404" in note for note in stooq.notes)
+    assert any("no scrape fallback" in note for note in stooq.notes)
+    assert "5750" not in report.markdown
+
+
+def test_stooq_503_retries_once() -> None:
+    stooq_calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if "stooq.com" in url:
+            stooq_calls["n"] += 1
+            return httpx.Response(503, text="down")
+        return _handler(request)
+
+    transport = httpx.MockTransport(handler)
+    report = generate_source_health(
+        repo_root=ROOT,
+        captured_at=AS_OF,
+        env=_empty_env(),
+        http_client=httpx.Client(transport=transport, timeout=2.0),
+        hl_client=HyperliquidInfoClient(transport=transport, timeout=2.0),
+        skip_db=True,
+        sleep=lambda _: None,
+    )
+    stooq = report.by_id()["stooq"]
+    assert stooq.status == "unavailable"
+    assert stooq.error_class == "http_5xx"
+    assert stooq_calls["n"] == 2
+    assert any("attempts=2" in note for note in stooq.notes)

@@ -5,12 +5,21 @@ from __future__ import annotations
 import csv
 import io
 import os
+import time
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Protocol
 from urllib.parse import urlencode
 
 import httpx
 
+from mm_common.http import (
+    DEFAULT_MAX_ATTEMPTS,
+    DEFAULT_TIMEOUT,
+    ERROR_PARSE,
+    http_get,
+    missing_env_notes,
+)
 from mm_common.time import as_utc, parse_utc
 from mm_briefing.models import ASSET_ORDER, AssetPrint, MacroSnapshot, worst_quality
 
@@ -222,10 +231,14 @@ class LiveMacroFetcher:
         *,
         client: httpx.Client | None = None,
         env: dict[str, str] | None = None,
+        sleep: Callable[[float], None] | None = None,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
     ) -> None:
         self.spec = spec
         self._client = client
         self._env = env
+        self._sleep = sleep or time.sleep
+        self._max_attempts = max_attempts
 
     def fetch(self, as_of: datetime, *, prior_us_close: datetime) -> MacroSnapshot:
         notes: list[str] = []
@@ -235,8 +248,9 @@ class LiveMacroFetcher:
             return empty_snapshot(as_of, prior_us_close, reason="live macro disabled", source="live")
         captured = as_utc(as_of)
 
+        timeout = float(live.get("timeout_seconds") or DEFAULT_TIMEOUT)
         owns = self._client is None
-        client = self._client or httpx.Client(timeout=20.0)
+        client = self._client or httpx.Client(timeout=timeout)
         try:
             stooq = live.get("stooq") or {}
             if stooq.get("enabled"):
@@ -308,29 +322,44 @@ class LiveMacroFetcher:
         out: list[AssetPrint] = []
         errors = 0
         missing: list[str] = []
+        classes: list[str] = []
+        max_attempts_seen = 1
         for symbol, ticker in symbols.items():
             query = urlencode({"s": ticker, "f": "sd2t2ohlcv", "h": "", "e": "csv"})
             url = f"{base}?{query}"
-            try:
-                response = client.get(url)
-                response.raise_for_status()
-                parsed = _parse_stooq_csv(
-                    response.text,
-                    symbol=str(symbol).upper(),
-                    captured=captured,
-                    source_url=url,
-                )
-                if parsed is None:
-                    errors += 1
-                    missing.append(str(symbol).upper())
-                    continue
-                out.append(parsed)
-            except httpx.HTTPError:
+            result = http_get(
+                client,
+                url,
+                max_attempts=self._max_attempts,
+                sleep=self._sleep,
+            )
+            max_attempts_seen = max(max_attempts_seen, result.attempts)
+            if not result.ok or result.text is None:
                 errors += 1
                 missing.append(str(symbol).upper())
+                classes.append(result.error_class)
+                continue
+            parsed = _parse_stooq_csv(
+                result.text,
+                symbol=str(symbol).upper(),
+                captured=captured,
+                source_url=url,
+            )
+            if parsed is None:
+                errors += 1
+                missing.append(str(symbol).upper())
+                classes.append(ERROR_PARSE)
+                continue
+            out.append(parsed)
         note = None
         if errors:
-            note = f"stooq failed for {errors} symbol(s): {', '.join(missing)}"
+            class_txt = ", ".join(dict.fromkeys(classes)) or "error"
+            note = (
+                f"stooq unavailable (error_class={class_txt}) for {errors} symbol(s): "
+                f"{', '.join(missing)}; no scrape fallback (ToS); "
+                f"attempts<={max_attempts_seen} (retry only timeout/5xx/429). "
+                "See docs/runbooks/market-pulse.md and lab data source-health."
+            )
         return out, note
 
     def _fetch_fred(
@@ -339,11 +368,12 @@ class LiveMacroFetcher:
         env_name = str(spec.get("api_key_env") or "FRED_API_KEY")
         key = self._getenv(env_name)
         if not key:
-            return [], f"missing env {env_name}; FRED unavailable"
+            return [], " ".join(missing_env_notes(env_name, source="FRED"))
         series = spec.get("series") or {}
         base = str(spec.get("base_url") or "https://api.stlouisfed.org/fred/series/observations")
         out: list[AssetPrint] = []
         errors = 0
+        classes: list[str] = []
         for symbol, series_id in series.items():
             params = {
                 "series_id": series_id,
@@ -352,38 +382,52 @@ class LiveMacroFetcher:
                 "sort_order": "desc",
                 "limit": 2,
             }
-            try:
-                response = client.get(base, params=params)
-                response.raise_for_status()
-                payload = response.json()
-                observations = payload.get("observations") or []
-                values = [obs for obs in observations if str(obs.get("value")) not in {"", "."}]
-                if not values:
-                    errors += 1
-                    continue
-                last = _maybe_float(values[0].get("value"))
-                prior = _maybe_float(values[1].get("value")) if len(values) > 1 else None
-                obs_date = values[0].get("date")
-                quote_as_of = _date_as_utc(str(obs_date)) if obs_date else captured
-                quality = "ok" if last is not None else "unavailable"
-                if quote_as_of is not None and (captured.date() - quote_as_of.date()).days > 4:
-                    quality = worst_quality(quality, "stale")
-                out.append(
-                    AssetPrint(
-                        symbol=str(symbol).upper(),
-                        name=ASSET_NAMES.get(str(symbol).upper(), str(symbol).upper()),
-                        last=last,
-                        prior_close=prior,
-                        unit="%" if str(symbol).upper() == "US10Y" else "idx",
-                        data_quality=quality,
-                        source="fred",
-                        as_of=quote_as_of or captured,
-                        source_url=f"{base}?series_id={series_id}",
-                    )
-                )
-            except httpx.HTTPError:
+            result = http_get(
+                client,
+                base,
+                params=params,
+                max_attempts=self._max_attempts,
+                sleep=self._sleep,
+                parse_json=True,
+            )
+            if not result.ok:
                 errors += 1
-        note = f"fred failed for {errors} series" if errors else None
+                classes.append(result.error_class)
+                continue
+            payload = result.json_payload if isinstance(result.json_payload, dict) else {}
+            observations = payload.get("observations") or []
+            values = [obs for obs in observations if str(obs.get("value")) not in {"", "."}]
+            if not values:
+                errors += 1
+                classes.append(ERROR_PARSE)
+                continue
+            last = _maybe_float(values[0].get("value"))
+            prior = _maybe_float(values[1].get("value")) if len(values) > 1 else None
+            obs_date = values[0].get("date")
+            quote_as_of = _date_as_utc(str(obs_date)) if obs_date else captured
+            quality = "ok" if last is not None else "unavailable"
+            if quote_as_of is not None and (captured.date() - quote_as_of.date()).days > 4:
+                quality = worst_quality(quality, "stale")
+            out.append(
+                AssetPrint(
+                    symbol=str(symbol).upper(),
+                    name=ASSET_NAMES.get(str(symbol).upper(), str(symbol).upper()),
+                    last=last,
+                    prior_close=prior,
+                    unit="%" if str(symbol).upper() == "US10Y" else "idx",
+                    data_quality=quality,
+                    source="fred",
+                    as_of=quote_as_of or captured,
+                    source_url=f"{base}?series_id={series_id}",
+                )
+            )
+        note = None
+        if errors:
+            class_txt = ", ".join(dict.fromkeys(classes)) or "error"
+            note = (
+                f"fred failed for {errors} series (error_class={class_txt}); "
+                "key value not printed. See docs/runbooks/market-pulse.md."
+            )
         return out, note
 
     def _fetch_coingecko(
@@ -398,12 +442,17 @@ class LiveMacroFetcher:
             "vs_currencies": "usd",
             "include_24hr_change": "true",
         }
-        try:
-            response = client.get(base, params=params)
-            response.raise_for_status()
-            payload = response.json()
-        except httpx.HTTPError:
-            return [], "coingecko HTTP error"
+        result = http_get(
+            client,
+            base,
+            params=params,
+            max_attempts=self._max_attempts,
+            sleep=self._sleep,
+            parse_json=True,
+        )
+        if not result.ok:
+            return [], f"coingecko unavailable (error_class={result.error_class}); no prices invented"
+        payload = result.json_payload if isinstance(result.json_payload, dict) else {}
         out: list[AssetPrint] = []
         for symbol, gecko_id in ids.items():
             body = payload.get(gecko_id) or {}
