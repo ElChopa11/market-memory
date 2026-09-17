@@ -57,7 +57,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-000 (charter + language rules) — **DONE** (#28). Data freshness for any live-looking inputs. |
 | **Risk level** | Medium (language and process can be misread as calls). |
 | **Status** | IN_PROGRESS |
-| **PR** | https://github.com/ElChopa11/market-memory/pull/30 |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/31 |
 | **Lesson learned** | *(fill at close)* Historical packs remain evidence; they are not the Board. |
 
 ### IMP-002 — US Market Pulse vertical slice
@@ -87,7 +87,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
 | IMP-000 | Chief of Staff / Hive Coordinator | Don | DONE | [#28](https://github.com/ElChopa11/market-memory/pull/28) merged |
-| IMP-001 | Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | [#30](https://github.com/ElChopa11/market-memory/pull/30) — only active implementation |
+| IMP-001 | Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | [#31](https://github.com/ElChopa11/market-memory/pull/31) — only active implementation |
 | IMP-002 | Macro & Cross-Asset Desk | Don | BACKLOG | Parked; do not start while IMP-001 is in flight |
 
 `IN_PROGRESS` count: **1** (IMP-001 Quant Review Board). IMP-000 is `DONE`. IMP-002 stays `BACKLOG`.

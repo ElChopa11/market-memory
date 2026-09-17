@@ -1,6 +1,6 @@
 # PLAN — IMP-001 Quant Review Board
 
-**Report status:** PLAN (implementation)  
+**Report status:** PR READY  
 **Owner:** Don/Quant (Quant & Market Structure Desk)  
 **Scope:** read-only Quant Review Board + `lab quant-review`. No orders, wallets, live keys, Market Pulse, desk-doc rewrite, or strategy promotion.
 
