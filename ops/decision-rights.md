@@ -114,7 +114,7 @@ Research desk = Crypto / Equities & Post-IPO / Macro & Cross-Asset as applicable
 
 | AGENTS.md role | Desk in this model |
 |---|---|
-| Principal | Principal / CIO |
+| Principal | Principal |
 | Coordinator | Chief of Staff / Hive Coordinator (Don) |
 | Intel / ingest | Data & Market Memory Desk |
 | Research | Crypto Desk; Equities & Post-IPO Desk; Macro & Cross-Asset Desk |

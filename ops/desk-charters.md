@@ -45,9 +45,9 @@ Research desk is Crypto / Equities & Post-IPO / Macro & Cross-Asset as applicabl
 
 | Gate | Question the gate answers | What it is not |
 |---|---|---|
-| Data & Market Memory | Was this knowable, lawful, and durable at `as_of_knowledge`? | A thesis or ranking |
+| Data & Market Memory Desk | Was this knowable, lawful, and durable at `as_of_knowledge`? | A thesis or ranking |
 | Research desk | What is the falsifiable claim, catalyst, and invalidation? | A size, allocation, or order |
-| Quant Review | Relative-value / reclaim / structure triage with one verdict + reason code | An “active call,” buy, or sell |
+| Quant & Market Structure Desk | Relative-value / reclaim / structure triage with one verdict + reason code | An “active call,” buy, sell, or size |
 | Independent Skeptic | Does the claim survive leakage, crowding, stale data, already-priced narrative? | Authorship of the thesis |
 | Risk (independent veto) | Is progression unsafe on concentration, liquidity, leverage, freshness, policy? | A new thesis |
 | Principal | Mandate, budget, promotion, paper/live enablement, material approval | Delegable to any desk |
@@ -72,9 +72,9 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Principal / CIO (human)
+## Principal
 
-**Mandate.** Sole authority for the investment mandate; capital and risk budget; strategy promotion; external capital, legal, and paid-data contracts; enabling paper or live execution; and final approval of material decisions.
+**Mandate.** Human CIO. Sole authority for the investment mandate; capital and risk budget; strategy promotion; external capital, legal, and paid-data contracts; enabling paper or live execution; and final approval of material decisions.
 
 **May**
 
@@ -237,7 +237,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Must not**
 
-- Call a trade, allocate, or access execution.
+- Call a trade, size, allocate, or access execution.
 - Skip Data → Research → Quant → Skeptic → Risk → Principal.
 - Use forbidden language or treat `RESEARCH_PRIORITY` as permission to paper or live.
 
@@ -340,16 +340,16 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 
 | Capability / artifact | Desk | State |
 |---|---|---|
-| Market Memory (Postgres models, PIT, object pointers) | Data & Market Memory | Exists |
-| Ingest worker + `hl_info` (mids, funding, OI, candles, liquidations when public) | Data & Market Memory | Exists (crypto perps in universe) |
-| Provenance / claim hash / stale flags | Data & Market Memory | Exists (package); no standing DQ report |
-| `config/ingest.yaml`, `config/instruments/perps.yaml` | Data & Market Memory | Exists |
-| Equity names on `config/universe.yaml` | Equities (watchlist) + Data (future feed) | Membership exists; **no equity ingest** |
-| `lab thesis` / `templates/{intent,thesis,research-plan,evidence-links}` / `research/YYYY/` | Research desks (Crypto / Equities / Macro as applicable) | Exists (generic, not desk-specific cards) |
-| `research/queue/` cards | Research desks + Quant (ad-hoc) | Exists; not the Board |
-| Market Pulse preopen/close/alert-check | Macro & Cross-Asset | Exists (Phase 3) |
-| `config/briefing/macro.yaml`, calendar, divergences, alerts | Macro & Cross-Asset | Exists; live macro opt-in |
-| Quant pack builder under `research/queue/quant-20260917/` | Quant & Market Structure | Ad-hoc pack; **not** Quant Review Board |
+| Market Memory (Postgres models, PIT, object pointers) | Data & Market Memory Desk | Exists |
+| Ingest worker + `hl_info` (mids, funding, OI, candles, liquidations when public) | Data & Market Memory Desk | Exists (crypto perps in universe) |
+| Provenance / claim hash / stale flags | Data & Market Memory Desk | Exists (package); no standing DQ report |
+| `config/ingest.yaml`, `config/instruments/perps.yaml` | Data & Market Memory Desk | Exists |
+| Equity names on `config/universe.yaml` | Equities & Post-IPO Desk (watchlist) + Data & Market Memory Desk (future feed) | Membership exists; **no equity ingest** |
+| `lab thesis` / `templates/{intent,thesis,research-plan,evidence-links}` / `research/YYYY/` | Crypto Desk / Equities & Post-IPO Desk / Macro & Cross-Asset Desk | Exists (generic, not desk-specific cards) |
+| `research/queue/` cards | Research desks + Quant & Market Structure Desk (ad-hoc) | Exists; not the Board |
+| Market Pulse preopen/close/alert-check | Macro & Cross-Asset Desk | Exists (Phase 3) |
+| `config/briefing/macro.yaml`, calendar, divergences, alerts | Macro & Cross-Asset Desk | Exists; live macro opt-in |
+| Quant pack builder under `research/queue/quant-20260917/` | Quant & Market Structure Desk | Ad-hoc pack; **not** Quant Review Board |
 | `templates/skeptic-review.md`, `lab skeptic`, queue skeptic reviews | Independent Skeptic | Exists |
 | `config/risk/*`, live.yaml guard, halt | Risk (independent veto) | Config exists; **service stub** |
 | `packages/backtest`, `lab backtest` | Quant / Research evaluation | Exists (fixtures, `params_hash`, `available_at`) |

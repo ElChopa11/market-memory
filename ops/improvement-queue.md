@@ -47,7 +47,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **ID** | IMP-001 |
 | **Priority** | P1 |
 | **Type** | Process / desk product |
-| **Desk** | Quant & Market Structure |
+| **Desk** | Quant & Market Structure Desk |
 | **Owner** | Don/Quant |
 | **Problem** | Opportunity triage is ad-hoc queue packs that use Principal “active call” language. There is no daily Board, no instrument Quant Card, and no closed verdict set. |
 | **Evidence** | `research/queue/QUANT-20260917-active-calls.md`; `config/universe.yaml` `active_calls` / `watch_only` (Principal membership, not a Quant verdict); desk charter Quant section. |
@@ -56,7 +56,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | **Do not implement in IMP-000.** No order path, no sizing, no live.yaml, no renaming Principal universe fields in the same change as the Board unless Principal asks. |
 | **Dependencies** | IMP-000 (charter + language rules). Data freshness for any live-looking inputs. |
 | **Risk level** | Medium (language and process can be misread as calls). |
-| **Status** | READY (parked; not implementing in this PR) |
+| **Status** | READY |
 | **PR** | — |
 | **Lesson learned** | *(fill at close)* Historical packs remain evidence; they are not the Board. |
 
@@ -67,7 +67,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **ID** | IMP-002 |
 | **Priority** | P2 |
 | **Type** | Desk product / briefing |
-| **Desk** | Macro & Cross-Asset |
+| **Desk** | Macro & Cross-Asset Desk |
 | **Owner** | Don |
 | **Problem** | Phase 3 Pulse exists as code and runbook, but it is not operated as a Macro desk vertical slice with the reporting template, regime note, and explicit “macro ≠ allocation” cadence. |
 | **Evidence** | `packages/briefing`, `docs/runbooks/market-pulse.md`, `config/briefing/*`, `config/schedules/market-pulse.yaml`; charter gap: no standing cross-asset regime note. |
@@ -86,9 +86,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
-| IMP-000 | Chief of Staff | Don | IN_REVIEW | [#28](https://github.com/ElChopa11/market-memory/pull/28) |
-| IMP-001 | Quant & Market Structure | Don/Quant | READY | Parked; do not start while IMP-000 is the active docs change |
-| IMP-002 | Macro & Cross-Asset | Don | BACKLOG | After Board/charter usage is real |
+| IMP-000 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | [#28](https://github.com/ElChopa11/market-memory/pull/28) |
+| IMP-001 | Quant & Market Structure Desk | Don/Quant | READY | Parked; not implementing in this PR |
+| IMP-002 | Macro & Cross-Asset Desk | Don | BACKLOG | After Board/charter usage is real |
 
 `IN_PROGRESS` count: **0** (IMP-000 is `IN_REVIEW`). Next implementation candidate after IMP-000 closes: IMP-001, still only if Chief of Staff moves it to `IN_PROGRESS`.
 
@@ -100,11 +100,11 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 
 | Area | Desk | Owner (accountable) |
 |---|---|---|
-| Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory | Data desk (unassigned human; Coordinator until named) |
-| Crypto thesis / HL structure research | Crypto | Research (Coordinator assigns per card) |
-| Equity / post-IPO cards and screens | Equities & Post-IPO | Research (Coordinator assigns per card) |
-| US Market Pulse, calendar, macro config | Macro & Cross-Asset | Don (IMP-002) |
-| Quant packs / future Board | Quant & Market Structure | Don/Quant (IMP-001) |
+| Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory Desk | Data desk (unassigned human; Coordinator until named) |
+| Crypto thesis / HL structure research | Crypto Desk | Research (Coordinator assigns per card) |
+| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Research (Coordinator assigns per card) |
+| US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002) |
+| Quant packs / future Board | Quant & Market Structure Desk | Don/Quant (IMP-001) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
 | `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
 | Paper ledger `lab paper` | Principal-gated lab control | Principal enables; Coordinator operates CLI |
@@ -117,16 +117,16 @@ These are identified so they are not silently treated as existing desks. They ar
 
 | Gap | Desk that would own | Why not queued now |
 |---|---|---|
-| Standing DQ / source-health report | Data & Market Memory | Charter names the artifact; no generator this cycle |
-| Dedicated crypto / equity thesis-card templates | Crypto; Equities | Generic `templates/thesis.md` suffices until Board exists |
-| Post-IPO reclaim screen product | Equities & Post-IPO | Needs Quant language rules (IMP-001) first |
-| Equity-feed ingest; on-chain ingest | Data | Mandate/paid-data/ToS — Principal gate |
-| `risk-review.md` + portfolio exposure report | Risk | Risk *service* is out of Phase 4 |
-| Quant Board generator + Quant Cards | Quant | **IMP-001 READY, parked** |
-| Cross-asset regime note cadence | Macro | Covered by IMP-002 scope |
+| Standing DQ / source-health report | Data & Market Memory Desk | Charter names the artifact; no generator this cycle |
+| Dedicated crypto / equity thesis-card templates | Crypto Desk; Equities & Post-IPO Desk | Generic `templates/thesis.md` suffices until Board exists |
+| Post-IPO reclaim screen product | Equities & Post-IPO Desk | Needs Quant language rules (IMP-001) first |
+| Equity-feed ingest; on-chain ingest | Data & Market Memory Desk | Mandate/paid-data/ToS — Principal gate |
+| `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
+| Quant Board generator + Quant Cards | Quant & Market Structure Desk | **IMP-001 READY, parked** |
+| Cross-asset regime note cadence | Macro & Cross-Asset Desk | Covered by IMP-002 scope |
 | Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
 | Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |
-| Rename historical “active calls” in universe/queue files | Principal + Quant | Membership language vs Quant vocabulary; not this PR |
+| Rename historical “active calls” in universe/queue files | Principal + Quant & Market Structure Desk | Membership language vs Quant vocabulary; not this PR |
 
 ## Reconciliation notes
 
