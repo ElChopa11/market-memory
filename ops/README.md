@@ -18,5 +18,6 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - US Market Pulse vertical slice (IMP-002) is **DONE** (#32).
 - Standing source-health report (IMP-003) is **DONE** (#33).
 - Pulse source hardening (IMP-004) is **PARKED** (#34) — not this thread.
-- Membership vocabulary (IMP-005) is the active implementation item. Rename/docs only; no execution.
+- Membership vocabulary (IMP-005) is **DONE** (#35). Keys are `in_universe` / `watch_only`.
+- Post-IPO reclaim screen (IMP-006) is the active implementation item. Equities desk product; not a trading decision.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

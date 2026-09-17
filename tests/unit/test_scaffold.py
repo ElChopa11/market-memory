@@ -16,6 +16,7 @@ REQUIRED_TEMPLATES = [
     "unicorn-card.md",
     "quant-card.md",
     "quant-review-board.md",
+    "post-ipo-reclaim-screen.md",
     "paper-trade.md",
     "promotion-decision.md",
     "post-mortem.md",
@@ -72,6 +73,9 @@ def test_core_docs_present() -> None:
         "ops/improvement-queue.md",
         "ops/plans/IMP-001-quant-review-board.md",
         "ops/plans/IMP-005-active-call-language-debt.md",
+        "ops/plans/IMP-006-post-ipo-reclaim-screen.md",
+        "config/equities/post_ipo_reclaim.yaml",
+        "docs/runbooks/post-ipo-reclaim.md",
     ):
         assert (ROOT / rel).exists(), rel
 

@@ -185,11 +185,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 - Invent catalysts, skip liquidity, or skip invalidation.
 - Access execution. Author and approve the same thesis.
 
-**Artifacts.** Equity thesis card; post-IPO reclaim screen.
+**Artifacts.** Equity thesis card; post-IPO reclaim screen (`lab equities reclaim-screen`; IMP-006).
 
-**Exists today.** Equity names on `config/universe.yaml` as Phase 3 briefing / future equity-feed watchlist (not Hyperliquid); queue cards (UNIVERSE call cards, WATCHLIST-DD, EXPECTATIONS scorecard); generic thesis template.
+**Exists today.** Equity names on `config/universe.yaml` as Phase 3 briefing / future equity-feed watchlist (not Hyperliquid); queue cards (UNIVERSE call cards, WATCHLIST-DD, EXPECTATIONS scorecard); generic thesis template; screen-only Post-IPO / reclaim universe `config/equities/post_ipo_reclaim.yaml` (not membership).
 
-**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline; no post-IPO reclaim screen as a product; no dedicated equity thesis-card template. Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
+**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline; no dedicated equity thesis-card template. Post-IPO reclaim screen product is IMP-006. Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
 
 ---
 
@@ -245,7 +245,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** Ad-hoc queue packs (`research/queue/QUANT-20260917-active-calls.md` — historical filename; membership vocabulary after IMP-005) and builder, universe shortlists, fail-pair / expectations scorecards. Fixture backtest harness (`packages/backtest`) is evaluation infrastructure, not the Board.
 
-**Gap.** Board generator exists (IMP-001 DONE). Remaining: dedicated crypto/equity thesis-card templates; post-IPO reclaim screen as a product; Quant pack rewrite (templates / pack workflow — still a Gap, not this PR). Do not treat membership (`in_universe`) as a Quant verdict.
+**Gap.** Board generator exists (IMP-001 DONE). Remaining: dedicated crypto/equity thesis-card templates; Quant pack rewrite (templates / pack workflow — still a Gap, not this PR). Post-IPO reclaim **screen product** is Equities desk IMP-006 (uses Quant closed verdicts; does not rewrite the Board). Do not treat membership (`in_universe`) as a Quant verdict.
 
 ---
 
@@ -346,6 +346,7 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 | `lab data source-health` / `ops/reports/source-health/` | Data & Market Memory Desk | IMP-003 |
 | `config/ingest.yaml`, `config/instruments/perps.yaml` | Data & Market Memory Desk | Exists |
 | Equity names on `config/universe.yaml` | Equities & Post-IPO Desk (watchlist) + Data & Market Memory Desk (future feed) | Membership exists; **no equity ingest** |
+| `lab equities reclaim-screen` / `config/equities/post_ipo_reclaim.yaml` / `research/screens/post-ipo-reclaim/` | Equities & Post-IPO Desk | IMP-006 (screen-only; not membership) |
 | `lab thesis` / `templates/{intent,thesis,research-plan,evidence-links}` / `research/YYYY/` | Crypto Desk / Equities & Post-IPO Desk / Macro & Cross-Asset Desk | Exists (generic, not desk-specific cards) |
 | `research/queue/` cards | Research desks + Quant & Market Structure Desk (ad-hoc) | Exists; not the Board |
 | Market Pulse preopen/close/alert-check | Macro & Cross-Asset Desk | Exists (Phase 3) |
@@ -378,3 +379,4 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 - Security / halt / live.yaml: [docs/security-model.md](../docs/security-model.md)
 - Decision rights: [decision-rights.md](decision-rights.md)
 - Improvement queue: [improvement-queue.md](improvement-queue.md)
+- Post-IPO / reclaim screen: [docs/runbooks/post-ipo-reclaim.md](../docs/runbooks/post-ipo-reclaim.md)

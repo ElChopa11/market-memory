@@ -1,0 +1,66 @@
+# SCREEN-ONLY Post-IPO / reclaim triage universe (IMP-006).
+# Does NOT change Principal membership in config/universe.yaml.
+# Not ingest. Not thesis-priority. Not a Quant Review Board expansion.
+#
+# Membership vocabulary stays in_universe / watch_only on universe.yaml.
+# This file is a clearly marked Equities desk screen watchlist.
+version: "2026-09-17"
+status: screen_only
+kind: post_ipo_reclaim_screen
+desk: Equities & Post-IPO Desk
+locked_membership_file: config/universe.yaml
+quant_review_universe: config/quant_review_universe.yaml
+stale_after_hours: 36
+notes:
+  - "Screen-only. Names here are research triage, not membership adds and not trades."
+  - "Start small: Quant-review TV equities already flagged post-IPO / reclaim-relevant (CRCL, HOOD)."
+  - "A beaten-down print is not a candidate. Needs catalyst, benchmark-relative context, liquidity, and a falsifiable invalidation."
+  - "Listing dates are not in Market Memory; issuance context is unavailable until a lawful equity feed exists."
+  - "Equity prints are briefing/watchlist overlays, not Market Memory ingest."
+  - "Principal in_universe equities (NVDA, AVGO, MSFT, META, JPM, XOM) are not post-IPO reclaim candidates on this screen."
+
+provenance:
+  - id: quant-review-tv-post-ipo
+    kind: screenshot_subset
+    description: CRCL (Track C post-IPO) and HOOD from Principal-approved Quant Review TV watchlist
+    captured_for: IMP-006
+    source_config: config/quant_review_universe.yaml
+
+symbol_map:
+  CRCL: CRCL
+  HOOD: HOOD
+  QQQ: QQQ
+  SPX: SPX
+  GLXY: GLXY
+
+# Context names supply relative-value denominators. They are not reclaim candidates.
+context:
+  - {symbol: QQQ, role: benchmark, asset_class: etf}
+  - {symbol: SPX, role: benchmark, asset_class: index}
+  - {symbol: GLXY, role: peer, asset_class: equity}
+
+instruments:
+  - symbol: CRCL
+    raw_symbols: [CRCL]
+    asset_class: equity
+    venue: unknown
+    sector: crypto_equity
+    benchmark: QQQ
+    peers: [HOOD, GLXY]
+    post_ipo: true
+    listing_date: null
+    role: candidate
+    membership: screen_only
+    notes: Quant Board Track C post-IPO flag; listing date not in Market Memory.
+  - symbol: HOOD
+    raw_symbols: [HOOD]
+    asset_class: equity
+    venue: unknown
+    sector: crypto_equity
+    benchmark: QQQ
+    peers: [CRCL, GLXY]
+    post_ipo: true
+    listing_date: null
+    role: candidate
+    membership: screen_only
+    notes: Quant-review TV equity; IPO-era name for reclaim triage. Listing date not in Market Memory.

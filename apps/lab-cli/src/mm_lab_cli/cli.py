@@ -1,4 +1,4 @@
-"""Coordinator CLI: status, migrate, ingest, research, briefs, backtest, paper ledger, source-health.
+"""Coordinator CLI: status, migrate, ingest, research, briefs, backtest, paper ledger, source-health, equities screen.
 
 Must not hold trading credentials.
 """
@@ -14,6 +14,7 @@ from mm_common.time import parse_utc, utcnow
 from mm_lab_cli.backtest import add_backtest_parser, dispatch_backtest
 from mm_lab_cli.briefing import add_brief_parser, dispatch_brief
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
+from mm_lab_cli.equities import add_equities_parser, dispatch_equities
 from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_review
 from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
 from mm_lab_cli.source_health import add_source_health_parser, dispatch_source_health
@@ -98,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     add_paper_parser(sub)
     add_quant_review_parser(sub)
     add_source_health_parser(sub)
+    add_equities_parser(sub)
 
     args = parser.parse_args(argv)
     if args.cmd is None or args.cmd == "status":
@@ -122,6 +124,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_quant_review(args)
     if args.cmd in {"data", "dq"}:
         return dispatch_source_health(args)
+    if args.cmd == "equities":
+        return dispatch_equities(args)
     parser.print_help()
     return 2
 
@@ -147,6 +151,7 @@ def cmd_status() -> int:
     print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
     print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
+    print("Equities screen: lab equities reclaim-screen --fixture PATH --no-db (Post-IPO / reclaim triage; not a trading decision)")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")

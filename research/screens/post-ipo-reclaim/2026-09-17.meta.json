@@ -1,0 +1,40 @@
+{
+  "as_of_knowledge": "2026-09-17T02:42:00+00:00",
+  "engine": "imp-006.1",
+  "footer": "Informational research triage only. Not a trading decision, allocation, or execution approval. A Quant verdict is not permission to paper or live. Principal gate still required for anything beyond research.",
+  "generated_at": "2026-09-17T02:42:00+00:00",
+  "params_hash": "a366deb4eeb1d3ca9e16462777775756ce98957d707eecb793949638be631c1a",
+  "screen_date": "2026-09-17",
+  "snapshot_source": "principal_watchlist_screenshot_subset",
+  "universe_version": "2026-09-17",
+  "verdicts": {
+    "CRCL": {
+      "data_quality": "partial",
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "DILUTION_OR_LOCKUP_RISK",
+        "STALE_OR_PARTIAL_DATA",
+        "INADEQUATE_LIQUIDITY",
+        "CORRELATED_EXPOSURE"
+      ],
+      "verdict": "DEFER"
+    },
+    "HOOD": {
+      "data_quality": "partial",
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "INSUFFICIENT_HISTORY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "DILUTION_OR_LOCKUP_RISK",
+        "STALE_OR_PARTIAL_DATA",
+        "INADEQUATE_LIQUIDITY",
+        "CORRELATED_EXPOSURE"
+      ],
+      "verdict": "DEFER"
+    }
+  }
+}
