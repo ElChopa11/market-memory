@@ -21,6 +21,8 @@ research/
       post-mortem.md
 ```
 
+Coordinator queue snapshots (not thesis workspaces) live under `research/queue/`. They are not lifecycle-gated.
+
 `./scripts/check-lifecycle.sh` refuses a thesis without intent and refuses `in_skeptic` without evidence links. Rejected workspaces stay here as learning records.
 
 See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md).
