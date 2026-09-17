@@ -37,7 +37,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | None (docs on current `main`). |
 | **Risk level** | Low (documentation). Process risk if desks ignore the pipeline after merge. |
 | **Status** | IN_REVIEW |
-| **PR** | This PR (IMP-000). |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/28 |
 | **Lesson learned** | *(fill at close)* Parked-agent `ops/` on `cursor/ops-scan-proposals-2158` had proposal drafts, not an improvement queue — rebased from `main` rather than that branch. |
 
 ### IMP-001 — Quant Review Board
@@ -86,7 +86,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
-| IMP-000 | Chief of Staff | Don | IN_REVIEW | This PR |
+| IMP-000 | Chief of Staff | Don | IN_REVIEW | [#28](https://github.com/ElChopa11/market-memory/pull/28) |
 | IMP-001 | Quant & Market Structure | Don/Quant | READY | Parked; do not start while IMP-000 is the active docs change |
 | IMP-002 | Macro & Cross-Asset | Don | BACKLOG | After Board/charter usage is real |
 
