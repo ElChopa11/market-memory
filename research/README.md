@@ -23,4 +23,6 @@ research/
 
 `./scripts/check-lifecycle.sh` refuses a thesis without intent and refuses `in_skeptic` without evidence links. Rejected workspaces stay here as learning records.
 
+Queue notes (not theses — no `intent.md`, not lifecycle workspaces) live under `research/queue/`. QUANT packs are citation tables plus scripts/CSVs, e.g. `QUANT-20260917-active-calls.md` and `quant-20260917/`.
+
 See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md).

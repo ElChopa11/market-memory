@@ -1,0 +1,80 @@
+{
+  "pack_id": "QUANT-20260917-active-calls",
+  "started_at": "2026-09-17T01:22:17.638Z",
+  "finished_at": "2026-09-17T01:22:22.964Z",
+  "active_calls": {
+    "crypto_perps": [
+      "BTC",
+      "ETH"
+    ],
+    "equities": [
+      "NVDA",
+      "AVGO",
+      "MSFT",
+      "META",
+      "JPM",
+      "XLF",
+      "XOM"
+    ]
+  },
+  "excluded_watch_only": [
+    "UNI",
+    "AAVE",
+    "SMH"
+  ],
+  "must_cuts_not_reopened": [
+    "HYPE",
+    "SOL",
+    "XRP",
+    "ARB",
+    "NEAR",
+    "LINK",
+    "GLD",
+    "LLY"
+  ],
+  "sources": {
+    "equities": "Yahoo Finance v8 chart (adjclose preferred)",
+    "crypto": "Hyperliquid public /info"
+  },
+  "conventions": {
+    "equity_ann_factor": 252,
+    "crypto_ann_factor": 365,
+    "equity_1m_bars": 21,
+    "equity_3m_bars": 63,
+    "equity_1y_bars": 252,
+    "crypto_1m_bars": 30,
+    "crypto_3m_bars": 90,
+    "crypto_1y_bars": 365,
+    "stdev_ddof": 1,
+    "funding_naive_ann": "rate_8h * 3 * 365"
+  },
+  "nine_name_session_n_dates": 274,
+  "equity_spy_session_n_dates": 549,
+  "cross_corr_n_return_pairs": 273,
+  "cross_corr_60d_n_return_pairs": 60,
+  "cross_corr_60d_window": {
+    "start": "2026-06-22",
+    "end": "2026-09-15"
+  },
+  "overlap_research_pr": 19,
+  "http_429_count": 0,
+  "last_dates": {
+    "BTC": "2026-09-17",
+    "ETH": "2026-09-17",
+    "NVDA": "2026-09-16",
+    "AVGO": "2026-09-16",
+    "MSFT": "2026-09-16",
+    "META": "2026-09-15",
+    "JPM": "2026-09-16",
+    "XLF": "2026-09-16",
+    "XOM": "2026-09-16",
+    "SPY": "2026-09-16"
+  },
+  "errors": {},
+  "notes": [
+    "Not Market Memory observations; no obs_ids.",
+    "OI is snapshot-only; no public OI history on /info.",
+    "Do not invent fills for failed tickers.",
+    "Beta calendar is equities+SPY; heatmap calendar is the 9 active calls."
+  ]
+}
