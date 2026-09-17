@@ -20,4 +20,5 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Pulse source hardening (IMP-004) is **DONE** (#34). Read-only; no execution.
 - Membership vocabulary (IMP-005) is **DONE** (#35). Keys are `in_universe` / `watch_only`.
 - Post-IPO reclaim screen (IMP-006) is **DONE** (#36). Equities desk product; not a trading decision.
+- Dedicated crypto / equities thesis-card templates (IMP-007) are **IN_PROGRESS**. Generic `thesis.md` stays the lifecycle spine.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

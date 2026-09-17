@@ -44,6 +44,8 @@ uv run lab thesis new --goal "…" --owner Research --instrument BTC
 - Invalidation, risks / alternative explanations, what would change our mind.
 - Status / version.
 
+Desk-specific companions (IMP-007; not a substitute for `thesis.md`): `crypto-thesis-card.md` or `equities-thesis-card.md` when `--instrument` is in locked membership. See [runbooks/thesis-cards.md](runbooks/thesis-cards.md).
+
 ### 3. Research plan (`research-plan.md`)
 
 **Requires:** `thesis.md`

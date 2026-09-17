@@ -33,6 +33,8 @@ from mm_research_kit.markdown import first_token, get_field, set_field
 REQUIRED_TEMPLATES = [
     "intent.md",
     "thesis.md",
+    "crypto-thesis-card.md",
+    "equities-thesis-card.md",
     "research-plan.md",
     "skeptic-review.md",
     "unicorn-card.md",

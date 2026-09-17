@@ -11,6 +11,6 @@ Public helpers:
 - `advance_status` — DoD gates (no `in_skeptic` without evidence links; paper needs skeptic pass + invalidation/max loss)
 - `open_skeptic_review` / `record_skeptic_verdict` — `pass` | `revise` | `reject`
 
-Coordinator surface: `uv run lab thesis …`, `lab skeptic …`, `lab backtest run`, `lab paper …`, `lab quant-review`, `lab equities reclaim-screen`. Runbook: [../../docs/runbooks/research-workspace.md](../../docs/runbooks/research-workspace.md). Quant plan: [../../ops/plans/IMP-001-quant-review-board.md](../../ops/plans/IMP-001-quant-review-board.md). Equities screen: [../../docs/runbooks/post-ipo-reclaim.md](../../docs/runbooks/post-ipo-reclaim.md).
+Coordinator surface: `uv run lab thesis …`, `lab skeptic …`, `lab backtest run`, `lab paper …`, `lab quant-review`, `lab equities reclaim-screen`. Runbook: [../../docs/runbooks/research-workspace.md](../../docs/runbooks/research-workspace.md). Quant plan: [../../ops/plans/IMP-001-quant-review-board.md](../../ops/plans/IMP-001-quant-review-board.md). Equities screen: [../../docs/runbooks/post-ipo-reclaim.md](../../docs/runbooks/post-ipo-reclaim.md). Thesis cards: [../../docs/runbooks/thesis-cards.md](../../docs/runbooks/thesis-cards.md).
 
 See [../../docs/founding-brief.md](../../docs/founding-brief.md) and [../../AGENTS.md](../../AGENTS.md).

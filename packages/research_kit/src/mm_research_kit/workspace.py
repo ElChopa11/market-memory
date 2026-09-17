@@ -20,6 +20,7 @@ from mm_research_kit.artifacts import (
 )
 from mm_research_kit.errors import NO_INTENT, GateError, ResearchKitError
 from mm_research_kit.markdown import get_field
+from mm_research_kit.thesis_cards import attach_desk_thesis_card
 
 SLUG_RE = re.compile(r"^THESIS-(\d+)$")
 DEFAULT_DOD = "Hypothesis, instrument, invalidation, and why-now are written in thesis.md."
@@ -181,6 +182,16 @@ def create_thesis_from_intent(
             horizon=spec.horizon,
             hypothesis=spec.hypothesis,
         ),
+    )
+    attach_desk_thesis_card(
+        workspace=workspace,
+        templates_root=templates_root,
+        instrument=spec.instrument,
+        slug=slug,
+        status=status,
+        author_role=spec.author_role or spec.owner,
+        horizon=spec.horizon,
+        opened_at=opened_at,
     )
     write_text(
         workspace / "research-plan.md",
