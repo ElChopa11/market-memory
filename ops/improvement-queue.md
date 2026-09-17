@@ -177,7 +177,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-006 DONE (#36) for Equities screen vs card boundary. |
 | **Risk level** | Low (templates). Process risk if operators treat a desk card as a call or skip Skeptic. |
 | **Status** | IN_PROGRESS |
-| **PR** | *(this PR)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/37 |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -194,7 +194,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-004 | Data & Market Memory Desk + Macro & Cross-Asset Desk | Don/Data+Macro | DONE | [#34](https://github.com/ElChopa11/market-memory/pull/34) — Pulse source hardening |
 | IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
 | IMP-006 | Equities & Post-IPO Desk | Don/Equities | DONE | [#36](https://github.com/ElChopa11/market-memory/pull/36) merged |
-| IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | IN_PROGRESS | this PR — dedicated thesis-card templates |
+| IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | IN_PROGRESS | [#37](https://github.com/ElChopa11/market-memory/pull/37) — dedicated thesis-card templates |
 
 `IN_PROGRESS` count: **1** (IMP-007 thesis-card templates). IMP-000–IMP-006 are `DONE`.
 
