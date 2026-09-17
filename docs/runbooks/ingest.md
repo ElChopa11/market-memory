@@ -43,7 +43,8 @@ uv run lab migrate
 # 4a. Fixture window (offline, what CI uses). `--no-objects` skips raw pointers honestly.
 uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
 
-# 4b. One-shot live public info for locked HL perps (BTC, ETH, UNI, AAVE; last 7 days).
+# 4b. One-shot live public info for locked HL perps (BTC, ETH, UNI, AAVE membership; last 7 days).
+#     UNI and AAVE stay on the ingest list as watch-only (no thesis priority).
 #     Raw JSON goes to MinIO bucket `market-memory` (checksum + key only).
 #     Requires durable MinIO/S3 env (see `.env.example`). Incomplete env fails closed.
 uv run lab ingest --window 7d
@@ -68,7 +69,7 @@ uv run lab what-did-we-know --at 2026-09-10T00:05:00Z --instrument BTC --metric 
 | Prices (window) | `candleSnapshot` | `candle_close` |
 | Liquidations | `recentTrades` when a `liquidation` object is present | `liquidation` |
 
-Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked in `config/universe.yaml`). Equities on that universe file are a Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest. Settings: `config/ingest.yaml`.
+Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked ingest membership in `config/universe.yaml`). UNI and AAVE remain ingested as **watch-only** (no active call / no thesis priority); BTC and ETH are the crypto **active calls**. Equities on that universe file are a Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest — SMH is watch-only; NVDA, AVGO, MSFT, META, JPM, XLF, XOM are active calls. Settings: `config/ingest.yaml`.
 
 The client **refuses** user-private types (`clearinghouseState`, `userFills`, `openOrders`, …). There is no `hl_trade` module.
 

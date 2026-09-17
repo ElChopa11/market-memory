@@ -1,13 +1,15 @@
 # Controlled research/ingest universe — Principal lock 2026-09-17
-# Skeptic PR #11 must-cuts archived; survivors only.
+# Skeptic PR #11 must-cuts archived. Full survivor membership kept for ingest.
+# Principal 2026-09-17: KEEP membership; DEMOTE UNI, AAVE, SMH to watch-only
+# (no active call / no thesis priority). Cite call cards PR #13 and Skeptic PR #14.
 version: "2026-09-17"
 status: locked
-crypto_perps:  # Hyperliquid
+crypto_perps:  # Hyperliquid ingest membership (not call priority)
   - BTC
   - ETH
   - UNI
   - AAVE
-equities:  # US liquid stocks/ETFs
+equities:  # US liquid stocks/ETFs — briefing / future equity-feed membership
   - NVDA
   - AVGO
   - SMH
@@ -16,11 +18,23 @@ equities:  # US liquid stocks/ETFs
   - JPM
   - XLF
   - XOM
-deferred_must_cut:  # learning records — not active universe
+# Call tiers partition membership. Watch-only names stay in the lists above.
+# Survivors are not equal priority: thesis work follows active_calls only.
+active_calls:
+  crypto_perps: [BTC, ETH]
+  equities: [NVDA, AVGO, MSFT, META, JPM, XLF, XOM]
+watch_only:
+  crypto_perps: [UNI, AAVE]
+  equities: [SMH]
+deferred_must_cut:  # learning records — not universe membership
   crypto: [HYPE, SOL, XRP, ARB, NEAR, LINK]
   equities: [GLD, LLY]
 notes:
   - Intent-level watchlist only; not orders.
-  - Survivors still status=revise pending data gates (Skeptic PR #11).
-  - Cite research/queue/UNIVERSE-20260917-shortlist.md and UNIVERSE-20260917-skeptic-review.md
+  - Full locked membership kept after Skeptic PR #11; not all survivors are equal priority.
+  - Active calls (revise keepers, thesis priority): BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM.
+  - Watch-only (still ingested / still in universe; no active call / no thesis priority): UNI, AAVE, SMH.
+  - Demotion follows Skeptic PR #14 rejects vs call cards PR #13 (UNI event-gated with no dated event; AAVE liquidity/causation; SMH redundant vs NVDA+AVGO).
+  - Must-cuts remain archived learning records (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY).
+  - Cite research/queue/UNIVERSE-20260917-shortlist.md (PR #10), UNIVERSE-20260917-skeptic-review.md (PR #11), UNIVERSE-20260917-call-cards.md (PR #13), UNIVERSE-20260917-call-cards-skeptic.md (PR #14).
   - Equities are Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest.
