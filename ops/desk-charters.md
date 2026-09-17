@@ -138,9 +138,9 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Artifacts.** Data-quality report; source inventory; schema and provenance records.
 
-**Exists today.** `packages/memory`, `packages/ingest`, `packages/provenance`, `packages/common`, `apps/ingest-worker`, `config/ingest.yaml`, `config/instruments/perps.yaml`, `docs/runbooks/ingest.md`. PIT query: `lab what-did-we-know`.
+**Exists today.** `packages/memory`, `packages/ingest`, `packages/provenance`, `packages/common`, `packages/source_health`, `apps/ingest-worker`, `config/ingest.yaml`, `config/instruments/perps.yaml`, `docs/runbooks/ingest.md`, `docs/runbooks/source-health.md`. PIT query: `lab what-did-we-know`. Source health: `lab data source-health`.
 
-**Gap.** No standing DQ report / source-health dashboard as a desk product; equity and on-chain feeds are not ingest (equities are briefing/watchlist only); contradiction workflows are schema-level (`observation_link`), not an operating cadence.
+**Gap.** Equity and on-chain feeds are not ingest (equities are briefing/watchlist only); contradiction workflows are schema-level (`observation_link`), not an operating cadence. Standing DQ / source-health generator is IMP-003.
 
 ---
 
@@ -342,7 +342,8 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 |---|---|---|
 | Market Memory (Postgres models, PIT, object pointers) | Data & Market Memory Desk | Exists |
 | Ingest worker + `hl_info` (mids, funding, OI, candles, liquidations when public) | Data & Market Memory Desk | Exists (crypto perps in universe) |
-| Provenance / claim hash / stale flags | Data & Market Memory Desk | Exists (package); no standing DQ report |
+| Provenance / claim hash / stale flags | Data & Market Memory Desk | Exists (package); standing DQ report is IMP-003 (`lab data source-health`) |
+| `lab data source-health` / `ops/reports/source-health/` | Data & Market Memory Desk | IMP-003 |
 | `config/ingest.yaml`, `config/instruments/perps.yaml` | Data & Market Memory Desk | Exists |
 | Equity names on `config/universe.yaml` | Equities & Post-IPO Desk (watchlist) + Data & Market Memory Desk (future feed) | Membership exists; **no equity ingest** |
 | `lab thesis` / `templates/{intent,thesis,research-plan,evidence-links}` / `research/YYYY/` | Crypto Desk / Equities & Post-IPO Desk / Macro & Cross-Asset Desk | Exists (generic, not desk-specific cards) |

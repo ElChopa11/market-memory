@@ -7,11 +7,14 @@ Desk operating model for Market Memory as a **private research lab**. This tree 
 | [desk-charters.md](desk-charters.md) | Desk mandates, forbidden actions, artifacts, pipeline, reporting template, capability map |
 | [decision-rights.md](decision-rights.md) | Who proposes / challenges / vetoes / approves; Principal-only gates |
 | [improvement-queue.md](improvement-queue.md) | Single continuous-improvement queue; every item has a desk and one accountable owner |
+| [plans/](plans/) | IMP implementation plans |
+| [reports/source-health/](reports/source-health/) | Standing DQ / source-health reports (`lab data source-health`) |
 
 Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 
 - No trading credentials, signing, wallets, or `hl_trade` / `mm_execution` usage from this tree.
 - Do not edit `config/risk/environments/live.yaml` from ops docs work.
-- Quant Review Board (IMP-001) is **DONE** (#31). Do not rewrite the board in a Pulse PR.
-- US Market Pulse vertical slice (IMP-002) is the active implementation item. Read-only; no execution.
+- Quant Review Board (IMP-001) is **DONE** (#31). Do not rewrite the board in a Pulse or DQ PR.
+- US Market Pulse vertical slice (IMP-002) is **DONE** (#32).
+- Standing source-health report (IMP-003) is the active implementation item. Read-only; no execution.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

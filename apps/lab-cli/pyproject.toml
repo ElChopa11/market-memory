@@ -12,6 +12,7 @@ dependencies = [
   "mm-briefing",
   "mm-backtest",
   "mm-paper",
+  "mm-source-health",
 ]
 
 [project.scripts]

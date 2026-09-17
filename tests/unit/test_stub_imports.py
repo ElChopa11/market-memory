@@ -15,10 +15,11 @@ import mm_paper
 import mm_provenance
 import mm_research_kit
 import mm_risk
+import mm_source_health
 import mm_unicorn
 
 ROOT = Path(__file__).resolve().parents[2]
-PHASE4 = {mm_memory, mm_backtest, mm_paper, mm_lab_cli}
+PHASE4 = {mm_memory, mm_backtest, mm_paper, mm_lab_cli, mm_source_health}
 PHASE3 = {mm_briefing}
 PHASE1 = {mm_ingest, mm_provenance}
 PHASE2 = {mm_common, mm_research_kit}
@@ -46,6 +47,7 @@ def test_stubs_import_and_are_hard_gated() -> None:
         mm_briefing,
         mm_unicorn,
         mm_lab_cli,
+        mm_source_health,
     ):
         assert mod.LIVE_TRADING_ENABLED is False
         if mod in PHASE4:
