@@ -84,10 +84,10 @@ def test_controlled_universe_is_locked_2026_09_17() -> None:
     assert universe["status"] == "locked"
     assert universe["crypto_perps"] == ["BTC", "ETH", "UNI", "AAVE"]
     assert universe["equities"] == ["NVDA", "AVGO", "SMH", "MSFT", "META", "JPM", "XLF", "XOM"]
-    assert universe["active_calls"]["crypto_perps"] == ["BTC", "ETH"]
-    assert universe["active_calls"]["equities"] == ["NVDA", "AVGO", "MSFT", "META", "JPM", "XLF", "XOM"]
-    assert universe["watch_only"]["crypto_perps"] == ["UNI", "AAVE"]
-    assert universe["watch_only"]["equities"] == ["SMH"]
+    assert universe["active_calls"]["crypto_perps"] == ["BTC"]
+    assert universe["active_calls"]["equities"] == ["NVDA", "AVGO", "MSFT", "META", "JPM", "XOM"]
+    assert universe["watch_only"]["crypto_perps"] == ["ETH", "UNI", "AAVE"]
+    assert universe["watch_only"]["equities"] == ["SMH", "XLF"]
     assert universe["deferred_must_cut"]["crypto"] == ["HYPE", "SOL", "XRP", "ARB", "NEAR", "LINK"]
     assert universe["deferred_must_cut"]["equities"] == ["GLD", "LLY"]
     notes = "\n".join(universe.get("notes") or [])
@@ -99,6 +99,12 @@ def test_controlled_universe_is_locked_2026_09_17() -> None:
     assert "PR #13" in notes
     assert "UNIVERSE-20260917-call-cards-skeptic.md" in notes
     assert "PR #14" in notes
+    assert "EXPECTATIONS-20260917-methodology-scorecard.md" in notes
+    assert "PR #22" in notes
+    assert "EXPECTATIONS-20260917-fail-patch-changelog.md" in notes
+    assert "PR #23" in notes
+    assert "BTC-beta watch" in notes
+    assert "monitor ≪ JPM" in notes
     membership = set(universe["crypto_perps"]) | set(universe["equities"])
     active_calls = set(universe["active_calls"]["crypto_perps"]) | set(universe["active_calls"]["equities"])
     watch_only = set(universe["watch_only"]["crypto_perps"]) | set(universe["watch_only"]["equities"])
