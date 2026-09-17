@@ -225,10 +225,12 @@ def cross_corr_matrix(
     matrix: dict[str, dict[str, float | None]] = {a: {} for a in names}
     for a in names:
         for b in names:
-            if a not in rets or b not in rets or n < 3:
+            if a not in rets or b not in rets:
                 matrix[a][b] = None
             elif a == b:
                 matrix[a][b] = 1.0
+            elif n < 3:
+                matrix[a][b] = None
             else:
                 matrix[a][b] = m.pearson(rets[a][-n:], rets[b][-n:])
     return list(names), matrix, n

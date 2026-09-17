@@ -73,11 +73,12 @@ def test_windowed_cross_corr_uses_trailing_pairs() -> None:
         "B": [1.0, 1.1, 1.21, 1.331, 10.0],
     }
     _names, matrix_full, n_full = pack.cross_corr_matrix(dates_aligned, ("A", "B"))
-    _names, matrix_w, n_w = pack.cross_corr_matrix(dates_aligned, ("A", "B"), window=2)
+    _names, matrix_w, n_w = pack.cross_corr_matrix(dates_aligned, ("A", "B"), window=3)
     assert n_full == 4
-    assert n_w == 2
+    assert n_w == 3
     assert matrix_full["A"]["B"] is not None
     assert matrix_w["A"]["A"] == 1.0
+    assert matrix_w["A"]["B"] is not None
 
 
 def test_quant_pack_is_not_a_thesis_workspace() -> None:
