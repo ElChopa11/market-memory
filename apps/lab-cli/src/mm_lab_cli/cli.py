@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
 
     know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
     know.add_argument("--at", required=True, help="UTC instant (ISO-8601)")
-    know.add_argument("--instrument", help="filter BTC/ETH")
+    know.add_argument("--instrument", help="filter by instrument (locked HL perps: BTC, ETH, UNI, AAVE)")
     know.add_argument("--metric", help="filter metric name")
     know.add_argument("--dsn", help="Postgres DSN (default POSTGRES_DSN)")
     know.add_argument("--limit", type=int, default=50)

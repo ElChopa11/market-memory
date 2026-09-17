@@ -19,7 +19,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [AGENTS.md](AGENTS.md) | Role permissions (Research **cannot** access trading credentials) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
 
-Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). Default instruments: **BTC and ETH perps**. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
+Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17): Hyperliquid ingest is **BTC, ETH, UNI, AAVE** perps; equities (NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM) are a Phase 3 briefing / future equity-feed watchlist, not HL. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 
 ## Boot local dev (Phase 4)
 
@@ -80,7 +80,7 @@ docs/             founding brief, security, lifecycle, runbooks
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
-config/           risk / instruments / ingest / schedules / briefing
+config/           risk / universe / instruments / ingest / schedules / briefing
 packages/         common, memory, ingest, provenance, briefing, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)

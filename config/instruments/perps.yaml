@@ -1,8 +1,16 @@
-# v1 instrument universe — BTC/ETH perps for read-only Hyperliquid info ingest.
+# Hyperliquid ingest instruments — Principal lock 2026-09-17 (Skeptic survivors).
+# Membership source of truth: config/universe.yaml (crypto_perps).
+# Default HL info ingest: BTC, ETH, UNI, AAVE. Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK) stay out.
+# Equities (NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM) are a research/briefing watchlist
+# for Phase 3 Market Pulse / future equity feeds — not Hyperliquid perps. Do not add them here.
 venue: hyperliquid
 kind: perpetual
 instruments:
   - symbol: BTC
     enabled: true
   - symbol: ETH
+    enabled: true
+  - symbol: UNI
+    enabled: true
+  - symbol: AAVE
     enabled: true
