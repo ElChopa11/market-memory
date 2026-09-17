@@ -64,6 +64,8 @@ def test_core_docs_present() -> None:
         "docker-compose.yml",
         "scripts/check-lifecycle.sh",
         "config/ingest.yaml",
+        "config/universe.yaml",
+        "config/instruments/perps.yaml",
     ):
         assert (ROOT / rel).exists(), rel
 
@@ -76,12 +78,34 @@ def test_live_trading_hard_gated() -> None:
     assert live["risk_budget_usd"] == 0
 
 
-def test_instruments_are_btc_eth_perps() -> None:
+def test_controlled_universe_is_locked_2026_09_17() -> None:
+    universe = yaml.safe_load((ROOT / "config/universe.yaml").read_text())
+    assert universe["version"] == "2026-09-17"
+    assert universe["status"] == "locked"
+    assert universe["crypto_perps"] == ["BTC", "ETH", "UNI", "AAVE"]
+    assert universe["equities"] == ["NVDA", "AVGO", "SMH", "MSFT", "META", "JPM", "XLF", "XOM"]
+    assert universe["deferred_must_cut"]["crypto"] == ["HYPE", "SOL", "XRP", "ARB", "NEAR", "LINK"]
+    assert universe["deferred_must_cut"]["equities"] == ["GLD", "LLY"]
+    notes = "\n".join(universe.get("notes") or [])
+    assert "Intent-level watchlist only" in notes
+    assert "UNIVERSE-20260917-shortlist.md" in notes
+    assert "UNIVERSE-20260917-skeptic-review.md" in notes
+    active = set(universe["crypto_perps"]) | set(universe["equities"])
+    deferred = set(universe["deferred_must_cut"]["crypto"]) | set(universe["deferred_must_cut"]["equities"])
+    assert not (active & deferred)
+
+
+def test_hl_perps_match_locked_universe() -> None:
+    universe = yaml.safe_load((ROOT / "config/universe.yaml").read_text())
     data = yaml.safe_load((ROOT / "config/instruments/perps.yaml").read_text())
-    symbols = {row["symbol"] for row in data["instruments"]}
-    assert symbols == {"BTC", "ETH"}
+    enabled = [row["symbol"] for row in data["instruments"] if row.get("enabled", True)]
+    assert enabled == universe["crypto_perps"]
     assert data["kind"] == "perpetual"
     assert data["venue"] == "hyperliquid"
+    equity_names = set(universe["equities"]) | set(universe["deferred_must_cut"]["equities"])
+    assert not (set(enabled) & equity_names), "equities are briefing/future-feed watchlist, not HL ingest"
+    deferred_crypto = set(universe["deferred_must_cut"]["crypto"])
+    assert not (set(enabled) & deferred_crypto), "Skeptic must-cuts must stay out of HL ingest"
 
 
 def test_compose_defines_postgres_and_minio() -> None:

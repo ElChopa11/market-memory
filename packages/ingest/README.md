@@ -4,6 +4,6 @@ Read-only Hyperliquid **info** ingest (mids, funding, open interest, candles, li
 
 **Must not:** sign orders, import an exchange/signing module, hold API wallets, or call user-private info types.
 
-Default instruments: BTC and ETH perps from `config/instruments/perps.yaml`.
+Default Hyperliquid instruments: BTC, ETH, UNI, AAVE perps from `config/instruments/perps.yaml` (locked universe: `config/universe.yaml`). Equities on the universe file are not HL ingest.
 
 See [../../docs/runbooks/ingest.md](../../docs/runbooks/ingest.md).
