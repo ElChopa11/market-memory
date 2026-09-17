@@ -2,6 +2,21 @@
 
 Market Memory is a **private research lab**, not a managed fund and not an autonomous trading system. These charters encode a hedge-fund-style desk model for how work is owned **today** (Phase 4: backtest + paper/shadow ledger). They do not raise external capital, enable live trading, or authorise any desk to place orders.
 
+**Canonical desk names (Principal lock)** — use these strings in reports, the improvement queue, and PR titles:
+
+| Desk | Notes |
+|---|---|
+| Principal | Sole mandate, risk budget, promotion, execution enablement |
+| Chief of Staff / Hive Coordinator | Operating system (Don); not an investment desk |
+| Data & Market Memory Desk | Trusted information infrastructure |
+| Crypto Desk | Digital-asset research |
+| Equities & Post-IPO Desk | Equity / thematic / post-IPO research |
+| Macro & Cross-Asset Desk | Rates, USD, energy, vol, US session context |
+| Quant & Market Structure Desk | Triage only; closed verdict set |
+| Independent Skeptic | Cannot author and approve the same thesis |
+| Risk (independent veto) | Blocks unsafe progression; never creates theses |
+| Execution & Fund Ops | **Future-only** until Principal separately activates |
+
 Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This file maps those roles onto desks, names artifacts, and forbids skipped gates. Decision tables live in [decision-rights.md](decision-rights.md). Work is queued in [improvement-queue.md](improvement-queue.md).
 
 **No agent or desk may override the Principal.** Research priority is not a trading decision.
@@ -23,15 +38,10 @@ Paper trading exists as a **shadow ledger bound to theses**. It is not Execution
 No skipped gates. A Quant `RESEARCH_PRIORITY` verdict is triage, not permission to trade.
 
 ```text
-Data & Market Memory
-→ Research Desk (Crypto / Equities / Macro as applicable)
-→ Quant Review
-→ Independent Skeptic
-→ Risk & Portfolio Construction
-→ Principal decision
-→ Paper trading only when authorised
-→ Future constrained execution only when separately authorised
+Data → Research desk → Quant → Skeptic → Risk → Principal
 ```
+
+Research desk is Crypto / Equities & Post-IPO / Macro & Cross-Asset as applicable. No skipped gates. After Principal: paper trading only when authorised; constrained Execution & Fund Ops only when separately authorised (future-only).
 
 | Gate | Question the gate answers | What it is not |
 |---|---|---|
@@ -39,7 +49,7 @@ Data & Market Memory
 | Research desk | What is the falsifiable claim, catalyst, and invalidation? | A size, allocation, or order |
 | Quant Review | Relative-value / reclaim / structure triage with one verdict + reason code | An “active call,” buy, or sell |
 | Independent Skeptic | Does the claim survive leakage, crowding, stale data, already-priced narrative? | Authorship of the thesis |
-| Risk & Portfolio Construction | Is progression unsafe on concentration, liquidity, leverage, freshness, policy? | A new thesis |
+| Risk (independent veto) | Is progression unsafe on concentration, liquidity, leverage, freshness, policy? | A new thesis |
 | Principal | Mandate, budget, promotion, paper/live enablement, material approval | Delegable to any desk |
 | Paper (when authorised) | Shadow expression with invalidation + max loss | Live execution |
 | Future execution (when separately authorised) | Submit only Risk-allowed, Principal-enabled intents | Interpretation or invention of the decision |
@@ -239,9 +249,9 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Research Review Office / Skeptic (independent)
+## Independent Skeptic
 
-**Mandate.** Invalidate research. Check leakage, false causality, crowding, duplicate beta, stale data, liquidity, and already-priced narratives. Every thesis needs one **observable** invalidation. Approve, reject, or return.
+**Mandate.** Invalidate research. Check leakage, false causality, crowding, duplicate beta, stale data, liquidity, and already-priced narratives. Every thesis needs one **observable** invalidation. Approve, reject, or return. This is the independent review office — not a research-authoring desk.
 
 **May**
 
@@ -262,7 +272,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Risk & Portfolio Construction (independent veto)
+## Risk (independent veto)
 
 **Mandate.** Concentration by economic idea, correlation, liquidity, drawdown, leverage, data freshness, scenario risk. Deterministic risk-policy **config**. Blocks unsafe progression. Paper-trade proposals only after research + Skeptic clearance (and only when the Principal has authorised paper). Independent veto: a block stands until Principal-handled exception (Principal cannot be bypassed by the proposing desk).
 
@@ -286,11 +296,13 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Execution & Trade Operations — FUTURE ONLY
+## Execution & Fund Ops — FUTURE ONLY
 
-**Not operational until the Principal separately activates it.** Dormant stubs must stay dormant.
+**Not operational until the Principal separately activates each surface.** Dormant stubs must stay dormant. This is one future-only cell with two sub-functions; neither is a live desk today.
 
-**Future mandate (when activated).** Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state, recon, fills, slippage, incidents. Restricted credentials (API/agent wallet in live env only). No treasury-wallet authority. Halt checked before every order.
+### Execution (future)
+
+Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state, recon, fills, slippage, incidents. Restricted credentials (API/agent wallet in live env only). No treasury-wallet authority. Halt checked before every order.
 
 **Must not (now and later)**
 
@@ -298,13 +310,9 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 - Run inside research workers; sign without a Risk id; bypass halt; touch treasury.
 - Exist as an enabled path while `live_trading_enabled` is false.
 
-**Exists today (dormant).** `packages/execution`, `apps/execution-service` (Phase 0 stubs — no wallet, signing, or submission). Paper ledger (`packages/paper`) is **not** this desk.
+**Exists today (dormant).** `packages/execution`, `apps/execution-service` (Phase 0 stubs — no wallet, signing, or submission). Paper ledger (`packages/paper`) is **not** Execution.
 
-**Gap.** Entire operational surface. Do not fill it in a research or docs PR.
-
----
-
-## Fund Operations — FUTURE ONLY
+### Fund Ops (future)
 
 **Not operational.** There is no fund, no external capital, and no investor-reporting duty.
 
@@ -313,6 +321,8 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 **Must not (now).** Represent the lab as a managed product; produce investor reports; move capital.
 
 **Exists today.** Nothing. Paper P&L on the shadow ledger is a research record, not fund accounting.
+
+**Gap.** Entire Execution & Fund Ops surface. Do not fill it in a research or docs PR.
 
 ---
 
@@ -340,13 +350,13 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 | Market Pulse preopen/close/alert-check | Macro & Cross-Asset | Exists (Phase 3) |
 | `config/briefing/macro.yaml`, calendar, divergences, alerts | Macro & Cross-Asset | Exists; live macro opt-in |
 | Quant pack builder under `research/queue/quant-20260917/` | Quant & Market Structure | Ad-hoc pack; **not** Quant Review Board |
-| `templates/skeptic-review.md`, `lab skeptic`, queue skeptic reviews | Research Review Office / Skeptic | Exists |
-| `config/risk/*`, live.yaml guard, halt | Risk & Portfolio Construction | Config exists; **service stub** |
+| `templates/skeptic-review.md`, `lab skeptic`, queue skeptic reviews | Independent Skeptic | Exists |
+| `config/risk/*`, live.yaml guard, halt | Risk (independent veto) | Config exists; **service stub** |
 | `packages/backtest`, `lab backtest` | Quant / Research evaluation | Exists (fixtures, `params_hash`, `available_at`) |
 | `packages/paper`, `lab paper` | Principal-gated paper (lab control) | Exists; not Execution |
-| `packages/execution`, `apps/execution-service` | Execution & Trade Operations | **Dormant stub — future only** |
+| `packages/execution`, `apps/execution-service` | Execution & Fund Ops (Execution) | **Dormant stub — future only** |
 | `packages/risk`, `apps/risk-service` | Risk (future service) | **Stub — do not treat as live gate** |
-| Fund ledger / tax / investor reporting | Fund Operations | **Absent — future only** |
+| Fund ledger / tax / investor reporting | Execution & Fund Ops (Fund Ops) | **Absent — future only** |
 | `packages/unicorn`, `apps/dashboard` | Adjacent / later | Stubs |
 
 ### Missing desk boundaries (exists vs gap)
@@ -356,7 +366,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 3. **Skeptic and Risk independence is procedural.** Same repo, no separate credential domain for Skeptic. Risk veto is config + future service, not an implemented gate on paper open beyond lifecycle DoD.
 4. **Paper ≠ Execution.** Shadow ledger is live in Phase 4; Execution remains future-only.
 5. **Data desk does not cover equities or on-chain.** Those are research/watchlist gaps, not silent ingest.
-6. **No Fund Operations surface.** Do not imply AUM, investors, or a management company.
+6. **No Execution & Fund Ops surface.** Do not imply AUM, investors, a management company, or an order path.
 7. **Single-threaded implementation.** Chief of Staff owns that rule; desks must not start parallel implementation items.
 
 ## Related documents

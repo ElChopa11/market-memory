@@ -13,4 +13,4 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - No trading credentials, signing, wallets, or `hl_trade` / `mm_execution` usage from this tree.
 - Do not edit `config/risk/environments/live.yaml` from ops docs work.
 - Quant Review Board (IMP-001) is **parked**. Do not implement generators, boards, or verdict engines in a docs PR.
-- Execution & Trade Operations and Fund Operations are **future-only** until the Principal separately activates them.
+- Execution & Fund Ops is **future-only** until the Principal separately activates it.

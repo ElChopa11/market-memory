@@ -41,7 +41,7 @@ RACI shorthand on the same rows: **R** does the work, **A** is accountable (matc
 |---|---|---|---|---|---|
 | Investment mandate | Principal; Chief of Staff may table a question | Any desk (recorded) | Principal | **Principal only** | Encoded in universe lock + these ops docs |
 | Capital & risk budget | Principal; Risk may draft options | Risk; Skeptic (research implications) | Principal; Risk (unsafe draft) | **Principal only** | Risk cannot raise limits on its own |
-| External capital / legal entity / investors | Principal | Chief of Staff (ops burden) | Principal | **Principal only** | Fund Operations is future-only; default is **no** |
+| External capital / legal entity / investors | Principal | Chief of Staff (ops burden) | Principal | **Principal only** | Execution & Fund Ops is future-only; default is **no** |
 | Paid data / vendor contracts | Data desk; research desks (need) | Data (ToS, quality, cost); Risk | Principal | **Principal only** | No paid feed lands without Principal; lawful/ToS still required |
 | Halt / resume new orders (when execution exists) | Principal; Coordinator under halt runbook | Risk | Principal | **Principal only** | `config/halt.flag`; Execution must stop new orders |
 
@@ -90,15 +90,10 @@ RACI shorthand on the same rows: **R** does the work, **A** is accountable (matc
 ## Pipeline vs rights
 
 ```text
-Data & Market Memory     →  Data proposes facts; does not rank
-Research Desk            →  Crypto / Equities / Macro propose claims
-Quant Review             →  Quant verdict + reason code (not a trade)
-Independent Skeptic      →  pass | revise | reject (independent)
-Risk & Portfolio         →  veto unsafe progression; no autonomous limit change
-Principal decision       →  only approver for Principal-only gates
-Paper (if authorised)    →  shadow ledger; not Execution
-Future execution         →  only if separately authorised; Risk-allowed intents only
+Data → Research desk → Quant → Skeptic → Risk → Principal
 ```
+
+Research desk = Crypto / Equities & Post-IPO / Macro & Cross-Asset as applicable. Data proposes facts; Quant issues a verdict + reason code (not a trade); Independent Skeptic is `pass` | `revise` | `reject`; Risk holds independent veto (no autonomous limit change). After Principal: paper only if authorised; Execution & Fund Ops only if separately authorised (future-only).
 
 **Research priority ≠ trading decision.** `RESEARCH_PRIORITY` does not authorise paper or live.
 
@@ -121,11 +116,11 @@ Future execution         →  only if separately authorised; Risk-allowed intent
 |---|---|
 | Principal | Principal / CIO |
 | Coordinator | Chief of Staff / Hive Coordinator (Don) |
-| Intel / ingest | Data & Market Memory |
-| Research | Crypto; Equities & Post-IPO; Macro & Cross-Asset (split by subject) |
-| Skeptic | Research Review Office |
-| Briefing | Macro & Cross-Asset (Pulse) |
-| Risk | Risk & Portfolio Construction |
+| Intel / ingest | Data & Market Memory Desk |
+| Research | Crypto Desk; Equities & Post-IPO Desk; Macro & Cross-Asset Desk |
+| Skeptic | Independent Skeptic |
+| Briefing | Macro & Cross-Asset Desk (Pulse) |
+| Risk | Risk (independent veto) |
 | Paper | Lab control under Principal (not a trading desk) |
-| Execution | Execution & Trade Operations (**future only**) |
+| Execution | Execution & Fund Ops (**future only**) |
 | Unicorn | Adjacent later cell; not a desk here |

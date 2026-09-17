@@ -105,11 +105,11 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 | Equity / post-IPO cards and screens | Equities & Post-IPO | Research (Coordinator assigns per card) |
 | US Market Pulse, calendar, macro config | Macro & Cross-Asset | Don (IMP-002) |
 | Quant packs / future Board | Quant & Market Structure | Don/Quant (IMP-001) |
-| `skeptic-review.md` / `lab skeptic` | Research Review Office | Independent reviewer (not the author) |
-| `config/risk/*`, halt, live.yaml guard | Risk & Portfolio Construction | Risk (Principal owns live.yaml) |
+| `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
+| `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
 | Paper ledger `lab paper` | Principal-gated lab control | Principal enables; Coordinator operates CLI |
-| `packages/execution`, `apps/execution-service` | Execution & Trade Operations | **Dormant / future only** |
-| Fund ledger, tax, investor reporting | Fund Operations | **Absent / future only** |
+| `packages/execution`, `apps/execution-service` | Execution & Fund Ops | **Dormant / future only** |
+| Fund ledger, tax, investor reporting | Execution & Fund Ops | **Absent / future only** |
 
 ## Gaps (not yet queued)
 
@@ -124,8 +124,8 @@ These are identified so they are not silently treated as existing desks. They ar
 | `risk-review.md` + portfolio exposure report | Risk | Risk *service* is out of Phase 4 |
 | Quant Board generator + Quant Cards | Quant | **IMP-001 READY, parked** |
 | Cross-asset regime note cadence | Macro | Covered by IMP-002 scope |
-| Execution order-state / recon | Execution | Future only; Principal enablement required |
-| Fund P&L / investor reporting | Fund Operations | Future only; legal approval required |
+| Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
+| Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |
 | Rename historical “active calls” in universe/queue files | Principal + Quant | Membership language vs Quant vocabulary; not this PR |
 
 ## Reconciliation notes

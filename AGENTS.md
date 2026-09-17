@@ -4,7 +4,7 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 **Phase 4:** backtest harness + paper/shadow ledger. Replay fixtures with explicit as-of timestamps; record `params_hash` on `research_run`; open paper trades only with invalidation + max loss. No live trading, no wallet code, no `hl_trade` / signing. Do not implement the deterministic risk *service*, execution service, or live paths in this phase.
 
-Desk operating model (private research lab, not a fund): [ops/desk-charters.md](ops/desk-charters.md), [ops/decision-rights.md](ops/decision-rights.md), [ops/improvement-queue.md](ops/improvement-queue.md). Hive roles in this file remain the permission constitution; desks are how work is assigned. No desk overrides the Principal. Execution and Fund Operations are future-only.
+Desk operating model (private research lab, not a fund): [ops/desk-charters.md](ops/desk-charters.md), [ops/decision-rights.md](ops/decision-rights.md), [ops/improvement-queue.md](ops/improvement-queue.md). Hive roles in this file remain the permission constitution; desks are how work is assigned. No desk overrides the Principal. Execution & Fund Ops is future-only.
 
 ## Non-negotiables
 
