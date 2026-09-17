@@ -6,7 +6,7 @@
 | **Date** | 2026-09-17 (Australia/Sydney, AEST) |
 | **Status** | `intent-level watchlist proposal` — **not orders, not theses, not trades** |
 | **Lab venues** | Crypto: Hyperliquid perps · Equities: liquid US stocks/ETFs (NYSE/NASDAQ) |
-| **HL liquidity capture** | `metaAndAssetCtxs` **2026-09-17T00:28:03Z** (= **10:28 AEST**) · file-only (no obs_ids on sheet) · `Intel lab capture file (not in-repo; ask Intel/Ops)` · PARTIAL top25: `Intel PARTIAL HL top25 JSON (lab file; not yet in-repo)` |
+| **HL liquidity capture** | `metaAndAssetCtxs` **2026-09-17T00:28:03Z** (= **10:28 AEST**) · file-only (no obs_ids on sheet) · `Intel lab capture file (not in-repo; ask Intel/Ops)` · PARTIAL top25: `Intel PARTIAL HL top25 JSON (lab file; not yet in-repo)` · Intel full scan confirmed **2026-09-17 ~10:49 AEST** (lab paths `20260917-universe-scan-crypto-equity.md` / `.json`; live HL still **429×2**, cache ~**10:30 AEST**) |
 
 ## Macro frame (hawkish)
 
@@ -159,7 +159,7 @@ Selected for **falsifiable cycle upside under hawkish Fed** (AI infra power, hig
 1) **why TRADEABLE now:** Mega-liquid energy major.  
 2) **why UPSIDE THIS CYCLE:** Energy cash-flow / inflation-stickiness hedge while Fed hikes on elevated inflation — falsify with crude strip, refining margins, buyback capacity.  
 3) **key INVALIDATION:** Oil demand shock / price collapse; windfall-tax; FCF miss.  
-4) **evidence links:** FOMC “inflation remains elevated” https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm (2026-09-16); CNBC hike coverage https://www.cnbc.com/2026/09/16/fed-rate-decision-september-2026.html (2026-09-16); obs `01M2PCX90PQAP96J62RR6EWQ35`.  
+4) **evidence links:** FOMC “inflation remains elevated” https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm (2026-09-16); CNBC hike coverage https://www.cnbc.com/2026/09/16/fed-rate-decision-september-2026.html (2026-09-16); obs `01M2PCX90PQAP96J62RR6EWQ35`; Intel full scan oil/Middle East catalyst: Saudi East-West pipeline shutdown; WTI/Brent reported >$100 — https://www.cnbc.com/2026/09/15/oil-prices-saudi-arabia-east-west-pipeline-iran.html (2026-09-15).  
 5) **confidence:** 0.48 · **still need:** latest production/FCF guide; oil inventory prints.
 
 ### 9. GLD (NYSE Arca ETF)
@@ -187,6 +187,7 @@ Selected for **falsifiable cycle upside under hawkish Fed** (AI infra power, hig
 | **Mid-only mean-reversion (reject)** | Thin mid-cap alts with dayNtl ≪ majors and no catalyst beyond “oversold mid” | Explicitly rejected — no mid-only MR names on this shortlist. |
 | **Equities deferred** | **SPY, QQQ** (index-level beta — prefer single-name/sector drivers); **IWM** (small-caps hurt by higher-for-longer); **XLK** (prefer SMH for clearer AI-infra); **XLE** (overlap with XOM); **TSLA** (high-duration / lottery-relative under hawkish); **AAPL, AMZN, GOOGL, BRK-B** (quality but lower cycle specificity vs selected 10 this pass) |
 | **Crypto near-misses deferred** | SUI, DOGE | Liquid enough on HL but meme/beta-heavier than LINK/AAVE for this cycle’s falsifiable set. |
+| **Intel full sheet (deferred this pass)** | AMD, TSM, GS, ORCL, CVX, etc. | Listed on Intel full scan; **no shortlist swap** this pass. |
 
 ---
 
