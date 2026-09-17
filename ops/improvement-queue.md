@@ -77,7 +77,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-000 DONE (#28). IMP-001 DONE (#31) — do not reopen. Benefits from Data DQ reports (not blocking). |
 | **Risk level** | Low–medium (partial macro data can be over-read). |
 | **Status** | IN_PROGRESS |
-| **PR** | *(set on open)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/32 |
 | **Lesson learned** | *(fill at close)* Standing cross-asset regime note is **deferred** (not in this slice). |
 
 ---
@@ -88,7 +88,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 |---|---|---|---|---|
 | IMP-000 | Chief of Staff / Hive Coordinator | Don | DONE | [#28](https://github.com/ElChopa11/market-memory/pull/28) merged |
 | IMP-001 | Quant & Market Structure Desk | Don/Quant | DONE | [#31](https://github.com/ElChopa11/market-memory/pull/31) merged |
-| IMP-002 | Macro & Cross-Asset Desk | Don | IN_PROGRESS | only active implementation — PR set on open |
+| IMP-002 | Macro & Cross-Asset Desk | Don | IN_PROGRESS | [#32](https://github.com/ElChopa11/market-memory/pull/32) — only active implementation |
 
 `IN_PROGRESS` count: **1** (IMP-002 US Market Pulse). IMP-000 and IMP-001 are `DONE`.
 
