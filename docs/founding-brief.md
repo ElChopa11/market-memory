@@ -44,7 +44,7 @@ Statuses: `draft | in_research | in_skeptic | paper | live | rejected | retired`
 
 Rejected theses remain learning records. A thesis cannot skip Skeptic. Paper cannot open without invalidation and max loss. Live cannot open without dual control (Risk allow **and** Principal promotion). Halt is checked before every live order (when live exists).
 
-Definition-of-done gates: [research-lifecycle.md](research-lifecycle.md). Role permissions: [AGENTS.md](../AGENTS.md). Security: [security-model.md](security-model.md).
+Definition-of-done gates: [research-lifecycle.md](research-lifecycle.md). Role permissions: [AGENTS.md](../AGENTS.md). Security: [security-model.md](security-model.md). Desk operating model: [ops/desk-charters.md](../ops/desk-charters.md).
 
 ## v1 scope
 
