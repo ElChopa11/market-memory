@@ -2,7 +2,7 @@
 
 **Report status:** PR READY  
 **Owner:** Don/Data (Data & Market Memory Desk)  
-**Scope:** read-only source-health / data-quality report for configured Market Memory and Pulse sources. No orders, wallets, live keys in git, Quant Board changes, watchlist MAKE/active-call loops, or risk/execution services.
+**Scope:** read-only source-health / data-quality report for configured Market Memory and Pulse sources. No orders, wallets, live keys in git, Quant Board changes, watchlist recommendation loops, or risk/execution services.
 
 ID note: IMP-001’s plan mentioned “QUANT pack rewrite (IMP-003)” as a **non-goal placeholder**. Principal assigned **IMP-003** to this Data desk product. QUANT pack rewrite stays a Gap.
 
@@ -54,7 +54,7 @@ Missing env → unavailable (not crash); forbidden HL types still blocked (local
 
 ## Non-goals
 
-Paid-data purchases; committing `FRED_API_KEY`; Stooq ToS-violating scrape workarounds (report the failure class); Quant Board; watchlist MAKE/active-call loops; execution; `live.yaml`; risk limits; post-IPO reclaim product.
+Paid-data purchases; committing `FRED_API_KEY`; Stooq ToS-violating scrape workarounds (report the failure class); Quant Board; watchlist recommendation loops; execution; `live.yaml`; risk limits; post-IPO reclaim product.
 
 ## Limitations
 

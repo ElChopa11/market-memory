@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QUANT-20260917 reproducible metrics for ElChopa11/market-memory active calls.
+"""QUANT-20260917 reproducible metrics for ElChopa11/market-memory in-universe membership names.
 
 Sources (public only):
   - yfinance daily auto-adjusted Close for equities + BTC-USD/ETH-USD/AAVE-USD/SMH/SPY

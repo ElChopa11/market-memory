@@ -27,7 +27,7 @@ from mm_briefing.schedule import NY_TZ, SYDNEY_TZ, session_date_for, us_session_
 NO_DECISION_FOOTER = (
     "---",
     "**Informational only — no decision, no recommendation, no order intent.**",
-    "This brief does not create an active_call, size a trade, submit an order, or approve risk.",
+    "This brief does not change universe membership, size a trade, submit an order, or approve risk.",
 )
 
 

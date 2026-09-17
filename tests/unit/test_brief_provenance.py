@@ -117,7 +117,9 @@ def test_no_trading_language_in_preopen() -> None:
         assert phrase not in lowered
     assert "informational only" in lowered
     assert "no order intent" in lowered
-    assert "active_call" in lowered
+    assert "universe membership" in lowered
+    assert "active_call" not in lowered
+    assert "active call" not in lowered
 
 
 def test_dual_write_dod_and_legacy_paths(tmp_path: Path) -> None:

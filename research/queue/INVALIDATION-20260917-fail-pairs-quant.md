@@ -1,9 +1,9 @@
-# INVALIDATION-20260917 — QUANT fail pairs / expressions (not valid as active calls)
+# INVALIDATION-20260917 — QUANT fail pairs / expressions (not valid as in-universe membership or Quant verdicts)
 
 | Field | Value |
 |---|---|
 | **Date** | 2026-09-17 (Australia/Sydney, AEST) |
-| **Ask** | Principal / Don: QUANT **invalidation** analysis — why listed expectations are **not** valid as active calls / pair expressions |
+| **Ask** | Principal / Don: QUANT **invalidation** analysis — why listed expectations are **not** valid as in-universe membership / pair expressions |
 | **Status** | `method invalidation analysis` |
 | **Privacy** | **Private repo only** (`ElChopa11/market-memory`). **No Telegram.** **No trades.** |
 | **Out of scope** | Memory-semi / MU / SNDK / SK Hynix (**Principal killed** — not reopened). Allocation, sizing, `live.yaml`, thesis folders. |
@@ -23,7 +23,7 @@
 
 **Corr window (QUANT):** 60 aligned-panel daily returns, **2026-05-28 → 2026-09-15**, **pre-FOMC**, `n_obs=60`, point estimate only (no CI/HAC). Source: `corr_matrix_60d.csv`.
 
-**Conf ceiling** below = max conf one may assign to treating the **pre-patch / residual pair expression** as a research-grade active call. Post-patch demoted labels (BTC-beta watch, etc.) are acknowledged but **do not rehabilitate** the invalidated expression.
+**Conf ceiling** below = max conf one may assign to treating the **pre-patch / residual pair expression** as research-grade in-universe membership. Post-patch demoted labels (BTC-beta watch, etc.) are acknowledged but **do not rehabilitate** the invalidated expression.
 
 ---
 
@@ -120,7 +120,7 @@ Until then: **BTC-beta watch only** (membership ≠ RV call).
 ## 4. UNI — undated governance event optionality
 
 ### Stated expectation
-Pre-#23: conditional / **event-gated fee-switch**; cycle IF binary re-rate if dated fee-switch lands. Scorecard **FAIL** (Skeptic #14 reject stands). Patch: **deferred governance watch** — **not an active call**; 90-day clock **removed**; conf **0.32 → 0.20**.
+Pre-#23: conditional / **event-gated fee-switch**; cycle IF binary re-rate if dated fee-switch lands. Scorecard **FAIL** (Skeptic #14 reject stands). Patch: **deferred governance watch** — **watch-only membership, not a Quant verdict**; 90-day clock **removed**; conf **0.32 → 0.20**.
 
 ### Why invalid (quant/method)
 1. **Undated governance optionality is not a call.** No dated primary proposal URL as of 2026-09-17 → event gate is empty → expectation is **unfalsifiable fishing**.

@@ -1,10 +1,12 @@
-# QUANT-20260917 — Active Calls Pack (Principal / Don)
+# QUANT-20260917 — In-universe membership pack (Principal / Don)
+
+> IMP-005: filename retained as historical evidence id. Body uses Principal **membership** vocabulary (`in_universe` / `watch_only`). Not a Quant verdict and not a trade. Quant closed set: `RESEARCH_PRIORITY | MONITOR | DEFER | REJECT | INSUFFICIENT_DATA`.
 
 | Field | Value |
 | --- | --- |
 | Pack ID | `QUANT-20260917` |
 | Repo | `ElChopa11/market-memory` |
-| Scope | **ACTIVE CALLS only** (center): BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM |
+| Scope | **in-universe membership (pack-era center):** BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM. Current yaml (PR #24): ETH and XLF are `watch_only`; `in_universe` crypto is BTC only. Analysis below is historical evidence, not a membership edit. |
 | Appendix | Watch-only (do not center): UNI, AAVE, SMH |
 | Selection | **Conditioned on Principal lock after Skeptic #11/#14 — not an evaluation of the selection rule.** Not a universe quant. |
 | Pack written | **2026-09-17 11:18 AEST** (box clock Australia/Sydney) |
@@ -61,15 +63,15 @@ End date for every trailing native-series metric = **that name’s asof** (table
 
 | Name | Role | Series asof | Ann. factor | Short / long / MDD bars | Bench |
 | --- | --- | --- | --- | --- | --- |
-| BTC | ACTIVE | 2026-09-17 | √365 | 30 / 90 / 365 | — (absolute) |
-| ETH | ACTIVE | 2026-09-17 | √365 | 30 / 90 / 365 | BTC |
-| NVDA | ACTIVE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
-| AVGO | ACTIVE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
-| MSFT | ACTIVE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
-| META | ACTIVE | **2026-09-15 (lag)** | √252 | 21 / 63 / 252 | SPY (**vs SPY not contemporaneous** — SPY asof 2026-09-16) |
-| JPM | ACTIVE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
-| XLF | ACTIVE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
-| XOM | ACTIVE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
+| BTC | IN_UNIVERSE | 2026-09-17 | √365 | 30 / 90 / 365 | — (absolute) |
+| ETH | IN_UNIVERSE | 2026-09-17 | √365 | 30 / 90 / 365 | BTC |
+| NVDA | IN_UNIVERSE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
+| AVGO | IN_UNIVERSE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
+| MSFT | IN_UNIVERSE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
+| META | IN_UNIVERSE | **2026-09-15 (lag)** | √252 | 21 / 63 / 252 | SPY (**vs SPY not contemporaneous** — SPY asof 2026-09-16) |
+| JPM | IN_UNIVERSE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
+| XLF | IN_UNIVERSE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
+| XOM | IN_UNIVERSE | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
 | UNI | watch | 2026-09-17 | √365 | 30 / 90 / 365 | BTC; Kraken history **starts 2024-09-27** vs peers **2024-09-17** |
 | AAVE | watch | 2026-09-17 | √365 | 30 / 90 / 365 | BTC |
 | SMH | watch | 2026-09-16 | √252 | 21 / 63 / 252 | SPY |
@@ -184,12 +186,12 @@ CSV: `research/queue/quant-20260917/equity_adv_5d_from_universe_scan.csv`.
 
 ---
 
-## Active calls — native price/vol one-pagers
+## In-universe membership — native price/vol one-pagers
 
 HL rows **removed** from these tables. Relative prints are **raw outperformance (NOT α)**.
 
 
-### BTC (ACTIVE)
+### BTC (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -201,7 +203,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Deepest book ≠ mispricing. Public hike / CLARITY fail are **not** a BTC thesis. No thesis until ETF flow series + **fresh** fundingHistory continuity exist. HL omitted (429).
 
 
-### ETH (ACTIVE)
+### ETH (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -214,7 +216,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Trailing raw outperformance vs BTC is **not** a trade signal. OI/mark ULIDs missing from known MM set. Flow/L2 gates still required. HL omitted (429).
 
 
-### NVDA (ACTIVE)
+### NVDA (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -229,7 +231,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Extremely crowded AI long; Q3 guide public for weeks. Macro obs_ids ≠ name edge. Capex/ROI falsifiers required before thesis.
 
 
-### AVGO (ACTIVE)
+### AVGO (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -244,7 +246,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Satellite to NVDA (same AI-infra bet — do not double-count). Consensus ASIC/networking narrative; backlog conversion unshown. NVDA–AVGO corr 0.46 is **not** a two-name license.
 
 
-### MSFT (ACTIVE)
+### MSFT (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -259,7 +261,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Mega-cap duration + AI spend consensus. Large raw vs-SPY 63d print is **not** residual alpha.
 
 
-### META (ACTIVE) — asof lag FLAG
+### META (IN_UNIVERSE pack-era) — asof lag FLAG
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -274,7 +276,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Ads+AI ROI is consensus crowded long. Zero ad ARPU/DAU evidence in shortlist. **Silent-lag vs active peers is not allowed:** this name is flagged, not dropped (vendor NaN). Truncates the 9-name corr end to **2026-09-15**.
 
 
-### JPM (ACTIVE)
+### JPM (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -289,7 +291,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Higher-for-longer NII is a **public crowded narrative**, not an implication of this pack. Need credit/NII primary prints. **No allocation from FOMC backdrop.**
 
 
-### XLF (ACTIVE)
+### XLF (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -304,7 +306,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 **Skeptic honesty:** Diversifier to JPM only; weak/stale secondary blogs are not evidence. Prefer JPM as primary financials name. JPM–XLF 0.73 is sample description, not a pair trade.
 
 
-### XOM (ACTIVE)
+### XOM (IN_UNIVERSE pack-era)
 
 | Metric | Value | Source / ts |
 | --- | --- | --- |
@@ -320,7 +322,7 @@ HL rows **removed** from these tables. Relative prints are **raw outperformance 
 
 ---
 
-## Active calls — returns summary (NOT α)
+## In-universe membership — returns summary (NOT α)
 
 HL-free. Rel column = **raw outperformance (name − bench), NOT alpha**. YTD is post-selection descriptive. META rel vs SPY is **not contemporaneous**.
 

@@ -1,13 +1,20 @@
 # Controlled research/ingest universe — Principal lock 2026-09-17
 # Skeptic PR #11 must-cuts archived. Full survivor membership kept for ingest.
 # Principal 2026-09-17: KEEP membership; DEMOTE UNI, AAVE, SMH to watch-only
-# (no active call / no thesis priority). Cite call cards PR #13 and Skeptic PR #14.
+# (no thesis-priority membership). Cite call cards PR #13 and Skeptic PR #14.
 # Principal 2026-09-17: DEMOTE ETH, XLF to watch-only (membership kept; match FAIL-patch cards).
 # ETH = BTC-beta watch; XLF = monitor-only ≪ JPM. Cite FAIL-patch PR #23 / Skeptic PASS
 # and expectations scorecard PR #22.
+#
+# Membership vocabulary (IMP-005) — Principal language, not Quant verdicts:
+#   controlled_universe = this locked file
+#   membership          = crypto_perps ∪ equities (full ingest/briefing set)
+#   in_universe         = thesis-priority membership (was active_calls; not a trade)
+#   watch_only          = still ingested / still in membership; no thesis priority
+# Quant Board verdicts stay RESEARCH_PRIORITY | MONITOR | DEFER | REJECT | INSUFFICIENT_DATA.
 version: "2026-09-17"
 status: locked
-crypto_perps:  # Hyperliquid ingest membership (not call priority)
+crypto_perps:  # Hyperliquid ingest membership (not thesis-priority)
   - BTC
   - ETH
   - UNI
@@ -21,9 +28,9 @@ equities:  # US liquid stocks/ETFs — briefing / future equity-feed membership
   - JPM
   - XLF
   - XOM
-# Call tiers partition membership. Watch-only names stay in the lists above.
-# Survivors are not equal priority: thesis work follows active_calls only.
-active_calls:
+# Membership partitions. Watch-only names stay in the lists above.
+# Survivors are not equal priority: thesis work follows in_universe only.
+in_universe:
   crypto_perps: [BTC]
   equities: [NVDA, AVGO, MSFT, META, JPM, XOM]
 watch_only:
@@ -35,10 +42,11 @@ deferred_must_cut:  # learning records — not universe membership
 notes:
   - Intent-level watchlist only; not orders.
   - "Full locked membership kept after Skeptic PR #11; not all survivors are equal priority."
-  - "Active calls (revise keepers, thesis priority): BTC, NVDA, AVGO, MSFT, META, JPM, XOM."
-  - "Watch-only (still ingested / still in universe; no active call / no thesis priority): ETH (BTC-beta watch), UNI, AAVE, SMH, XLF (monitor ≪ JPM)."
+  - "In-universe membership (thesis priority; not a Quant verdict): BTC, NVDA, AVGO, MSFT, META, JPM, XOM."
+  - "Watch-only (still ingested / still in membership; no thesis-priority): ETH (BTC-beta watch), UNI, AAVE, SMH, XLF (monitor ≪ JPM)."
   - "Demotion of UNI, AAVE, SMH follows Skeptic PR #14 rejects vs call cards PR #13 (UNI event-gated with no dated event; AAVE liquidity/causation; SMH redundant vs NVDA+AVGO)."
   - "Demotion of ETH and XLF follows FAIL-patch PR #23 / Skeptic PASS vs expectations scorecard PR #22 (ETH = BTC-beta watch; XLF = monitor-only ≪ JPM)."
   - Must-cuts remain archived learning records (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY).
   - "Cite research/queue/UNIVERSE-20260917-shortlist.md (PR #10), UNIVERSE-20260917-skeptic-review.md (PR #11), UNIVERSE-20260917-call-cards.md (PR #13), UNIVERSE-20260917-call-cards-skeptic.md (PR #14), EXPECTATIONS-20260917-methodology-scorecard.md (PR #22), EXPECTATIONS-20260917-fail-patch-changelog.md (PR #23)."
   - Equities are Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest.
+  - "IMP-005: YAML key in_universe replaced active_calls. Membership ticker sets unchanged."

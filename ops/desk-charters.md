@@ -78,7 +78,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **May**
 
-- Lock or change `config/universe.yaml` membership and call-tier partitions.
+- Lock or change `config/universe.yaml` membership and `in_universe` / `watch_only` partitions.
 - Change `config/risk/environments/live.yaml` only via the `principal-review` path.
 - Halt (`config/halt.flag` / halt runbook); own treasury (hardware wallet, never on a server).
 - Authorise a specific thesis to paper, or separately authorise live later.
@@ -157,12 +157,12 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 **Must not**
 
 - Call a trade, allocate capital, or access account / wallet / execution endpoints.
-- Treat Quant `RESEARCH_PRIORITY` or universe `active_calls` as an order.
+- Treat Quant `RESEARCH_PRIORITY` or universe `in_universe` membership as an order.
 - Author and Skeptic-approve the same thesis.
 
 **Artifacts.** Crypto thesis card; crypto market-pulse contribution.
 
-**Exists today.** HL public `/info` ingest (BTC, ETH, UNI, AAVE perps); generic `templates/thesis.md` + `research/` workspaces; queue cards under `research/queue/` (e.g. QUANT-20260917, UNIVERSE-20260917). UNI/AAVE/ETH are watch-only for thesis priority; BTC remains the crypto active-call name in `config/universe.yaml` (Principal language — not a Quant Board verdict).
+**Exists today.** HL public `/info` ingest (BTC, ETH, UNI, AAVE perps); generic `templates/thesis.md` + `research/` workspaces; queue cards under `research/queue/` (e.g. QUANT-20260917, UNIVERSE-20260917). UNI/AAVE/ETH are watch-only for thesis-priority membership; BTC remains the crypto in-universe name in `config/universe.yaml` (Principal membership language — not a Quant Board verdict).
 
 **Gap.** No dedicated crypto thesis-card template; no on-chain ingest; no funding/OI/basis desk product with a standing cadence; live HL refresh can be rate-limited (DQ, not a trading signal).
 
@@ -212,13 +212,13 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** `packages/briefing`, `apps/briefing-worker`, `briefs/` (dated output gitignored), `config/briefing/*`, `config/schedules/market-pulse.yaml`, `docs/runbooks/market-pulse.md`. Macro live fetchers are opt-in and degrade without keys.
 
-**Gap.** No standing cross-asset **regime note** distinct from Pulse (explicitly deferred on IMP-002). US Market Pulse vertical slice is IMP-002 (`IN_PROGRESS`): pre-market brief DoD on the existing Phase 3 Pulse substrate.
+**Gap.** No standing cross-asset **regime note** distinct from Pulse (explicitly deferred on IMP-002). US Market Pulse vertical slice is IMP-002 (`DONE` #32): pre-market brief DoD on the existing Phase 3 Pulse substrate.
 
 ---
 
 ## Quant & Market Structure Desk
 
-**Mandate.** Disciplined reviewer and opportunity triage. Runs the Quant Review Board (process; **not implemented in this PR** — see IMP-001). Reviews structure, benchmarks, peer-relative context, liquidity, and data quality. Screens post-IPO reclaim and relative-value candidates. Distinguishes true executable arbitrage from non-arb divergence. Issues **one verdict + reason code per instrument**.
+**Mandate.** Disciplined reviewer and opportunity triage. Runs the Quant Review Board (IMP-001 **DONE** #31). Reviews structure, benchmarks, peer-relative context, liquidity, and data quality. Screens post-IPO reclaim and relative-value candidates. Distinguishes true executable arbitrage from non-arb divergence. Issues **one verdict + reason code per instrument**.
 
 **Allowed verdicts (only)**
 
@@ -228,12 +228,12 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 “active call,” “make,” “buy,” “sell,” “high confidence.”
 
-**Language rule.** Label work a **relative-value / reclaim candidate** unless executable-arbitrage criteria are fully met. Universe file `active_calls` / `watch_only` is **Principal membership language**, not a Quant verdict. Do not copy those strings into Quant Board artifacts.
+**Language rule.** Label work a **relative-value / reclaim candidate** unless executable-arbitrage criteria are fully met. Universe file `in_universe` / `watch_only` is **Principal membership language**, not a Quant verdict. Do not copy those strings into Quant Board artifacts.
 
 **May**
 
 - Challenge research desks on structure, benchmark, liquidity, and DQ.
-- Produce the daily Quant Review Board and instrument-level Quant Cards **once IMP-001 is implemented** (parked; not this PR).
+- Produce the daily Quant Review Board and instrument-level Quant Cards (`lab quant-review`; IMP-001 DONE).
 
 **Must not**
 
@@ -243,9 +243,9 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Artifacts.** Daily Quant Review Board; instrument-level Quant Cards.
 
-**Exists today.** Ad-hoc queue packs (`research/queue/QUANT-20260917-active-calls.md` and builder), universe shortlists, fail-pair / expectations scorecards. Fixture backtest harness (`packages/backtest`) is evaluation infrastructure, not the Board.
+**Exists today.** Ad-hoc queue packs (`research/queue/QUANT-20260917-active-calls.md` — historical filename; membership vocabulary after IMP-005) and builder, universe shortlists, fail-pair / expectations scorecards. Fixture backtest harness (`packages/backtest`) is evaluation infrastructure, not the Board.
 
-**Gap.** No Quant Review Board generator, no instrument Quant Card template, no registered verdict/reason-code vocabulary in code, no executable-arb vs divergence checklist as a product. **Do not implement those in a docs-only change.** IMP-001 is READY and parked.
+**Gap.** Board generator exists (IMP-001 DONE). Remaining: dedicated crypto/equity thesis-card templates; post-IPO reclaim screen as a product; Quant pack rewrite (templates / pack workflow — still a Gap, not this PR). Do not treat membership (`in_universe`) as a Quant verdict.
 
 ---
 
@@ -363,7 +363,7 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 ### Missing desk boundaries (exists vs gap)
 
 1. **Hive roles ≠ desks.** AGENTS.md names Principal, Coordinator, Intel, Research, Skeptic, Briefing, Risk, Paper, Execution, Unicorn. Crypto / Equities / Macro / Quant are not separate packages today; they share `research/` + briefing + one ingest path.
-2. **Quant Board is a named desk without a product.** Queue packs exist; IMP-001 is parked. Forbidden language is in force for future Quant artifacts; historical “active calls” strings in universe/queue files stay Principal/historical until a later cleanup.
+2. **Quant Board is a named desk product (IMP-001 DONE).** Queue packs remain historical evidence, not the Board. Forbidden language stays in force for Quant artifacts. Principal membership keys are `in_universe` / `watch_only` (IMP-005); do not treat membership as a recommendation.
 3. **Skeptic and Risk independence is procedural.** Same repo, no separate credential domain for Skeptic. Risk veto is config + future service, not an implemented gate on paper open beyond lifecycle DoD.
 4. **Paper ≠ Execution.** Shadow ledger is live in Phase 4; Execution remains future-only.
 5. **Data desk does not cover equities or on-chain.** Those are research/watchlist gaps, not silent ingest.

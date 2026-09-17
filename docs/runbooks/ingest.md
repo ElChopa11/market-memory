@@ -69,7 +69,7 @@ uv run lab what-did-we-know --at 2026-09-10T00:05:00Z --instrument BTC --metric 
 | Prices (window) | `candleSnapshot` | `candle_close` |
 | Liquidations | `recentTrades` when a `liquidation` object is present | `liquidation` |
 
-Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked ingest membership in `config/universe.yaml`). UNI and AAVE remain ingested as **watch-only** (no active call / no thesis priority); BTC and ETH are the crypto **active calls**. Equities on that universe file are a Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest — SMH is watch-only; NVDA, AVGO, MSFT, META, JPM, XLF, XOM are active calls. Settings: `config/ingest.yaml`.
+Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked ingest membership in `config/universe.yaml`). ETH, UNI, and AAVE remain ingested as **watch-only** (no thesis-priority membership); BTC is the crypto **in-universe** name. Equities on that universe file are a Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest — SMH and XLF are watch-only; NVDA, AVGO, MSFT, META, JPM, XOM are in-universe. Membership is Principal language, not a Quant verdict. Settings: `config/ingest.yaml`.
 
 The client **refuses** user-private types (`clearinghouseState`, `userFills`, `openOrders`, …). There is no `hl_trade` module.
 

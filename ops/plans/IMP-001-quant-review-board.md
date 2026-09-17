@@ -2,7 +2,7 @@
 
 **Report status:** PR READY  
 **Owner:** Don/Quant (Quant & Market Structure Desk)  
-**Scope:** read-only Quant Review Board + `lab quant-review`. No orders, wallets, live keys, Market Pulse, desk-doc rewrite, or strategy promotion.
+**Scope:** read-only Quant Review Board + `lab quant-review`. No orders, wallets, live keys, Market Pulse, desk-doc rewrite, or strategy promotion. Principal universe membership rename is IMP-005.
 
 ## Why
 
@@ -19,7 +19,7 @@ Watchlist review was collapsing into call generation. The Principal wants a **de
 
 ## Universe
 
-Locked ingest/thesis membership stays in `config/universe.yaml` (unchanged).
+Locked ingest/thesis membership stays in `config/universe.yaml` (membership partitions `in_universe` / `watch_only` after IMP-005; ticker set unchanged).
 
 Review-board input is `config/quant_review_universe.yaml`, transcribed from the Principal-approved TradingView screenshots (crypto `USDC.P` list + cross-asset/US list). No popularity adds. Symbol normalization is explicit in that file.
 

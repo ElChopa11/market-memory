@@ -50,15 +50,15 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Quant & Market Structure Desk |
 | **Owner** | Don/Quant |
 | **Problem** | Opportunity triage is ad-hoc queue packs that use Principal “active call” language. There is no daily Board, no instrument Quant Card, and no closed verdict set. |
-| **Evidence** | `research/queue/QUANT-20260917-active-calls.md`; `config/universe.yaml` `active_calls` / `watch_only` (Principal membership, not a Quant verdict); desk charter Quant section. |
+| **Evidence** | `research/queue/QUANT-20260917-active-calls.md` (historical filename retained); `config/universe.yaml` membership partitions (now `in_universe` / `watch_only` after IMP-005; not a Quant verdict); desk charter Quant section. |
 | **Proposed outcome** | A Quant Review Board that emits **one verdict + reason code per instrument**: `RESEARCH_PRIORITY` \| `MONITOR` \| `DEFER` \| `REJECT` \| `INSUFFICIENT_DATA`. Forbidden language: “active call,” “make,” “buy,” “sell,” “high confidence.” Relative-value/reclaim candidate unless executable-arb criteria are fully met. |
 | **Definition of done** | `lab quant-review` generator; Board + one Quant Card per reviewed name; closed verdicts `RESEARCH_PRIORITY \| MONITOR \| DEFER \| REJECT \| INSUFFICIENT_DATA` with reason codes; relative-value/reclaim unless Track D executable-arb is complete; language gate (no active call / make / buy / sell / high confidence / sizing); tests + sample board artifact; still not a trading decision. |
-| **Non-goals** | No Market Pulse work (IMP-002). No order path, no sizing, no live.yaml, no risk-limit edits, no renaming Principal universe `active_calls` fields unless Principal asks. |
+| **Non-goals** | No Market Pulse work (IMP-002). No order path, no sizing, no live.yaml, no risk-limit edits. Principal universe membership rename is IMP-005 (was out of scope here). |
 | **Dependencies** | IMP-000 (charter + language rules) — **DONE** (#28). Data freshness for any live-looking inputs. |
 | **Risk level** | Medium (language and process can be misread as calls). |
 | **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/31 |
-| **Lesson learned** | Merged to `main` (#31). Board + Quant Cards use a closed verdict set and a language gate. Historical `research/queue/` packs remain evidence; they are not the Board. |
+| **Lesson learned** | Merged to `main` (#31). Board + Quant Cards use a closed verdict set and a language gate. Historical `research/queue/` packs remain evidence; they are not the Board. Membership-key rename was deferred to IMP-005. |
 
 ### IMP-002 — US Market Pulse vertical slice
 
@@ -73,7 +73,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | `packages/briefing`, `docs/runbooks/market-pulse.md`, `config/briefing/*`, `config/schedules/market-pulse.yaml`; closed PR #29; charter gap: Pulse not yet a standing desk product. |
 | **Proposed outcome** | One versioned US pre-market brief from retained Market Memory / approved read-only sources. Dual-write DoD path `briefs/YYYY-MM-DD/us-pre-market.md` plus legacy `preopen.md`. Regime note explicitly deferred. |
 | **Definition of done** | Manual `lab brief preopen` produces one versioned US pre-market brief: NY + Sydney generation time; DST-aware US session status; as-of on every market-data section; per-source `fresh\|stale\|partial\|unavailable`; slots always listed (crypto, equity-index proxy, rates, USD, oil, vol); attributable calendar; HL via allowlisted `/info` only; what changed since prior US close from recorded observations when available; informational / no-decision footer; provenance + memory watermark; never invent missing data; tests + committed sample. |
-| **Non-goals** | Turning macro into allocation; enabling live FRED as a silent default; dashboard product; Quant Board rewrite; watchlist MAKE/active-call loops; live.yaml / risk-limit edits; execution/signing. |
+| **Non-goals** | Turning macro into allocation; enabling live FRED as a silent default; dashboard product; Quant Board rewrite; watchlist recommendation loops; live.yaml / risk-limit edits; execution/signing. |
 | **Dependencies** | IMP-000 DONE (#28). IMP-001 DONE (#31) — do not reopen. Benefits from Data DQ reports (not blocking). |
 | **Risk level** | Low–medium (partial macro data can be over-read). |
 | **Status** | DONE |
@@ -93,11 +93,51 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | [desk-charters.md](desk-charters.md) Data desk artifacts; IMP-002 sample `briefs/2026-09-16/us-pre-market.md`; this queue’s former Gap row. |
 | **Proposed outcome** | Repeatable read-only `lab data source-health` writes a versioned health/provenance report for configured Memory and Pulse sources. Never invents prints. |
 | **Definition of done** | Command writes `ops/reports/source-health/YYYY-MM-DD.md`; inventory always listed (HL `/info`, CoinGecko, Stooq, FRED, calendar YAML, Postgres, object store); per source `ok\|degraded\|unavailable` plus latency/error class, last success when known, credentials/env missing without printing secrets, Pulse required vs optional; missing env does not crash; forbidden HL types still blocked; tests + sample from a real read-only run; short runbook. |
-| **Non-goals** | Paid-data purchases; committing FRED secrets; ToS-violating Stooq scrape fixes; Quant Board; watchlist MAKE/active-call loops; execution; live.yaml; risk limits; post-IPO reclaim product. |
+| **Non-goals** | Paid-data purchases; committing FRED secrets; ToS-violating Stooq scrape fixes; Quant Board; watchlist recommendation loops; execution; live.yaml; risk limits; post-IPO reclaim product. |
 | **Dependencies** | IMP-002 DONE (#32) — evidence, not a blocker. |
 | **Risk level** | Low (read-only probes). Process risk if operators treat health copy as a brief. |
-| **Status** | IN_PROGRESS |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/33 |
+| **Lesson learned** | Merged to `main` (#33). `lab data source-health` writes versioned health/provenance reports; Pulse required vs optional inventory is always listed. Stooq/FRED failures are classified without scrape workarounds or committed secrets. Pulse source hardening (retries / failure-class ops) was split out as IMP-004 and remains PARKED (#34) — not this thread. |
+
+### IMP-004 — Pulse source hardening (Stooq/FRED)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-004 |
+| **Priority** | P2 |
+| **Type** | Desk product / data quality |
+| **Desk** | Data & Market Memory Desk + Macro & Cross-Asset Desk |
+| **Owner** | Don/Data |
+| **Problem** | IMP-002/IMP-003 honestly report Stooq timeout/ToS-class failures and FRED missing-key unavailability. Pulse still has no bounded retry / failure-class hardening, and FRED key ops are not a standing procedure. |
+| **Evidence** | IMP-002 sample `briefs/2026-09-16/us-pre-market.md`; IMP-003 report `ops/reports/source-health/2026-09-17.md`; former Gap row “Pulse source hardening”. |
+| **Proposed outcome** | Classify Stooq/FRED failure classes; bounded retries where lawful; FRED key ops without committing secrets. |
+| **Definition of done** | See open PR #34. Not active on this thread. |
+| **Non-goals** | ToS-violating Stooq scrapes; committing `FRED_API_KEY`; Quant Board rewrite; universe expansion; execution; live.yaml. |
+| **Dependencies** | IMP-003 DONE (#33). |
+| **Risk level** | Low–medium (network/ToS). |
+| **Status** | PARKED |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/34 |
+| **Lesson learned** | Open PR, CI green, **not this thread**. Do not continue IMP-004 here. |
+
+### IMP-005 — Active-call language debt (membership vocabulary)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-005 |
+| **Priority** | P1 |
+| **Type** | Hygiene / docs + config |
+| **Desk** | Principal + Quant & Market Structure Desk |
+| **Owner** | Don/Quant |
+| **Problem** | Historical Principal-universe field names and queue prose (`active_calls` / “active call”, MAKE-as-recommendation) conflate **universe membership** with Quant/trade recommendations. IMP-001 locked closed verdicts and banned investment-call language; leftover keys still read like calls. |
+| **Evidence** | `config/universe.yaml` former `active_calls` / `watch_only`; `research/queue/` packs; IMP-001 language gate (`packages/research_kit/.../language.py`); desk charter Quant section. |
+| **Proposed outcome** | Canonical Principal membership vocabulary only: `in_universe` / `watch_only` (plus `membership` = full locked ingest/briefing set). Quant verdicts stay the closed set `RESEARCH_PRIORITY \| MONITOR \| DEFER \| REJECT \| INSUFFICIENT_DATA`. Membership sets unchanged. |
+| **Definition of done** | Plan file; inventory then rename/rewrite lab-owned config/docs/templates/queue prose; loaders/tests/schemas on new keys; regression that canonical membership config keys are not `active_calls`; language gates intact (and cheap template lint if present); `uv run pytest` + lifecycle; non-draft PR to main; do not merge. |
+| **Non-goals** | No merge of #34; no Pulse/Stooq/FRED code; no universe expansion (ticker set stays the same); no Quant Board rewrite; no MAKE/buy/sell recommendations; no sizing; no execution; no live.yaml; no secrets; no paid data; no Telegram; no invented market prints. |
+| **Dependencies** | IMP-001 DONE (#31). |
+| **Risk level** | Low (rename/docs). Process risk if operators still read membership as a call. |
+| **Status** | IN_PROGRESS |
+| **PR** | this PR |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -109,9 +149,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-000 | Chief of Staff / Hive Coordinator | Don | DONE | [#28](https://github.com/ElChopa11/market-memory/pull/28) merged |
 | IMP-001 | Quant & Market Structure Desk | Don/Quant | DONE | [#31](https://github.com/ElChopa11/market-memory/pull/31) merged |
 | IMP-002 | Macro & Cross-Asset Desk | Don | DONE | [#32](https://github.com/ElChopa11/market-memory/pull/32) merged |
-| IMP-003 | Data & Market Memory Desk | Don/Data | IN_PROGRESS | [#33](https://github.com/ElChopa11/market-memory/pull/33) — only active implementation |
+| IMP-003 | Data & Market Memory Desk | Don/Data | DONE | [#33](https://github.com/ElChopa11/market-memory/pull/33) merged |
+| IMP-004 | Data & Market Memory Desk + Macro | Don/Data | PARKED | [#34](https://github.com/ElChopa11/market-memory/pull/34) — not this thread |
+| IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | IN_PROGRESS | this PR — only active implementation |
 
-`IN_PROGRESS` count: **1** (IMP-003 source-health). IMP-000, IMP-001, and IMP-002 are `DONE`.
+`IN_PROGRESS` count: **1** (IMP-005 membership vocabulary). IMP-000–IMP-003 are `DONE`. IMP-004 is `PARKED`.
 
 ---
 
@@ -139,8 +181,6 @@ These are identified so they are not silently treated as existing desks. They ar
 | Gap | Desk that would own | Why not queued now |
 |---|---|---|
 | Post-IPO reclaim screen product | Equities & Post-IPO Desk | Needs Quant language rules (IMP-001 DONE); not this PR |
-| Pulse source hardening (Stooq timeout/ToS class; FRED key ops) | Data & Market Memory Desk + Macro | IMP-003 reports failure class; do not scrape around ToS or commit secrets |
-| Rename historical “active calls” in universe/queue files (language debt) | Principal + Quant & Market Structure Desk | Membership language vs Quant vocabulary; not this PR |
 | Dedicated crypto / equity thesis-card templates | Crypto Desk; Equities & Post-IPO Desk | Generic `templates/thesis.md` suffices until a later intake |
 | Equity-feed ingest; on-chain ingest | Data & Market Memory Desk | Mandate/paid-data/ToS — Principal gate |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
@@ -149,8 +189,14 @@ These are identified so they are not silently treated as existing desks. They ar
 | Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
 | Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |
 
+Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 PARKED** (#34) — not active, not this thread.
+
+Historical “active calls” language debt was a Gap; it is now **IMP-005 IN_PROGRESS**.
+
 ## Reconciliation notes
 
 - No `ops/improvement-queue.md` existed on `main` or on parked agent branches.
 - `origin/cursor/ops-scan-proposals-2158` has `ops/README.md` plus proposal/draft playbooks. Those are **not** this queue; they were not used as the base. Fresh branch from `main`.
 - `research/queue/` remains artifact storage for research packs. It is not an improvement backlog. New implementation work is IMP-* here, then artifacts there if the owning desk produces them.
+- IMP-003 merged as #33 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-005.
+- IMP-004 (#34) stays PARKED; do not continue Pulse/source-health code on this thread.

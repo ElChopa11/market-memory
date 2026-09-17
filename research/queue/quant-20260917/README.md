@@ -1,10 +1,10 @@
-# QUANT-20260917 active-calls pack
+# QUANT-20260917 membership pack (historical filename: active-calls)
 
-Quant snapshot for Skeptic methodology review. **Not a trade. No sizing. No allocation implication.** No thesis folders, no universe expand, no must-cuts.
+Quant snapshot for Skeptic methodology review. **Not a trade. No sizing. No allocation implication.** No thesis folders, no universe expand, no must-cuts. IMP-005: this pack is **in-universe / watch-only membership evidence**, not a Quant/trade call.
 
 - Pack write-up: [`../QUANT-20260917-active-calls.md`](../QUANT-20260917-active-calls.md)
 - Skeptic REVISE: [PR #21](https://github.com/ElChopa11/market-memory/pull/21) (`research/queue/QUANT-20260917-active-calls-skeptic.md` on that branch)
-- Active names: BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM
+- Pack-era center names: BTC, ETH, NVDA, AVGO, MSFT, META, JPM, XLF, XOM (ETH/XLF later `watch_only` on yaml)
 - Watch-only appendix: UNI, AAVE, SMH
 - Conditioned on Principal lock after Skeptic #11/#14 — **not** an evaluation of the selection rule
 

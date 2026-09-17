@@ -71,6 +71,7 @@ def test_core_docs_present() -> None:
         "config/instruments/perps.yaml",
         "ops/improvement-queue.md",
         "ops/plans/IMP-001-quant-review-board.md",
+        "ops/plans/IMP-005-active-call-language-debt.md",
     ):
         assert (ROOT / rel).exists(), rel
 
@@ -89,8 +90,8 @@ def test_controlled_universe_is_locked_2026_09_17() -> None:
     assert universe["status"] == "locked"
     assert universe["crypto_perps"] == ["BTC", "ETH", "UNI", "AAVE"]
     assert universe["equities"] == ["NVDA", "AVGO", "SMH", "MSFT", "META", "JPM", "XLF", "XOM"]
-    assert universe["active_calls"]["crypto_perps"] == ["BTC"]
-    assert universe["active_calls"]["equities"] == ["NVDA", "AVGO", "MSFT", "META", "JPM", "XOM"]
+    assert universe["in_universe"]["crypto_perps"] == ["BTC"]
+    assert universe["in_universe"]["equities"] == ["NVDA", "AVGO", "MSFT", "META", "JPM", "XOM"]
     assert universe["watch_only"]["crypto_perps"] == ["ETH", "UNI", "AAVE"]
     assert universe["watch_only"]["equities"] == ["SMH", "XLF"]
     assert universe["deferred_must_cut"]["crypto"] == ["HYPE", "SOL", "XRP", "ARB", "NEAR", "LINK"]
@@ -111,19 +112,19 @@ def test_controlled_universe_is_locked_2026_09_17() -> None:
     assert "BTC-beta watch" in notes
     assert "monitor ≪ JPM" in notes
     membership = set(universe["crypto_perps"]) | set(universe["equities"])
-    active_calls = set(universe["active_calls"]["crypto_perps"]) | set(universe["active_calls"]["equities"])
+    in_universe = set(universe["in_universe"]["crypto_perps"]) | set(universe["in_universe"]["equities"])
     watch_only = set(universe["watch_only"]["crypto_perps"]) | set(universe["watch_only"]["equities"])
     deferred = set(universe["deferred_must_cut"]["crypto"]) | set(universe["deferred_must_cut"]["equities"])
-    assert active_calls.isdisjoint(watch_only)
-    assert active_calls | watch_only == membership
-    assert set(universe["active_calls"]["crypto_perps"]) | set(universe["watch_only"]["crypto_perps"]) == set(
+    assert in_universe.isdisjoint(watch_only)
+    assert in_universe | watch_only == membership
+    assert set(universe["in_universe"]["crypto_perps"]) | set(universe["watch_only"]["crypto_perps"]) == set(
         universe["crypto_perps"]
     )
-    assert set(universe["active_calls"]["equities"]) | set(universe["watch_only"]["equities"]) == set(
+    assert set(universe["in_universe"]["equities"]) | set(universe["watch_only"]["equities"]) == set(
         universe["equities"]
     )
     assert not (membership & deferred)
-    assert not (active_calls & deferred)
+    assert not (in_universe & deferred)
     assert not (watch_only & deferred)
 
 
@@ -134,7 +135,7 @@ def test_hl_perps_match_locked_universe() -> None:
     assert enabled == universe["crypto_perps"]
     assert data["kind"] == "perpetual"
     assert data["venue"] == "hyperliquid"
-    # Watch-only crypto still ingest; demotion is research/call priority, not membership.
+    # Watch-only crypto still ingest; demotion is thesis-priority membership, not ingest membership.
     assert set(universe["watch_only"]["crypto_perps"]).issubset(set(enabled))
     equity_names = set(universe["equities"]) | set(universe["deferred_must_cut"]["equities"])
     assert not (set(enabled) & equity_names), "equities are briefing/future-feed watchlist, not HL ingest"

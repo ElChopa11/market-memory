@@ -16,5 +16,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Do not edit `config/risk/environments/live.yaml` from ops docs work.
 - Quant Review Board (IMP-001) is **DONE** (#31). Do not rewrite the board in a Pulse or DQ PR.
 - US Market Pulse vertical slice (IMP-002) is **DONE** (#32).
-- Standing source-health report (IMP-003) is the active implementation item. Read-only; no execution.
+- Standing source-health report (IMP-003) is **DONE** (#33).
+- Pulse source hardening (IMP-004) is **PARKED** (#34) — not this thread.
+- Membership vocabulary (IMP-005) is the active implementation item. Rename/docs only; no execution.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

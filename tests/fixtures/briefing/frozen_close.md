@@ -83,4 +83,4 @@ Overnight reference:
 
 ---
 **Informational only — no decision, no recommendation, no order intent.**
-This brief does not create an active_call, size a trade, submit an order, or approve risk.
+This brief does not change universe membership, size a trade, submit an order, or approve risk.
