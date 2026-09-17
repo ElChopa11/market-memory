@@ -1,5 +1,6 @@
 # Skeptic cut-review — WATCHLIST-DD-20260917-personal (+ invalidation appendix)
 
+> IMP-005: MAKE / WATCH / CUT in this review are historical personal-TV disposition labels, not trades. Map: MAKE → `RESEARCH_PRIORITY`; WATCH → `MONITOR`; CUT → `REJECT`.
 | Field | Value |
 |---|---|
 | **Date** | 2026-09-17 (Australia/Sydney, AEST) |
@@ -45,7 +46,7 @@ Pack methodology is **directionally strong** (rejection bias, must-cut hygiene, 
 ## 1. MAKE — stress test
 
 ### BTC — **KEEP MAKE**
-- Locked `active_calls`; expectations methodology PASS; HL stale labeled DO NOT SIZE; cycle gates empty/honest.
+- Locked `in_universe` membership; expectations methodology PASS; HL stale labeled DO NOT SIZE; cycle gates empty/honest.
 - Personal TV instruments (HL USDC + BTC1!) are hygiene, not a second thesis.
 - **Pass.**
 
@@ -54,7 +55,7 @@ Pack methodology is **directionally strong** (rejection bias, must-cut hygiene, 
 - Does not auto-MAKE AMD/SMH/memory — good. Enforcing AMD→CUT makes this sharper.
 - **Pass.**
 
-**MAKE hygiene note:** Lab still has AVGO/MSFT/META/JPM/XLF/XOM as yaml actives **absent from TV**. Pack correctly lists them as gaps and does **not** invent MAKE rows — good. Do not treat personal-TV MAKE-2 as the full lab active set.
+**MAKE hygiene note:** Lab still has AVGO/MSFT/META/JPM/XOM as yaml **in_universe** (and XLF as **watch_only**) names **absent from TV**. Pack correctly lists them as gaps and does **not** invent MAKE rows — good. Do not treat personal-TV MAKE-2 as the full lab in-universe set.
 
 ---
 

@@ -1,5 +1,6 @@
 # WATCHLIST-DD-20260917-personal-LIVE — Principal personal TV due-diligence (LIVE scrape provenance)
 
+> IMP-005: historical personal-TV labels MAKE / WATCH / CUT are **not** trades. Map: MAKE → `RESEARCH_PRIORITY`; WATCH → `MONITOR` / `watch_only`; CUT → `REJECT`.
 | Field | Value |
 |---|---|
 | **Date** | 2026-09-17 (Australia/Sydney, **AEST**) |
@@ -19,10 +20,10 @@
 
 **Provenance supersession:** PR **#25** `WATCHLIST-DD-20260917-personal.md` was based on a **recycled extract**. **This LIVE file supersedes #25 for inventory provenance.** Disposition board may align with Skeptic-passed #25 board AFTER reclass (MAKE 2 / WATCH 25 / CUT 36) but **must cite LIVE scrape timestamps** above.
 
-**What MAKE/WATCH/CUT means here:** research-queue disposition for the **personal TV inventory**, not orders.
-- **MAKE** = liquid, falsifiable **lab `active_call` candidate** (keep or propose into thesis priority).
-- **WATCH** = monitor / context / demoted expectation / proxy — **no** active-call priority.
-- **CUT** = reject-learn (lottery, meme, must-cut archive, killed sleeve, thin narrative, double-count).
+**What RESEARCH_PRIORITY / MONITOR / REJECT means here** (historical pack labels MAKE / WATCH / CUT): research-queue disposition for the **personal TV inventory**, not orders.
+- **RESEARCH_PRIORITY** (historical **MAKE**) = liquid, falsifiable **in-universe membership** candidate (keep or propose into thesis priority). Not a Quant Board verdict and not a trade.
+- **MONITOR** (historical **WATCH**) = monitor / context / demoted expectation / proxy — **no** thesis-priority membership.
+- **REJECT** (historical **CUT**) = reject-learn (lottery, meme, must-cut archive, killed sleeve, thin narrative, double-count).
 
 ---
 
@@ -232,7 +233,7 @@ Personal TV is a **crypto + AI/tech + macro dashboard** with a Racksor memory-se
 | **IBIT** | BTC TradFi spot ETF | **Valid WATCH** | Principal greenlit wrapper; not MAKE |
 | **MSTR** | Levered corporate BTC | **CUT** | Double-counts BTC MAKE |
 | **GLXY** | Crypto equity proxy | **CUT** | BTC MAKE + IBIT WATCH already cover cluster |
-| **QQQ / NQ / SPX** | US risk / duration | **WATCH** context | Not active calls |
+| **QQQ / NQ / SPX** | US risk / duration | **WATCH** context | Not in-universe membership |
 | **IWM** | US small-cap | **CUT** | Higher-for-longer defer |
 | **GOLD / SILVER** | Real-asset dashboard | **WATCH** metals; **BTC/SLV pair CUT** | Keep **BTC/GOLD** only as relative monitor; GLD *call* stays must-cut learning |
 | **CL / NG** | Energy path | **WATCH** context for XOM gate family | Not XOM equity substitute |
@@ -248,10 +249,10 @@ Board = Skeptic-final (#25 after #26 REVISE). Inventory citations = **LIVE 12:27
 ### 5.1 MAKE (2)
 
 #### BTC — **MAKE**
-Locked yaml `active_calls.crypto_perps` = **[BTC]** only (ETH demoted to watch_only). QUANT: last close **$76,201** (yfinance BTC-USD asof **2026-09-17**); RV20/RV60 **35.6% / 39.1%** √365; MDD~1y **−53.1%**; ret 1m/3m/YTD **+18.1% / +21.2% / −14.1%**. Expectations scorecard **PASS**. HL dayNtl/OI stale capture **2026-09-17T00:28:03Z** = appendix / DO NOT SIZE. LIVE TV: `BTCUSDC.P` (Crypto) + `BTC1!` (Base).
+Locked yaml `in_universe.crypto_perps` = **[BTC]** only (ETH demoted to watch_only). QUANT: last close **$76,201** (yfinance BTC-USD asof **2026-09-17**); RV20/RV60 **35.6% / 39.1%** √365; MDD~1y **−53.1%**; ret 1m/3m/YTD **+18.1% / +21.2% / −14.1%**. Expectations scorecard **PASS**. HL dayNtl/OI stale capture **2026-09-17T00:28:03Z** = appendix / DO NOT SIZE. LIVE TV: `BTCUSDC.P` (Crypto) + `BTC1!` (Base).
 
 #### NVDA — **MAKE**
-Locked yaml `active_calls.equities` includes NVDA. QUANT: last **213.90** asof **2026-09-16**; RV20/RV60 **45.5% / 40.4%** √252; MDD **−20.2%**; vs SPY 1m/3m/YTD **−2.4% / +2.5% / +2.6%** (simple-diff **NOT α**); ADV 5d ≈ **102.3M** sh / **$21.70B**. Corr NVDA–AVGO **0.462… ≈ 0.46** (`corr_matrix_60d.csv`, window 2026-05-28→2026-09-15) = co-movement, **not** multi-name license. AMD is **CUT**. LIVE TV: `NVDA` on Base.
+Locked yaml `in_universe.equities` includes NVDA. QUANT: last **213.90** asof **2026-09-16**; RV20/RV60 **45.5% / 40.4%** √252; MDD **−20.2%**; vs SPY 1m/3m/YTD **−2.4% / +2.5% / +2.6%** (simple-diff **NOT α**); ADV 5d ≈ **102.3M** sh / **$21.70B**. Corr NVDA–AVGO **0.462… ≈ 0.46** (`corr_matrix_60d.csv`, window 2026-05-28→2026-09-15) = co-movement, **not** multi-name license. AMD is **CUT**. LIVE TV: `NVDA` on Base.
 
 ### 5.2 WATCH (25)
 
@@ -266,7 +267,7 @@ ETH, UNI, BNB, IBIT, GOOG, NOW, QQQ, NQ, SPX, CL, NG, COPPER, GOLD, SILVER, DXY,
 | **BNB** | Venue/CEX context only |
 | **QQQ / NQ / SPX / DXY / TNX / VIX / KOSDAQ** | Dashboards |
 | **CL / NG / COPPER / GOLD / SILVER** | Commodity path context; GLD call stays must-cut learning |
-| **BTC.D … STABLE.C** | Crypto structure — never active calls |
+| **BTC.D … STABLE.C** | Crypto structure — never in-universe membership / never a Quant verdict |
 
 ### 5.3 CUT (36)
 
@@ -323,8 +324,8 @@ Fetched **main** lock version `2026-09-17`, status `locked`:
 
 | Tier | Yaml membership | On LIVE TV? | Personal disposition |
 |---|---|---|---|
-| **active_calls crypto** | **BTC** | Yes | **MAKE** |
-| **active_calls equity** | NVDA, AVGO, MSFT, META, JPM, XOM | **Only NVDA** | NVDA **MAKE** · others **absent** |
+| **in_universe crypto** | **BTC** | Yes | **MAKE** |
+| **in_universe equity** | NVDA, AVGO, MSFT, META, JPM, XOM | **Only NVDA** | NVDA **MAKE** · others **absent** |
 | **watch_only crypto** | ETH, UNI, AAVE | ETH+UNI yes · **AAVE no** | ETH/UNI **WATCH** |
 | **watch_only equity** | SMH, XLF | **No** | n/a on TV |
 | **deferred_must_cut crypto** | HYPE, SOL, XRP, ARB, NEAR, LINK | HYPE SOL XRP NEAR yes | present → **CUT** |

@@ -2,7 +2,7 @@
 
 **Report status:** PR READY  
 **Owner:** Don (Macro & Cross-Asset Desk)  
-**Scope:** read-only US pre-market Pulse on existing `mm_briefing` / `lab brief preopen`. No orders, wallets, live keys, Quant Board rewrite, watchlist MAKE/active-call loops, or risk/execution services.
+**Scope:** read-only US pre-market Pulse on existing `mm_briefing` / `lab brief preopen`. No orders, wallets, live keys, Quant Board rewrite, watchlist recommendation loops, or risk/execution services.
 
 Revives closed PR #29 (`cursor/phase2-us-pre-market-pulse-d645`) onto current `main` (IMP-000 #28 + IMP-001 #31). Repo-phase naming still calls Market Pulse “Phase 3”; this is the **Principal Phase 2** brief DoD on that substrate.
 
@@ -54,7 +54,7 @@ Standing **cross-asset regime note** (distinct from Pulse) is **deferred**. This
 
 ## Non-goals
 
-Quant Board (IMP-001, DONE); watchlist MAKE/active-call loops; live.yaml / risk-limit edits; execution/signing; live economic-calendar API; silent FRED default.
+Quant Board (IMP-001, DONE); watchlist recommendation loops; live.yaml / risk-limit edits; execution/signing; live economic-calendar API; silent FRED default.
 
 ## Limitations
 

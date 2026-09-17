@@ -1,12 +1,13 @@
 # Hyperliquid ingest instruments — Principal lock 2026-09-17.
 # Membership source of truth: config/universe.yaml (crypto_perps).
 # Default HL info ingest: BTC, ETH, UNI, AAVE (full locked membership).
-# Call priority is not equal: BTC/ETH are active_calls; UNI/AAVE are watch-only
-# (no thesis priority) per Principal demotion after Skeptic PR #14 / call cards PR #13.
+# Membership partitions are not equal: BTC is in_universe; ETH/UNI/AAVE are watch-only
+# (no thesis priority) per Principal demotion after Skeptic PR #14 / call cards PR #13
+# and ETH demotion (FAIL-patch PR #23 / yaml PR #24). IMP-005: in_universe was active_calls.
 # Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK) stay out.
 # Equities (NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM) are a research/briefing watchlist
 # for Phase 3 Market Pulse / future equity feeds — not Hyperliquid perps. Do not add them here.
-# SMH is watch-only in universe.yaml; NVDA/AVGO/MSFT/META/JPM/XLF/XOM are active_calls.
+# SMH and XLF are watch-only in universe.yaml; NVDA/AVGO/MSFT/META/JPM/XOM are in_universe.
 venue: hyperliquid
 kind: perpetual
 instruments:

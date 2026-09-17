@@ -11,7 +11,7 @@ from mm_source_health.models import HealthReport, SourceHealth, overall_status
 NO_DECISION_FOOTER = (
     "**Informational only — no decision, no recommendation, no order intent.**\n"
     "This is a Data & Market Memory source-health report. It does not quote markets, "
-    "create an active_call, size a trade, submit an order, or approve risk."
+    "change universe membership, size a trade, submit an order, or approve risk."
 )
 
 LIMITATIONS = (

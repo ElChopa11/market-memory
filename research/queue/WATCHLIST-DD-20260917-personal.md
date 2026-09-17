@@ -1,10 +1,12 @@
 # WATCHLIST-DD-20260917 — Principal personal TV due-diligence pack
 
+> IMP-005: historical personal-TV labels MAKE / WATCH / CUT are **not** trades. Map: MAKE → `RESEARCH_PRIORITY` (in-universe membership candidate); WATCH → `MONITOR` / `watch_only`; CUT → `REJECT`. Quant closed set remains `RESEARCH_PRIORITY|MONITOR|DEFER|REJECT|INSUFFICIENT_DATA`.
+
 | Field | Value |
 |---|---|
 | **Date** | 2026-09-17 (Australia/Sydney, **AEST**) |
 | **Repo** | `ElChopa11/market-memory` (private research) |
-| **Ask** | Principal personal TradingView inventory → MAKE / WATCH / CUT due-diligence vs locked lab universe + QUANT honesty |
+| **Ask** | Principal personal TradingView inventory → RESEARCH_PRIORITY / MONITOR / REJECT due-diligence vs locked lab universe + QUANT honesty (historical pack labels: MAKE / WATCH / CUT) |
 | **Privacy** | **Private research only.** **No Telegram.** **No trades.** |
 | **TV lists** | Base `194324969` · Racksor Capital `343370615` · Crypto HL `330128831` |
 | **Lab lock** | `config/universe.yaml` **main** · version `2026-09-17` · status `locked` |
@@ -13,10 +15,10 @@
 | **Skeptic** | Cut-review **REVISE** (PR **#26**, `research/queue/WATCHLIST-DD-20260917-personal-skeptic.md`): AMD, CRCL, GLXY WATCH→CUT; BTC/SLV pair **CUT**. Board **MAKE 2 / WATCH 25 / CUT 36**. MAKE BTC/NVDA **unchanged**. Memory-semi stays killed. |
 | **Hard rules** | rel≠α · HL stale not primary · corr≠causation · memory-semi **killed** · must-cuts = learning · prefer rejection |
 
-**What MAKE/WATCH/CUT means here:** research-queue disposition for the **personal TV inventory**, not orders.
-- **MAKE** = liquid, falsifiable **lab `active_call` candidate** (keep or propose into thesis priority).
-- **WATCH** = monitor / context / demoted expectation / proxy — **no** active-call priority.
-- **CUT** = reject-learn (lottery, meme, must-cut archive, killed sleeve, thin narrative, double-count).
+**What RESEARCH_PRIORITY / MONITOR / REJECT means here** (historical pack labels MAKE / WATCH / CUT): research-queue disposition for the **personal TV inventory**, not orders.
+- **RESEARCH_PRIORITY** (historical **MAKE**) = liquid, falsifiable **in-universe membership** candidate (keep or propose into thesis priority). Not a Quant Board verdict and not a trade.
+- **MONITOR** (historical **WATCH**) = monitor / context / demoted expectation / proxy — **no** thesis-priority membership.
+- **REJECT** (historical **CUT**) = reject-learn (lottery, meme, must-cut archive, killed sleeve, thin narrative, double-count).
 
 ---
 
@@ -25,7 +27,7 @@
 1. **Distinct underlyings: 63** after normalize/dedupe (84 raw TV rows → 63 names + **7 pairs** treated separately).
 2. **MAKE 2 · WATCH 25 · CUT 36** (underlyings only; Skeptic cut-review REVISE). Pair verdicts: **1 valid monitor / 6 invalid or double-count** (BTC/SLV **CUT** as redundant vs BTC/GOLD).
 3. **Sector coverage claim FAILS:** personal TV is crypto-beta + AI/tech + macro dashboard heavy; **missing** staples, utilities, REITs, materials (ex-copper), healthcare depth (ex-MRNA thin), international breadth (ex-Samsung/Hynix crypto-proxy / KOSDAQ stub), banks/energy majors (JPM/XOM absent from TV).
-4. **Lab contrast:** yaml still lists **active_calls** BTC ETH + NVDA AVGO MSFT META JPM XLF XOM; personal TV only overlaps **BTC ETH NVDA UNI** (+ IBIT sidebar). AVGO/MSFT/META/JPM/XLF/XOM/AAVE/SMH **absent** from TV.
+4. **Lab contrast:** yaml **in_universe** is BTC + NVDA AVGO MSFT META JPM XOM; **watch_only** is ETH UNI AAVE SMH XLF. Pack-era text listed ETH/XLF with the former `active_calls` key. Personal TV only overlaps **BTC ETH NVDA UNI** (+ IBIT sidebar). AVGO/MSFT/META/JPM/XLF/XOM/AAVE/SMH **absent** from TV.
 5. **Rejection bias holds:** must-cuts (HYPE SOL XRP NEAR) + memory-semi (MU SNDK SKHYNIX) + memes (DOGE PURR CASHCAT SPX6900 …) + Skeptic cuts (AMD CRCL GLXY) = **CUT**; ETH/JPM/XLF-style FAIL expressions → see appendix (not MAKE). MAKE BTC/NVDA **unchanged**.
 
 ---
@@ -85,7 +87,7 @@
 | SNDK | Racksor | **CUT** (memory-semi **killed**) |
 | SKHYNIX | Racksor | **CUT** (memory-semi **killed**) |
 | RBLX | Racksor | **CUT** (thin consumer/gaming) |
-| QQQ | Base | **WATCH** (index beta context; not active call) |
+| QQQ | Base | **WATCH** (index beta context; not in-universe membership) |
 | IWM | Base | **CUT** (small-cap hurt by higher-for-longer; deferred in shortlist) |
 
 ### 1.3 Futures / rates / vol / metals / crypto-macro (19)
@@ -145,7 +147,7 @@ See §5.
 
 | Gap | Why it matters vs lab |
 |---|---|
-| **Financials equities** | **JPM / XLF absent** from personal TV despite yaml active_calls |
+| **Financials equities** | **JPM / XLF absent** from personal TV despite yaml in_universe (JPM) / watch_only (XLF) |
 | **Energy equities** | **XOM absent**; only CL/NG futures |
 | **Healthcare depth** | Only **MRNA** (CUT) — no LLY (must-cut learning) / no diversified health ETF |
 | **Consumer staples** | None |
@@ -165,7 +167,7 @@ See §5.
 
 | Proxy | Maps to | Verdict | Why |
 |---|---|---|---|
-| **IBIT** | BTC (TradFi spot ETF wrapper) | **Valid WATCH proxy** | Principal greenlit watch-only; not a perp substitute; membership ≠ active call. Config historically “greenlit then ignored” — keep **WATCH**, not MAKE. |
+| **IBIT** | BTC (TradFi spot ETF wrapper) | **Valid WATCH proxy** | Principal greenlit watch-only; not a perp substitute; membership ≠ Quant verdict. Config historically “greenlit then ignored” — keep **WATCH**, not MAKE. |
 | **MSTR** | Levered corporate BTC beta | **Invalid as separate sleeve** | Double-counts BTC active thesis; CUT. |
 | **GLXY** | Crypto equity / trading proxy | **CUT** | BTC **MAKE** + IBIT **WATCH** already cover the proxy cluster; not a separate sleeve. |
 | **QQQ / NQ / SPX** | US risk / duration beta | **Valid macro context** | Shortlist deferred index-beta as *calls*; keep WATCH dashboards only. |
@@ -180,17 +182,17 @@ See §5.
 
 ## 4. Per-name DD (MAKE / WATCH / CUT)
 
-### 4.1 MAKE (2) — lab active_call candidates
+### 4.1 MAKE (2) — in-universe membership candidates (historical MAKE label)
 
 #### BTC — **MAKE**
-Locked yaml `active_calls.crypto_perps` includes BTC. QUANT pack: last close **$76,201** (yfinance BTC-USD asof **2026-09-17**); RV20/RV60 **35.6% / 39.1%** √365; MDD~1y **−53.1%**; ret 1m/3m/YTD **+18.1% / +21.2% / −14.1%**. Expectations scorecard **PASS** (benchmark/range + empty cycle gates until ETF + fresh fundingHistory). HL dayNtl/OI from lab capture **2026-09-17T00:28:03Z** are **stale/partial** (live 429) — appendix only / DO NOT SIZE. Personal TV correctly carries BTC via HL USDC perp + `BTC1!`. **MAKE** = keep as sole crypto active-call priority on this inventory.
+Locked yaml `in_universe.crypto_perps` includes BTC. QUANT pack: last close **$76,201** (yfinance BTC-USD asof **2026-09-17**); RV20/RV60 **35.6% / 39.1%** √365; MDD~1y **−53.1%**; ret 1m/3m/YTD **+18.1% / +21.2% / −14.1%**. Expectations scorecard **PASS** (benchmark/range + empty cycle gates until ETF + fresh fundingHistory). HL dayNtl/OI from lab capture **2026-09-17T00:28:03Z** are **stale/partial** (live 429) — appendix only / DO NOT SIZE. Personal TV correctly carries BTC via HL USDC perp + `BTC1!`. **MAKE** here = keep as sole crypto **in-universe** membership on this inventory (`RESEARCH_PRIORITY` candidate — not a trade).
 
 #### NVDA — **MAKE**
-Locked yaml `active_calls.equities` includes NVDA. QUANT: last **213.90** asof **2026-09-16**; RV20/RV60 **45.5% / 40.4%** √252; MDD **−20.2%**; vs SPY 1m/3m/YTD **−2.4% / +2.5% / +2.6%** (simple-diff **NOT α**); ADV 5d ≈ **102.3M** sh / **$21.70B**. Scorecard **PASS** (crowded honesty + mispricing gate empty). Corr NVDA–AVGO **0.46** (60d, 2026-05-28→2026-09-15) = co-movement description, not a multi-name license. **MAKE** as AI-infra primary; do not auto-MAKE AMD/SMH/memory from this. AMD is **CUT** (no independent residual vs NVDA).
+Locked yaml `in_universe.equities` includes NVDA. QUANT: last **213.90** asof **2026-09-16**; RV20/RV60 **45.5% / 40.4%** √252; MDD **−20.2%**; vs SPY 1m/3m/YTD **−2.4% / +2.5% / +2.6%** (simple-diff **NOT α**); ADV 5d ≈ **102.3M** sh / **$21.70B**. Scorecard **PASS** (crowded honesty + mispricing gate empty). Corr NVDA–AVGO **0.46** (60d, 2026-05-28→2026-09-15) = co-movement description, not a multi-name license. **MAKE** as AI-infra primary (`RESEARCH_PRIORITY` candidate); do not auto-MAKE AMD/SMH/memory from this. AMD is **CUT** (no independent residual vs NVDA).
 
 ### 4.2 WATCH (25) — monitors / demotions / context
 
-#### ETH — **WATCH** (yaml still `active_calls`; expectation **FAIL** → personal disposition WATCH)
+#### ETH — **WATCH** (yaml `watch_only` after PR #24; pack-era listed with in_universe names; expectation **FAIL** → personal disposition WATCH / `MONITOR`)
 Yaml membership kept active; PR **#23** demotes *expectation* to BTC-beta watch (conf ceiling **0.28**). QUANT: corr ETH–BTC **0.888… ≈ 0.89**; raw ETH−BTC 30d/90d/YTD **+8.2% / +20.1% / −5.4%** = **NOT α**; RV20/60 **41.7% / 58.9%** √365. Without named β residual + L2/ETF gates, personal pack treats ETH as **WATCH**, not MAKE. Detail: appendix §1.
 
 #### UNI — **WATCH**
@@ -218,7 +220,7 @@ Commodity path context (esp. CL for XOM crude gate family). Not equity substitut
 Macro / regional risk dashboards only.
 
 #### BTC.D, USDT.D, TOTAL, TOTAL2, TOTAL3, OTHERSBTC, STABLE.C — **WATCH**
-Crypto market-structure dashboards; never active calls.
+Crypto market-structure dashboards; never in-universe membership / never a Quant verdict.
 
 ### 4.3 CUT (36) — reject-learn
 
@@ -265,8 +267,8 @@ Fetched **main** `config/universe.yaml` (version `2026-09-17`, status `locked`):
 
 | Tier | Yaml membership | On personal TV? | Personal disposition |
 |---|---|---|---|
-| **active_calls crypto** | BTC, ETH | Yes | BTC **MAKE** · ETH **WATCH** (expectation FAIL / #23 demotion) |
-| **active_calls equity** | NVDA, AVGO, MSFT, META, JPM, XLF, XOM | **Only NVDA** | NVDA **MAKE** · others **absent from TV** (lab still active — do not invent TV rows) |
+| **in_universe crypto** | BTC | Yes | BTC **MAKE** · ETH **WATCH** (`watch_only`; expectation FAIL / #23 demotion) |
+| **in_universe equity** | NVDA, AVGO, MSFT, META, JPM, XOM | **Only NVDA** | NVDA **MAKE** · others **absent from TV** (lab still in-universe — do not invent TV rows) |
 | **watch_only crypto** | UNI, AAVE | UNI yes · **AAVE no** | UNI **WATCH** |
 | **watch_only equity** | SMH | **No** | n/a on TV |
 | **deferred_must_cut crypto** | HYPE, SOL, XRP, ARB, NEAR, LINK | HYPE SOL XRP NEAR yes · ARB/LINK no | present ones **CUT** |
@@ -274,9 +276,9 @@ Fetched **main** `config/universe.yaml` (version `2026-09-17`, status `locked`):
 | **IBIT** | Not in yaml lists (sidebar greenlight) | Yes | **WATCH** |
 | **Memory-semi** | **Killed** (not in yaml) | MU SNDK SKHYNIX on Racksor | **CUT** |
 
-**PR #15-era note:** Active-call set matches current yaml intent (BTC ETH + NVDA AVGO MSFT META JPM XLF XOM). ETH/XLF demotion is **expectation-level** (scorecard #22 / patch #23), **not** a yaml membership delete as of this fetch — personal pack respects yaml membership but **does not MAKE** FAIL expressions.
+**PR #15-era note:** Former `active_calls` pack-era list was BTC ETH + NVDA AVGO MSFT META JPM XLF XOM. Current yaml (PR #24, IMP-005 keys): **in_universe** BTC + NVDA AVGO MSFT META JPM XOM; ETH/XLF are **watch_only**. ETH/XLF demotion is membership + expectation-level (scorecard #22 / patch #23 / yaml #24). Personal pack respects yaml membership but **does not MAKE** FAIL expressions.
 
-**Absent-from-TV lab actives (gap list):** AVGO, MSFT, META, JPM, XLF, XOM, AAVE, SMH. Personal TV cannot underwrite those sleeves; lab QUANT/cards remain source of record.
+**Absent-from-TV lab in-universe / watch_only names (gap list):** AVGO, MSFT, META, JPM, XLF, XOM, AAVE, SMH. Personal TV cannot underwrite those sleeves; lab QUANT/cards remain source of record.
 
 ### QUANT cites used (no invented numbers)
 

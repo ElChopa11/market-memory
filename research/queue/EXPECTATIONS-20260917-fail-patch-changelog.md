@@ -21,7 +21,7 @@
 | **ETH** | active | Cycle ETH/BTC outperformance without β/residual protocol; QUANT rel≠α; AND-invalidation | Demote to **BTC-beta watch**. Ban α. Residual empty until protocol defined. **Single-trigger** ETF-outflow invalidation. Conf 0.40 → **0.28**. |
 | **JPM** | active | “NII beats SEP-implied” with no numeric gap; macro→NII causation risk | Relabel **earnings-watch only**. Residual **empty/speculative** until gap test (number/source/as-of/pass-fail) exists — **not invented**. Conf 0.48 → **0.36**. |
 | **XLF** | active | Diversifier/breadth without aggregate NII/KRE; corr-as-proof; weak blog | **Monitor-only diversifier**, size-cap ≪ JPM. Double-count default. Corr 0.73 = description not proof. **Blog removed**. Conf 0.36 → **0.24**. |
-| **UNI** | watch | Event-gated with no dated event; 90-day fishing | **Deferred governance watch** (not an active call). 90-day clock **removed**. No dated primary proposal URL. Conf 0.32 → **0.20**. |
+| **UNI** | watch | Event-gated with no dated event; 90-day fishing | **Deferred governance watch** (watch-only membership; not a Quant verdict). 90-day clock **removed**. No dated primary proposal URL. Conf 0.32 → **0.20**. |
 | **AAVE** | watch | Rate→credit leap; utilization baseline missing; stale HL sizing | **Deferred / micro watch**. Credit expectation killed. HL appendix / DO NOT SIZE. Unfalsifiable 25% trigger **removed**. Conf 0.30 → **0.18**. |
 | **SMH** | watch | Basket-outperform while NVDA+AVGO active; holdings % absent | **Monitor-only AI-infra basket appendix**; **dropped from active expectations**. Overlap % required before xor. Conf 0.35 → **0.22**. |
 
@@ -37,7 +37,7 @@
 
 | Field | Before | After |
 |---|---|---|
-| Heading / call | conditional RV vs BTC | **BTC-beta watch** (membership still active_calls; **not** RV/α) |
+| Heading / expectation | conditional RV vs BTC | **BTC-beta watch** (pack-era listed with in-universe names; yaml later `watch_only`; **not** RV/α) |
 | Expected path (cycle) | ETH/BTC outperformance if ETF + L2 gates clear | **No** outperformance/α claim. Residual **empty** until named-window β-adjusted residual **plus** L2 fee/activity residual are defined |
 | α language | RV / outperformance as cycle IF | **Banned.** Raw ETH−BTC (QUANT simple-diff) is **not** edge |
 | Invalidation | AND: ETH−BTC ≤−8% / 20d **and** ETF outflows ≥5 of last 10 | **Single-trigger:** ETH ETF aggregate net outflows ≥5 consecutive US trading days — kill promotion from beta-watch to independent/RV long. Raw ETH−BTC is not the trigger |
@@ -81,7 +81,7 @@ Did **not** invent a SEP-implied NII figure or company guide extract.
 | Invalidation | JPM invalidation **or** (KRE ≤−10% / 20d with stress headlines) | **Single-trigger:** JPM NII-miss invalidation auto-drops XLF (double-count). KRE AND-gate removed |
 | Conf | 0.36 (≤ 0.53) | **0.24** (FAIL haircut) |
 
-`universe.yaml` still lists XLF under **active_calls** (Principal). This patch demotes the **expectation**, not membership.
+`universe.yaml` listed XLF under the former **`active_calls`** key (Principal; quoted as the pack-era key). This patch demotes the **expectation**, not membership. IMP-005: that key is now **`in_universe`**; XLF is **`watch_only`** after yaml PR #24.
 
 ---
 
@@ -93,7 +93,7 @@ Did **not** invent a SEP-implied NII figure or company guide extract.
 
 | Field | Before | After |
 |---|---|---|
-| Call | conditional / event-gated (fee-switch) | **deferred governance watch** — **not an active call**; matches watch-only |
+| Expectation | conditional / event-gated (fee-switch) | **deferred governance watch** — **watch-only membership, not a Quant verdict**; matches watch-only |
 | Cycle IF | binary re-rate if dated fee-switch lands | **No** event/re-rate expectation this cycle |
 | 90-day clock | no proposal reaching on-chain vote within 90 days of 2026-09-17 | **Removed** (undated fishing presented as a live gate) |
 | Invalidation | 90-day fishing clock | **Single-trigger:** event-gated frame **already killed** by missing dated proposal URL as of 2026-09-17. No countdown. Revival = new card citing URL |
