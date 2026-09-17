@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -11,20 +11,35 @@ from sqlalchemy.orm import Session
 
 from mm_common.time import as_utc, parse_utc, utcnow
 from mm_briefing.alerts import evaluate_alerts
-from mm_briefing.calendar import events_from_rows, relevant_events
+from mm_briefing.calendar import DEFAULT_CALENDAR_SOURCE, events_from_rows, relevant_events
 from mm_briefing.config import AlertSettings, BriefingSettings, load_briefing_settings
 from mm_briefing.divergences import assumption_changes, evaluate_divergences, unexpected_moves
-from mm_briefing.fetchers import MacroFetcher, fetcher_for_mode, snapshot_from_payload
-from mm_briefing.hl import hl_from_memory, hl_from_payload
+from mm_briefing.fetchers import (
+    MacroFetcher,
+    complete_cross_asset,
+    fetcher_for_mode,
+    live_macro_spec,
+    snapshot_from_payload,
+)
+from mm_briefing.hl import (
+    LIVE_INFO_SOURCE,
+    ensure_hl_instruments,
+    hl_from_live_info,
+    hl_from_memory,
+    hl_from_payload,
+    hl_has_metrics,
+)
 from mm_briefing.models import (
     AlertDecision,
     BriefDocument,
     HLInstrumentState,
     MacroSnapshot,
     ThesisHook,
+    overall_pulse_quality,
     worst_quality,
 )
 from mm_briefing.render import render_alerts, render_close, render_preopen
+from mm_briefing.schedule import prior_us_cash_close, us_session_status
 from mm_briefing.watchlist import build_watchlist
 
 
@@ -54,7 +69,7 @@ def as_of_for_kind(kind: str, fixture: dict[str, Any] | None, fallback: datetime
 def prior_close_for(fixture: dict[str, Any] | None, as_of: datetime) -> datetime:
     if fixture and fixture.get("prior_us_close"):
         return parse_utc(str(fixture["prior_us_close"]))
-    return as_utc(as_of) - timedelta(hours=16)
+    return prior_us_cash_close(as_of)
 
 
 def theses_from_payload(rows: list[dict[str, Any]], session: MacroSnapshot | None) -> tuple[ThesisHook, ...]:
@@ -117,23 +132,37 @@ def generate_preopen(
     macro: MacroSnapshot,
     hl: tuple[HLInstrumentState, ...],
     generated_at: datetime | None = None,
+    memory_watermark: datetime | None = None,
+    hl_origin: str = "market_memory",
+    calendar_source: str | None = None,
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
-    calendar = relevant_events(events_from_rows(settings.calendar_events), as_of=as_of)
-    divergences = evaluate_divergences(macro, settings.divergence_rules)
-    watch = build_watchlist(settings.watchlist, hl)
-    quality = worst_quality(macro.data_quality, *(row.data_quality for row in hl))
+    filled = complete_cross_asset(macro)
+    hl_filled = ensure_hl_instruments(hl, as_of=as_utc(as_of))
+    cal_source = calendar_source or getattr(settings, "calendar_source", None) or DEFAULT_CALENDAR_SOURCE
+    calendar = relevant_events(events_from_rows(settings.calendar_events, source=cal_source), as_of=as_of)
+    divergences = evaluate_divergences(filled, settings.divergence_rules)
+    watch = build_watchlist(settings.watchlist, hl_filled)
+    quality = overall_pulse_quality(
+        filled.data_quality,
+        *(row.data_quality for row in filled.assets),
+        *(row.data_quality for row in hl_filled),
+    )
     return render_preopen(
         generated_at=generated,
         as_of=as_utc(as_of),
-        macro=macro,
+        macro=filled,
         calendar=calendar,
         divergences=divergences,
-        hl=hl,
+        hl=hl_filled,
         watchlist=watch,
         data_quality=quality,
         session_tz=settings.schedule.session_timezone,
         lab_tz=settings.schedule.lab_timezone,
+        session_status=us_session_status(generated, session_tz=settings.schedule.session_timezone),
+        memory_watermark=as_utc(memory_watermark) if memory_watermark is not None else as_utc(as_of),
+        hl_origin=hl_origin,
+        calendar_source=cal_source,
     )
 
 
@@ -210,7 +239,19 @@ def generate_from_fixture(
     session_snap = _macro_from_fixture(fixture, key="session", as_of=moment, prior=prior)
     hl = hl_from_payload(fixture.get("hyperliquid") or {})
     if kind == "preopen":
-        return generate_preopen(as_of=moment, settings=cfg, macro=overnight, hl=hl, generated_at=generated), None
+        origin = str((fixture.get("hyperliquid") or {}).get("source") or "hyperliquid.info")
+        return (
+            generate_preopen(
+                as_of=moment,
+                settings=cfg,
+                macro=overnight,
+                hl=hl,
+                generated_at=generated,
+                memory_watermark=moment,
+                hl_origin=origin,
+            ),
+            None,
+        )
     if kind == "close":
         theses = theses_from_payload(list(fixture.get("theses") or []), session_snap)
         return (
@@ -247,6 +288,8 @@ def generate_from_sources(
     fixture: dict[str, Any] | None = None,
     generated_at: datetime | None = None,
     alert_settings: AlertSettings | None = None,
+    live: bool = False,
+    hl_client=None,
 ) -> tuple[BriefDocument | None, AlertDecision | None]:
     if fixture is not None:
         return generate_from_fixture(
@@ -257,18 +300,47 @@ def generate_from_sources(
             generated_at=generated_at,
             alert_settings=alert_settings,
         )
-    prior = as_utc(as_of) - timedelta(hours=16)
-    overnight = macro_fetcher.fetch(as_of, prior_us_close=prior)
+    generated = as_utc(generated_at or as_of)
+    prior = prior_us_cash_close(as_of)
+    fetcher = macro_fetcher
+    if live:
+        fetcher = fetcher_for_mode("live", macro_spec=live_macro_spec(settings.macro))
+    overnight = complete_cross_asset(fetcher.fetch(as_of, prior_us_close=prior))
     session_snap = overnight
-    if fixture is None and kind == "close":
-        session_snap = overnight
     hl: tuple[HLInstrumentState, ...] = ()
     theses: tuple[ThesisHook, ...] = ()
+    hl_origin = "none"
+    owns_client = False
     if session is not None:
         hl = hl_from_memory(session, as_of)
+        hl_origin = "market_memory"
         theses = theses_from_memory(session, session_snap if kind == "close" else overnight)
+    if live and not hl_has_metrics(hl):
+        from mm_ingest.hl_info import HyperliquidInfoClient
+
+        client = hl_client
+        if client is None:
+            client = HyperliquidInfoClient()
+            owns_client = True
+        try:
+            hl = hl_from_live_info(client, captured_at=generated)
+            hl_origin = LIVE_INFO_SOURCE
+        finally:
+            if owns_client:
+                client.close()
     if kind == "preopen":
-        return generate_preopen(as_of=as_of, settings=settings, macro=overnight, hl=hl, generated_at=generated_at), None
+        return (
+            generate_preopen(
+                as_of=as_of,
+                settings=settings,
+                macro=overnight,
+                hl=hl,
+                generated_at=generated,
+                memory_watermark=as_of if session is not None else generated,
+                hl_origin=hl_origin,
+            ),
+            None,
+        )
     if kind == "close":
         return (
             generate_close(

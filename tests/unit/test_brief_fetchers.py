@@ -13,9 +13,9 @@ AS_OF = datetime(2026, 3, 10, 12, 0, tzinfo=timezone.utc)
 PRIOR = datetime(2026, 3, 9, 20, 0, tzinfo=timezone.utc)
 
 
-def test_off_mode_is_partial() -> None:
+def test_off_mode_is_unavailable() -> None:
     snap = fetcher_for_mode("off").fetch(AS_OF, prior_us_close=PRIOR)
-    assert snap.data_quality == "partial"
+    assert snap.data_quality == "unavailable"
     assert snap.assets == ()
 
 
@@ -30,7 +30,7 @@ def test_fred_missing_api_key_degrades() -> None:
     }
     fetcher = LiveMacroFetcher(spec, env={})
     snap = fetcher.fetch(AS_OF, prior_us_close=PRIOR)
-    assert snap.data_quality == "partial"
+    assert snap.data_quality == "unavailable"
     assert any("FRED_API_KEY" in note for note in snap.notes)
 
 
@@ -49,10 +49,10 @@ def test_stooq_http_error_degrades() -> None:
         }
     }
     snap = LiveMacroFetcher(spec, client=client).fetch(AS_OF, prior_us_close=PRIOR)
-    assert snap.data_quality == "partial"
+    assert snap.data_quality == "unavailable"
 
 
 def test_empty_snapshot_helper() -> None:
     snap = empty_snapshot(AS_OF, PRIOR, reason="test")
-    assert snap.data_quality == "partial"
+    assert snap.data_quality == "unavailable"
     assert snap.notes == ("test",)

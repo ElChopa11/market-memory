@@ -7,7 +7,7 @@ from mm_briefing.alerts import evaluate_alerts
 from mm_briefing.config import load_briefing_settings, load_schedule
 from mm_briefing.engine import generate_from_fixture, generate_from_sources, load_fixture_file
 from mm_briefing.render import brief_hash
-from mm_briefing.schedule import fires_between, next_fire
+from mm_briefing.schedule import fires_between, next_fire, us_session_status
 from mm_briefing.store import write_brief
 
 __phase__ = 3
@@ -24,5 +24,6 @@ __all__ = [
     "load_fixture_file",
     "load_schedule",
     "next_fire",
+    "us_session_status",
     "write_brief",
 ]

@@ -38,6 +38,8 @@ htmlcov/
 # Local object-store / DB volumes (if bind-mounted)
 .local-data/
 
-# Generated Market Pulse briefs (keep the directory README)
+# Generated Market Pulse briefs (keep the directory README and committed DoD samples)
 briefs/**
 !briefs/README.md
+!briefs/*/
+!briefs/*/us-pre-market.md
