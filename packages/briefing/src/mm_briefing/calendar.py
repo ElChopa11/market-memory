@@ -9,7 +9,14 @@ from mm_common.time import as_utc, parse_utc
 from mm_briefing.models import CalendarEvent
 
 
-def events_from_rows(rows: tuple[dict[str, Any], ...] | list[dict[str, Any]]) -> tuple[CalendarEvent, ...]:
+DEFAULT_CALENDAR_SOURCE = "config/briefing/calendar.yaml"
+
+
+def events_from_rows(
+    rows: tuple[dict[str, Any], ...] | list[dict[str, Any]],
+    *,
+    source: str = DEFAULT_CALENDAR_SOURCE,
+) -> tuple[CalendarEvent, ...]:
     out: list[CalendarEvent] = []
     for row in rows:
         when_raw = row.get("when") or row.get("datetime")
@@ -23,6 +30,7 @@ def events_from_rows(rows: tuple[dict[str, Any], ...] | list[dict[str, Any]]) ->
                 importance=str(row.get("importance") or "medium").lower(),
                 region=str(row.get("region") or "US"),
                 notes=str(row.get("notes") or ""),
+                source=str(row.get("source") or source),
             )
         )
     return tuple(sorted(out, key=lambda event: (event.when, event.name)))

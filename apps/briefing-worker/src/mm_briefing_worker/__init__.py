@@ -56,6 +56,7 @@ def _add_gen_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, help="repo root to write briefs/ into")
     parser.add_argument("--dsn")
     parser.add_argument("--no-db", action="store_true")
+    parser.add_argument("--live", action="store_true")
     parser.add_argument("--repo-root", type=Path, default=Path("."))
 
 
@@ -63,6 +64,8 @@ def cmd_once(args: argparse.Namespace) -> int:
     settings = load_briefing_settings(Path(args.repo_root).resolve() if args.repo_root else None)
     fixture = load_fixture_file(args.fixture) if args.fixture else None
     as_of = parse_utc(args.as_of) if args.as_of else utcnow()
+    live = bool(getattr(args, "live", False)) and fixture is None
+    generated_at = utcnow() if live else None
     fetcher = default_macro_fetcher(settings, fixture)
     session_cm = None
     session = None
@@ -77,6 +80,8 @@ def cmd_once(args: argparse.Namespace) -> int:
             macro_fetcher=fetcher,
             session=session,
             fixture=fixture,
+            generated_at=generated_at,
+            live=live,
         )
     finally:
         if session_cm is not None:

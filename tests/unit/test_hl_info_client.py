@@ -7,15 +7,27 @@ import json
 import httpx
 import pytest
 
-from mm_ingest.hl_info import FORBIDDEN_INFO_TYPES, HyperliquidInfoClient, HyperliquidInfoError
+from mm_ingest.hl_info import ALLOWED_INFO_TYPES, FORBIDDEN_INFO_TYPES, HyperliquidInfoClient, HyperliquidInfoError
 
 
 def test_forbidden_info_types_are_refused() -> None:
     client = HyperliquidInfoClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, json={})))
-    for info_type in ("clearinghouseState", "openOrders", "userFills", "orderStatus"):
+    forbidden = (
+        "clearinghouseState",
+        "openOrders",
+        "frontendOpenOrders",
+        "userFills",
+        "userFillsByTime",
+        "userFunding",
+        "orderStatus",
+        "spotClearinghouseState",
+        "historicalOrders",
+    )
+    for info_type in forbidden:
         with pytest.raises(HyperliquidInfoError, match="refusing non-public"):
             client.post({"type": info_type, "user": "0x" + "0" * 40})
     assert "clearinghouseState" in FORBIDDEN_INFO_TYPES
+    assert not (FORBIDDEN_INFO_TYPES & ALLOWED_INFO_TYPES)
 
 
 def test_unknown_info_type_is_refused() -> None:

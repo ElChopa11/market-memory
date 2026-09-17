@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from mm_common.time import as_utc
 from mm_briefing.config import PulseSchedule
-from mm_briefing.models import Fire
+from mm_briefing.models import Fire, SessionStatus
 
 UTC = timezone.utc
 NY_TZ = ZoneInfo("America/New_York")
 SYDNEY_TZ = ZoneInfo("Australia/Sydney")
 WEEKDAY_NAMES = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+WEEKDAY_SESSION = ("Mon", "Tue", "Wed", "Thu", "Fri")
+
+# US cash session (NYSE) wall clocks in America/New_York. zoneinfo applies DST.
+PREMARKET_OPEN = time(4, 0)
+CASH_OPEN = time(9, 30)
+CASH_CLOSE = time(16, 0)
+AFTER_HOURS_END = time(20, 0)
 
 
 def zone(name: str) -> ZoneInfo:
@@ -86,3 +93,61 @@ def next_fire(
 def session_date_for(ts: datetime, schedule: PulseSchedule | None = None) -> date:
     tz_name = schedule.session_timezone if schedule is not None else "America/New_York"
     return as_utc(ts).astimezone(zone(tz_name)).date()
+
+
+def _fmt_offset(delta: timedelta | None) -> str:
+    if delta is None:
+        return "+00:00"
+    total = int(delta.total_seconds())
+    sign = "+" if total >= 0 else "-"
+    total = abs(total)
+    hours, rem = divmod(total, 3600)
+    minutes = rem // 60
+    return f"{sign}{hours:02d}:{minutes:02d}"
+
+
+def us_session_status(ts: datetime, *, session_tz: str = "America/New_York") -> SessionStatus:
+    """US-session status at *ts*. DST is whatever zoneinfo says for America/New_York."""
+    tz = zone(session_tz)
+    local = as_utc(ts).astimezone(tz)
+    weekday = WEEKDAY_NAMES[local.weekday()]
+    clock = time(local.hour, local.minute, local.second)
+    if weekday not in WEEKDAY_SESSION:
+        code = "weekend_closed"
+        label = "Weekend — US cash session closed"
+    elif CASH_OPEN <= clock < CASH_CLOSE:
+        code = "regular_hours"
+        label = "Regular hours (NYSE cash session 09:30–16:00)"
+    elif PREMARKET_OPEN <= clock < CASH_OPEN:
+        code = "pre_market"
+        label = "US pre-market (04:00–09:30 before cash open)"
+    elif CASH_CLOSE <= clock < AFTER_HOURS_END:
+        code = "after_hours"
+        label = "US after-hours (16:00–20:00 after cash close)"
+    else:
+        code = "overnight_closed"
+        label = "Overnight — US cash session closed"
+    tzname = local.tzname() or session_tz
+    return SessionStatus(
+        code=code,
+        label=label,
+        timezone=session_tz,
+        tzname=tzname,
+        utc_offset=_fmt_offset(local.utcoffset()),
+        cash_open="09:30",
+        cash_close="16:00",
+        local=local,
+    )
+
+
+def prior_us_cash_close(ts: datetime, *, session_tz: str = "America/New_York") -> datetime:
+    """Previous weekday 16:00 in the US session timezone (DST-correct)."""
+    tz = zone(session_tz)
+    local = as_utc(ts).astimezone(tz)
+    day = local.date()
+    close_today = session_local(day, CASH_CLOSE.hour, CASH_CLOSE.minute, 0, tz)
+    if local < close_today:
+        day = day - timedelta(days=1)
+    while WEEKDAY_NAMES[day.weekday()] not in WEEKDAY_SESSION:
+        day = day - timedelta(days=1)
+    return session_local(day, CASH_CLOSE.hour, CASH_CLOSE.minute, 0, tz).astimezone(UTC)

@@ -12,5 +12,6 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 
 - No trading credentials, signing, wallets, or `hl_trade` / `mm_execution` usage from this tree.
 - Do not edit `config/risk/environments/live.yaml` from ops docs work.
-- Quant Review Board (IMP-001) is **parked**. Do not implement generators, boards, or verdict engines in a docs PR.
+- Quant Review Board (IMP-001) is **DONE** (#31). Do not rewrite the board in a Pulse PR.
+- US Market Pulse vertical slice (IMP-002) is the active implementation item. Read-only; no execution.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

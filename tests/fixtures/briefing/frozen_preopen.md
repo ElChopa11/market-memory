@@ -1,67 +1,94 @@
-# US Pre-Open Brief — 2026-03-10
+# US Pre-Market Brief — 2026-03-10
 
-Generated: 2026-03-10T12:00:00+00:00
-As-of knowledge: 2026-03-10T12:00:00+00:00 (ingested_at watermark; never published_at alone)
-Session clock: 2026-03-10T08:00:00-04:00 (America/New_York)
-Lab clock: 2026-03-10T23:00:00+11:00 (Australia/Sydney)
-Data quality: partial
+Generated (UTC): 2026-03-10T12:00:00+00:00
+Generated (America/New_York): 2026-03-10T08:00:00-04:00 (EDT)
+Generated (Australia/Sydney): 2026-03-10T23:00:00+11:00 (AEDT)
+US session status: pre_market — US pre-market (04:00–09:30 before cash open) (DST=EDT, offset -04:00; cash open 09:30, cash close 16:00 America/New_York)
+Memory watermark (as_of_knowledge): 2026-03-10T12:00:00+00:00
+As-of knowledge: 2026-03-10T12:00:00+00:00 (ingested_at lockstep; never published_at / market_time)
+Overall data quality: partial
 Macro source: fixture
+HL origin: hyperliquid.info
 
-## Overnight tape
+## Data quality by source
 
-| Symbol | Last | Prior close | Change | prior US close | Quality |
-|---|---:|---:|---:|---|---|
-| ES | 5750.00 | 5720.00 | +0.52% | S&P 500 futures | ok |
-| NQ | 20500.00 | 20400.00 | +0.49% | Nasdaq 100 futures | ok |
-| US10Y | 4.28 | 4.22 | +6.0bp | US 10Y yield | ok |
-| DXY | 103.80 | 104.20 | -0.38% | US Dollar Index | ok |
-| CL | 78.50 | 77.20 | +1.68% | WTI crude | ok |
-| VIX | 16.20 | 17.80 | -8.99% | CBOE Volatility Index | ok |
-| BTC | 65500.00 | 64800.00 | +1.08% | Bitcoin | ok |
-| ETH | 3550.00 | 3480.00 | +2.01% | Ether | ok |
+| Source | Status | As-of | Evidence | Notes |
+|---|---|---|---|---|
+| fixture | fresh | 2026-03-10T12:00:00+00:00 | BTC, CL, DXY, ES, ETH, NQ, US10Y, VIX |  |
+| hyperliquid.info | partial | 2026-03-10T12:00:00+00:00 | 01FROZENBTCFUNDING00000001, 01FROZENBTCOI0000000000001, 01FROZENBTCOIPRIOR00000001, 01FROZENBTCMID000000000001, 01FROZENBTCMARK00000000001, 01FROZENBTCORACLE000000001, 01FROZENBTCLIQ000000000001, 01FROZENETHFUNDING00000001, 01FROZENETHOI0000000000001, 01FROZENETHMID000000000001, 01FROZENETHMARK00000000001, 01FROZENETHORACLE000000001 | public /info allowlist only |
+| config/briefing/calendar.yaml | fresh | 2026-03-10T12:00:00+00:00 | yaml events | fixture; no live calendar API configured |
+
+## Cross-asset snapshot
+
+Section as-of: 2026-03-10T12:00:00+00:00 (capture/quote time — not an exchange-event clock unless the source says so)
+Required slots (always listed): crypto, equity-index proxy, rates, USD, oil, vol. Unavailable is shown, never invented.
+
+| Slot | Symbol | Last | Prior close | Change | Name | Source | As-of | Quality |
+|---|---|---:|---:|---:|---|---|---|---|
+| equity-index proxy | ES | 5750.00 | 5720.00 | +0.52% | S&P 500 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| equity-index proxy | NQ | 20500.00 | 20400.00 | +0.49% | Nasdaq 100 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| rates | US10Y | 4.28 | 4.22 | +6.0bp | US 10Y yield | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| USD | DXY | 103.80 | 104.20 | -0.38% | US Dollar Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| oil | CL | 78.50 | 77.20 | +1.68% | WTI crude | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| vol | VIX | 16.20 | 17.80 | -8.99% | CBOE Volatility Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| crypto | BTC | 65500.00 | 64800.00 | +1.08% | Bitcoin | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| crypto | ETH | 3550.00 | 3480.00 | +2.01% | Ether | fixture | 2026-03-10T12:00:00+00:00 | fresh |
 
 ## What changed since prior US close
 
 Prior US close watermark: 2026-03-09T20:00:00+00:00
+Figures below are recorded prints vs that close; missing slots stay unavailable (not invented).
 
-- ES (S&P 500 futures): last 5750.00 / +0.52% [ok]
-- NQ (Nasdaq 100 futures): last 20500.00 / +0.49% [ok]
-- US10Y (US 10Y yield): last 4.28 / +6.0bp [ok]
-- DXY (US Dollar Index): last 103.80 / -0.38% [ok]
-- CL (WTI crude): last 78.50 / +1.68% [ok]
-- VIX (CBOE Volatility Index): last 16.20 / -8.99% [ok]
-- BTC (Bitcoin): last 65500.00 / +1.08% [ok]
-- ETH (Ether): last 3550.00 / +2.01% [ok]
+- ES [equity-index proxy] (S&P 500 futures): last 5750.00 / +0.52% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- NQ [equity-index proxy] (Nasdaq 100 futures): last 20500.00 / +0.49% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- US10Y [rates] (US 10Y yield): last 4.28 / +6.0bp [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- DXY [USD] (US Dollar Index): last 103.80 / -0.38% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- CL [oil] (WTI crude): last 78.50 / +1.68% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- VIX [vol] (CBOE Volatility Index): last 16.20 / -8.99% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- BTC [crypto] (Bitcoin): last 65500.00 / +1.08% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- ETH [crypto] (Ether): last 3550.00 / +2.01% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- HL vs prior US close 2026-03-09T20:00:00+00:00 (close-to-close change only when a prior observation exists; current snapshot is labeled, not invented as a move):
+  - BTC: OI +20.05% vs prior print; current funding 0.000400 (snapshot, not a close-to-close delta); current mid 65500 (snapshot, not a close-to-close delta) [quality=fresh; source=hyperliquid.info]
+  - ETH: OI change unavailable (no retained observation at/before prior US close); current funding -0.000100 (snapshot, not a close-to-close delta); current mid 3550 (snapshot, not a close-to-close delta) [quality=partial; source=hyperliquid.info]
 
-## Macro / catalysts
+## Today's market-event calendar
 
-- 2026-03-10T12:30:00+00:00 [high] US CPI YoY — Frozen fixture day. Consensus 2.4% (fixture).
-- 2026-03-10T14:00:00+00:00 [medium] US 10Y auction — Watch for a stop-through vs overnight yield backup.
-- 2026-03-11T18:00:00+00:00 [medium] US FOMC speaker — Into next US session / Europe overlap.
+Source: config/briefing/calendar.yaml (approved attributable file; empty window is shown, not invented)
+Section as-of: 2026-03-10T12:00:00+00:00
+
+- 2026-03-10T12:30:00+00:00 [high] US CPI YoY (source: config/briefing/calendar.yaml) — Frozen fixture day. Consensus 2.4% (fixture).
+- 2026-03-10T14:00:00+00:00 [medium] US 10Y auction (source: config/briefing/calendar.yaml) — Watch for a stop-through vs overnight yield backup.
+- 2026-03-11T18:00:00+00:00 [medium] US FOMC speaker (source: config/briefing/calendar.yaml) — Into next US session / Europe overlap.
 
 ## Cross-asset divergences
 
 - `equity_vol` **Equity / vol divergence**: ES +0.52% while VIX -8.99% since prior US close (evidence: ES, VIX)
 - `yields_equity` **Yields up with equities bid**: US10Y +6.0bp with ES +0.52% since prior US close (evidence: US10Y, ES)
 
-## Hyperliquid (Market Memory)
+## Hyperliquid market structure
 
-### BTC (quality=ok)
+Section as-of / memory watermark: 2026-03-10T12:00:00+00:00
+Source: hyperliquid.info — public `/info` allowlist only (no wallet, user, account, or trading endpoints).
+Snapshot fields have no exchange event time; capture is ingested_at / as_of_knowledge.
 
-- Funding: 0.000400 (obs 01FROZENBTCFUNDING00000001)
-- Open interest: 1200.5 (Δ +20.05%; obs 01FROZENBTCOI0000000000001)
-- Mid: 65500 (obs 01FROZENBTCMID000000000001)
-- Basis mark−oracle: 110.0
-- Liquidations (window sum): 2.5000 (obs 01FROZENBTCLIQ000000000001)
+### BTC (quality=fresh; source=hyperliquid.info)
+
+- Instrument as-of knowledge: 2026-03-10T12:00:00+00:00
+- Funding: 0.000400 (obs 01FROZENBTCFUNDING00000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T08:00:00+00:00)
+- Open interest: 1200.5 (Δ +20.05%; obs 01FROZENBTCOI0000000000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T11:55:00+00:00)
+- Mid: 65500 (obs 01FROZENBTCMID000000000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T11:55:00+00:00)
+- Basis mark−oracle: 110 (mark obs 01FROZENBTCMARK00000000001; oracle obs 01FROZENBTCORACLE000000001)
+- Liquidations (window sum): 2.5 (obs 01FROZENBTCLIQ000000000001)
 - Levels: basis_mark_minus_oracle=110, session_high=65800, session_low=64600
 
-### ETH (quality=partial)
+### ETH (quality=partial; source=hyperliquid.info)
 
-- Funding: -0.000100 (obs 01FROZENETHFUNDING00000001)
-- Open interest: missing (Δ n/a; obs 01FROZENETHOI0000000000001)
-- Mid: 3550 (obs 01FROZENETHMID000000000001)
-- Basis mark−oracle: 3.0
-- Liquidations (window sum): 0.0000 (obs none)
+- Instrument as-of knowledge: 2026-03-10T12:00:00+00:00
+- Funding: -0.000100 (obs 01FROZENETHFUNDING00000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T08:00:00+00:00)
+- Open interest: missing (Δ n/a; obs 01FROZENETHOI0000000000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T11:55:00+00:00)
+- Mid: 3550 (obs 01FROZENETHMID000000000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T11:55:00+00:00)
+- Basis mark−oracle: 3 (mark obs 01FROZENETHMARK00000000001; oracle obs 01FROZENETHORACLE000000001)
+- Liquidations (window sum): 0 (obs none)
 - Levels: basis_mark_minus_oracle=3, session_high=3580, session_low=3460
 
 
@@ -82,3 +109,8 @@ Prior US close watermark: 2026-03-09T20:00:00+00:00
 - Levels: resistance=3650, support=3400, basis_mark_minus_oracle=3, session_high=3580, session_low=3460
 - Invalidation: ETH lags while BTC funding remains bid; lose support without OI confirmation
 - No-trade: ETH open_interest is missing or partial; HL ETH data_quality=partial
+
+
+---
+**Informational only — no decision, no recommendation, no order intent.**
+This brief does not create an active_call, size a trade, submit an order, or approve risk.

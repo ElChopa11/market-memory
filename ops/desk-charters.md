@@ -212,7 +212,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** `packages/briefing`, `apps/briefing-worker`, `briefs/` (dated output gitignored), `config/briefing/*`, `config/schedules/market-pulse.yaml`, `docs/runbooks/market-pulse.md`. Macro live fetchers are opt-in and degrade without keys.
 
-**Gap.** No standing cross-asset **regime note** distinct from Pulse; US Market Pulse vertical slice as an explicit desk product is queued as IMP-002 (BACKLOG). Pulse exists as Phase 3 code; the desk cadence and regime artifact do not.
+**Gap.** No standing cross-asset **regime note** distinct from Pulse (explicitly deferred on IMP-002). US Market Pulse vertical slice is IMP-002 (`IN_PROGRESS`): pre-market brief DoD on the existing Phase 3 Pulse substrate.
 
 ---
 

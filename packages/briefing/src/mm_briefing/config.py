@@ -102,6 +102,7 @@ class BriefingSettings:
     watchlist: tuple[WatchlistSpec, ...]
     divergence_rules: dict[str, Any]
     briefs_dir: Path = field(default_factory=lambda: Path("briefs"))
+    calendar_source: str = "config/briefing/calendar.yaml"
 
 
 def load_schedule(path: Path | None = None) -> PulseSchedule:
@@ -199,4 +200,5 @@ def load_briefing_settings(root: Path | None = None) -> BriefingSettings:
         watchlist=load_watchlist(base / "config" / "briefing" / "watchlist.yaml"),
         divergence_rules=load_yaml(base / "config" / "briefing" / "divergences.yaml"),
         briefs_dir=base / "briefs",
+        calendar_source="config/briefing/calendar.yaml",
     )
