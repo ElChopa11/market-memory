@@ -39,9 +39,9 @@ Status values: `BACKLOG` | `IN_PROGRESS` | `IN_REVIEW` | `BLOCKED` | `DONE`.
 - **Non-goals:** Not a call generator. No MAKE / active-call / confidence-as-verdict. No trade sizing, orders, wallets, account endpoints, live keys, or strategy promotion. Does not unlock ingest membership. Does not implement US Market Pulse (IMP-002). Does not rewrite QUANT-20260917 packs.
 - **Dependencies:** Existing research_kit artifacts, briefing data-quality vocabulary, optional QUANT-20260917 overlay for overlapping names, optional Market Memory `what_did_we_know` (as_of_knowledge lockstep with ingested_at).
 - **Risk level:** Low (read-only research artifacts; no execution surface).
-- **Status:** IN_PROGRESS
+- **Status:** IN_REVIEW
 - **Owner:** Don/cloud
-- **PR:**
+- **PR:** https://github.com/ElChopa11/market-memory/pull/30
 - **Lesson learned:**
 
 ---

@@ -1,6 +1,6 @@
 # PLAN — IMP-001 Quant Review Board
 
-**Report status:** PLAN  
+**Report status:** PR READY  
 **Owner:** Don/cloud  
 **Scope:** read-only research artifacts + `lab quant-review`. No orders, wallets, live keys, or strategy promotion.
 
