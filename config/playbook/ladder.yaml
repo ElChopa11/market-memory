@@ -1,0 +1,49 @@
+# Hive PLAYBOOK artifact ladder (Phase 6c / IMP-016).
+# One run emits the set. All artifacts share run_id + content_hash.
+# Trade math is inherited from mm_quant — mismatch is a failed run.
+
+version: "imp-016.1"
+max_ideas: 3
+dq_publish_threshold: 0.8
+no_actionable_setup_is_complete: true
+
+types:
+  - DAILY_BIAS
+  - EDGE_SCAN
+  - INTEL_PACKET
+  - CHART_ARTIFACT
+  - OFFICIAL_BRIEF
+  - STATE_CARD
+
+required_fields:
+  DAILY_BIAS:
+    - instrument
+    - direction
+    - conviction
+    - level
+    - trade_math_hash
+  EDGE_SCAN:
+    - instrument
+    - catalyst
+    - source
+    - as_of
+    - invalidator
+    - trade_math_hash
+  INTEL_PACKET:
+    - instrument
+    - detail
+    - trade_math_hash
+  CHART_ARTIFACT:
+    - instrument
+    - levels
+    - png_filename
+    - trade_math_hash
+  OFFICIAL_BRIEF:
+    - executive_cut
+    - trade_math_hash
+  STATE_CARD:
+    - instrument
+    - state
+    - permission
+    - rearm
+    - trade_math_hash

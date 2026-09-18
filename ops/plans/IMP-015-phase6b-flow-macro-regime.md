@@ -1,6 +1,6 @@
 # PLAN — IMP-015 Phase 6b flow + macro + regime
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#46).  
 **Owner:** Don / Macro & Cross-Asset Desk + Data & Market Memory Desk  
 **Scope:** Flow and macro market-data packages plus a real regime tag (replacing the 6a `unset` placeholder). No live trading. No execution. No `live.yaml`. No Redis. No Phase 6c Telegram fan-out.
 
@@ -38,4 +38,4 @@ Redis. Per-desk Telegram fan-out (6c). Listings/IPO desk (6d). Scorecards (6e). 
 
 ## Status
 
-IN_REVIEW (this PR). IMP-014 is DONE (#45). IMP-016 Phase 6c is READY/PARKED — do not implement Telegram fan-out here.
+DONE (#46). IMP-016 Phase 6c is the following implementation thread.

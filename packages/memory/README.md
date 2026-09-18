@@ -15,6 +15,9 @@ Market Memory: Postgres models, Alembic migrations, object-store pointers, and t
 - `research_run` — backtest/scan/manual runs (`params_hash`, artifact paths)
 - `desk_envelope` — Phase 6a mesh envelope (header + body JSON + `content_hash`)
 - `desk_health` — last-seen desk status for the Coord worker stub
+- `delivery_event` — Phase 6c Telegram delivery attempts (`FAILED` escalates; never silent drop)
+- `inbound_audit` — Phase 6c inbound Telegram audit (unknown uid silent drop)
+- `llm_call` — Phase 6c WRITER/CRITIC ledger (`prompt_hash` required)
 
 Git artifacts under `research/` remain the human-review source. Postgres stores indexes and hashes. Rejected theses are **not** deleted.
 

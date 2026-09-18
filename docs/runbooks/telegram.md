@@ -1,8 +1,8 @@
-# Telegram delivery (Phase 5e)
+# Telegram delivery (Phase 5e) + per-desk fan-out (Phase 6c)
 
-Coordinator delivery of desk packs over the **Telegram Bot API**. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.**
+Coordinator delivery of desk packs over the **Telegram Bot API**, plus Phase 6c per-desk fan-out and Coord mirror. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.**
 
-Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md). Desk packs: [desks.md](desks.md). Secrets: [security-model.md](../security-model.md).
+Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md). Desk packs: [desks.md](desks.md). PLAYBOOK: [../playbook.md](../playbook.md). Secrets: [security-model.md](../security-model.md).
 
 ## What operators can do
 
@@ -14,6 +14,10 @@ uv run lab deliver pack --fixture tests/fixtures/phase5d/frozen_day.json --no-se
 
 uv run lab deliver pack --from-markdown tests/fixtures/phase5e/desk-pack.md \
   --as-of 2026-09-18T00:00:00Z --desk coord --no-send --out /tmp/desk-run
+
+# Per-desk fan-out + Coord mirror (same content_hash + footer; never re-rendered)
+uv run lab deliver fanout --desk crypto --from-markdown tests/fixtures/phase5e/desk-pack.md \
+  --as-of 2026-09-18T00:00:00Z --no-send
 
 # Manual real send of a one-line ping (bot box only; never in pytest)
 # Requires TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in the environment.
@@ -28,7 +32,7 @@ uv run lab deliver test --desk coord --i-mean-it --ignore-quiet-hours
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | live send | Bot token. Never git. Never dry-run files. |
 | `TELEGRAM_CHAT_ID` | live send | Default chat. |
-| `TELEGRAM_CHAT_ID_<DESK>` | optional | Per-desk override (`CRYPTO`, `EQUITIES`, …). |
+| `TELEGRAM_CHAT_ID_<DESK>` | optional | Per-desk override (`CRYPTO`, `EQUITIES`, `ALERTS`, `CHART`, `FLOW`, …). |
 
 `config/delivery/telegram.yaml` maps desk → **env var name** + optional forum `thread_id`. It must not contain token or chat id values. Copy `.env.example` placeholders only.
 
@@ -41,6 +45,7 @@ Every live POST is refused unless all of these pass:
 3. **Idempotency** key `sha256(desk, as_of, content_hash)` — reruns inside `dedupe.ttl_seconds` do not double-post.
 4. **Rate limit** `rate_limit.max_requests_per_minute`.
 5. Token + chat id present in env (`missing_env` fail-closed; values never printed).
+6. **Retry** 429 / 5xx honouring `Retry-After`. Exhausted retries write a `FAILED` delivery row and escalate to Coord — **never silent drop**.
 
 Dry-run still writes the **exact** `sendMessage` chunks that would have been posted.
 
@@ -56,9 +61,13 @@ Under `--out` (or repo root) `briefs/YYYY-MM-DD/`:
 
 Parse mode is MarkdownV2. Messages longer than 4096 characters are split with ordered `[i/n]` prefixes.
 
-## Inbound (stubs)
+## Inbound (read-only)
 
-`lab deliver inbound "/status"` — allowlist `/status`, `/brief`, `/desk` only. Trading verbs (`/buy`, `/sell`, `/order`, …) are refused. No network, no orders.
+`lab deliver inbound "/status"` — allowlist `/status`, `/brief`, `/desk`, `/idea`, `/gaps`, `/halt`. Trading verbs (`/buy`, `/sell`, `/order`, …) are refused. Unknown uid → **silent drop + audit** (no reply). No network, no orders.
+
+## Fan-out (Phase 6c)
+
+`lab deliver fanout --desk <slug>` delivers the desk channel then a Coord mirror of the **same** `content_hash` plus a footer. The body is not re-rendered. Chart PNG caption uses filename `{content_hash}.png`.
 
 ## Import walls
 
@@ -66,6 +75,6 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 ## Not this phase
 
-- Phase 6a PG `LISTEN/NOTIFY` mesh / per-desk workers / Redis (IMP-014, parked).
+- Phase 6d listings / IPO desk (IMP-017, parked).
 - `live_trading_enabled: true`, signing, wallet code, order endpoints.
-- Paid Telegram SDKs (httpx is enough).
+- Paid Telegram SDKs (httpx is enough). Redis.

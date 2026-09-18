@@ -336,29 +336,49 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6c–6f products; reopening IMP-014 except queue hygiene; new paid data vendors. |
 | **Dependencies** | IMP-014 DONE (#45). |
 | **Risk level** | Medium (vendor ToS, over-reading regime as a call). |
-| **Status** | IN_REVIEW |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/46 |
-| **Lesson learned** | *(fill at close)* |
+| **Lesson learned** | Merged to `main` (#46). `mm_flow` + `mm_macro` desk runners; envelope `regime` from YAML; EVENT_RISK + UNTRADEABLE_AT_SIZE Risk stubs. Per-desk Telegram fan-out and the Hive PLAYBOOK stayed out of 6b and are IMP-016. |
 
-### IMP-016 — Phase 6c per-desk Telegram fan-out
+### IMP-016 — Phase 6c per-desk Telegram + PLAYBOOK + token budget/grounding
 
 | Field | Value |
 |---|---|
 | **ID** | IMP-016 |
 | **Priority** | P2 |
-| **Type** | Delivery |
+| **Type** | Delivery / desk product |
 | **Desk** | Chief of Staff / Hive Coordinator |
 | **Owner** | Don |
-| **Problem** | 5e Telegram is a single Coordinator sink. 6a/6b publish per-desk envelopes on PG NOTIFY, but there is no desk→chat_id fan-out matrix, presentation layer, chart desk, or read-only inbound. |
-| **Evidence** | ADR 0003; ADR 0005; IMP-015 this PR; Principal-locked 6c DoD + Hive PLAYBOOK (from 6c onward). |
-| **Proposed outcome** | Per-desk Telegram channels + presentation layer + chart desk + read-only inbound. Hive PLAYBOOK (artifact ladder + Quant-owned trade math + sizing/DD/invalidation/concentration/post-mortem/DQ%) is absorbed in 6c, not 6b. Bus stays Postgres NOTIFY. |
-| **Definition of done** | *(filled in the 6c PR)*. Plan stub: [plans/IMP-016-phase6c-telegram-fanout.md](plans/IMP-016-phase6c-telegram-fanout.md). Not started while IMP-015 is open. |
-| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6d–6f products; reopening IMP-015 except queue hygiene; implementing the Hive PLAYBOOK in 6b. |
-| **Dependencies** | IMP-015 (this PR) must be DONE. |
-| **Risk level** | Medium (secrets, ToS, alert spam). |
-| **Status** | READY |
+| **Problem** | 5e Telegram is a single Coordinator sink. 6a/6b publish per-desk envelopes on PG NOTIFY, but there is no desk→chat_id fan-out matrix, presentation layer, chart desk, or read-only inbound. The Hive PLAYBOOK (artifact ladder + Quant-owned trade math) and addendum 6c-0 (token budget + grounding + prompt versioning) apply from 6c onward. |
+| **Evidence** | ADR 0003; ADR 0005; IMP-015 DONE #46; Principal-locked 6c DoD + Hive PLAYBOOK + addendum 6c-0. |
+| **Proposed outcome** | Per-desk Telegram channels + presentation layer + chart desk + read-only inbound. Hive PLAYBOOK (artifact ladder + Quant-owned trade math + sizing/DD/invalidation/concentration/post-mortem/DQ%). LLM is WRITER/CRITIC only with hard token budgets and grounding locks. Bus stays Postgres NOTIFY. |
+| **Definition of done** | Queue hygiene: IMP-015 DONE (#46). This item the only implementation thread. Plan [plans/IMP-016-phase6c-telegram-fanout.md](plans/IMP-016-phase6c-telegram-fanout.md). Per-desk fan-out + coord mirror same `content_hash`; presentation formatter; chart PNG filename=`content_hash`; inbound `/idea` `/gaps` `/halt` + unknown-uid silent drop; PLAYBOOK ladder; Quant `compute_trade_math` inherited hash; drawdown/cluster YAML; post-mortem gate; `config/llm/budgets.yaml` + `config/prompts/`; no-setup zero LLM; grounding locks; ledger; ADR 0006 + runbooks; README 6c; IMP-017 parked; import walls; no Redis; pytest never hits live Telegram/LLM; `uv run pytest` + lifecycle. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6d listings/IPO; 6e scorecards automation; 6f strategy decay-watch remainder; reopening IMP-015 except queue hygiene; live LLM HTTP provider; paid Telegram/LLM SDKs. |
+| **Dependencies** | IMP-015 DONE (#46). |
+| **Risk level** | Medium (secrets, ToS, alert spam, LLM backfill). |
+| **Status** | IN_REVIEW |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-017 — Phase 6d listings / IPO desk
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-017 |
+| **Priority** | P2 |
+| **Type** | Desk product |
+| **Desk** | Equities & Post-IPO Desk |
+| **Owner** | Don/Equities |
+| **Problem** | 6c ships PLAYBOOK + Telegram fan-out. There is still no listings / IPO desk product. |
+| **Evidence** | ADR 0006; IMP-016 this PR; Principal-locked 6d. |
+| **Proposed outcome** | Listings / IPO desk runner on the existing mesh + 6c fan-out. Honest unavailable. Closed Quant verdicts. PLAYBOOK math inherited. |
+| **Definition of done** | *(filled in the 6d PR)*. Plan stub: [plans/IMP-017-phase6d-listings-ipo.md](plans/IMP-017-phase6d-listings-ipo.md). Not started while IMP-016 is open. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6e–6f products; reopening IMP-016 except queue hygiene; implementing listings in 6c. |
+| **Dependencies** | IMP-016 (this PR) must be DONE. |
+| **Risk level** | Medium (language, missing listing feeds). |
+| **Status** | PARKED |
 | **PR** | — |
-| **Lesson learned** | Parked. Do not implement per-desk Telegram fan-out or the Hive PLAYBOOK in IMP-015. |
+| **Lesson learned** | Parked. Do not implement listings/IPO in IMP-016. |
 
 ---
 
@@ -384,10 +404,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-012 | Chief of Staff / Hive Coordinator | Don | DONE | [#43](https://github.com/ElChopa11/market-memory/pull/43) Phase 5d desk runners |
 | IMP-013 | Chief of Staff / Hive Coordinator | Don | DONE | [#44](https://github.com/ElChopa11/market-memory/pull/44) Phase 5e Telegram |
 | IMP-014 | Chief of Staff / Hive Coordinator | Don | DONE | [#45](https://github.com/ElChopa11/market-memory/pull/45) Phase 6a PG NOTIFY mesh |
-| IMP-015 | Macro & Cross-Asset Desk + Data & Market Memory Desk | Don/Macro+Data | IN_REVIEW | Phase 6b flow+macro+regime — this PR |
-| IMP-016 | Chief of Staff / Hive Coordinator | Don | READY | Phase 6c per-desk Telegram + presentation + chart desk + inbound; PLAYBOOK absorbed in 6c — parked |
+| IMP-015 | Macro & Cross-Asset Desk + Data & Market Memory Desk | Don/Macro+Data | DONE | [#46](https://github.com/ElChopa11/market-memory/pull/46) Phase 6b flow+macro+regime |
+| IMP-016 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 token budget/grounding — this PR |
+| IMP-017 | Equities & Post-IPO Desk | Don/Equities | PARKED | Phase 6d listings/IPO — parked |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-014 are `DONE`. IMP-015 is `IN_REVIEW` (DoD met in this PR). IMP-016 is `READY` (parked until 015 merges).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-015 are `DONE`. IMP-016 is `IN_REVIEW` (DoD met in this PR). IMP-017 is `PARKED` (until 016 merges).
 
 
 ---
@@ -418,7 +439,7 @@ These are identified so they are not silently treated as existing desks. They ar
 | Equity-feed ingest (Polygon); HL structure | Data & Market Memory Desk | IMP-010 DONE (#41) |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
 | Quant pack rewrite (templates / pack workflow) | Quant & Market Structure Desk | IMP-001 plan placeholder; **not** assigned IMP-003 (source-health took that ID) |
-| Cross-asset regime note cadence | Macro & Cross-Asset Desk | IMP-015 IN_REVIEW (this PR) |
+| Cross-asset regime note cadence | Macro & Cross-Asset Desk | IMP-015 DONE (#46) |
 | Execution order-state / recon | Execution & Fund Ops | Future only; Principal enablement required |
 | Fund P&L / investor reporting | Execution & Fund Ops | Future only; legal approval required |
 
@@ -432,7 +453,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 IN_REVIEW** (6b, this PR). Phase 6c per-desk Telegram fan-out is **IMP-016 READY** (parked). Do not start 6c in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 is **IMP-016 IN_REVIEW** (this PR). Phase 6d listings/IPO is **IMP-017 PARKED**. Do not start 6d in this PR.
 
 ## Reconciliation notes
 
@@ -451,4 +472,5 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-012 merged as #43 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-013.
 - IMP-013 merged as #44 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-014.
 - IMP-014 merged as #45 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-015.
-- IMP-015 intakes Phase 6b flow+macro+regime (Principal-locked 6a–6f; bus = Postgres NOTIFY, no Redis; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-016 is READY/parked for 6c (Telegram channels + presentation + chart desk + read-only inbound; Hive PLAYBOOK absorbed in 6c, not this PR).
+- IMP-015 merged as #46 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-016.
+- IMP-016 intakes Phase 6c per-desk Telegram + PLAYBOOK + addendum 6c-0 (token budget, grounding, prompt versioning pulled from 6f). Principal-locked 6a–6f; bus = Postgres NOTIFY, no Redis; one phase per PR. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-017 is PARKED for 6d (listings/IPO). Strategy decay-watch remainder stays 6f.

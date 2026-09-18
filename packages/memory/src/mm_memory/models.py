@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -393,3 +393,66 @@ class DeskHealthRow(Base):
     n: Mapped[int] = mapped_column(nullable=False, default=0)
     completeness_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DeliveryEventRow(Base):
+    """Telegram delivery attempt. FAILED rows escalate to Coord; never silent drop."""
+
+    __tablename__ = "delivery_event"
+    __table_args__ = (
+        CheckConstraint("status IN ('DRY_RUN','SENT','FAILED','DEDUPE')", name="delivery_event_status_check"),
+        Index("delivery_event_desk_as_of_idx", "desk", "as_of_knowledge"),
+        Index("delivery_event_content_hash_idx", "content_hash"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    desk: Mapped[str] = mapped_column(String(64), nullable=False)
+    as_of_knowledge: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    notes_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class InboundAuditRow(Base):
+    """Read-only inbound Telegram audit. Unknown uid is a silent drop row."""
+
+    __tablename__ = "inbound_audit"
+    __table_args__ = (Index("inbound_audit_uid_idx", "uid"),)
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    uid: Mapped[str] = mapped_column(Text, nullable=False)
+    command: Mapped[str] = mapped_column(Text, nullable=False)
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class LlmCallRow(Base):
+    """Accountability ledger for WRITER/CRITIC calls. Prompt hash required."""
+
+    __tablename__ = "llm_call"
+    __table_args__ = (
+        Index("llm_call_run_id_idx", "run_id"),
+        Index("llm_call_desk_idx", "desk_slug"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    run_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    desk_slug: Mapped[str] = mapped_column(String(32), nullable=False)
+    artifact_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    prompt_file: Mapped[str] = mapped_column(Text, nullable=False)
+    prompt_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    model: Mapped[str] = mapped_column(Text, nullable=False)
+    model_version: Mapped[str] = mapped_column(Text, nullable=False)
+    temperature: Mapped[float] = mapped_column(Numeric(4, 3), nullable=False)
+    input_tokens: Mapped[int] = mapped_column(nullable=False)
+    output_tokens: Mapped[int] = mapped_column(nullable=False)
+    cached_tokens: Mapped[int] = mapped_column(nullable=False, default=0)
+    latency_ms: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False, default=0)
+    cost: Mapped[float] = mapped_column(Numeric(12, 6), nullable=False, default=0)
+    schema_valid: Mapped[bool] = mapped_column(nullable=False)
+    retry_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+

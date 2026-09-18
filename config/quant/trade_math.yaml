@@ -1,0 +1,19 @@
+# Quant-owned trade math (Phase 6c / IMP-016). Computed once; artifacts inherit.
+# Not an order. Leverage is a ceiling only. prior(judgement) never enters expectancy/sizing.
+
+version: "imp-016.1"
+min_sample: 20
+risk_budget_pct: 1.0
+max_leverage: 1.0
+dq_publish_threshold: 0.8
+max_ideas: 3
+
+cost:
+  taker_fee: 0.00045
+  default_clip: 10000
+  default_hold_hours: 24
+
+# Same formula crypto/equities; only the vol input (atr_pct) changes.
+sizing:
+  method: vol_targeted
+  formula: risk_budget_pct / (stop_distance_atr * atr_pct)

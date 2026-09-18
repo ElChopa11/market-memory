@@ -84,9 +84,25 @@ desks:
     chat_id_env: TELEGRAM_CHAT_ID_BRIEFING
     thread_id: null
 
+  flow:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_FLOW
+    thread_id: null
+  chart:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_CHART
+    thread_id: null
+  alerts:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_ALERTS
+    thread_id: null
+
 inbound:
   enabled: false
   allowlist:
     - /status
     - /brief
     - /desk
+    - /idea
+    - /gaps
+    - /halt

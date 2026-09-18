@@ -14,7 +14,7 @@ from mm_common.enums import DataQuality, EvidenceType, ResearchRunKind, SourceKi
 from mm_common.ids import new_ulid
 from mm_common.schemas import ClaimIdentity, ObservationEnvelope
 from mm_memory.db import make_engine
-from mm_memory.migrate import current_revision
+from mm_memory.migrate import alembic_head, current_revision
 from mm_memory.models import PaperTrade, ResearchRun
 from mm_memory.paper_repository import PaperRepository
 from mm_memory.repository import ObservationRepository
@@ -63,7 +63,7 @@ def test_phase4_tables_exist(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     tables = set(inspect(engine).get_table_names())
     assert {"research_run", "paper_trade"} <= tables
-    assert current_revision(postgres_dsn) == "0007_phase6a_desk_mesh"
+    assert current_revision(postgres_dsn) == alembic_head()
 
 
 def test_research_run_and_paper_trade_persist(db_session, tmp_path: Path) -> None:

@@ -11,8 +11,8 @@ def test_queue_marks_014_done_015_in_review_016_parked() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-014" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-015" in line and "IN_REVIEW" in line for line in board_lines)
-    assert any("IMP-016" in line and ("READY" in line or "PARKED" in line) for line in board_lines)
+    assert any("IMP-015" in line and "DONE" in line for line in board_lines)
+    assert any("IMP-016" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-016" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-014" in line and "IN_REVIEW" in line for line in board_lines)
     assert "NOTIFY" in queue

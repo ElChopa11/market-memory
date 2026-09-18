@@ -134,6 +134,10 @@ def _thesis(raw: dict[str, Any] | None) -> ThesisSnapshot:
         crowding=str(data.get("crowding") or "noted"),
         invalidation_quality=str(data.get("invalidation_quality") or "ok"),
         reviewer=str(data.get("reviewer") or "Independent Skeptic"),
+        invalidation_kind=str(data.get("invalidation_kind") or ""),
+        invalidation_lookback_days=None
+        if data.get("invalidation_lookback_days") in (None, "")
+        else float(data.get("invalidation_lookback_days")),
     )
 
 

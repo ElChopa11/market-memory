@@ -206,7 +206,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "## DATA GAPS",
         "",
-        "Always list. Telegram delivery is 5e; per-desk Telegram fan-out is Phase 6c (parked).",
+        "Always list. Telegram delivery is 5e; per-desk fan-out + PLAYBOOK is Phase 6c (`lab playbook run --no-send`).",
         "",
         "| gap | impact | owner desk |",
         "| --- | --- | --- |",

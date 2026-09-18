@@ -62,6 +62,10 @@ def _checklist(ctx: DeskContext) -> list[dict[str, Any]]:
         "already-priced / crowded without invalidation",
         fail_mode="return",
     )
+    from mm_desks.invalidation import evaluate_invalidation
+
+    for row in evaluate_invalidation(thesis):
+        items.append(row)
     return items
 
 

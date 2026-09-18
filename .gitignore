@@ -11,6 +11,7 @@ vault/
 **/wallet.json
 **/*private*key*
 config/halt.flag
+config/llm/disabled.flag
 
 # Python
 .venv/

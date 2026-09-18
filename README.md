@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 6 in progress (6b flow/macro/regime on PG LISTEN/NOTIFY mesh).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). **No live trading, no order signing, no wallet code.** IMP-015 is this tree. Phase 6c per-desk Telegram fan-out is parked as IMP-016.
+**Status: Phase 6 in progress (6c per-desk Telegram + PLAYBOOK + token budget/grounding on PG LISTEN/NOTIFY mesh).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). Phase 6b flow/macro/regime is **IMP-015 DONE** (#46). **No live trading, no order signing, no wallet code.** IMP-016 is this tree. Phase 6d listings/IPO is parked as IMP-017.
 
 ## Start here
 
@@ -23,10 +23,12 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ops/desk-charters.md](ops/desk-charters.md) | Desk operating model (private research lab, not a fund) |
 | [ops/decision-rights.md](ops/decision-rights.md) | Propose / challenge / veto / approve — Principal-only gates |
 | [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
-| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5d + 6a/6b:** desk runners + PG NOTIFY mesh (`lab desk run`, `lab mesh dry`) |
+| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5d + 6a/6b/6c:** desk runners + PG NOTIFY mesh + PLAYBOOK (`lab desk run`, `lab mesh dry`, `lab playbook run`) |
 | [docs/runbooks/flow-desk.md](docs/runbooks/flow-desk.md) | **Phase 6b:** flow / liquidity (`mm_flow`; verdict OK\|THIN\|UNTRADEABLE_AT_SIZE) |
 | [docs/runbooks/macro-desk.md](docs/runbooks/macro-desk.md) | **Phase 6b:** macro regime + EVENT_RISK (`mm_macro`; envelope `regime` tag) |
-| [docs/runbooks/telegram.md](docs/runbooks/telegram.md) | **Phase 5e:** Telegram delivery (`lab deliver pack --no-send`; live send is operator-only) |
+| [docs/runbooks/telegram.md](docs/runbooks/telegram.md) | **Phase 5e + 6c:** Telegram delivery + per-desk fan-out (`lab deliver pack\|fanout --no-send`) |
+| [docs/runbooks/llm-budget.md](docs/runbooks/llm-budget.md) | **Phase 6c-0:** LLM WRITER/CRITIC only; hard token budgets; grounding locks |
+| [docs/playbook.md](docs/playbook.md) | **Phase 6c:** Hive PLAYBOOK artifact ladder + Quant-owned trade math |
 | [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) | **Phase 5b:** Polygon equities + HL structure ingest (fixture dry-run without keys) |
 | [docs/runbooks/quant-desk.md](docs/runbooks/quant-desk.md) | **Phase 5c:** Quant factor library (`mm_quant`; fixture-backed, not a call) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
@@ -34,6 +36,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ADR/0003-telegram-delivery.md](ADR/0003-telegram-delivery.md) | Phase 5e Telegram channel; multi-channel mesh is Phase 6 |
 | [ADR/0004-desk-mesh-pg-notify.md](ADR/0004-desk-mesh-pg-notify.md) | Phase 6a desk mesh; bus = Postgres LISTEN/NOTIFY (no Redis) |
 | [ADR/0005-flow-macro-regime.md](ADR/0005-flow-macro-regime.md) | Phase 6b flow/liquidity + macro regime tag (no Redis) |
+| [ADR/0006-phase6c-playbook-telegram.md](ADR/0006-phase6c-playbook-telegram.md) | Phase 6c PLAYBOOK + per-desk Telegram + deterministic-first LLM |
 
 Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17). Ingest membership stays full: Hyperliquid **BTC, ETH, UNI, AAVE** perps; equities **NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM** are a Phase 3 briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority** — **in-universe membership** (thesis priority; not a Quant verdict): BTC, NVDA, AVGO, MSFT, META, JPM, XOM; **watch-only** (still ingested / still in membership; no thesis-priority): ETH, UNI, AAVE, SMH, XLF (Skeptic PR #14 / call cards PR #13 / FAIL-patch PR #23). Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY) stay archived. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 
@@ -107,6 +110,11 @@ uv run lab mesh channels
 uv run lab desk run --all --fixture tests/fixtures/phase6b/frozen_day.json --no-send --no-db
 uv run lab mesh dry --fixture tests/fixtures/phase6b/frozen_day.json --no-db
 
+# 16. PLAYBOOK ladder (no-setup = zero LLM; default --no-send)
+uv run lab playbook run --fixture tests/fixtures/phase6c/no_setup.json --no-send --no-db
+uv run lab deliver fanout --desk crypto --from-markdown tests/fixtures/phase5e/desk-pack.md \
+  --as-of 2026-09-18T00:00:00Z --no-send
+
 # Optional one-shot
 ./scripts/bootstrap-dev.sh
 ```
@@ -127,7 +135,7 @@ ops/              desk charters, decision rights, improvement queue, source-heal
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
-config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors / flow / macro / delivery
+config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors / flow / macro / delivery / playbook / llm / prompts
 packages/         common, memory, ingest, provenance, briefing, desks, quant, flow, macro, delivery, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)
@@ -142,7 +150,7 @@ scripts/          bootstrap + lifecycle checker
 3. Market Pulse (merged)
 4. Backtest + paper ledger (merged)
 5. **complete** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check **merged (IMP-010, #41)**. 5c quant factors **merged (IMP-011, #42)**. 5d desk runners **merged (IMP-012, #43)**. 5e Telegram delivery **merged (IMP-013, #44)**.
-6. **in progress (6a)** — PG `LISTEN/NOTIFY` mesh (IMP-014, this tree). 6b flow/macro/regime is IMP-015 (READY/PARKED). Tiny manually approved live remains later and hard-gated.
+6. **in progress (6c)** — per-desk Telegram fan-out + PLAYBOOK + token budget/grounding (IMP-016, this tree). 6a mesh **DONE** (#45). 6b flow/macro **DONE** (#46). 6d listings/IPO is IMP-017 (READY/PARKED). Tiny manually approved live remains later and hard-gated.
 7. Learning loop
 
-Out of scope for Phase 6a: Redis, flow/macro packages, per-desk Telegram fan-out, listings/IPO desk, scorecards automation, decay/prompt versioning, `live.yaml` changes, order/signing code, paid deps, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM at decision time.
+Out of scope for Phase 6c: Redis, listings/IPO desk, scorecards automation, strategy decay-watch remainder, `live.yaml` changes, order/signing code, paid deps, live LLM HTTP provider, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM as calculator/router.

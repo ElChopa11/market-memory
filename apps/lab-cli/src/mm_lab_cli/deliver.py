@@ -35,8 +35,12 @@ def add_deliver_parser(sub) -> None:
         help="required for a live POST; without it, writes payload only",
     )
 
-    inbound_p = deliver_sub.add_parser("inbound", help="read-only inbound stub (/status /brief /desk)")
+    inbound_p = deliver_sub.add_parser("inbound", help="read-only inbound stub (/status /brief /desk /idea /gaps /halt)")
     inbound_p.add_argument("text", help="inbound message text")
+    inbound_p.add_argument("--uid", help="telegram user id (unknown uid is a silent drop)")
+
+    fan_p = deliver_sub.add_parser("fanout", help="per-desk deliver + coord mirror (default --no-send)")
+    _add_pack_args(fan_p)
 
     _add_pack_args(deliver_p)
 
@@ -57,9 +61,37 @@ def _add_pack_args(parser) -> None:
 def dispatch_deliver(args: Namespace) -> int:
     cmd = getattr(args, "deliver_cmd", None)
     if cmd == "inbound":
-        reply = handle_inbound(str(args.text))
+        uid = getattr(args, "uid", None)
+        allow_uids = None
+        if uid is not None:
+            # Explicit uid without allowlist → treat as unknown unless it matches itself via env later.
+            allow_uids = ()
+        reply = handle_inbound(str(args.text), uid=uid, allow_uids=allow_uids if uid else None)
         print(json.dumps(reply.canonical(), sort_keys=True))
-        return 0 if reply.ok else 2
+        return 0 if reply.ok or reply.silent else 2
+    if cmd == "fanout":
+        from mm_delivery.fanout import fanout_desk
+
+        send = _want_send(args)
+        if send is None:
+            return 2
+        loaded = _load_source(args, Path(args.repo_root).resolve(), str(getattr(args, "desk", None) or "coord"))
+        if loaded is None:
+            return 2
+        markdown, as_of, completeness, session_date, extra = loaded
+        result = fanout_desk(
+            markdown,
+            desk=str(getattr(args, "desk", None) or "coord"),
+            as_of=as_of,
+            send=bool(send),
+            completeness_pct=completeness,
+            repo=Path(args.repo_root).resolve(),
+            out_root=Path(args.out).resolve() if getattr(args, "out", None) else Path(args.repo_root).resolve(),
+        )
+        payload = result.as_public_dict()
+        payload.update(extra)
+        print(json.dumps(payload, sort_keys=True, indent=2))
+        return 0
     if cmd == "test":
         return _cmd_test(args)
     if cmd in {None, "pack"}:

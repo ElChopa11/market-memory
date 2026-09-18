@@ -17,6 +17,8 @@ RULE_MISSING_MAX_LOSS = "missing_max_loss"
 RULE_LEVERAGE = "leverage_exceeds_max"
 RULE_UNTRADEABLE = "untradeable_at_size"
 RULE_EVENT_RISK = "event_risk"
+RULE_CLUSTER = "cluster_concentration"
+RULE_DRAWDOWN_DRY = "drawdown_dry_review"
 RULE_ALLOW = "allow_config"
 
 
@@ -84,6 +86,35 @@ def evaluate(
             cfg,
             f"leverage {intent.leverage} exceeds max_leverage {cfg.max_leverage}",
         )
+    if intent.cluster_exposure_pct is not None:
+        from mm_risk.clusters import load_cluster_config
+
+        clusters = load_cluster_config(repo_root)
+        cap = float(clusters.max_cluster_pct)
+        if float(intent.cluster_exposure_pct) > cap:
+            return _block(
+                clusters.rule_id or RULE_CLUSTER,
+                cfg,
+                f"cluster {intent.cluster_id or '?'} exposure {intent.cluster_exposure_pct} > {cap} (trailing-corr config)",
+            )
+    if intent.rolling_drawdown_pct is not None:
+        from mm_risk.drawdown import evaluate_drawdown, load_drawdown_config
+
+        dd_cfg = load_drawdown_config(repo_root)
+        decision = evaluate_drawdown(
+            rolling_dd_pct=intent.rolling_drawdown_pct,
+            n_points=int(intent.drawdown_n),
+            config=dd_cfg,
+        )
+        if decision.action == "dry_review":
+            return _block(decision.rule_id or RULE_DRAWDOWN_DRY, cfg, *decision.notes)
+        if decision.action == "sleeve_half":
+            return _allow(
+                cfg,
+                *decision.notes,
+                rule_id=decision.rule_id or "drawdown_sleeve_half",
+                haircut_pct=50.0,
+            )
     verdict = (intent.liquidity_verdict or "").strip().upper()
     if verdict == "UNTRADEABLE_AT_SIZE" and cfg.untradeable_action == "block":
         return _block(

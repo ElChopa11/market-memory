@@ -11,7 +11,7 @@ from sqlalchemy import func, inspect, select
 from mm_common.enums import DataQuality, ObservationRelation
 from mm_ingest.pipeline import ingest_from_fixture
 from mm_memory.db import make_engine
-from mm_memory.migrate import current_revision
+from mm_memory.migrate import alembic_head, current_revision
 from mm_memory.models import Observation, ObservationLink, RawObject, Source
 from mm_memory.object_store import InMemoryObjectStore
 from mm_memory.queries import what_did_we_know
@@ -38,7 +38,7 @@ def test_migrate_creates_core_tables(postgres_dsn: str) -> None:
         "skeptic_review",
         "brief",
     } <= tables
-    assert current_revision(postgres_dsn) == "0007_phase6a_desk_mesh"
+    assert current_revision(postgres_dsn) == alembic_head()
     columns = {col["name"] for col in inspector.get_columns("observation")}
     assert "ingested_at" in columns
     assert "published_at" in columns
