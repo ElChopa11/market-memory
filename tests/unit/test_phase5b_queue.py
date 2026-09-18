@@ -1,4 +1,4 @@
-"""Phase 5b queue hygiene + docs (IMP-009 DONE, IMP-010 this PR, IMP-011 parked)."""
+"""Phase 5b queue hygiene (IMP-010 closed on main as #41)."""
 
 from __future__ import annotations
 
@@ -7,13 +7,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_queue_marks_009_done_010_in_review_011_parked() -> None:
+def test_queue_marks_009_and_010_done() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-009" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-010" in line and "IN_REVIEW" in line for line in board_lines)
-    assert any("IMP-011" in line and ("READY" in line or "PARKED" in line) for line in board_lines)
-    assert not any("IMP-011" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-010" in line and "DONE" in line for line in board_lines)
     assert "Polygon" in queue
 
 

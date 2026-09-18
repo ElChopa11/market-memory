@@ -1,9 +1,12 @@
 [project]
 name = "mm-quant"
 version = "0.1.0"
-description = "Phase 5a Quant skeleton (Tier 4). No factor implementations."
+description = "Phase 5c Quant factor library (Tier 4). Research-only; no execution."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+  "pyyaml>=6.0",
+]
 
 [build-system]
 requires = ["hatchling"]

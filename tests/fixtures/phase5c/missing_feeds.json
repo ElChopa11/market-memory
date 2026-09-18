@@ -1,0 +1,1568 @@
+{
+  "kind": "quant_panel",
+  "fixture_id": "phase5c-missing-feeds-v1",
+  "watermark_hint": "2026-09-18T00:05:00+00:00",
+  "bars": [
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-15T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-16T00:00:00+00:00",
+      "ingested_at": "2026-04-16T00:00:00+00:00",
+      "c": 62630.336866,
+      "v": 1050.7841,
+      "observation_id": "fx-BTC-0000"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-16T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-17T00:00:00+00:00",
+      "ingested_at": "2026-04-17T00:00:00+00:00",
+      "c": 62079.262509,
+      "v": 1051.1909,
+      "observation_id": "fx-BTC-0001"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-17T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-18T00:00:00+00:00",
+      "ingested_at": "2026-04-18T00:00:00+00:00",
+      "c": 60759.670415,
+      "v": 1009.0671,
+      "observation_id": "fx-BTC-0002"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-18T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-19T00:00:00+00:00",
+      "ingested_at": "2026-04-19T00:00:00+00:00",
+      "c": 61304.901329,
+      "v": 1004.188,
+      "observation_id": "fx-BTC-0003"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-19T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-20T00:00:00+00:00",
+      "ingested_at": "2026-04-20T00:00:00+00:00",
+      "c": 64233.783889,
+      "v": 1015.7494,
+      "observation_id": "fx-BTC-0004"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-20T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-21T00:00:00+00:00",
+      "ingested_at": "2026-04-21T00:00:00+00:00",
+      "c": 62956.192067,
+      "v": 1005.9551,
+      "observation_id": "fx-BTC-0005"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-21T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-22T00:00:00+00:00",
+      "ingested_at": "2026-04-22T00:00:00+00:00",
+      "c": 63291.736562,
+      "v": 1044.0531,
+      "observation_id": "fx-BTC-0006"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-22T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-23T00:00:00+00:00",
+      "ingested_at": "2026-04-23T00:00:00+00:00",
+      "c": 63556.63936,
+      "v": 1064.0292,
+      "observation_id": "fx-BTC-0007"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-23T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-24T00:00:00+00:00",
+      "ingested_at": "2026-04-24T00:00:00+00:00",
+      "c": 61917.517105,
+      "v": 1099.7656,
+      "observation_id": "fx-BTC-0008"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-24T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-25T00:00:00+00:00",
+      "ingested_at": "2026-04-25T00:00:00+00:00",
+      "c": 62181.223493,
+      "v": 1070.781,
+      "observation_id": "fx-BTC-0009"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-25T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-26T00:00:00+00:00",
+      "ingested_at": "2026-04-26T00:00:00+00:00",
+      "c": 61884.398751,
+      "v": 1076.6288,
+      "observation_id": "fx-BTC-0010"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-26T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-27T00:00:00+00:00",
+      "ingested_at": "2026-04-27T00:00:00+00:00",
+      "c": 62323.052172,
+      "v": 1038.6514,
+      "observation_id": "fx-BTC-0011"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-27T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-28T00:00:00+00:00",
+      "ingested_at": "2026-04-28T00:00:00+00:00",
+      "c": 64484.373334,
+      "v": 1091.0272,
+      "observation_id": "fx-BTC-0012"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-28T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-29T00:00:00+00:00",
+      "ingested_at": "2026-04-29T00:00:00+00:00",
+      "c": 64512.900096,
+      "v": 1039.7424,
+      "observation_id": "fx-BTC-0013"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-29T20:00:00+00:00",
+      "as_of_knowledge": "2026-04-30T00:00:00+00:00",
+      "ingested_at": "2026-04-30T00:00:00+00:00",
+      "c": 66023.101836,
+      "v": 1008.7144,
+      "observation_id": "fx-BTC-0014"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-04-30T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-01T00:00:00+00:00",
+      "ingested_at": "2026-05-01T00:00:00+00:00",
+      "c": 65128.328,
+      "v": 1075.8041,
+      "observation_id": "fx-BTC-0015"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-01T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-02T00:00:00+00:00",
+      "ingested_at": "2026-05-02T00:00:00+00:00",
+      "c": 65808.254081,
+      "v": 1079.7022,
+      "observation_id": "fx-BTC-0016"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-02T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-03T00:00:00+00:00",
+      "ingested_at": "2026-05-03T00:00:00+00:00",
+      "c": 66082.061856,
+      "v": 1044.7425,
+      "observation_id": "fx-BTC-0017"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-03T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-04T00:00:00+00:00",
+      "ingested_at": "2026-05-04T00:00:00+00:00",
+      "c": 66815.295272,
+      "v": 1011.6508,
+      "observation_id": "fx-BTC-0018"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-04T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-05T00:00:00+00:00",
+      "ingested_at": "2026-05-05T00:00:00+00:00",
+      "c": 68121.341386,
+      "v": 1026.9795,
+      "observation_id": "fx-BTC-0019"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-05T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-06T00:00:00+00:00",
+      "ingested_at": "2026-05-06T00:00:00+00:00",
+      "c": 70359.429076,
+      "v": 1021.071,
+      "observation_id": "fx-BTC-0020"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-06T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-07T00:00:00+00:00",
+      "ingested_at": "2026-05-07T00:00:00+00:00",
+      "c": 72915.289729,
+      "v": 1064.1836,
+      "observation_id": "fx-BTC-0021"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-07T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-08T00:00:00+00:00",
+      "ingested_at": "2026-05-08T00:00:00+00:00",
+      "c": 76210.634262,
+      "v": 1077.269,
+      "observation_id": "fx-BTC-0022"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-08T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-09T00:00:00+00:00",
+      "ingested_at": "2026-05-09T00:00:00+00:00",
+      "c": 77280.831092,
+      "v": 1007.3399,
+      "observation_id": "fx-BTC-0023"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-09T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-10T00:00:00+00:00",
+      "ingested_at": "2026-05-10T00:00:00+00:00",
+      "c": 78880.210327,
+      "v": 1037.1704,
+      "observation_id": "fx-BTC-0024"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-10T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-11T00:00:00+00:00",
+      "ingested_at": "2026-05-11T00:00:00+00:00",
+      "c": 80859.791287,
+      "v": 1048.3725,
+      "observation_id": "fx-BTC-0025"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-11T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-12T00:00:00+00:00",
+      "ingested_at": "2026-05-12T00:00:00+00:00",
+      "c": 78326.465165,
+      "v": 1090.8424,
+      "observation_id": "fx-BTC-0026"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-12T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-13T00:00:00+00:00",
+      "ingested_at": "2026-05-13T00:00:00+00:00",
+      "c": 79105.833976,
+      "v": 1018.9801,
+      "observation_id": "fx-BTC-0027"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-13T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-14T00:00:00+00:00",
+      "ingested_at": "2026-05-14T00:00:00+00:00",
+      "c": 78913.167948,
+      "v": 1088.219,
+      "observation_id": "fx-BTC-0028"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-14T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-15T00:00:00+00:00",
+      "ingested_at": "2026-05-15T00:00:00+00:00",
+      "c": 82299.800921,
+      "v": 1010.384,
+      "observation_id": "fx-BTC-0029"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-15T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-16T00:00:00+00:00",
+      "ingested_at": "2026-05-16T00:00:00+00:00",
+      "c": 86105.349795,
+      "v": 1025.6981,
+      "observation_id": "fx-BTC-0030"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-16T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-17T00:00:00+00:00",
+      "ingested_at": "2026-05-17T00:00:00+00:00",
+      "c": 88588.892028,
+      "v": 1029.3435,
+      "observation_id": "fx-BTC-0031"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-17T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-18T00:00:00+00:00",
+      "ingested_at": "2026-05-18T00:00:00+00:00",
+      "c": 89781.78583,
+      "v": 1055.9366,
+      "observation_id": "fx-BTC-0032"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-18T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-19T00:00:00+00:00",
+      "ingested_at": "2026-05-19T00:00:00+00:00",
+      "c": 90306.619953,
+      "v": 1028.0219,
+      "observation_id": "fx-BTC-0033"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-19T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-20T00:00:00+00:00",
+      "ingested_at": "2026-05-20T00:00:00+00:00",
+      "c": 91301.451595,
+      "v": 1044.5706,
+      "observation_id": "fx-BTC-0034"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-20T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-21T00:00:00+00:00",
+      "ingested_at": "2026-05-21T00:00:00+00:00",
+      "c": 91473.434898,
+      "v": 1036.8785,
+      "observation_id": "fx-BTC-0035"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-21T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-22T00:00:00+00:00",
+      "ingested_at": "2026-05-22T00:00:00+00:00",
+      "c": 90726.86997,
+      "v": 1098.0493,
+      "observation_id": "fx-BTC-0036"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-22T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-23T00:00:00+00:00",
+      "ingested_at": "2026-05-23T00:00:00+00:00",
+      "c": 93421.582724,
+      "v": 1058.444,
+      "observation_id": "fx-BTC-0037"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-23T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-24T00:00:00+00:00",
+      "ingested_at": "2026-05-24T00:00:00+00:00",
+      "c": 93745.213227,
+      "v": 1070.097,
+      "observation_id": "fx-BTC-0038"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-24T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-25T00:00:00+00:00",
+      "ingested_at": "2026-05-25T00:00:00+00:00",
+      "c": 94199.479346,
+      "v": 1063.6185,
+      "observation_id": "fx-BTC-0039"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-25T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-26T00:00:00+00:00",
+      "ingested_at": "2026-05-26T00:00:00+00:00",
+      "c": 91546.530949,
+      "v": 1007.5263,
+      "observation_id": "fx-BTC-0040"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-26T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-27T00:00:00+00:00",
+      "ingested_at": "2026-05-27T00:00:00+00:00",
+      "c": 97504.104682,
+      "v": 1090.0196,
+      "observation_id": "fx-BTC-0041"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-27T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-28T00:00:00+00:00",
+      "ingested_at": "2026-05-28T00:00:00+00:00",
+      "c": 97321.441523,
+      "v": 1035.1834,
+      "observation_id": "fx-BTC-0042"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-28T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-29T00:00:00+00:00",
+      "ingested_at": "2026-05-29T00:00:00+00:00",
+      "c": 93683.263887,
+      "v": 1087.1101,
+      "observation_id": "fx-BTC-0043"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-29T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-30T00:00:00+00:00",
+      "ingested_at": "2026-05-30T00:00:00+00:00",
+      "c": 91168.391633,
+      "v": 1062.4961,
+      "observation_id": "fx-BTC-0044"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-30T20:00:00+00:00",
+      "as_of_knowledge": "2026-05-31T00:00:00+00:00",
+      "ingested_at": "2026-05-31T00:00:00+00:00",
+      "c": 89599.544608,
+      "v": 1060.8867,
+      "observation_id": "fx-BTC-0045"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-05-31T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-01T00:00:00+00:00",
+      "ingested_at": "2026-06-01T00:00:00+00:00",
+      "c": 91676.270051,
+      "v": 1072.8207,
+      "observation_id": "fx-BTC-0046"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-01T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-02T00:00:00+00:00",
+      "ingested_at": "2026-06-02T00:00:00+00:00",
+      "c": 91570.523403,
+      "v": 1058.0953,
+      "observation_id": "fx-BTC-0047"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-02T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-03T00:00:00+00:00",
+      "ingested_at": "2026-06-03T00:00:00+00:00",
+      "c": 88722.756237,
+      "v": 1002.979,
+      "observation_id": "fx-BTC-0048"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-03T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-04T00:00:00+00:00",
+      "ingested_at": "2026-06-04T00:00:00+00:00",
+      "c": 90105.401156,
+      "v": 1023.0222,
+      "observation_id": "fx-BTC-0049"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-04T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-05T00:00:00+00:00",
+      "ingested_at": "2026-06-05T00:00:00+00:00",
+      "c": 89536.578971,
+      "v": 1025.583,
+      "observation_id": "fx-BTC-0050"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-05T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-06T00:00:00+00:00",
+      "ingested_at": "2026-06-06T00:00:00+00:00",
+      "c": 87213.356187,
+      "v": 1067.8137,
+      "observation_id": "fx-BTC-0051"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-06T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-07T00:00:00+00:00",
+      "ingested_at": "2026-06-07T00:00:00+00:00",
+      "c": 87529.813781,
+      "v": 1044.1932,
+      "observation_id": "fx-BTC-0052"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-07T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-08T00:00:00+00:00",
+      "ingested_at": "2026-06-08T00:00:00+00:00",
+      "c": 86281.700794,
+      "v": 1066.5899,
+      "observation_id": "fx-BTC-0053"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-08T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-09T00:00:00+00:00",
+      "ingested_at": "2026-06-09T00:00:00+00:00",
+      "c": 86842.304334,
+      "v": 1088.0269,
+      "observation_id": "fx-BTC-0054"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-09T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-10T00:00:00+00:00",
+      "ingested_at": "2026-06-10T00:00:00+00:00",
+      "c": 83683.653934,
+      "v": 1031.6487,
+      "observation_id": "fx-BTC-0055"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-10T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-11T00:00:00+00:00",
+      "ingested_at": "2026-06-11T00:00:00+00:00",
+      "c": 84882.71258,
+      "v": 1071.1218,
+      "observation_id": "fx-BTC-0056"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-11T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-12T00:00:00+00:00",
+      "ingested_at": "2026-06-12T00:00:00+00:00",
+      "c": 82417.349535,
+      "v": 1016.9129,
+      "observation_id": "fx-BTC-0057"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-12T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-13T00:00:00+00:00",
+      "ingested_at": "2026-06-13T00:00:00+00:00",
+      "c": 81324.231217,
+      "v": 1062.5734,
+      "observation_id": "fx-BTC-0058"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-13T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-14T00:00:00+00:00",
+      "ingested_at": "2026-06-14T00:00:00+00:00",
+      "c": 82845.809295,
+      "v": 1083.9118,
+      "observation_id": "fx-BTC-0059"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-14T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-15T00:00:00+00:00",
+      "ingested_at": "2026-06-15T00:00:00+00:00",
+      "c": 84522.017706,
+      "v": 1087.2829,
+      "observation_id": "fx-BTC-0060"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-15T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-16T00:00:00+00:00",
+      "ingested_at": "2026-06-16T00:00:00+00:00",
+      "c": 84730.103905,
+      "v": 1057.0582,
+      "observation_id": "fx-BTC-0061"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-16T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-17T00:00:00+00:00",
+      "ingested_at": "2026-06-17T00:00:00+00:00",
+      "c": 83790.356785,
+      "v": 1045.4832,
+      "observation_id": "fx-BTC-0062"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-17T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-18T00:00:00+00:00",
+      "ingested_at": "2026-06-18T00:00:00+00:00",
+      "c": 83921.63463,
+      "v": 1023.7409,
+      "observation_id": "fx-BTC-0063"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-18T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-19T00:00:00+00:00",
+      "ingested_at": "2026-06-19T00:00:00+00:00",
+      "c": 84252.454039,
+      "v": 1062.9964,
+      "observation_id": "fx-BTC-0064"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-19T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-20T00:00:00+00:00",
+      "ingested_at": "2026-06-20T00:00:00+00:00",
+      "c": 83097.595813,
+      "v": 1095.8461,
+      "observation_id": "fx-BTC-0065"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-20T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-21T00:00:00+00:00",
+      "ingested_at": "2026-06-21T00:00:00+00:00",
+      "c": 82732.611231,
+      "v": 1001.0767,
+      "observation_id": "fx-BTC-0066"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-21T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-22T00:00:00+00:00",
+      "ingested_at": "2026-06-22T00:00:00+00:00",
+      "c": 82911.243647,
+      "v": 1017.9099,
+      "observation_id": "fx-BTC-0067"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-22T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-23T00:00:00+00:00",
+      "ingested_at": "2026-06-23T00:00:00+00:00",
+      "c": 82752.10303,
+      "v": 1061.4448,
+      "observation_id": "fx-BTC-0068"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-23T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-24T00:00:00+00:00",
+      "ingested_at": "2026-06-24T00:00:00+00:00",
+      "c": 81094.301421,
+      "v": 1079.1932,
+      "observation_id": "fx-BTC-0069"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-24T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-25T00:00:00+00:00",
+      "ingested_at": "2026-06-25T00:00:00+00:00",
+      "c": 81647.073921,
+      "v": 1012.991,
+      "observation_id": "fx-BTC-0070"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-25T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-26T00:00:00+00:00",
+      "ingested_at": "2026-06-26T00:00:00+00:00",
+      "c": 80718.242261,
+      "v": 1090.9965,
+      "observation_id": "fx-BTC-0071"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-26T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-27T00:00:00+00:00",
+      "ingested_at": "2026-06-27T00:00:00+00:00",
+      "c": 79413.585353,
+      "v": 1094.4258,
+      "observation_id": "fx-BTC-0072"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-27T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-28T00:00:00+00:00",
+      "ingested_at": "2026-06-28T00:00:00+00:00",
+      "c": 77709.163875,
+      "v": 1020.4894,
+      "observation_id": "fx-BTC-0073"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-28T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-29T00:00:00+00:00",
+      "ingested_at": "2026-06-29T00:00:00+00:00",
+      "c": 77288.195525,
+      "v": 1021.3297,
+      "observation_id": "fx-BTC-0074"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-29T20:00:00+00:00",
+      "as_of_knowledge": "2026-06-30T00:00:00+00:00",
+      "ingested_at": "2026-06-30T00:00:00+00:00",
+      "c": 75618.407459,
+      "v": 1097.7359,
+      "observation_id": "fx-BTC-0075"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-06-30T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-01T00:00:00+00:00",
+      "ingested_at": "2026-07-01T00:00:00+00:00",
+      "c": 73340.6543,
+      "v": 1085.5783,
+      "observation_id": "fx-BTC-0076"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-01T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-02T00:00:00+00:00",
+      "ingested_at": "2026-07-02T00:00:00+00:00",
+      "c": 76036.5552,
+      "v": 1044.0901,
+      "observation_id": "fx-BTC-0077"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-02T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-03T00:00:00+00:00",
+      "ingested_at": "2026-07-03T00:00:00+00:00",
+      "c": 73873.8599,
+      "v": 1080.914,
+      "observation_id": "fx-BTC-0078"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-03T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-04T00:00:00+00:00",
+      "ingested_at": "2026-07-04T00:00:00+00:00",
+      "c": 73928.583205,
+      "v": 1017.2896,
+      "observation_id": "fx-BTC-0079"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-04T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-05T00:00:00+00:00",
+      "ingested_at": "2026-07-05T00:00:00+00:00",
+      "c": 72774.261452,
+      "v": 1051.6525,
+      "observation_id": "fx-BTC-0080"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-05T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-06T00:00:00+00:00",
+      "ingested_at": "2026-07-06T00:00:00+00:00",
+      "c": 73380.038081,
+      "v": 1068.9372,
+      "observation_id": "fx-BTC-0081"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-06T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-07T00:00:00+00:00",
+      "ingested_at": "2026-07-07T00:00:00+00:00",
+      "c": 74874.436179,
+      "v": 1022.1414,
+      "observation_id": "fx-BTC-0082"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-07T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-08T00:00:00+00:00",
+      "ingested_at": "2026-07-08T00:00:00+00:00",
+      "c": 74725.002677,
+      "v": 1072.8843,
+      "observation_id": "fx-BTC-0083"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-08T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-09T00:00:00+00:00",
+      "ingested_at": "2026-07-09T00:00:00+00:00",
+      "c": 73710.053891,
+      "v": 1031.1698,
+      "observation_id": "fx-BTC-0084"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-09T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-10T00:00:00+00:00",
+      "ingested_at": "2026-07-10T00:00:00+00:00",
+      "c": 72338.1693,
+      "v": 1090.0525,
+      "observation_id": "fx-BTC-0085"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-10T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-11T00:00:00+00:00",
+      "ingested_at": "2026-07-11T00:00:00+00:00",
+      "c": 73029.165814,
+      "v": 1057.2989,
+      "observation_id": "fx-BTC-0086"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-11T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-12T00:00:00+00:00",
+      "ingested_at": "2026-07-12T00:00:00+00:00",
+      "c": 72743.303315,
+      "v": 1050.3174,
+      "observation_id": "fx-BTC-0087"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-12T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-13T00:00:00+00:00",
+      "ingested_at": "2026-07-13T00:00:00+00:00",
+      "c": 72527.513878,
+      "v": 1040.0584,
+      "observation_id": "fx-BTC-0088"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-13T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-14T00:00:00+00:00",
+      "ingested_at": "2026-07-14T00:00:00+00:00",
+      "c": 72256.545716,
+      "v": 1049.104,
+      "observation_id": "fx-BTC-0089"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-14T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-15T00:00:00+00:00",
+      "ingested_at": "2026-07-15T00:00:00+00:00",
+      "c": 72111.573814,
+      "v": 1095.6865,
+      "observation_id": "fx-BTC-0090"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-15T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-16T00:00:00+00:00",
+      "ingested_at": "2026-07-16T00:00:00+00:00",
+      "c": 71817.903941,
+      "v": 1047.3161,
+      "observation_id": "fx-BTC-0091"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-16T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-17T00:00:00+00:00",
+      "ingested_at": "2026-07-17T00:00:00+00:00",
+      "c": 72816.157657,
+      "v": 1047.6533,
+      "observation_id": "fx-BTC-0092"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-17T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-18T00:00:00+00:00",
+      "ingested_at": "2026-07-18T00:00:00+00:00",
+      "c": 70310.0058,
+      "v": 1061.7895,
+      "observation_id": "fx-BTC-0093"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-18T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-19T00:00:00+00:00",
+      "ingested_at": "2026-07-19T00:00:00+00:00",
+      "c": 70935.199445,
+      "v": 1019.4107,
+      "observation_id": "fx-BTC-0094"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-19T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-20T00:00:00+00:00",
+      "ingested_at": "2026-07-20T00:00:00+00:00",
+      "c": 70694.466826,
+      "v": 1032.2082,
+      "observation_id": "fx-BTC-0095"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-20T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-21T00:00:00+00:00",
+      "ingested_at": "2026-07-21T00:00:00+00:00",
+      "c": 69642.985148,
+      "v": 1012.2783,
+      "observation_id": "fx-BTC-0096"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-21T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-22T00:00:00+00:00",
+      "ingested_at": "2026-07-22T00:00:00+00:00",
+      "c": 70926.265543,
+      "v": 1019.7729,
+      "observation_id": "fx-BTC-0097"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-22T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-23T00:00:00+00:00",
+      "ingested_at": "2026-07-23T00:00:00+00:00",
+      "c": 69623.567781,
+      "v": 1052.9348,
+      "observation_id": "fx-BTC-0098"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-23T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-24T00:00:00+00:00",
+      "ingested_at": "2026-07-24T00:00:00+00:00",
+      "c": 70568.828982,
+      "v": 1063.1315,
+      "observation_id": "fx-BTC-0099"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-24T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-25T00:00:00+00:00",
+      "ingested_at": "2026-07-25T00:00:00+00:00",
+      "c": 69597.834542,
+      "v": 1085.6764,
+      "observation_id": "fx-BTC-0100"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-25T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-26T00:00:00+00:00",
+      "ingested_at": "2026-07-26T00:00:00+00:00",
+      "c": 68252.810568,
+      "v": 1081.0508,
+      "observation_id": "fx-BTC-0101"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-26T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-27T00:00:00+00:00",
+      "ingested_at": "2026-07-27T00:00:00+00:00",
+      "c": 69162.621091,
+      "v": 1021.8144,
+      "observation_id": "fx-BTC-0102"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-27T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-28T00:00:00+00:00",
+      "ingested_at": "2026-07-28T00:00:00+00:00",
+      "c": 71826.110039,
+      "v": 1013.3932,
+      "observation_id": "fx-BTC-0103"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-28T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-29T00:00:00+00:00",
+      "ingested_at": "2026-07-29T00:00:00+00:00",
+      "c": 71994.28969,
+      "v": 1083.2169,
+      "observation_id": "fx-BTC-0104"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-29T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-30T00:00:00+00:00",
+      "ingested_at": "2026-07-30T00:00:00+00:00",
+      "c": 72610.118137,
+      "v": 1012.6003,
+      "observation_id": "fx-BTC-0105"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-30T20:00:00+00:00",
+      "as_of_knowledge": "2026-07-31T00:00:00+00:00",
+      "ingested_at": "2026-07-31T00:00:00+00:00",
+      "c": 71028.821302,
+      "v": 1068.2383,
+      "observation_id": "fx-BTC-0106"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-07-31T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-01T00:00:00+00:00",
+      "ingested_at": "2026-08-01T00:00:00+00:00",
+      "c": 71152.694315,
+      "v": 1011.541,
+      "observation_id": "fx-BTC-0107"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-01T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-02T00:00:00+00:00",
+      "ingested_at": "2026-08-02T00:00:00+00:00",
+      "c": 69056.097611,
+      "v": 1018.9007,
+      "observation_id": "fx-BTC-0108"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-02T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-03T00:00:00+00:00",
+      "ingested_at": "2026-08-03T00:00:00+00:00",
+      "c": 69050.624347,
+      "v": 1003.7436,
+      "observation_id": "fx-BTC-0109"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-03T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-04T00:00:00+00:00",
+      "ingested_at": "2026-08-04T00:00:00+00:00",
+      "c": 67675.367377,
+      "v": 1018.4536,
+      "observation_id": "fx-BTC-0110"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-04T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-05T00:00:00+00:00",
+      "ingested_at": "2026-08-05T00:00:00+00:00",
+      "c": 67415.850419,
+      "v": 1099.0301,
+      "observation_id": "fx-BTC-0111"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-05T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-06T00:00:00+00:00",
+      "ingested_at": "2026-08-06T00:00:00+00:00",
+      "c": 67931.436511,
+      "v": 1046.2071,
+      "observation_id": "fx-BTC-0112"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-06T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-07T00:00:00+00:00",
+      "ingested_at": "2026-08-07T00:00:00+00:00",
+      "c": 69110.190172,
+      "v": 1046.696,
+      "observation_id": "fx-BTC-0113"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-07T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-08T00:00:00+00:00",
+      "ingested_at": "2026-08-08T00:00:00+00:00",
+      "c": 67836.631675,
+      "v": 1070.103,
+      "observation_id": "fx-BTC-0114"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-08T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-09T00:00:00+00:00",
+      "ingested_at": "2026-08-09T00:00:00+00:00",
+      "c": 67745.678399,
+      "v": 1045.3951,
+      "observation_id": "fx-BTC-0115"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-09T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-10T00:00:00+00:00",
+      "ingested_at": "2026-08-10T00:00:00+00:00",
+      "c": 67689.548276,
+      "v": 1051.2561,
+      "observation_id": "fx-BTC-0116"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-10T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-11T00:00:00+00:00",
+      "ingested_at": "2026-08-11T00:00:00+00:00",
+      "c": 68409.240421,
+      "v": 1080.1706,
+      "observation_id": "fx-BTC-0117"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-11T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-12T00:00:00+00:00",
+      "ingested_at": "2026-08-12T00:00:00+00:00",
+      "c": 67752.787807,
+      "v": 1059.9605,
+      "observation_id": "fx-BTC-0118"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-12T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-13T00:00:00+00:00",
+      "ingested_at": "2026-08-13T00:00:00+00:00",
+      "c": 66883.598555,
+      "v": 1080.4821,
+      "observation_id": "fx-BTC-0119"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-13T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-14T00:00:00+00:00",
+      "ingested_at": "2026-08-14T00:00:00+00:00",
+      "c": 66772.904799,
+      "v": 1081.4642,
+      "observation_id": "fx-BTC-0120"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-14T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-15T00:00:00+00:00",
+      "ingested_at": "2026-08-15T00:00:00+00:00",
+      "c": 64747.001553,
+      "v": 1087.9842,
+      "observation_id": "fx-BTC-0121"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-15T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-16T00:00:00+00:00",
+      "ingested_at": "2026-08-16T00:00:00+00:00",
+      "c": 64099.680507,
+      "v": 1072.2634,
+      "observation_id": "fx-BTC-0122"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-16T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-17T00:00:00+00:00",
+      "ingested_at": "2026-08-17T00:00:00+00:00",
+      "c": 62963.740893,
+      "v": 1046.884,
+      "observation_id": "fx-BTC-0123"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-17T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-18T00:00:00+00:00",
+      "ingested_at": "2026-08-18T00:00:00+00:00",
+      "c": 64058.543952,
+      "v": 1023.2107,
+      "observation_id": "fx-BTC-0124"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-18T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-19T00:00:00+00:00",
+      "ingested_at": "2026-08-19T00:00:00+00:00",
+      "c": 62861.168748,
+      "v": 1033.7816,
+      "observation_id": "fx-BTC-0125"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-19T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-20T00:00:00+00:00",
+      "ingested_at": "2026-08-20T00:00:00+00:00",
+      "c": 62101.842358,
+      "v": 1099.9887,
+      "observation_id": "fx-BTC-0126"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-20T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-21T00:00:00+00:00",
+      "ingested_at": "2026-08-21T00:00:00+00:00",
+      "c": 61897.825109,
+      "v": 1076.174,
+      "observation_id": "fx-BTC-0127"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-21T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-22T00:00:00+00:00",
+      "ingested_at": "2026-08-22T00:00:00+00:00",
+      "c": 62160.670968,
+      "v": 1025.6633,
+      "observation_id": "fx-BTC-0128"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-22T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-23T00:00:00+00:00",
+      "ingested_at": "2026-08-23T00:00:00+00:00",
+      "c": 60981.015755,
+      "v": 1019.5446,
+      "observation_id": "fx-BTC-0129"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-23T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-24T00:00:00+00:00",
+      "ingested_at": "2026-08-24T00:00:00+00:00",
+      "c": 60651.433882,
+      "v": 1055.0058,
+      "observation_id": "fx-BTC-0130"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-24T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-25T00:00:00+00:00",
+      "ingested_at": "2026-08-25T00:00:00+00:00",
+      "c": 63095.802828,
+      "v": 1056.7979,
+      "observation_id": "fx-BTC-0131"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-25T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-26T00:00:00+00:00",
+      "ingested_at": "2026-08-26T00:00:00+00:00",
+      "c": 64760.939803,
+      "v": 1059.7537,
+      "observation_id": "fx-BTC-0132"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-26T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-27T00:00:00+00:00",
+      "ingested_at": "2026-08-27T00:00:00+00:00",
+      "c": 64356.097748,
+      "v": 1093.0154,
+      "observation_id": "fx-BTC-0133"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-27T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-28T00:00:00+00:00",
+      "ingested_at": "2026-08-28T00:00:00+00:00",
+      "c": 65087.708147,
+      "v": 1061.1172,
+      "observation_id": "fx-BTC-0134"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-28T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-29T00:00:00+00:00",
+      "ingested_at": "2026-08-29T00:00:00+00:00",
+      "c": 66322.655701,
+      "v": 1042.0704,
+      "observation_id": "fx-BTC-0135"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-29T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-30T00:00:00+00:00",
+      "ingested_at": "2026-08-30T00:00:00+00:00",
+      "c": 64778.838203,
+      "v": 1065.5112,
+      "observation_id": "fx-BTC-0136"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-30T20:00:00+00:00",
+      "as_of_knowledge": "2026-08-31T00:00:00+00:00",
+      "ingested_at": "2026-08-31T00:00:00+00:00",
+      "c": 65524.266723,
+      "v": 1071.6602,
+      "observation_id": "fx-BTC-0137"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-08-31T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-01T00:00:00+00:00",
+      "ingested_at": "2026-09-01T00:00:00+00:00",
+      "c": 65493.960723,
+      "v": 1015.6587,
+      "observation_id": "fx-BTC-0138"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-01T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-02T00:00:00+00:00",
+      "ingested_at": "2026-09-02T00:00:00+00:00",
+      "c": 65869.645574,
+      "v": 1089.7542,
+      "observation_id": "fx-BTC-0139"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-02T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-03T00:00:00+00:00",
+      "ingested_at": "2026-09-03T00:00:00+00:00",
+      "c": 65892.085273,
+      "v": 1007.3504,
+      "observation_id": "fx-BTC-0140"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-03T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-04T00:00:00+00:00",
+      "ingested_at": "2026-09-04T00:00:00+00:00",
+      "c": 65717.608931,
+      "v": 1047.7608,
+      "observation_id": "fx-BTC-0141"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-04T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-05T00:00:00+00:00",
+      "ingested_at": "2026-09-05T00:00:00+00:00",
+      "c": 66621.674163,
+      "v": 1072.2738,
+      "observation_id": "fx-BTC-0142"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-05T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-06T00:00:00+00:00",
+      "ingested_at": "2026-09-06T00:00:00+00:00",
+      "c": 66236.733007,
+      "v": 1081.6696,
+      "observation_id": "fx-BTC-0143"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-06T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-07T00:00:00+00:00",
+      "ingested_at": "2026-09-07T00:00:00+00:00",
+      "c": 65795.724768,
+      "v": 1020.3657,
+      "observation_id": "fx-BTC-0144"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-07T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-08T00:00:00+00:00",
+      "ingested_at": "2026-09-08T00:00:00+00:00",
+      "c": 64908.803896,
+      "v": 1012.4326,
+      "observation_id": "fx-BTC-0145"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-08T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-09T00:00:00+00:00",
+      "ingested_at": "2026-09-09T00:00:00+00:00",
+      "c": 63330.112462,
+      "v": 1058.2237,
+      "observation_id": "fx-BTC-0146"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-09T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-10T00:00:00+00:00",
+      "ingested_at": "2026-09-10T00:00:00+00:00",
+      "c": 63601.032124,
+      "v": 1053.0766,
+      "observation_id": "fx-BTC-0147"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-10T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-11T00:00:00+00:00",
+      "ingested_at": "2026-09-11T00:00:00+00:00",
+      "c": 66518.531182,
+      "v": 1011.3869,
+      "observation_id": "fx-BTC-0148"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-11T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-12T00:00:00+00:00",
+      "ingested_at": "2026-09-12T00:00:00+00:00",
+      "c": 65671.211112,
+      "v": 1062.4976,
+      "observation_id": "fx-BTC-0149"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-12T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-13T00:00:00+00:00",
+      "ingested_at": "2026-09-13T00:00:00+00:00",
+      "c": 65103.91634,
+      "v": 1059.1675,
+      "observation_id": "fx-BTC-0150"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-13T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-14T00:00:00+00:00",
+      "ingested_at": "2026-09-14T00:00:00+00:00",
+      "c": 63756.479566,
+      "v": 1018.9815,
+      "observation_id": "fx-BTC-0151"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-14T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-15T00:00:00+00:00",
+      "ingested_at": "2026-09-15T00:00:00+00:00",
+      "c": 63802.917025,
+      "v": 1003.9508,
+      "observation_id": "fx-BTC-0152"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-15T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-16T00:00:00+00:00",
+      "ingested_at": "2026-09-16T00:00:00+00:00",
+      "c": 62647.280274,
+      "v": 1042.5193,
+      "observation_id": "fx-BTC-0153"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-16T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-17T00:00:00+00:00",
+      "ingested_at": "2026-09-17T00:00:00+00:00",
+      "c": 62298.716986,
+      "v": 1008.6442,
+      "observation_id": "fx-BTC-0154"
+    },
+    {
+      "instrument": "BTC",
+      "asset_class": "crypto",
+      "market_time": "2026-09-17T20:00:00+00:00",
+      "as_of_knowledge": "2026-09-18T00:00:00+00:00",
+      "ingested_at": "2026-09-18T00:00:00+00:00",
+      "c": 62211.149122,
+      "v": 1063.1105,
+      "observation_id": "fx-BTC-0155"
+    }
+  ],
+  "structure": []
+}

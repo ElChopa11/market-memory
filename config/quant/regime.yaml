@@ -1,0 +1,27 @@
+# Explicit regime thresholds (IMP-011 / Phase 5c). Auditable YAML — not model-internal.
+# Changing a number here must change the emitted tag. Research labels only; not a call.
+version: "2026-09-18"
+kind: quant_regime_thresholds
+desk: Quant & Market Structure Desk
+min_inputs_for_tag: 2
+notes:
+  - "Tag is composed from vol bucket + ADX trend/chop."
+  - "Stretched z-score and crowded funding are suffixes when those inputs exist."
+  - "If fewer than min_inputs_for_tag inputs are available, tag is unavailable."
+
+vol:
+  metric: realised_vol_short
+  low: 0.20
+  high: 0.50
+
+adx:
+  metric: adx
+  trending: 25.0
+
+zscore:
+  metric: zscore
+  stretched: 2.0
+
+funding:
+  metric: funding_carry
+  crowded: 0.0003

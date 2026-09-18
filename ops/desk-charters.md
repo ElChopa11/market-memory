@@ -29,7 +29,7 @@ Principal lock for Phase 5. Hive roles stay in [AGENTS.md](../AGENTS.md). Runboo
 | 2 | Intel | Data & Market Memory Desk | `packages/ingest` (existing; no opine imports) |
 | 3a | Crypto | Crypto Desk | `packages/desks` (`mm_desks.crypto` stub) |
 | 3b | Equities | Equities & Post-IPO Desk | `packages/desks` (`mm_desks.equities` stub) |
-| 4 | Quant | Quant & Market Structure Desk | `packages/quant` (stub; no factors) |
+| 4 | Quant | Quant & Market Structure Desk | `packages/quant` (IMP-011 factor library; no runners) |
 | 5 | Skeptic | Independent Skeptic | `packages/research_kit` skeptic (existing) |
 | 6 | Risk | Risk (independent veto) | `packages/risk` (stub service; config exists) |
 | 7 | Paper Ledger | Paper Ledger (lab control) | `packages/paper` (existing) |
@@ -57,8 +57,9 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | US Market Pulse briefs (read-only) | Live execution, wallets, signing |
 | Versioned risk **config** (live hard-gated off) | Deterministic risk *service* as an operational gate |
 | Coordinator-run improvement queue | Multi-desk concurrent implementation |
-| Phase 5a desk-tier boundaries (docs + CI + skeletons) | Telegram send, desk runners, quant factors |
+| Phase 5a desk-tier boundaries (docs + CI + skeletons) | Telegram send, desk runners |
 | Phase 5b Polygon + HL structure ingest (IMP-010) | Paid data beyond Polygon env key; order endpoints |
+| Phase 5c quant factor library (IMP-011) | Desk runners (5d); Telegram (5e); live path |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 
