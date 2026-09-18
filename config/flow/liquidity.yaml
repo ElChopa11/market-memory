@@ -1,0 +1,27 @@
+# Liquidity / flow thresholds (IMP-015 / Phase 6b). Auditable YAML — not model weights.
+# Changing a number here must change verdicts / max clip. Research labels only; not a call.
+version: "2026-09-18"
+kind: flow_liquidity_thresholds
+desk: Flow / Liquidity Desk
+notes:
+  - "Verdict is OK | THIN | UNTRADEABLE_AT_SIZE from depth/spread or ADV proxies."
+  - "Missing book or ADV → unavailable, never invented fills or sizes."
+  - "max_clip_usd is the largest configured clip whose estimated slippage stays under budget."
+
+clip_sizes_usd:
+  - 10000
+  - 50000
+  - 100000
+  - 250000
+
+slippage:
+  budget_bps: 10.0
+  thin_bps: 5.0
+  impact_coeff: 1.0
+  adv_k: 0.1
+
+thin_max_clip_usd: 50000
+funding_z_window: 20
+oi_lookback: 1
+adv_window: 20
+spread_proxy_levels: 5

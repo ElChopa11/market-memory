@@ -1,0 +1,239 @@
+{
+  "fixture_id": "phase6b-untradeable",
+  "structure": [
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 8e-05,
+      "as_of_knowledge": "2026-08-30T00:05:00Z",
+      "ingested_at": "2026-08-30T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0000",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 8.211e-05,
+      "as_of_knowledge": "2026-08-31T00:05:00Z",
+      "ingested_at": "2026-08-31T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0001",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 8.421e-05,
+      "as_of_knowledge": "2026-09-01T00:05:00Z",
+      "ingested_at": "2026-09-01T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0002",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 8.632e-05,
+      "as_of_knowledge": "2026-09-02T00:05:00Z",
+      "ingested_at": "2026-09-02T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0003",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 8.842e-05,
+      "as_of_knowledge": "2026-09-03T00:05:00Z",
+      "ingested_at": "2026-09-03T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0004",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 9.053e-05,
+      "as_of_knowledge": "2026-09-04T00:05:00Z",
+      "ingested_at": "2026-09-04T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0005",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 9.263e-05,
+      "as_of_knowledge": "2026-09-05T00:05:00Z",
+      "ingested_at": "2026-09-05T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0006",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 9.474e-05,
+      "as_of_knowledge": "2026-09-06T00:05:00Z",
+      "ingested_at": "2026-09-06T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0007",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 9.684e-05,
+      "as_of_knowledge": "2026-09-07T00:05:00Z",
+      "ingested_at": "2026-09-07T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0008",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 9.895e-05,
+      "as_of_knowledge": "2026-09-08T00:05:00Z",
+      "ingested_at": "2026-09-08T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0009",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00010105,
+      "as_of_knowledge": "2026-09-09T00:05:00Z",
+      "ingested_at": "2026-09-09T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0010",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00010316,
+      "as_of_knowledge": "2026-09-10T00:05:00Z",
+      "ingested_at": "2026-09-10T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0011",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00010526,
+      "as_of_knowledge": "2026-09-11T00:05:00Z",
+      "ingested_at": "2026-09-11T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0012",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00010737,
+      "as_of_knowledge": "2026-09-12T00:05:00Z",
+      "ingested_at": "2026-09-12T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0013",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00010947,
+      "as_of_knowledge": "2026-09-13T00:05:00Z",
+      "ingested_at": "2026-09-13T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0014",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00011158,
+      "as_of_knowledge": "2026-09-14T00:05:00Z",
+      "ingested_at": "2026-09-14T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0015",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00011368,
+      "as_of_knowledge": "2026-09-15T00:05:00Z",
+      "ingested_at": "2026-09-15T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0016",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00011579,
+      "as_of_knowledge": "2026-09-16T00:05:00Z",
+      "ingested_at": "2026-09-16T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0017",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00011789,
+      "as_of_knowledge": "2026-09-17T00:05:00Z",
+      "ingested_at": "2026-09-17T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0018",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "funding",
+      "value": 0.00012,
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-BTC-funding-hist-0019",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "open_interest",
+      "value": 1000000000.0,
+      "as_of_knowledge": "2026-09-17T00:05:00Z",
+      "ingested_at": "2026-09-17T00:05:00Z",
+      "observation_id": "fx-BTC-oi-0000",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "open_interest",
+      "value": 1050000000.0,
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-BTC-oi-0001",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "l2_spread",
+      "value": 80.0,
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-BTC-thin-spread",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "l2_mid",
+      "value": 65000.0,
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-BTC-thin-mid",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "l2_bid_notional",
+      "value": 400.0,
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-BTC-thin-bid",
+      "data_quality": "ok"
+    },
+    {
+      "instrument": "BTC",
+      "metric": "l2_ask_notional",
+      "value": 400.0,
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-BTC-thin-ask",
+      "data_quality": "ok"
+    }
+  ]
+}

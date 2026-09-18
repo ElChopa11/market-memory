@@ -1,8 +1,8 @@
-# Desk mesh cadence (Phase 6a / IMP-014).
+# Desk mesh cadence (Phase 6a / IMP-014 + Phase 6b / IMP-015).
 # Principal lock: bus = Postgres LISTEN/NOTIFY (no Redis).
-# Regime header stays the placeholder until IMP-015 / Phase 6b.
+# Regime header is filled from the Macro desk when IMP-015 succeeds.
 
-version: "imp-014.1"
+version: "imp-015.1"
 regime_placeholder: unset
 default:
   cadence: daily
@@ -16,6 +16,10 @@ channels:
   - desk.crypto.alert
   - desk.equities.output
   - desk.equities.alert
+  - desk.flow.output
+  - desk.flow.alert
+  - desk.macro.output
+  - desk.macro.alert
   - desk.quant.output
   - desk.quant.alert
   - desk.skeptic.output
@@ -44,6 +48,18 @@ desks:
     op: observation
     output_channel: desk.equities.output
     alert_channel: desk.equities.alert
+  flow:
+    cadence: daily
+    op: observation
+    output_channel: desk.flow.output
+    alert_channel: desk.flow.alert
+    dq_channel: dq.event
+  macro:
+    cadence: daily
+    op: observation
+    output_channel: desk.macro.output
+    alert_channel: desk.macro.alert
+    dq_channel: dq.event
   quant:
     cadence: daily
     op: observation

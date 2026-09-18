@@ -16,3 +16,13 @@ require_invalidation: true
 require_max_loss: true
 kill_switch_path: config/halt.flag
 llm_at_order_time: false
+
+# Phase 6b stubs — deterministic YAML only. No LLM. Not a live path.
+liquidity:
+  untradeable_at_size:
+    action: block
+    rule_id: untradeable_at_size
+event_risk:
+  action: haircut
+  haircut_pct: 50
+  rule_id: event_risk

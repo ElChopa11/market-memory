@@ -1,4 +1,4 @@
-"""Phase 5d desk runners + Phase 6a PG LISTEN/NOTIFY mesh (no Redis).
+"""Phase 5d desk runners + Phase 6a PG LISTEN/NOTIFY mesh + Phase 6b flow/macro (no Redis).
 
 Must not depend on the mm_execution module or signing surfaces. Intel ingest
 must not import this package. Telegram send is `mm_delivery.deliver` (Phase 5e).

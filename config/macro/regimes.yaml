@@ -1,0 +1,62 @@
+# Cross-asset regime thresholds (IMP-015 / Phase 6b). Auditable YAML — not model weights.
+# Tag requires two driving inputs (VIX + DXY). Missing either → unavailable, never invented.
+version: "2026-09-18"
+kind: macro_regime_thresholds
+desk: Macro & Cross-Asset Desk
+min_inputs_for_tag: 2
+notes:
+  - "Tag is {risk_on|risk_neutral|risk_off}_{usd_weak|usd_mid|usd_strong}."
+  - "Confidence is coverage/sharpness in [0, 1], not the phrase high confidence, not a call."
+  - "Curve, credit, and commodities are optional context; they never invent a tag."
+
+driving:
+  - VIX
+  - DXY
+
+vix:
+  metric: VIX
+  risk_on_below: 18.0
+  risk_off_above: 25.0
+
+dxy:
+  metric: DXY
+  weak_below: 100.0
+  strong_above: 106.0
+
+# Optional context (reported when present; not required for a tag).
+curve:
+  metric: T10Y2Y
+  inverted_below: 0.0
+credit:
+  metric: HY_OAS
+  stressed_above: 500.0
+commodities:
+  metric: WTI
+
+fred_series:
+  VIX: VIXCLS
+  DXY: DTWEXBGS
+  US10Y: DGS10
+  US2Y: DGS2
+  T10Y2Y: T10Y2Y
+  HY_OAS: BAMLH0A0HYM2
+  WTI: DCOILWTICO
+
+event_risk:
+  window_minutes: 30
+  high_importance:
+    - high
+  rule_id: event_risk
+  size_haircut_pct: 50
+  cb_name_tokens:
+    - FOMC
+    - FOMC speaker
+    - Jackson Hole
+    - ECB
+    - BOJ
+    - BOE
+    - CPI
+    - NFP
+    - Payrolls
+    - PCE
+    - GDP

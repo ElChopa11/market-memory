@@ -1,8 +1,8 @@
-# Desk runners (Phase 5d) + mesh (Phase 6a) + Telegram (Phase 5e)
+# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro (Phase 6b) + Telegram (Phase 5e)
 
-Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Telegram Bot API send is **Phase 5e** (`lab deliver`; default `--no-send`). No live trading. **No Redis.**
+Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are **Phase 6b**. Telegram Bot API send is **Phase 5e** (`lab deliver`; default `--no-send`). No live trading. **No Redis.**
 
-Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0004-desk-mesh-pg-notify.md](../../ADR/0004-desk-mesh-pg-notify.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md).
+Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0004-desk-mesh-pg-notify.md](../../ADR/0004-desk-mesh-pg-notify.md), [ADR/0005-flow-macro-regime.md](../../ADR/0005-flow-macro-regime.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md).
 
 ## What operators can do
 
@@ -32,7 +32,7 @@ Principal lock: **bus = Postgres LISTEN/NOTIFY**. Redis is not used.
 
 | Piece | Behaviour |
 |---|---|
-| Envelope header | `desk`, `as_of` UTC + Sydney, `status`, `n`, `completeness`, `regime=unset` (6b fills it), `op=paper\|observation`, `universe`, `sources` / `missing` |
+| Envelope header | `desk`, `as_of` UTC + Sydney, `status`, `n`, `completeness`, `regime` (macro tag when 6b succeeds, else `unset`), `op=paper\|observation`, `universe`, `sources` / `missing` |
 | Cadence | `config/desks/cadence.yaml` (default `daily`) |
 | `content_hash` | SHA-256 of canonical header+body. ULID `envelope_id` is not hashed. |
 | Persist | Market Memory `desk_envelope` + `desk_health` |
@@ -59,7 +59,7 @@ Each desk implements `run(as_of, ctx) -> DeskOutput`:
 Pipeline (no skipped gates):
 
 ```text
-Intel → 3a Crypto | 3b Equities → Quant → Skeptic → Risk → Coord pack
+Intel → 3a Crypto | 3b Equities → flow → macro → Quant → Skeptic → Risk → Coord pack
 ```
 
 Paper / Principal remain human gates. Runners do **not** open paper. Telegram send is a separate Coordinator step (`lab deliver`), default dry-run.
@@ -71,6 +71,8 @@ Paper / Principal remain human gates. Runners do **not** open paper. Telegram se
 | `intel` | 2 | Read-only assemble of ingest/health feeds. Facts only. Missing required feed → `DEGRADED`, never invent. |
 | `crypto` | 3a | Crypto tape note from fixture/Memory facts. No HL client. |
 | `equities` | 3b | Equity tape note. Polygon client stays in `mm_ingest`. |
+| `flow` | flow | Liquidity metrics from existing HL + equity tape. Verdict `OK\|THIN\|UNTRADEABLE_AT_SIZE`. Not an order. |
+| `macro` | macro | Cross-asset regime tag (VIX+DXY YAML) + EVENT_RISK. Missing feeds → `DEGRADED`. |
 | `quant` | 4 | Calls `mm_quant` FactorRegistry + QuantCard. Closed verdict set. Not a call. |
 | `skeptic` | 5 | Adversarial checklist. FAIL **return** (`revise` → `in_research`) or FAIL **archive** (`reject` → `rejected`). No self-approve. |
 | `risk` | 6 | Deterministic allow/block from `config/risk/*`. Explains `rule_id` + `config_version`. **BLOCK is terminal** without Principal override. No LLM. |
@@ -86,17 +88,22 @@ Fixture runs stamp `ts` from `as_of_knowledge` so hashes stay stable.
 
 | Path | Case |
 |---|---|
-| `tests/fixtures/phase5d/frozen_day.json` | Happy path, all `OK` |
+| `tests/fixtures/phase5d/frozen_day.json` | Happy path, all `OK` (includes 6b flow/macro extras) |
 | `tests/fixtures/phase5d/missing_feed.json` | Intel `DEGRADED` (polygon unavailable) |
 | `tests/fixtures/phase5d/skeptic_fail.json` | Skeptic FAIL return |
 | `tests/fixtures/phase5d/risk_block.json` | Risk BLOCK (SOL not allowlisted) |
+| `tests/fixtures/phase6b/frozen_day.json` | 6b happy path: regime tag + liquidity OK |
+| `tests/fixtures/phase6b/event_risk.json` | EVENT_RISK haircut |
+| `tests/fixtures/phase6b/untradeable.json` | UNTRADEABLE_AT_SIZE auto-block |
+| `tests/fixtures/phase6b/missing_feeds.json` | flow/macro DEGRADED, never invent |
+| `tests/fixtures/phase6b/lookahead_trap.json` | Adversarial PIT |
 
 ## Import walls (CI)
 
 `scripts/check_import_boundaries.py` (also a job in `.github/workflows/test.yml`):
 
-- `packages/research_kit`, `packages/desks`, `packages/quant`, `packages/delivery` must not import `mm_execution` / `mm_execution_service` or signing / live-trade surfaces.
-- Intel `packages/ingest` must not import opine packages: `mm_research_kit`, `mm_desks`, `mm_quant`, `mm_delivery`.
+- `packages/research_kit`, `packages/desks`, `packages/quant`, `packages/delivery`, `packages/flow`, `packages/macro` must not import `mm_execution` / `mm_execution_service` or signing / live-trade surfaces.
+- Intel `packages/ingest` must not import opine packages: `mm_research_kit`, `mm_desks`, `mm_quant`, `mm_delivery`, `mm_flow`, `mm_macro`.
 
 The Intel *desk runner* lives in `mm_desks.intel` and only assembles fixture/health facts. Ingest does not import it.
 
@@ -110,6 +117,6 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 ## Not this phase
 
-Phase 6b flow/macro/regime (IMP-015, parked). Per-desk Telegram fan-out (6c). Listings/IPO desk (6d). Scorecards (6e). Decay/prompt versioning (6f). Live trading, signing, Redis, paid deps. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
+Per-desk Telegram fan-out (IMP-016 / 6c, parked). Listings/IPO desk (6d). Scorecards (6e). Decay/prompt versioning (6f). Live trading, signing, Redis, paid deps. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
 
-Telegram: [telegram.md](telegram.md). Factor math: [quant-desk.md](quant-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).
+Telegram: [telegram.md](telegram.md). Factor math: [quant-desk.md](quant-desk.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

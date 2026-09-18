@@ -39,17 +39,17 @@ jobs:
         run: uv run pytest
       - name: Lifecycle DoD gates
         run: bash scripts/check-lifecycle.sh
-      - name: Import boundaries (research/desks/quant/delivery vs execution; Intel vs opine; no Redis)
+      - name: Import boundaries (research/desks/quant/delivery/flow/macro vs execution; Intel vs opine; no Redis)
         run: uv run python scripts/check_import_boundaries.py
       - name: No Redis bus
         run: |
           ! git grep -n -E '^[ \t]*(import redis|from redis|import aioredis|from aioredis)\b' -- packages apps
       - name: Opine packages cannot import mm_execution
         run: |
-          ! git grep -n -E '^[ \t]*(import mm_execution|from mm_execution)\b' -- packages/research_kit packages/desks packages/quant packages/delivery
+          ! git grep -n -E '^[ \t]*(import mm_execution|from mm_execution)\b' -- packages/research_kit packages/desks packages/quant packages/delivery packages/flow packages/macro
       - name: Intel cannot import opine packages
         run: |
-          ! git grep -n -E '^[ \t]*(import mm_research_kit|from mm_research_kit|import mm_desks|from mm_desks|import mm_quant|from mm_quant|import mm_delivery|from mm_delivery)\b' -- packages/ingest
+          ! git grep -n -E '^[ \t]*(import mm_research_kit|from mm_research_kit|import mm_desks|from mm_desks|import mm_quant|from mm_quant|import mm_delivery|from mm_delivery|import mm_flow|from mm_flow|import mm_macro|from mm_macro)\b' -- packages/ingest
       - name: Live remains hard-gated
         run: uv run python -c "import yaml, pathlib; p=pathlib.Path('config/risk/environments/live.yaml'); d=yaml.safe_load(p.read_text()); assert d.get('live_trading_enabled') is False, 'live trading must stay hard-gated'"
       - name: Telegram secrets not committed
@@ -58,4 +58,4 @@ jobs:
           ! git grep -nE '^[ ]*TELEGRAM_BOT_TOKEN:' -- config
       - name: No signing surface in ingest
         run: |
-          ! git grep -n -E 'sign_l1_action|hl_trade|private_key|submit_order' -- packages/ingest packages/memory packages/provenance packages/common packages/research_kit packages/briefing packages/backtest packages/paper packages/source_health packages/desks packages/quant packages/delivery apps/ingest-worker apps/lab-cli apps/briefing-worker
+          ! git grep -n -E 'sign_l1_action|hl_trade|private_key|submit_order' -- packages/ingest packages/memory packages/provenance packages/common packages/research_kit packages/briefing packages/backtest packages/paper packages/source_health packages/desks packages/quant packages/delivery packages/flow packages/macro apps/ingest-worker apps/lab-cli apps/briefing-worker

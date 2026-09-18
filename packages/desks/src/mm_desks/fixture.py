@@ -99,6 +99,7 @@ def _calendar(rows: list[dict[str, Any]] | None) -> tuple[CalendarRow, ...]:
         when_raw = raw.get("when") or raw.get("datetime")
         if not when_raw:
             continue
+        ingested_raw = raw.get("ingested_at") or raw.get("as_of_knowledge")
         out.append(
             CalendarRow(
                 when=parse_utc(str(when_raw)),
@@ -107,6 +108,7 @@ def _calendar(rows: list[dict[str, Any]] | None) -> tuple[CalendarRow, ...]:
                 region=str(raw.get("region") or "US"),
                 notes=str(raw.get("notes") or ""),
                 source=str(raw.get("source") or "fixture"),
+                ingested_at=None if not ingested_raw else parse_utc(str(ingested_raw)),
             )
         )
     return tuple(sorted(out, key=lambda row: (row.when, row.name)))

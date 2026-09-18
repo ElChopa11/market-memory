@@ -15,6 +15,8 @@ RULE_NOT_ALLOWLISTED = "instrument_not_allowlisted"
 RULE_MISSING_INVALIDATION = "missing_invalidation"
 RULE_MISSING_MAX_LOSS = "missing_max_loss"
 RULE_LEVERAGE = "leverage_exceeds_max"
+RULE_UNTRADEABLE = "untradeable_at_size"
+RULE_EVENT_RISK = "event_risk"
 RULE_ALLOW = "allow_config"
 
 
@@ -29,14 +31,15 @@ def _block(rule_id: str, config: RiskConfig, *reasons: str) -> RiskResult:
     )
 
 
-def _allow(config: RiskConfig, *reasons: str) -> RiskResult:
+def _allow(config: RiskConfig, *reasons: str, rule_id: str = RULE_ALLOW, haircut_pct: float | None = None) -> RiskResult:
     return RiskResult(
         decision=RiskDecision.ALLOW.value,
-        rule_id=RULE_ALLOW,
+        rule_id=rule_id,
         config_version=config.config_version,
         reasons=reasons or ("all configured gates passed",),
         terminal=False,
         live_trading_enabled=bool(config.live_trading_enabled),
+        haircut_pct=haircut_pct,
     )
 
 
@@ -80,6 +83,20 @@ def evaluate(
             RULE_LEVERAGE,
             cfg,
             f"leverage {intent.leverage} exceeds max_leverage {cfg.max_leverage}",
+        )
+    verdict = (intent.liquidity_verdict or "").strip().upper()
+    if verdict == "UNTRADEABLE_AT_SIZE" and cfg.untradeable_action == "block":
+        return _block(
+            cfg.untradeable_rule_id or RULE_UNTRADEABLE,
+            cfg,
+            "liquidity verdict UNTRADEABLE_AT_SIZE auto-blocks from versioned YAML",
+        )
+    if intent.event_risk and cfg.event_risk_action == "haircut":
+        return _allow(
+            cfg,
+            f"EVENT_RISK size haircut {cfg.event_risk_haircut_pct:g}% under {cfg.event_risk_rule_id}",
+            rule_id=cfg.event_risk_rule_id or RULE_EVENT_RISK,
+            haircut_pct=float(cfg.event_risk_haircut_pct),
         )
     return _allow(
         cfg,

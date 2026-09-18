@@ -1,0 +1,14 @@
+[project]
+name = "mm-macro"
+version = "0.1.0"
+description = "Phase 6b macro regime + calendar EVENT_RISK (research-only; no execution)."
+requires-python = ">=3.12"
+dependencies = [
+  "mm-common",
+  "mm-provenance",
+  "pyyaml>=6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

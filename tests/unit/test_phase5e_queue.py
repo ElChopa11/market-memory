@@ -12,7 +12,7 @@ def test_queue_marks_012_done_013_in_review_014_parked() -> None:
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-012" in line and "DONE" in line for line in board_lines)
     assert any("IMP-013" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-014" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-014" in line and "DONE" in line for line in board_lines)
     assert "IMP-013" in queue
     assert "Telegram" in queue
 

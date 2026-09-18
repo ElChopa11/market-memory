@@ -54,7 +54,7 @@ Body of the envelope is a passthrough of the Phase 5d `DeskOutput` canonical pay
 
 - **Positive:** Coord can assemble when a desk is down; hashes are stable; Memory is the payload store; NOTIFY stays small; no new network/key/order dependency.
 - **Negative:** Listeners need a dedicated Postgres connection (LISTEN is session-scoped). Operators still cron `lab mesh dry` / `lab desk run` until a supervised worker lands.
-- **Follow-ups:** IMP-015 / Phase 6b flow+macro+regime — READY/PARKED. Do not fold 6b–6f into 6a.
+- **Follow-ups:** IMP-015 / Phase 6b flow+macro+regime — DONE in a later PR (ADR 0005). Do not fold 6c–6f into 6a.
 
 ## Notes
 
