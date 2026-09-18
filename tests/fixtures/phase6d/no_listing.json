@@ -1,0 +1,100 @@
+{
+  "fixture_id": "phase6d-no-listing-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T00:05:00Z",
+  "what_changed": "no listing day fixture",
+  "intel": {
+    "inventory": [
+      "hyperliquid.info",
+      "hyperliquid.structure",
+      "coingecko",
+      "binance.public",
+      "stooq",
+      "fred",
+      "polygon",
+      "calendar.yaml",
+      "postgres",
+      "object_store"
+    ],
+    "feeds": [
+      {
+        "source_id": "hyperliquid.info",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-hl-info-0001"
+      },
+      {
+        "source_id": "hyperliquid.structure",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-BTC-funding-0001"
+      },
+      {
+        "source_id": "coingecko",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cg-0001"
+      },
+      {
+        "source_id": "binance.public",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-bn-0001"
+      },
+      {
+        "source_id": "stooq",
+        "status": "unavailable",
+        "freshness": "unavailable",
+        "observation_id": null,
+        "notes": "SRC-STOOQ-404 stays OPEN"
+      },
+      {
+        "source_id": "fred",
+        "status": "unavailable",
+        "freshness": "unavailable",
+        "observation_id": null,
+        "notes": "SRC-FRED-MISSING-ENV stays OPEN"
+      },
+      {
+        "source_id": "polygon",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-poly-CRCL-0001"
+      },
+      {
+        "source_id": "calendar.yaml",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cal-0001"
+      },
+      {
+        "source_id": "postgres",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-pg-0001"
+      },
+      {
+        "source_id": "object_store",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-obj-0001"
+      }
+    ]
+  },
+  "thesis": {
+    "slug": "THESIS-6D-LISTINGS",
+    "status": "in_research",
+    "author": "Research",
+    "instrument": "CRCL",
+    "invalidation": "close below listing-day VWAP for two sessions",
+    "max_loss": "research-only; paper stays closed",
+    "membership": "screen_only"
+  },
+  "listings": {
+    "missing_feed": false,
+    "deals": [],
+    "filings": [],
+    "index_events": [],
+    "history": []
+  }
+}

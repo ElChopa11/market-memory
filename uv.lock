@@ -18,6 +18,7 @@ members = [
     "mm-ingest",
     "mm-ingest-worker",
     "mm-lab-cli",
+    "mm-listings",
     "mm-macro",
     "mm-memory",
     "mm-paper",
@@ -259,6 +260,7 @@ dependencies = [
     { name = "mm-ingest" },
     { name = "mm-ingest-worker" },
     { name = "mm-lab-cli" },
+    { name = "mm-listings" },
     { name = "mm-macro" },
     { name = "mm-memory" },
     { name = "mm-paper" },
@@ -289,6 +291,7 @@ requires-dist = [
     { name = "mm-ingest", editable = "packages/ingest" },
     { name = "mm-ingest-worker", editable = "apps/ingest-worker" },
     { name = "mm-lab-cli", editable = "apps/lab-cli" },
+    { name = "mm-listings", editable = "packages/listings" },
     { name = "mm-macro", editable = "packages/macro" },
     { name = "mm-memory", editable = "packages/memory" },
     { name = "mm-paper", editable = "packages/paper" },
@@ -469,6 +472,7 @@ dependencies = [
     { name = "mm-common" },
     { name = "mm-delivery" },
     { name = "mm-flow" },
+    { name = "mm-listings" },
     { name = "mm-macro" },
     { name = "mm-memory" },
     { name = "mm-quant" },
@@ -482,6 +486,7 @@ requires-dist = [
     { name = "mm-common", editable = "packages/common" },
     { name = "mm-delivery", editable = "packages/delivery" },
     { name = "mm-flow", editable = "packages/flow" },
+    { name = "mm-listings", editable = "packages/listings" },
     { name = "mm-macro", editable = "packages/macro" },
     { name = "mm-memory", editable = "packages/memory" },
     { name = "mm-quant", editable = "packages/quant" },
@@ -594,6 +599,27 @@ requires-dist = [
     { name = "mm-research-kit", editable = "packages/research_kit" },
     { name = "mm-risk", editable = "packages/risk" },
     { name = "mm-source-health", editable = "packages/source_health" },
+]
+
+[[package]]
+name = "mm-listings"
+version = "0.1.0"
+source = { editable = "packages/listings" }
+dependencies = [
+    { name = "mm-common" },
+    { name = "mm-flow" },
+    { name = "mm-provenance" },
+    { name = "mm-quant" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mm-common", editable = "packages/common" },
+    { name = "mm-flow", editable = "packages/flow" },
+    { name = "mm-provenance", editable = "packages/provenance" },
+    { name = "mm-quant", editable = "packages/quant" },
+    { name = "pyyaml", specifier = ">=6.0" },
 ]
 
 [[package]]

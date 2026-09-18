@@ -1,8 +1,8 @@
-# Telegram delivery (Phase 5e + 6c fan-out + 6c-5 Ops expansion)
+# Telegram delivery (Phase 5e + 6c fan-out + 6c-5 Ops expansion + 6d listings)
 
 **Ops-owned** delivery of desk packs over the **Telegram Bot API**, plus Phase 6c per-desk fan-out and Ops mirror. Coord/Don is orchestration only — **Coord is not the publisher**. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.**
 
-Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md), [ADR/0010-phase6c5-delivery.md](../../ADR/0010-phase6c5-delivery.md). Desk packs: [desks.md](desks.md). Watchlist: [watchlist.md](watchlist.md). PLAYBOOK: [../playbook.md](../playbook.md). Secrets: [security-model.md](../security-model.md). Naming: [`config/desks/naming.yaml`](../../config/desks/naming.yaml).
+Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md), [ADR/0010-phase6c5-delivery.md](../../ADR/0010-phase6c5-delivery.md), [ADR/0011-phase6d-listings.md](../../ADR/0011-phase6d-listings.md). Desk packs: [desks.md](desks.md). Watchlist: [watchlist.md](watchlist.md). Listings: [listings.md](listings.md). PLAYBOOK: [../playbook.md](../playbook.md). Secrets: [security-model.md](../security-model.md). Naming: [`config/desks/naming.yaml`](../../config/desks/naming.yaml).
 
 ## What operators can do
 
@@ -21,6 +21,9 @@ uv run lab deliver fanout --desk research --from-markdown tests/fixtures/phase5e
 
 # Watchlist monitor → Ops Telegram cut (IMP-020 artifact; inherit content_hash)
 uv run lab deliver watchlist --fixture tests/fixtures/phase6c4/locked_scan.json --no-send --out /tmp/watchlist
+
+# Listings / IPO screen → Ops Telegram cut (IMP-017 artifact; inherit content_hash)
+uv run lab deliver listings --fixture tests/fixtures/phase6d/listing_day.json --no-send --out /tmp/listings
 
 # Manual real send of a one-line ping (bot box only; never in pytest)
 # Requires TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in the environment.
@@ -41,13 +44,13 @@ uv run lab deliver test --desk ops --i-mean-it --ignore-quiet-hours
 
 ## Channel matrix (naming-bound)
 
-Publishing routes (from `mm_common.naming`): `intel` `research` `quant` `ic_risk` `ops`. Sink: `alerts`. Unknown or retired slug (`coord`, `crypto`, …) **fails closed**. Telegram header is `{display} · {slug}` plus optional sleeve (`watchlist monitor`) or PLAYBOOK artifact label.
+Publishing routes (from `mm_common.naming`): `intel` `research` `quant` `ic_risk` `ops`. Sink: `alerts`. Unknown or retired slug (`coord`, `crypto`, …) **fails closed**. Telegram header is `{display} · {slug}` plus optional sleeve (`watchlist monitor`, `listings / IPO screen`) or PLAYBOOK artifact label.
 
 ## Gates (never alert without a threshold)
 
 Every live POST is refused unless all of these pass:
 
-1. **Numeric threshold** in `config/delivery/telegram.yaml` (`thresholds.require_threshold_config`, `desk_pack.min_completeness_pct`, `watchlist.min_completeness_pct`, `alert.min_events`).
+1. **Numeric threshold** in `config/delivery/telegram.yaml` (`thresholds.require_threshold_config`, `desk_pack.min_completeness_pct`, `watchlist.min_completeness_pct`, `listings.min_completeness_pct`, `alert.min_events`).
 2. **Quiet hours** (default 22:00–07:00 Australia/Sydney). `lab deliver test --ignore-quiet-hours` is operator-only.
 3. **Idempotency** key `sha256(desk, as_of, content_hash)` — reruns inside `dedupe.ttl_seconds` do not double-post.
 4. **Rate limit** `rate_limit.max_requests_per_minute`.
@@ -78,13 +81,15 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 `lab deliver watchlist` presents the IMP-020 Research scan (membership, monitor_state, freshness, PLAYBOOK flags only — **no invented ideas**) and fans it to `research` with an Ops mirror, inheriting the scan `content_hash`. Watchlist schedule in yaml is 07:45 Sydney; it does **not** close SCHED-001 (Sydney 08:00 digest).
 
+`lab deliver listings` presents the IMP-017 Research listings screen (deals, closed Quant verdicts, inherited trade math, index events — **no invented prints**) and fans it to `research` with an Ops mirror, inheriting the scan `content_hash`. Listings schedule is 07:50 Sydney; it also does **not** close SCHED-001.
+
 ## Import walls
 
 `packages/delivery` must not import `mm_execution`. Research / desks / quant must not grow a signing surface. CI: `scripts/check_import_boundaries.py`.
 
 ## Not this phase
 
-- Phase 6d listings / IPO desk (IMP-017, parked until 6c-1..6c-5 complete).
+- Scorecards automation (6e). Strategy decay-watch remainder (6f).
 - `live_trading_enabled: true`, signing, wallet code, order endpoints.
 - Paid Telegram SDKs (httpx is enough). Redis.
 - Closing OPEN incidents (SCHED-001, BRIEF-TAG, SRC-STOOQ-404, SRC-FRED-MISSING-ENV).

@@ -9,6 +9,7 @@ dependencies = [
   "mm-flow",
   "mm-macro",
   "mm-research-kit",
+  "mm-listings",
   "mm-risk",
   "mm-delivery",
   "mm-memory",

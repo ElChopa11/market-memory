@@ -47,6 +47,9 @@ thresholds:
   watchlist:
     enabled: true
     min_completeness_pct: 1
+  listings:
+    enabled: true
+    min_completeness_pct: 1
 
 schedule:
   timezone: Australia/Sydney
@@ -58,6 +61,11 @@ schedule:
   watchlist:
     enabled: true
     local_time: "07:45"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+  # Listings Ops cut. Not the Sydney 08:00 digest (SCHED-001 stays OPEN).
+  listings:
+    enabled: true
+    local_time: "07:50"
     weekdays: [Mon, Tue, Wed, Thu, Fri]
 
 desks:
@@ -92,6 +100,12 @@ products:
     desk: research
     kind: watchlist
     sleeve: watchlist
+    enabled: true
+    inherit_content_hash: true
+  listings:
+    desk: research
+    kind: listings
+    sleeve: listings
     enabled: true
     inherit_content_hash: true
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 from mm_common.naming import (
+    LISTINGS,
     RESEARCH,
     WATCHLIST,
     sleeve_display,
@@ -182,3 +183,87 @@ def present_watchlist(canonical: Mapping[str, Any]) -> str:
         ]
     )
     return headed_markdown(body, RESEARCH, sleeve=WATCHLIST)
+
+
+LISTINGS_DELIVERY_FOOTER = (
+    "Not a call. Closed Quant verdicts only. Listings inherits Quant trade_math_hash "
+    "and does not invent R. IC/Risk gates still required. No self-approve. "
+    "Screen-only names are not universe promotion. Ops publishes; Coord orchestrates."
+)
+
+
+def present_listings(canonical: Mapping[str, Any]) -> str:
+    """Ops Telegram cut of an IMP-017 listings screen. Does not invent prints or math."""
+    ideas = canonical.get("ideas") or []
+    if not isinstance(ideas, list):
+        ideas = []
+    index_events = canonical.get("index_events") or []
+    if not isinstance(index_events, list):
+        index_events = []
+    gaps: list[str] = []
+    table_rows: list[tuple[str, str, str, str, str]] = []
+    for row in ideas:
+        if not isinstance(row, dict):
+            continue
+        instrument = str(row.get("instrument") or UNKNOWN)
+        kind = str(row.get("kind") or UNKNOWN)
+        verdict = str(row.get("quant_verdict") or UNKNOWN)
+        liquidity = str(row.get("liquidity_verdict") or UNKNOWN)
+        math_hash = str(row.get("trade_math_hash") or "not inherited")
+        table_rows.append((instrument, kind, verdict, liquidity, math_hash[:12]))
+        track = row.get("track") if isinstance(row.get("track"), dict) else {}
+        if track.get("status") in {UNKNOWN, "unavailable"} or verdict == "INSUFFICIENT_DATA":
+            gaps.append(instrument)
+    table = monospace_table(
+        ("instrument", "kind", "quant_verdict", "liquidity", "trade_math"),
+        table_rows,
+        gaps=gaps,
+    )
+    idx_rows: list[tuple[str, str, str]] = []
+    for row in index_events:
+        if not isinstance(row, dict):
+            continue
+        idx_rows.append(
+            (
+                str(row.get("instrument") or UNKNOWN),
+                str(row.get("kind") or UNKNOWN),
+                str(row.get("index_name") or UNKNOWN),
+            )
+        )
+    idx_table = monospace_table(("instrument", "kind", "index"), idx_rows, gaps=gaps) if idx_rows else "no index events"
+    product = sleeve_display(LISTINGS)
+    completeness = canonical.get("completeness")
+    completeness_s = UNKNOWN if completeness is None else f"{completeness}%"
+    content_hash = canonical.get("content_hash") or UNKNOWN
+    as_of = canonical.get("as_of_knowledge") or UNKNOWN
+    status = canonical.get("status") or UNKNOWN
+    named_gaps = list(canonical.get("gaps") or []) or gaps or ["none"]
+    br = canonical.get("base_rates") if isinstance(canonical.get("base_rates"), dict) else {}
+    if br.get("claimed"):
+        base_line = f"own-history n={br.get('n')} median_30d={br.get('median_30d')}"
+    else:
+        base_line = str(br.get("reason") or "no base-rate claim")
+    body = "\n".join(
+        [
+            f"{product} (`{LISTINGS}`)",
+            f"as_of_knowledge: {as_of}",
+            f"status: {status}",
+            f"completeness: {completeness_s}",
+            f"content_hash: `{content_hash}`",
+            f"base rates: {base_line}",
+            "Send: no (default). Publisher: Ops. Coord is not the publisher.",
+            "Screen-only. Does not expand Principal membership.",
+            "",
+            table,
+            "",
+            "Index events (separate stream):",
+            idx_table,
+            "",
+            "## Gaps",
+            "",
+            *[f"- {item}" for item in named_gaps],
+            "",
+            LISTINGS_DELIVERY_FOOTER,
+        ]
+    )
+    return headed_markdown(body, RESEARCH, sleeve=LISTINGS)

@@ -18,6 +18,7 @@ per_desk_share:
   coord: 0.30
   crypto: 0.15
   equities: 0.15
+  listings: 0.00
 
 # Artifacts that MUST be templates (zero LLM).
 template_only:

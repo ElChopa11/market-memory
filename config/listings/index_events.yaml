@@ -1,0 +1,7 @@
+# Index adds / deletes / rebalance dates — a separate event stream from IPO deals.
+# Knowledge clock is as_of_knowledge (lockstep with ingested_at).
+
+version: "imp-017.1"
+kind: listings_index_events
+source: fixture
+events: []

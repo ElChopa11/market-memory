@@ -11,6 +11,7 @@ from pathlib import Path
 import mm_delivery
 import mm_desks
 import mm_flow
+import mm_listings
 import mm_macro
 import mm_quant
 
@@ -55,6 +56,7 @@ def test_ci_execution_import_grep_matches_statements_not_comments() -> None:
             "packages/delivery",
             "packages/flow",
             "packages/macro",
+            "packages/listings",
         ],
         check=False,
         capture_output=True,
@@ -94,6 +96,8 @@ def test_skeleton_packages_are_hard_gated() -> None:
         assert mod.__phase__ == 5
     assert mm_flow.LIVE_TRADING_ENABLED is False
     assert mm_flow.__phase__ == 6
+    assert mm_listings.LIVE_TRADING_ENABLED is False
+    assert mm_listings.__phase__ == 6
     assert mm_macro.LIVE_TRADING_ENABLED is False
     assert mm_macro.__phase__ == 6
     assert mm_desks.LIVE_TRADING_ENABLED is False

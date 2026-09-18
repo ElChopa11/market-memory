@@ -1,8 +1,8 @@
-# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro sleeves (Phase 6b) + five-desk roster (Phase 6c-1) + naming (Phase 6c-2) + watchlist monitor (Phase 6c-4) + Ops delivery (Phase 6c-5)
+# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro sleeves (Phase 6b) + five-desk roster (Phase 6c-1) + naming (Phase 6c-2) + watchlist monitor (Phase 6c-4) + Ops delivery (Phase 6c-5) + listings screen (Phase 6d)
 
-Private research lab control plane. **Five publishing desks.** Names are single-sourced in [`config/desks/naming.yaml`](../../config/desks/naming.yaml) and `mm_common.naming`. Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are Intel sleeves (**Phase 6b**). Hive PLAYBOOK + Ops-owned Telegram fan-out are **Phase 6c** (`lab playbook run`, `lab deliver fanout`; default `--no-send`). Watchlist monitor is **Phase 6c-4** (`lab watchlist scan`). Watchlist Telegram fan-out is **Phase 6c-5** (`lab deliver watchlist`; default `--no-send`). No live trading. **No Redis.** Coord is **not** the publisher.
+Private research lab control plane. **Five publishing desks.** Names are single-sourced in [`config/desks/naming.yaml`](../../config/desks/naming.yaml) and `mm_common.naming`. Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are Intel sleeves (**Phase 6b**). Hive PLAYBOOK + Ops-owned Telegram fan-out are **Phase 6c** (`lab playbook run`, `lab deliver fanout`; default `--no-send`). Watchlist monitor is **Phase 6c-4** (`lab watchlist scan`). Watchlist Telegram fan-out is **Phase 6c-5** (`lab deliver watchlist`; default `--no-send`). Listings / IPO screen is **Phase 6d** (`lab listings scan`, `lab deliver listings`; default `--no-send`). No live trading. **No Redis.** Coord is **not** the publisher.
 
-Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). ADR: [ADR/0010-phase6c5-delivery.md](../../ADR/0010-phase6c5-delivery.md), [ADR/0009-phase6c4-watchlist.md](../../ADR/0009-phase6c4-watchlist.md), [ADR/0008-phase6c2-naming.md](../../ADR/0008-phase6c2-naming.md), [ADR/0007-phase6c1-desk-roster.md](../../ADR/0007-phase6c1-desk-roster.md). Permissions: [AGENTS.md](../../AGENTS.md). Telegram runbook: [telegram.md](telegram.md). Watchlist: [watchlist.md](watchlist.md).
+Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). ADR: [ADR/0011-phase6d-listings.md](../../ADR/0011-phase6d-listings.md), [ADR/0010-phase6c5-delivery.md](../../ADR/0010-phase6c5-delivery.md), [ADR/0009-phase6c4-watchlist.md](../../ADR/0009-phase6c4-watchlist.md), [ADR/0008-phase6c2-naming.md](../../ADR/0008-phase6c2-naming.md), [ADR/0007-phase6c1-desk-roster.md](../../ADR/0007-phase6c1-desk-roster.md). Permissions: [AGENTS.md](../../AGENTS.md). Telegram runbook: [telegram.md](telegram.md). Watchlist: [watchlist.md](watchlist.md). Listings: [listings.md](listings.md).
 
 ## 6c-1 cutover (11 → 5)
 
@@ -11,7 +11,7 @@ Principal resume-build order 2026-09-19. Publishing roster is exactly:
 | Slug | Desk | Retired sleeves mapped in |
 |---|---|---|
 | `intel` | Intel (Market Intelligence) | flow, macro, briefing |
-| `research` | Research (Investment Research) | crypto, equities, chart, watchlist |
+| `research` | Research (Investment Research) | crypto, equities, chart, watchlist, listings |
 | `quant` | Quant | — |
 | `ic_risk` | IC/Risk | skeptic + risk **gates** (not two desks) |
 | `ops` | Ops | coord pack + delivery |
@@ -60,6 +60,10 @@ uv run lab watchlist scan --fixture tests/fixtures/phase6c4/locked_scan.json --n
 
 # Ops-owned watchlist Telegram cut (Phase 6c-5; inherit content_hash; Coord does not publish)
 uv run lab deliver watchlist --fixture tests/fixtures/phase6c4/locked_scan.json --no-send --no-db
+
+# Listings / IPO screen (Phase 6d; Research sleeve, not a sixth desk)
+uv run lab listings scan --fixture tests/fixtures/phase6d/listing_day.json --no-send --no-db
+uv run lab deliver listings --fixture tests/fixtures/phase6d/listing_day.json --no-send --no-db
 ```
 
 `--send` on `lab desk run` is a gated Ops-pack POST (token required; pytest fail-closed). Default remains `--no-send`. `mm_delivery.SEND_ENABLED` stays false so send is never implicit. See [telegram.md](telegram.md).
@@ -138,8 +142,8 @@ Fixture runs stamp `ts` from `as_of_knowledge` so hashes stay stable.
 
 `scripts/check_import_boundaries.py` (also a job in `.github/workflows/test.yml`):
 
-- `packages/research_kit`, `packages/desks`, `packages/quant`, `packages/delivery`, `packages/flow`, `packages/macro` must not import `mm_execution` / `mm_execution_service` or signing / live-trade surfaces.
-- Intel `packages/ingest` must not import opine packages: `mm_research_kit`, `mm_desks`, `mm_quant`, `mm_delivery`, `mm_flow`, `mm_macro`.
+- `packages/research_kit`, `packages/desks`, `packages/quant`, `packages/delivery`, `packages/flow`, `packages/macro`, `packages/listings` must not import `mm_execution` / `mm_execution_service` or signing / live-trade surfaces.
+- Intel `packages/ingest` must not import opine packages: `mm_research_kit`, `mm_desks`, `mm_quant`, `mm_delivery`, `mm_flow`, `mm_macro`, `mm_listings`.
 
 The Intel *desk runner* lives in `mm_desks.intel` and only assembles fixture/health facts. Ingest does not import it.
 
@@ -157,12 +161,18 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 `lab deliver watchlist --fixture PATH --no-send` is the Ops Telegram fan-out of that artifact (research route + Ops mirror, inherited `content_hash`). Coord is not the publisher. See [watchlist.md](watchlist.md) and [telegram.md](telegram.md).
 
+## Listings / IPO screen (Phase 6d)
+
+`lab listings scan --fixture PATH --no-send` is the Research listings / IPO screen (upcoming deals, index events as a separate stream, post-listing path, own-history base rates). Not a sixth desk. Missing feed stays unavailable. Quant math is inherited. IC/Risk gates still required.
+
+`lab deliver listings --fixture PATH --no-send` is the Ops Telegram fan-out (research route + Ops mirror, inherited `content_hash`). See [listings.md](listings.md).
+
 ## Gates kept
 
 `live_trading_enabled: false`. `risk-config-guard`. `promote-gate`. Point-in-time law. Degrade-never-invent. No secrets in git.
 
 ## Not this phase
 
-Listings/IPO (IMP-017 / 6d, parked until 6c-1..6c-5 complete). Scorecards automation (6e). Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
+Scorecards automation (6e). Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. Universe promotion. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
 
 Telegram: [telegram.md](telegram.md). LLM budget: [llm-budget.md](llm-budget.md). PLAYBOOK: [../playbook.md](../playbook.md). Factor math: [quant-desk.md](quant-desk.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

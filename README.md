@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 6 in progress (6c-5 Ops-owned delivery expansion on the five-desk roster).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). Phase 6b flow/macro/regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). **No live trading, no order signing, no wallet code.** IMP-021 is this tree. Phase 6d listings/IPO is parked as IMP-017 until 6c-1..6c-5 complete.
+**Status: Phase 6 in progress (6d listings / IPO Research screen on the five-desk roster).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). Phase 6b flow/macro/regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 Ops-owned delivery is **IMP-021 DONE** (#53). **No live trading, no order signing, no wallet code.** IMP-017 is this tree.
 
 ## Start here
 
@@ -23,10 +23,10 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ops/desk-charters.md](ops/desk-charters.md) | Desk operating model (private research lab, not a fund) |
 | [ops/decision-rights.md](ops/decision-rights.md) | Propose / challenge / veto / approve — Principal-only gates |
 | [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
-| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5d + 6a/6b/6c + 6c-5:** desk runners + PG NOTIFY mesh + PLAYBOOK + watchlist + Ops delivery (`lab desk run`, `lab mesh dry`, `lab playbook run`, `lab watchlist scan`, `lab deliver watchlist`) |
+| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5d + 6a/6b/6c + 6c-5 + 6d:** desk runners + PG NOTIFY mesh + PLAYBOOK + watchlist + Ops delivery + listings screen (`lab desk run`, `lab mesh dry`, `lab playbook run`, `lab watchlist scan`, `lab listings scan`, `lab deliver watchlist\|listings`) |
 | [docs/runbooks/flow-desk.md](docs/runbooks/flow-desk.md) | **Phase 6b:** flow / liquidity (`mm_flow`; verdict OK\|THIN\|UNTRADEABLE_AT_SIZE) |
 | [docs/runbooks/macro-desk.md](docs/runbooks/macro-desk.md) | **Phase 6b:** macro regime + EVENT_RISK (`mm_macro`; envelope `regime` tag) |
-| [docs/runbooks/telegram.md](docs/runbooks/telegram.md) | **Phase 5e + 6c + 6c-5:** Ops-owned Telegram delivery + per-desk fan-out + watchlist cut (`lab deliver pack\|fanout\|watchlist --no-send`) |
+| [docs/runbooks/telegram.md](docs/runbooks/telegram.md) | **Phase 5e + 6c + 6c-5 + 6d:** Ops-owned Telegram delivery + per-desk fan-out + watchlist/listings cuts (`lab deliver pack\|fanout\|watchlist\|listings --no-send`) |
 | [docs/runbooks/llm-budget.md](docs/runbooks/llm-budget.md) | **Phase 6c-0:** LLM WRITER/CRITIC only; hard token budgets; grounding locks |
 | [docs/playbook.md](docs/playbook.md) | **Phase 6c:** Hive PLAYBOOK artifact ladder + Quant-owned trade math |
 | [docs/runbooks/watchlist.md](docs/runbooks/watchlist.md) | **Phase 6c-4:** locked-universe watchlist monitor (`lab watchlist scan`) |
@@ -145,7 +145,7 @@ templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
 config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors / flow / macro / delivery / playbook / llm / prompts
-packages/         common, memory, ingest, provenance, briefing, desks, quant, flow, macro, delivery, …
+packages/         common, memory, ingest, provenance, briefing, desks, quant, flow, macro, delivery, listings, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)
 scripts/          bootstrap + lifecycle checker
@@ -159,7 +159,7 @@ scripts/          bootstrap + lifecycle checker
 3. Market Pulse (merged)
 4. Backtest + paper ledger (merged)
 5. **complete** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check **merged (IMP-010, #41)**. 5c quant factors **merged (IMP-011, #42)**. 5d desk runners **merged (IMP-012, #43)**. 5e Telegram delivery **merged (IMP-013, #44)**.
-6. **in progress (6c-5)** — Ops-owned delivery expansion (IMP-021, this tree). 6a mesh **DONE** (#45). 6b flow/macro **DONE** (#46). 6c PLAYBOOK + fan-out **DONE** (#47). 6c-1 roster **DONE** (#49). 6c-2 naming **DONE** (#51). 6c-4 watchlist **DONE** (#52). 6d listings/IPO is IMP-017 (PARKED until 6c-1..6c-5). Tiny manually approved live remains later and hard-gated.
+6. **in progress (6d)** — listings / IPO Research screen (IMP-017, this tree). 6a mesh **DONE** (#45). 6b flow/macro **DONE** (#46). 6c PLAYBOOK + fan-out **DONE** (#47). 6c-1 roster **DONE** (#49). 6c-2 naming **DONE** (#51). 6c-4 watchlist **DONE** (#52). 6c-5 Ops delivery **DONE** (#53). Tiny manually approved live remains later and hard-gated.
 7. Learning loop
 
-Out of scope for Phase 6c-5: Redis, listings/IPO desk, scorecards automation, strategy decay-watch remainder, `live.yaml` changes, order/signing code, paid deps, live LLM HTTP provider, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM as calculator/router, universe promotion, closing OPEN incidents.
+Out of scope for Phase 6d: Redis, scorecards automation (6e), strategy decay-watch remainder (6f), `live.yaml` changes, order/signing code, paid deps, live LLM HTTP provider, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM as calculator/router, universe promotion, closing OPEN incidents, reopening the five-desk roster.
