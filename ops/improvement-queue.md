@@ -237,7 +237,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-009 DONE (#40). |
 | **Risk level** | Medium (vendor ToS, secrets in env, over-reading structure as a call). |
 | **Status** | IN_REVIEW |
-| **PR** | — |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/41 |
 | **Lesson learned** | *(fill at close)* |
 
 ### IMP-011 — Phase 5c quant factor library
@@ -279,7 +279,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | DONE | [#37](https://github.com/ElChopa11/market-memory/pull/37) merged |
 | IMP-008 | Quant & Market Structure Desk | Don/Quant | DONE | [#38](https://github.com/ElChopa11/market-memory/pull/38) merged |
 | IMP-009 | Chief of Staff / Hive Coordinator | Don | DONE | [#40](https://github.com/ElChopa11/market-memory/pull/40) Phase 5a desk boundaries |
-| IMP-010 | Data & Market Memory Desk | Don/Data | IN_REVIEW | Phase 5b Polygon + HL structure — this PR |
+| IMP-010 | Data & Market Memory Desk | Don/Data | IN_REVIEW | [#41](https://github.com/ElChopa11/market-memory/pull/41) Phase 5b Polygon + HL structure |
 | IMP-011 | Quant & Market Structure Desk | Don/Quant | READY | Phase 5c quant factors — parked; do not implement here |
 
 `IN_PROGRESS` count: **0**. IMP-000–IMP-009 are `DONE`. IMP-010 is `IN_REVIEW` (DoD met in this PR). IMP-011 is `READY` (parked until 010 merges).
