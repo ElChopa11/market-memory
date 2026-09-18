@@ -36,4 +36,11 @@ def load_inventory_config(root: Path) -> dict[str, Any]:
         "fred": live.get("fred") if isinstance(live.get("fred"), dict) else {},
         "coingecko": live.get("coingecko") if isinstance(live.get("coingecko"), dict) else {},
         "calendar_path": calendar_path,
+        "polygon": ingest.get("equities") if isinstance(ingest.get("equities"), dict) else {},
+        "binance": ((ingest.get("crypto") or {}).get("spot_cross_check") or {}).get("binance")
+        if isinstance(ingest.get("crypto"), dict)
+        else {},
+        "hl_structure": ((ingest.get("crypto") or {}).get("structure") or {})
+        if isinstance(ingest.get("crypto"), dict)
+        else {},
     }

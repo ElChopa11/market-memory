@@ -1,9 +1,96 @@
-# Phase 1 read-only ingest (no secrets).
+# Phase 1 + Phase 5b read-only ingest (no secrets).
 venue: hyperliquid
 info_url: https://api.hyperliquid.xyz/info
 candle_interval: 1h
 # Snapshot rows whose lab-capture published_at is older than this at ingest time are flagged stale.
-# Historical series (fundingHistory, candles, liquidations) are never stale merely for being in the past.
+# Historical series (fundingHistory, candles, liquidations, Polygon bars, FRED prints) are never stale merely for being in the past.
 stale_after_seconds: 120
 store_raw_objects: true
 source_trust_tier: 4
+
+# Per-source request budgets. Exhaustion → unavailable + error_class=rate_limited (never invent).
+rate_limits:
+  hyperliquid:
+    max_requests_per_minute: 60
+    timeout_seconds: 8
+    max_attempts: 2
+    backoff_s: 0.25
+  polygon:
+    max_requests_per_minute: 5
+    timeout_seconds: 8
+    max_attempts: 2
+    backoff_s: 0.25
+  coingecko:
+    max_requests_per_minute: 10
+    timeout_seconds: 8
+    max_attempts: 2
+    backoff_s: 0.25
+  binance:
+    max_requests_per_minute: 20
+    timeout_seconds: 8
+    max_attempts: 2
+    backoff_s: 0.25
+  fred:
+    max_requests_per_minute: 20
+    timeout_seconds: 8
+    max_attempts: 2
+    backoff_s: 0.25
+
+# Principal lock: equities default vendor = Polygon. Ask is N/A.
+equities:
+  vendor: polygon
+  api_key_env: POLYGON_API_KEY
+  base_url: https://api.polygon.io
+  daily:
+    multiplier: 1
+    timespan: day
+  # Intraday requested when the plan allows. 403/429 → unavailable, never invent bars.
+  intraday:
+    enabled: true
+    multiplier: 5
+    timespan: minute
+  corporate_actions:
+    dividends: true
+    splits: true
+  earnings:
+    enabled: true
+    path: /vX/reference/tickers/{ticker}/events
+
+crypto:
+  structure:
+    funding: true
+    open_interest: true
+    basis: true
+    l2_book: true
+    predicted_fundings: true
+  spot_cross_check:
+    enabled: true
+    providers:
+      - coingecko
+      - binance
+    # DQ event if |perp-spot|/spot exceeds this. Not executable-arb.
+    divergence_bps: 50
+    coingecko:
+      base_url: https://api.coingecko.com/api/v3/simple/price
+      ids:
+        BTC: bitcoin
+        ETH: ethereum
+        UNI: uniswap
+        AAVE: aave
+    binance:
+      base_url: https://api.binance.com/api/v3/ticker/price
+      symbols:
+        BTC: BTCUSDT
+        ETH: ETHUSDT
+        UNI: UNIUSDT
+        AAVE: AAVEUSDT
+
+macro:
+  fred:
+    api_key_env: FRED_API_KEY
+    base_url: https://api.stlouisfed.org/fred/series/observations
+    series:
+      US10Y: DGS10
+  calendar:
+    source: fixture
+    path: config/briefing/calendar.yaml

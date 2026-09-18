@@ -8,7 +8,7 @@ _DSN_PW = re.compile(r"(postgres(?:ql)?(?:\+psycopg)?://[^:/?#]+:)[^@]+@", re.IG
 _AWS_KEY = re.compile(r"(AKIA[0-9A-Z]{16})")
 # Common env assignment leaks: NAME=value
 _ASSIGNED_SECRETS = re.compile(
-    r"\b(FRED_API_KEY|MINIO_SECRET_KEY|MINIO_ACCESS_KEY|MINIO_ROOT_PASSWORD|"
+    r"\b(FRED_API_KEY|POLYGON_API_KEY|MINIO_SECRET_KEY|MINIO_ACCESS_KEY|MINIO_ROOT_PASSWORD|"
     r"AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|POSTGRES_DSN)\s*[:=]\s*\S+",
     re.IGNORECASE,
 )

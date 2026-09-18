@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 5 in progress (5a desk boundaries).** Phase 4 backtest + paper ledger remain. 5a is docs + CI import walls + lifecycle skeleton + output-contract template. **No live trading, no order signing, no wallet code, no Polygon client, no Telegram send.** 5b (Polygon equities + HL structure) is queued as IMP-010, not this tree.
+**Status: Phase 5 in progress (5b Polygon equities + HL structure).** Phase 4 backtest + paper ledger remain. 5a desk boundaries merged (#40). **No live trading, no order signing, no wallet code, no Telegram send.** 5c (quant factors) is queued as IMP-011, not this tree.
 
 ## Start here
 
@@ -23,7 +23,8 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ops/desk-charters.md](ops/desk-charters.md) | Desk operating model (private research lab, not a fund) |
 | [ops/decision-rights.md](ops/decision-rights.md) | Propose / challenge / veto / approve — Principal-only gates |
 | [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
-| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5a:** Tier 0–7 desk boundaries (no adapters, no Telegram) |
+| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5a:** Tier 0–7 desk boundaries |
+| [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) | **Phase 5b:** Polygon equities + HL structure ingest (fixture dry-run without keys) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
 | [ADR/0002-desk-delivery-architecture.md](ADR/0002-desk-delivery-architecture.md) | Phase 5 desk/delivery architecture (5a committed; 5b–5e follow-ons) |
 
@@ -49,6 +50,8 @@ uv run lab migrate
 
 # 4. Ingest a fixture window (offline) or live public HL info
 uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
+# Phase 5b dry-run (no Polygon/FRED keys, no Postgres):
+uv run lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db
 # uv run lab ingest --window 7d
 
 # 5. Point-in-time query (as_of_knowledge <= T — never published_at / market_time)
@@ -85,7 +88,7 @@ uv run pytest
 ./scripts/bootstrap-dev.sh
 ```
 
-Copy `.env.example` to `.env` only if you need local overrides. **Never put Hyperliquid keys or FRED keys in git.** Phase 3 live macro fetchers read `FRED_API_KEY` from the environment (or CI repository secrets) and mark FRED `unavailable` / `error_class=missing_env` when it is missing. See [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md).
+Copy `.env.example` to `.env` only if you need local overrides. **Never put Hyperliquid keys, Polygon keys, or FRED keys in git.** Phase 5b Polygon and Phase 3 live macro fetchers read `POLYGON_API_KEY` / `FRED_API_KEY` from the environment (or CI repository secrets) and mark the feed `unavailable` / `error_class=missing_env` when missing. See [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) and [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md).
 
 ```bash
 uv run lab status
@@ -115,8 +118,8 @@ scripts/          bootstrap + lifecycle checker
 2. Research workspace (merged)
 3. Market Pulse (merged)
 4. Backtest + paper ledger (merged)
-5. **in progress** — 5a desk boundaries (this tree). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check (IMP-010, parked). 5c–5d follow-on PRs. 5e delivery (Telegram/schedules) deferred. Risk *service* / simulated execution are **not** 5a.
+5. **in progress** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check (**IMP-010, this tree**). 5c quant factors (IMP-011, parked). 5d desk runners later. 5e delivery (Telegram/schedules) deferred. Risk *service* / simulated execution are **not** 5b.
 6. Tiny manually approved live (optional)
 7. Learning loop
 
-Out of scope for Phase 5a: Polygon/HL new adapters, quant factor implementations, desk full runners, Telegram client, schedules, secrets, `live.yaml` changes, order/signing code, paid deps, risk/execution services, dashboards, Unicorn Hunter logic, alert spam without thresholds.
+Out of scope for Phase 5b: quant factor implementations, desk full runners, Telegram client, schedules, `live.yaml` changes, order/signing code, paid deps beyond Polygon env key, Redis, risk/execution services, dashboards, Unicorn Hunter logic, alert spam without thresholds.

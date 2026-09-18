@@ -16,10 +16,12 @@ NO_DECISION_FOOTER = (
 
 LIMITATIONS = (
     "No paid-data purchases; FRED stays unavailable without env FRED_API_KEY (set locally or in CI secrets; never committed).",
+    "Polygon stays unavailable without env POLYGON_API_KEY (set locally or in CI secrets; never committed). Earnings calendar degrades when not on plan.",
     "Stooq failures are classified (timeout / http_404 / http_5xx / parse / tos_or_blocked). Bounded GET retry on timeout/5xx/429 only; 404 is terminal. No ToS-violating scrape workaround.",
-    "CoinGecko/Stooq/FRED are not written into Market Memory; last success for those is this probe or unknown.",
+    "CoinGecko/Binance public/Stooq/FRED/Polygon last success is this probe or unknown unless Memory has a matching source row.",
     "Calendar health is YAML presence (no live economic-calendar API).",
-    "This report never copies mids, marks, yields, or CSV Close values into the artifact.",
+    "Hyperliquid structure (l2Book / predictedFundings) is public /info only; forbidden user types stay blocked.",
+    "This report never copies mids, marks, yields, OHLCV, or CSV Close values into the artifact.",
 )
 
 

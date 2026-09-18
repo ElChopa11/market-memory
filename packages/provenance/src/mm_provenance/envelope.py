@@ -32,32 +32,35 @@ def build_envelope(
     stale_after_seconds: int = 120,
     raw_object_key: str | None = None,
     raw_object_checksum: str | None = None,
+    venue: str = "perp",
+    data_quality: DataQuality | None = None,
 ) -> ObservationEnvelope:
     published = as_utc(published_at)
     ingested = as_utc(ingested_at)
-    market = as_utc(market_time) if market_time is not None else None
+    event_time = as_utc(market_time) if market_time is not None else None
     identity = ClaimIdentity(
         source_name=source_name,
         instrument=instrument,
         metric=metric,
-        market_time=market,
+        market_time=event_time,
         value=normalize_numeric(value) if value is not None and _looks_numeric(value) else value,
         extras=extras or {},
     )
-    quality = assess_quality(
+    quality = data_quality or assess_quality(
         ingested_at=ingested,
         published_at=published,
         missing_fields=missing_fields,
         historical=historical,
         stale_after_seconds=stale_after_seconds,
     )
-    when = market.isoformat() if market is not None else f"lab_capture {published.isoformat()}"
+    when = event_time.isoformat() if event_time is not None else f"lab_capture {published.isoformat()}"
+    venue_label = venue or "perp"
     if missing_fields:
         confidence = min(confidence, 0.2)
-        claim_text = f"{instrument} perp {metric} missing ({', '.join(missing_fields)}) at {when}"
+        claim_text = f"{instrument} {venue_label} {metric} missing ({', '.join(missing_fields)}) at {when}"
     else:
         shown = identity.value if identity.value is not None else "null"
-        claim_text = f"{instrument} perp {metric}={shown} at {when}"
+        claim_text = f"{instrument} {venue_label} {metric}={shown} at {when}"
         if quality is DataQuality.STALE:
             claim_text += " [stale]"
 
@@ -77,7 +80,7 @@ def build_envelope(
         source_url_or_id=source_url_or_id,
         published_at=published,
         ingested_at=ingested,
-        market_time=market,
+        market_time=event_time,
         claim_text=claim_text,
         claim_hash=claim_hash(identity.hash_payload()),
         confidence=confidence,

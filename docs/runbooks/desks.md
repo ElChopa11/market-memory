@@ -10,9 +10,9 @@ Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md)
 |---|---|---|---|
 | 0 | Principal | Mandate, budget, promotion, halt, `live.yaml`, Risk-BLOCK override | Keys on servers; delegate Principal-only gates |
 | 1 | Ops / CoS | Queue, DoD, `lab *`, PRs | Trading credentials; waive Skeptic; self-approve |
-| 2 | Intel | Public ingest into Memory (`hl_info` only today) | Opine (theses/verdicts); import `mm_research_kit` / `mm_desks` / `mm_quant` / `mm_delivery`; sign |
+| 2 | Intel | Public ingest into Memory (`hl_info` + Polygon) | Opine (theses/verdicts); import `mm_research_kit` / `mm_desks` / `mm_quant` / `mm_delivery`; sign |
 | 3a | Crypto | Crypto artifacts from Memory + named sources | Orders, sizing, `mm_execution`, self-Skeptic/Risk |
-| 3b | Equities | Equity / post-IPO artifacts | Same as 3a; drawdown-as-thesis; Polygon client (**5b**) |
+| 3b | Equities | Equity / post-IPO artifacts | Same as 3a; drawdown-as-thesis; Polygon client lives in `mm_ingest` |
 | 4 | Quant | Closed verdict + reason code | Calls, sizing, skip pipeline |
 | 5 | Skeptic | `pass` / FAIL return (`revise`) / FAIL archive (`reject`) | Author and approve the same thesis |
 | 6 | Risk | Allow / **BLOCK** from versioned config | LLM at decision time; self-clear BLOCK; edit `live.yaml` silently |
@@ -51,7 +51,7 @@ No desk overrides the Principal. No skipped gates.
 | `packages/delivery` | No-send stub; Telegram is 5e |
 | `templates/output-contract.md` | Principal briefing contract |
 
-Do **not** add Polygon, HL depth adapters, factor math, or a Telegram client in this runbook’s phase.
+Do **not** add factor math or a Telegram client in Phase 5b. Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).
 
 ## Output contract
 

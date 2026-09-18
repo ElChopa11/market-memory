@@ -12,7 +12,7 @@ This runbook does **not** enable live trading, wallets, or signing.
 - [uv](https://docs.astral.sh/uv/) and Python 3.12
 - Outbound HTTPS to `https://api.hyperliquid.xyz/info` only if you ingest live public data
 
-Copy `.env.example` to `.env` for local DSN/MinIO overrides. **Never put Hyperliquid keys in `.env`.** Phase 1 does not need any.
+Copy `.env.example` to `.env` for local DSN/MinIO overrides. **Never put Hyperliquid keys, Polygon keys, or FRED keys in `.env` committed to git.** Phase 1 does not need Hyperliquid keys. Phase 5b Polygon and FRED ingest need env keys only when you opt into live HTTP; fixtures dry-run without them.
 
 ## Raw object store (fail closed)
 
@@ -43,6 +43,12 @@ uv run lab migrate
 # 4a. Fixture window (offline, what CI uses). `--no-objects` skips raw pointers honestly.
 uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
 
+# 4a-bis. Phase 5b dry-run (no Postgres, no vendor keys):
+uv run lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db
+uv run lab ingest --fixture tests/fixtures/phase5b/hl_structure.json --no-db
+# See docs/runbooks/polygon-hl-structure.md
+
+
 # 4b. One-shot live public info for locked HL perps (BTC, ETH, UNI, AAVE membership; last 7 days).
 #     UNI and AAVE stay on the ingest list as watch-only (no thesis priority).
 #     Raw JSON goes to MinIO bucket `market-memory` (checksum + key only).
@@ -69,9 +75,13 @@ uv run lab what-did-we-know --at 2026-09-10T00:05:00Z --instrument BTC --metric 
 | Prices (window) | `candleSnapshot` | `candle_close` |
 | Liquidations | `recentTrades` when a `liquidation` object is present | `liquidation` |
 
-Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked ingest membership in `config/universe.yaml`). ETH, UNI, and AAVE remain ingested as **watch-only** (no thesis-priority membership); BTC is the crypto **in-universe** name. Equities on that universe file are a Phase 3 briefing / future equity-feed watchlist, not Hyperliquid ingest — SMH and XLF are watch-only; NVDA, AVGO, MSFT, META, JPM, XOM are in-universe. Membership is Principal language, not a Quant verdict. Settings: `config/ingest.yaml`.
+Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked ingest membership in `config/universe.yaml`). ETH, UNI, and AAVE remain ingested as **watch-only** (no thesis-priority membership); BTC is the crypto **in-universe** name. Equities on that universe file ingest via the **Polygon** adapter in Phase 5b (`mm_ingest.equities`; default vendor locked). SMH and XLF are watch-only; NVDA, AVGO, MSFT, META, JPM, XOM are in-universe. Membership is Principal language, not a Quant verdict. Settings: `config/ingest.yaml`.
 
-The client **refuses** user-private types (`clearinghouseState`, `userFills`, `openOrders`, …). There is no `hl_trade` module.
+The Hyperliquid client **refuses** user-private types (`clearinghouseState`, `userFills`, `openOrders`, …). There is no `hl_trade` module. Phase 5b adds public `l2Book` to the allowlist.
+
+## Phase 5b feeds
+
+See [polygon-hl-structure.md](polygon-hl-structure.md): Polygon OHLCV + corporate actions (env `POLYGON_API_KEY`); HL basis / L2 / predicted funding; optional CoinGecko/Binance public spot DQ; FRED + fixture calendar. Missing keys → `unavailable` + `error_class`; never invent.
 
 ## Provenance
 

@@ -17,9 +17,12 @@ PULSE_NA = "n/a"
 # Always listed, even when the probe cannot reach the source.
 SOURCE_INVENTORY: tuple[str, ...] = (
     "hyperliquid.info",
+    "hyperliquid.structure",
     "coingecko",
+    "binance.public",
     "stooq",
     "fred",
+    "polygon",
     "calendar.yaml",
     "postgres",
     "object_store",
@@ -27,9 +30,12 @@ SOURCE_INVENTORY: tuple[str, ...] = (
 
 PULSE_ROLE: dict[str, str] = {
     "hyperliquid.info": PULSE_REQUIRED,
+    "hyperliquid.structure": PULSE_OPTIONAL,
     "coingecko": PULSE_OPTIONAL,
+    "binance.public": PULSE_OPTIONAL,
     "stooq": PULSE_OPTIONAL,
     "fred": PULSE_OPTIONAL,
+    "polygon": PULSE_OPTIONAL,
     "calendar.yaml": PULSE_REQUIRED,
     "postgres": PULSE_OPTIONAL,  # Pulse can run --no-db
     "object_store": PULSE_NA,
@@ -37,9 +43,12 @@ PULSE_ROLE: dict[str, str] = {
 
 DISPLAY_NAME: dict[str, str] = {
     "hyperliquid.info": "hyperliquid.info /info",
+    "hyperliquid.structure": "hyperliquid.info structure (funding/OI/basis/l2)",
     "coingecko": "coingecko",
+    "binance.public": "binance.public",
     "stooq": "stooq",
     "fred": "fred",
+    "polygon": "polygon",
     "calendar.yaml": "config/briefing/calendar.yaml",
     "postgres": "postgres",
     "object_store": "object_store",
