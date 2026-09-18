@@ -337,3 +337,59 @@ class Brief(Base):
     data_quality: Mapped[str] = mapped_column(String(32), nullable=False)
     payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DeskEnvelopeRow(Base):
+    """Persisted Phase 6a desk mesh envelope. NOTIFY carries ids only."""
+
+    __tablename__ = "desk_envelope"
+    __table_args__ = (
+        CheckConstraint("status IN ('OK','DEGRADED','FAILED')", name="desk_envelope_status_check"),
+        CheckConstraint("op IN ('paper','observation')", name="desk_envelope_op_check"),
+        CheckConstraint(
+            "error_class IS NULL OR error_class IN ('desk_missing','desk_killed','desk_error','desk_timeout')",
+            name="desk_envelope_error_class_check",
+        ),
+        CheckConstraint("completeness_pct >= 0 AND completeness_pct <= 100", name="desk_envelope_completeness_check"),
+        UniqueConstraint("desk", "as_of_knowledge", "content_hash", name="desk_envelope_desk_as_of_hash_uidx"),
+        Index("desk_envelope_desk_as_of_idx", "desk", "as_of_knowledge"),
+        Index("desk_envelope_channel_idx", "channel"),
+        Index("desk_envelope_as_of_idx", "as_of_knowledge"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    desk: Mapped[str] = mapped_column(String(32), nullable=False)
+    channel: Mapped[str] = mapped_column(Text, nullable=False)
+    as_of_knowledge: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    as_of_sydney: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    n: Mapped[int] = mapped_column(nullable=False)
+    completeness_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
+    regime: Mapped[str] = mapped_column(Text, nullable=False, default="unset")
+    op: Mapped[str] = mapped_column(String(32), nullable=False)
+    universe: Mapped[str] = mapped_column(Text, nullable=False)
+    sources: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    missing: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    cadence: Mapped[str] = mapped_column(String(32), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    error_class: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    alert_channel: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dq_channel: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DeskHealthRow(Base):
+    """Last-seen mesh health per desk slug. Updated when an envelope is persisted."""
+
+    __tablename__ = "desk_health"
+
+    desk: Mapped[str] = mapped_column(String(32), primary_key=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    last_as_of: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_envelope_id: Mapped[str | None] = mapped_column(String(26), nullable=True)
+    last_content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_class: Mapped[str | None] = mapped_column(Text, nullable=True)
+    n: Mapped[int] = mapped_column(nullable=False, default=0)
+    completeness_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

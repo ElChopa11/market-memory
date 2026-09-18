@@ -61,8 +61,13 @@ def _gaps(ctx: DeskContext) -> list[str]:
         for card in quant.payload.get("cards") or []:
             for gap in card.get("gaps") or []:
                 rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | Quant & Market Structure Desk |")
+    for slug in ("intel", "crypto", "equities", "quant", "skeptic", "risk"):
+        out = _desk(ctx, slug)
+        if out is not None and out.status == "FAILED":
+            err = out.error_class or "desk_error"
+            rows.append(f"| {slug} {err} | Coord assembled with desk FAILED | {out.desk} |")
     if _desk(ctx, "coord") is None:
-        rows.append("| Multi-channel mesh (PG LISTEN/NOTIFY) | Phase 6a parked | Delivery |")
+        rows.append("| flow/macro/regime note | Phase 6b parked | Macro & Cross-Asset Desk |")
     if not rows:
         rows.append("| none listed | — | — |")
     # Deduplicate while preserving order.
@@ -119,7 +124,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "Research / desk product copy for the Principal. **Not an order. Not Execution. Not a Skeptic or Risk self-clear.**",
         "",
-        f"- **Engine:** imp-012.1",
+        f"- **Engine:** imp-014.1",
         f"- **Fixture:** {day.fixture_id}",
         "",
         "## HEADER",
@@ -185,7 +190,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "## DATA GAPS",
         "",
-        "Always list. Telegram delivery is 5e; multi-channel mesh is Phase 6 (parked).",
+        "Always list. Telegram delivery is 5e; flow/macro/regime is Phase 6b (parked).",
         "",
         "| gap | impact | owner desk |",
         "| --- | --- | --- |",

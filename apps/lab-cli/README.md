@@ -23,4 +23,7 @@ uv run lab paper list --no-db
 uv run lab quant-review --fixture tests/fixtures/quant_review/watchlist_snapshot_20260917.yaml --no-db
 uv run lab quant-review --locked-membership --no-db
 uv run lab equities reclaim-screen --fixture tests/fixtures/equities/post_ipo_reclaim_snapshot.yaml --no-db
+uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --no-db
+uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
+uv run lab mesh channels
 ```

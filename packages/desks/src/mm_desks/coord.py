@@ -33,6 +33,17 @@ def _overall(outputs: dict[str, DeskOutput]) -> str:
     return "OK"
 
 
+def _present_count(ctx: DeskContext) -> tuple[int, list[str], list[str]]:
+    missing = [slug for slug in PIPELINE_FOR_PACK if slug not in ctx.prior]
+    failed = [
+        slug
+        for slug in PIPELINE_FOR_PACK
+        if slug in ctx.prior and ctx.prior[slug].status == FAILED
+    ]
+    present = len(PIPELINE_FOR_PACK) - len(missing) - len(failed)
+    return present, missing, failed
+
+
 def _calendar_lines(ctx: DeskContext, as_of: datetime) -> tuple[str, ...]:
     events = ctx.fixture.calendar
     start = as_utc(as_of) - timedelta(hours=6)
@@ -48,14 +59,16 @@ def _calendar_lines(ctx: DeskContext, as_of: datetime) -> tuple[str, ...]:
 
 
 def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
-    missing = [slug for slug in PIPELINE_FOR_PACK if slug not in ctx.prior]
+    present, missing, failed = _present_count(ctx)
     calendar = _calendar_lines(ctx, as_of)
     pack_md = render_output_contract(as_of, ctx, calendar_lines=calendar)
     payload_obj = prepare_payload(pack_md)
     sydney = in_ops_tz(as_of).isoformat()
-    overall = _overall(ctx.prior) if not missing else DEGRADED
-    present = len(PIPELINE_FOR_PACK) - len(missing)
+    overall = _overall(ctx.prior)
+    if missing and overall == "OK":
+        overall = DEGRADED
     notes = tuple(f"missing desk output: {slug}" for slug in missing)
+    notes = notes + tuple(f"{slug} FAILED ({ctx.prior[slug].error_class})" for slug in failed)
     if ctx.prior.get("intel") and ctx.prior["intel"].status == DEGRADED:
         notes = notes + tuple(ctx.prior["intel"].notes)
     artifacts = (
@@ -75,6 +88,7 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     desk_status = FAILED if overall == FAILED else status_from_slots(
         present=present,
         expected=len(PIPELINE_FOR_PACK),
+        failed=bool(failed),
         required_missing=bool(missing),
     )
     if overall == DEGRADED and desk_status == "OK":
@@ -90,7 +104,7 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
         as_of_knowledge=as_of,
         notes=notes,
         payload={
-            "overall_status": overall if not missing else DEGRADED,
+            "overall_status": overall,
             "as_of_sydney": sydney,
             "calendar": list(calendar),
             "content_hash": payload_obj.content_hash,
@@ -98,6 +112,12 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
             "send_enabled": False,
             "pack_markdown": pack_md,
             "no_send_reason": payload_obj.reason,
+            "assembled_desks": [slug for slug in PIPELINE_FOR_PACK if slug in ctx.prior],
+            "desk_error_class": {
+                slug: ctx.prior[slug].error_class
+                for slug in PIPELINE_FOR_PACK
+                if slug in ctx.prior and ctx.prior[slug].error_class
+            },
         },
     )
 

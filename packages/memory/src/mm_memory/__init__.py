@@ -15,6 +15,8 @@ from mm_memory.object_store import (
     object_store_from_env,
 )
 from mm_memory.brief_repository import BriefRepository
+from mm_memory.envelope_repository import MeshEnvelopeRepository
+from mm_memory.notify import PostgresNotifyBus
 from mm_memory.paper_repository import PaperRepository
 from mm_memory.queries import (
     get_thesis_by_slug,
@@ -33,6 +35,8 @@ LIVE_TRADING_ENABLED = False
 
 __all__ = [
     "BriefRepository",
+    "MeshEnvelopeRepository",
+    "PostgresNotifyBus",
     "FilesystemObjectStore",
     "InMemoryObjectStore",
     "LIVE_TRADING_ENABLED",

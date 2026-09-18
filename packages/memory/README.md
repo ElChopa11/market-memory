@@ -13,7 +13,8 @@ Market Memory: Postgres models, Alembic migrations, object-store pointers, and t
 - `skeptic_review` — independent verdict (`pass` / `revise` / `reject`) plus artifact hash
 - `brief` — optional Market Pulse index
 - `research_run` — backtest/scan/manual runs (`params_hash`, artifact paths)
-- `paper_trade` — shadow ledger (invalidation + max loss required)
+- `desk_envelope` — Phase 6a mesh envelope (header + body JSON + `content_hash`)
+- `desk_health` — last-seen desk status for the Coord worker stub
 
 Git artifacts under `research/` remain the human-review source. Postgres stores indexes and hashes. Rejected theses are **not** deleted.
 

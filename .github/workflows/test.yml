@@ -39,8 +39,11 @@ jobs:
         run: uv run pytest
       - name: Lifecycle DoD gates
         run: bash scripts/check-lifecycle.sh
-      - name: Import boundaries (research/desks/quant/delivery vs execution; Intel vs opine)
+      - name: Import boundaries (research/desks/quant/delivery vs execution; Intel vs opine; no Redis)
         run: uv run python scripts/check_import_boundaries.py
+      - name: No Redis bus
+        run: |
+          ! git grep -n -E '^[ \t]*(import redis|from redis|import aioredis|from aioredis)\b' -- packages apps
       - name: Opine packages cannot import mm_execution
         run: |
           ! git grep -n -E '^[ \t]*(import mm_execution|from mm_execution)\b' -- packages/research_kit packages/desks packages/quant packages/delivery

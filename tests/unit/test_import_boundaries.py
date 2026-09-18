@@ -56,9 +56,11 @@ def test_ci_execution_import_grep_matches_statements_not_comments() -> None:
 
 
 def test_skeleton_packages_are_hard_gated() -> None:
-    for mod in (mm_desks, mm_quant, mm_delivery):
+    for mod in (mm_quant, mm_delivery):
         assert mod.LIVE_TRADING_ENABLED is False
         assert mod.__phase__ == 5
+    assert mm_desks.LIVE_TRADING_ENABLED is False
+    assert mm_desks.__phase__ == 6
     assert mm_desks.CRYPTO_TIER == "3a"
     assert mm_desks.EQUITIES_TIER == "3b"
     assert set(mm_quant.FactorRegistry().names()) == {
@@ -81,5 +83,6 @@ def test_skeleton_packages_are_hard_gated() -> None:
     assert hasattr(mm_delivery, "deliver")
     assert hasattr(mm_delivery, "prepare_payload")
     assert hasattr(mm_desks, "run_from_fixture")
+    assert hasattr(mm_desks, "mesh_from_fixture")
     assert not hasattr(mm_desks, "polygon")
     assert not hasattr(mm_quant, "sign")

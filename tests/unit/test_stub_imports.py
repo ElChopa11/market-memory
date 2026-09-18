@@ -22,7 +22,8 @@ import mm_source_health
 import mm_unicorn
 
 ROOT = Path(__file__).resolve().parents[2]
-PHASE5 = {mm_desks, mm_quant, mm_delivery, mm_risk}
+PHASE6 = {mm_desks}
+PHASE5 = {mm_quant, mm_delivery, mm_risk}
 PHASE4 = {mm_memory, mm_backtest, mm_paper, mm_lab_cli, mm_source_health}
 PHASE3 = {mm_briefing}
 PHASE1 = {mm_ingest, mm_provenance}
@@ -57,7 +58,9 @@ def test_stubs_import_and_are_hard_gated() -> None:
         mm_delivery,
     ):
         assert mod.LIVE_TRADING_ENABLED is False
-        if mod in PHASE5:
+        if mod in PHASE6:
+            expected_phase = 6
+        elif mod in PHASE5:
             expected_phase = 5
         elif mod in PHASE4:
             expected_phase = 4

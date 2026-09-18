@@ -1,6 +1,6 @@
 # PLAN — IMP-013 Phase 5e Telegram delivery
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#44).  
 **Owner:** Don / Chief of Staff (Coordinator)  
 **Scope:** Telegram Bot API send for desk packs, config, dry-run payloads, gates. No live trading. No execution. No `live.yaml`. No Phase 6 mesh.
 
@@ -39,4 +39,4 @@ Live trading. Signing. `live.yaml`. Phase 6 PG NOTIFY bus / per-desk worker mesh
 
 ## Status
 
-IN_REVIEW (this PR). IMP-012 is DONE (#43). IMP-014 Phase 6a is READY/PARKED — do not implement the mesh here.
+DONE (#44). IMP-014 Phase 6a is the following implementation thread.
