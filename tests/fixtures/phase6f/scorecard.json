@@ -1,0 +1,7 @@
+{
+  "fixture_id": "phase6f-decay-scorecard-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T13:05:00Z",
+  "what_changed": "decay watch attached to IMP-030 scorecard fixture; BRIEF-TAG stays NOT_COMPARABLE",
+  "scorecard_fixture": "tests/fixtures/phase6e/packs.json"
+}

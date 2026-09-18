@@ -1,8 +1,8 @@
 """Phase 6e pack scorecard (IMP-030).
 
 Quant product. Not a sixth desk. Deterministic fixture compare. Like-for-like
-only. Incomparable artifacts stay tagged. Decay inputs are stubbed toward 6f.
-No LLM. No send. No universe promotion.
+only. Incomparable artifacts stay tagged. Decay watch (IMP-031 / 6f) records
+prompt hashes and alerts Ops on drift. No LLM. No send. No universe promotion.
 # Boundary comment: packages here must not import mm_execution (statement form is gated).
 """
 
@@ -27,7 +27,7 @@ from mm_common.time import as_utc, parse_utc
 from mm_desks.envelope import DeskEnvelope, envelope_from_output, stamp_output
 from mm_desks.playbook import round_trip_envelopes
 from mm_desks.protocol import DEGRADED, FAILED, OK, DeskArtifact, DeskContext, DeskOutput, completeness_pct
-from mm_quant.decay_stub import decay_stub_payload
+from mm_quant.decay import decay_watch_payload
 from mm_quant.scorecard import (
     ENGINE_VERSION,
     FOOTER,
@@ -179,9 +179,10 @@ def render_markdown(
         )
     gap_block = "\n".join(f"- {g}" for g in (gaps or ("none",)))
     decay_line = (
-        f"Decay stub: watch_enabled={decay_stub.get('watch_enabled')} "
+        f"Decay watch: watch_enabled={decay_stub.get('watch_enabled')} "
         f"phase={decay_stub.get('phase')} item={decay_stub.get('item')} "
-        "(prompt hashes recorded; full watch is 6f)."
+        f"overall={decay_stub.get('overall')} "
+        "(prompt hashes versioned; mismatch is a NOTIFY/queue signal)."
     )
     body = "\n".join(
         [
@@ -260,7 +261,7 @@ def run_scorecard(as_of: datetime, ctx: DeskContext, *, payload: Mapping[str, An
     if not visible:
         gaps.append("packs")
         notes.append("no visible packs; degrade, never invent a compare")
-    decay = decay_stub_payload(root)
+    decay = decay_watch_payload(root)
     notes.append(str(decay.get("note") or "decay stub"))
     status = _status_for(n_visible=len(visible), n_raw=len(packs), failed=False)
     completeness = completeness_pct(len(visible), len(packs) if packs else 1)

@@ -32,7 +32,7 @@ def test_lab_scorecard_compare_no_send(tmp_path: Path, capsys) -> None:
     assert payload["no_send"] is True
     assert payload["desk"] == "quant"
     assert payload["promote"] is False
-    assert payload["decay_watch_enabled"] is False
+    assert payload["decay_watch_enabled"] is True
     sha = tmp_path / "research" / "scorecards" / "2026-09-18" / "scorecard.sha256"
     md = tmp_path / "research" / "scorecards" / "2026-09-18" / "scorecard.md"
     assert sha.is_file()

@@ -38,9 +38,9 @@ Fri 18 Sep pre-market fired ~90m pre-open (`08:00` NY) vs the 30m-pre-open ancho
 - `lab queue can-start IMP-XXX` reports whether READY→IN_PROGRESS is allowed. It does **not** write the file.
 - Refuses `--merge` / `--waive`. No auto-merge. No gate waiver. No auto-close of OPEN incidents.
 
-## Decay stub (not 6f)
+## Decay watch (Phase 6f)
 
-`config/scorecards/decay.yaml` lists versioned prompt files and records SHA-256. `watch_enabled: false`. Full prompt-hash decay watch is IMP-031 / Phase 6f.
+`config/scorecards/decay.yaml` lists versioned prompt files and listed configs with pinned SHA-256. `watch_enabled: true`. `lab decay watch` alerts Ops on drift (NOTIFY + queue signal). It does not invent like-for-like scores for tagged incomparable packs. See [decay.md](decay.md).
 
 ## Naming + delivery
 
@@ -48,4 +48,4 @@ Fri 18 Sep pre-market fired ~90m pre-open (`08:00` NY) vs the 30m-pre-open ancho
 
 ## Not this runbook
 
-Live/signing. Redis. Universe promotion. Closing OPEN incidents. Implementing 6f decay-watch. Waiving Skeptic or Risk.
+Live/signing. Redis. Universe promotion. Closing OPEN incidents. Auto-disable of prompts. Waiving Skeptic or Risk.

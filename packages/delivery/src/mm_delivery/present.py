@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 from mm_common.naming import (
+    DECAY,
     LISTINGS,
     QUANT,
     RESEARCH,
@@ -275,7 +276,7 @@ SCORECARD_DELIVERY_FOOTER = (
     "Not a call. Like-for-like only when product, schedule_anchor, and universe match "
     "and no incomparable tag applies. Tagged artifacts (including BRIEF-TAG-20260918 "
     "90m vs 30m pre-open) are not scored as equals. Quant owns the math; Ops publishes; "
-    "Coord orchestrates. Decay-watch stays 6f."
+    "Coord orchestrates. Prompt-hash decay watch is 6f (`lab decay watch`)."
 )
 
 
@@ -305,9 +306,11 @@ def present_scorecard(canonical: Mapping[str, Any]) -> str:
     status = canonical.get("status") or UNKNOWN
     named_gaps = list(canonical.get("gaps") or []) or gaps or ["none"]
     decay = canonical.get("decay_stub") if isinstance(canonical.get("decay_stub"), dict) else {}
+    if not decay:
+        decay = canonical.get("decay_watch") if isinstance(canonical.get("decay_watch"), dict) else {}
     decay_line = (
-        f"decay stub watch_enabled={decay.get('watch_enabled', False)} "
-        f"item={decay.get('item') or 'IMP-031'}"
+        f"decay watch watch_enabled={decay.get('watch_enabled', False)} "
+        f"overall={decay.get('overall') or 'n/a'} item={decay.get('item') or 'IMP-031'}"
     )
     body = "\n".join(
         [
@@ -330,3 +333,77 @@ def present_scorecard(canonical: Mapping[str, Any]) -> str:
         ]
     )
     return headed_markdown(body, QUANT, sleeve=SCORECARD)
+
+
+DECAY_DELIVERY_FOOTER = (
+    "Not a call. Prompt and config hashes are versioned. Mismatch emits a "
+    "NOTIFY/queue signal. Does not waive Skeptic or Risk. Does not invent "
+    "like-for-like scores for tagged incomparable packs. Quant owns the math; "
+    "Ops publishes; Coord orchestrates."
+)
+
+
+def present_decay(canonical: Mapping[str, Any]) -> str:
+    """Ops Telegram cut of an IMP-031 decay watch. Does not invent scorecard numbers."""
+    watch = canonical.get("decay_watch") if isinstance(canonical.get("decay_watch"), dict) else {}
+    rows = canonical.get("rows") or watch.get("rows") or []
+    if not isinstance(rows, list):
+        rows = []
+    table_rows: list[tuple[str, str, str]] = []
+    gaps: list[str] = list(canonical.get("gaps") or [])
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        path = str(row.get("path") or UNKNOWN)
+        verdict = str(row.get("verdict") or UNKNOWN)
+        kind = str(row.get("kind") or UNKNOWN)
+        table_rows.append((path, kind, verdict))
+        if verdict not in {"MATCH", ""}:
+            gaps.append(path)
+    table = monospace_table(("path", "kind", "verdict"), table_rows, gaps=None)
+    pairs = canonical.get("scorecard_pairs") or []
+    pair_note = "no attached scorecard pairs"
+    if isinstance(pairs, list) and pairs:
+        tagged = [
+            f"{row.get('left_id')} vs {row.get('right_id')}"
+            for row in pairs
+            if isinstance(row, dict) and (row.get("verdict") == "NOT_COMPARABLE" or not row.get("comparable"))
+        ]
+        pair_note = (
+            "attached scorecard pairs kept honest; NOT_COMPARABLE stays tagged"
+            if tagged
+            else "attached scorecard pairs passed through without re-scoring"
+        )
+    product = sleeve_display(DECAY)
+    completeness = canonical.get("completeness")
+    completeness_s = UNKNOWN if completeness is None else f"{completeness}%"
+    content_hash = canonical.get("content_hash") or UNKNOWN
+    as_of = canonical.get("as_of_knowledge") or UNKNOWN
+    status = canonical.get("status") or UNKNOWN
+    overall = canonical.get("overall") or watch.get("overall") or UNKNOWN
+    signal = canonical.get("queue_signal") if isinstance(canonical.get("queue_signal"), dict) else {}
+    signal_kind = signal.get("kind") or "none"
+    named_gaps = list(dict.fromkeys(gaps)) or ["none"]
+    body = "\n".join(
+        [
+            f"{product} (`{DECAY}`)",
+            f"as_of_knowledge: {as_of}",
+            f"status: {status}",
+            f"overall: {overall}",
+            f"completeness: {completeness_s}",
+            f"content_hash: `{content_hash}`",
+            f"queue_signal: {signal_kind} (does not write the queue)",
+            pair_note,
+            "Send: no (default). Publisher: Ops. Coord is not the publisher.",
+            "",
+            table,
+            "",
+            "## Gaps",
+            "",
+            *[f"- {item}" for item in named_gaps],
+            "",
+            DECAY_DELIVERY_FOOTER,
+        ]
+    )
+    return headed_markdown(body, QUANT, sleeve=DECAY)
+
