@@ -1,8 +1,8 @@
-# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro sleeves (Phase 6b) + five-desk roster (Phase 6c-1) + naming (Phase 6c-2)
+# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro sleeves (Phase 6b) + five-desk roster (Phase 6c-1) + naming (Phase 6c-2) + watchlist monitor (Phase 6c-4)
 
-Private research lab control plane. **Five publishing desks.** Names are single-sourced in [`config/desks/naming.yaml`](../../config/desks/naming.yaml) and `mm_common.naming`. Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are Intel sleeves (**Phase 6b**). Hive PLAYBOOK + Ops-owned Telegram fan-out are **Phase 6c** (`lab playbook run`, `lab deliver fanout`; default `--no-send`). No live trading. **No Redis.**
+Private research lab control plane. **Five publishing desks.** Names are single-sourced in [`config/desks/naming.yaml`](../../config/desks/naming.yaml) and `mm_common.naming`. Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are Intel sleeves (**Phase 6b**). Hive PLAYBOOK + Ops-owned Telegram fan-out are **Phase 6c** (`lab playbook run`, `lab deliver fanout`; default `--no-send`). Watchlist monitor is **Phase 6c-4** (`lab watchlist scan`; default `--no-send`). No live trading. **No Redis.**
 
-Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). ADR: [ADR/0008-phase6c2-naming.md](../../ADR/0008-phase6c2-naming.md), [ADR/0007-phase6c1-desk-roster.md](../../ADR/0007-phase6c1-desk-roster.md). Permissions: [AGENTS.md](../../AGENTS.md). Telegram runbook: [telegram.md](telegram.md).
+Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). ADR: [ADR/0009-phase6c4-watchlist.md](../../ADR/0009-phase6c4-watchlist.md), [ADR/0008-phase6c2-naming.md](../../ADR/0008-phase6c2-naming.md), [ADR/0007-phase6c1-desk-roster.md](../../ADR/0007-phase6c1-desk-roster.md). Permissions: [AGENTS.md](../../AGENTS.md). Telegram runbook: [telegram.md](telegram.md). Watchlist: [watchlist.md](watchlist.md).
 
 ## 6c-1 cutover (11 → 5)
 
@@ -11,7 +11,7 @@ Principal resume-build order 2026-09-19. Publishing roster is exactly:
 | Slug | Desk | Retired sleeves mapped in |
 |---|---|---|
 | `intel` | Intel (Market Intelligence) | flow, macro, briefing |
-| `research` | Research (Investment Research) | crypto, equities, chart |
+| `research` | Research (Investment Research) | crypto, equities, chart, watchlist |
 | `quant` | Quant | — |
 | `ic_risk` | IC/Risk | skeptic + risk **gates** (not two desks) |
 | `ops` | Ops | coord pack + delivery |
@@ -54,6 +54,9 @@ uv run lab mesh channels
 
 # PLAYBOOK ladder (Phase 6c; no-setup = zero LLM)
 uv run lab playbook run --fixture tests/fixtures/phase6c/no_setup.json --no-send --no-db
+
+# Watchlist monitor (Phase 6c-4; locked in_universe ∪ watch_only; not a call)
+uv run lab watchlist scan --fixture tests/fixtures/phase6c4/locked_scan.json --no-send --no-db
 ```
 
 `--send` on `lab desk run` is a gated Ops-pack POST (token required; pytest fail-closed). Default remains `--no-send`. `mm_delivery.SEND_ENABLED` stays false so send is never implicit. See [telegram.md](telegram.md).
@@ -145,12 +148,16 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 `lab playbook run --fixture PATH --no-send` emits `DAILY_BIAS`, `EDGE_SCAN`, `INTEL_PACKET`, `CHART_ARTIFACT`, `OFFICIAL_BRIEF`, `STATE_CARD` sharing `run_id` + `content_hash`. Quant computes R once (`mm_quant.trade_math`); mismatch is a failed run. LLM is WRITER/CRITIC only — a no-setup fixture makes zero LLM calls. See [../playbook.md](../playbook.md) and [llm-budget.md](llm-budget.md).
 
+## Watchlist monitor (Phase 6c-4)
+
+`lab watchlist scan --fixture PATH --no-send` lists every locked `in_universe` ∪ `watch_only` name with membership, monitor_state, freshness, and provenance. `deferred_must_cut` stays archived. PLAYBOOK setups are flagged only — trade math stays on the ladder. See [watchlist.md](watchlist.md).
+
 ## Gates kept
 
 `live_trading_enabled: false`. `risk-config-guard`. `promote-gate`. Point-in-time law. Degrade-never-invent. No secrets in git.
 
 ## Not this phase
 
-Listings/IPO (IMP-017 / 6d, parked until 6c-1..6c-5). Scorecards automation (6e). Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. 6c-4 watchlist, 6c-5 delivery expansion. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
+Listings/IPO (IMP-017 / 6d, parked until 6c-1..6c-5). Scorecards automation (6e). Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. 6c-5 delivery expansion. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
 
 Telegram: [telegram.md](telegram.md). LLM budget: [llm-budget.md](llm-budget.md). PLAYBOOK: [../playbook.md](../playbook.md). Factor math: [quant-desk.md](quant-desk.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

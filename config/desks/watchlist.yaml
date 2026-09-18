@@ -1,0 +1,30 @@
+# Phase 6c-4 / IMP-020 watchlist monitor (Research product).
+# Locked universe only: in_universe ∪ watch_only from config/universe.yaml.
+# Not a call. Not a Quant verdict. No promotion. No LLM. No send.
+# deferred_must_cut stays archived. 6c-5 delivery expansion and 6d listings stay out.
+
+version: "imp-020.1"
+desk: research
+product: watchlist
+cadence: daily
+op: observation
+universe: config/universe.yaml
+include:
+  - in_universe
+  - watch_only
+exclude:
+  - deferred_must_cut
+promote: false
+llm: false
+send: false
+states:
+  - COVERED
+  - PARTIAL
+  - UNAVAILABLE
+playbook:
+  # Flag existing PLAYBOOK EDGE_SCAN setups. Do not compute trade math here.
+  inherit_setup_flag: true
+  inherit_trade_math: false
+footer: >
+  Not a call. Not a Quant verdict. Locked membership is not promotion.
+  deferred_must_cut names stay archived. Missing tape stays unavailable.
