@@ -277,7 +277,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-011 DONE (#42). |
 | **Risk level** | Medium (runners can skip gates or look like calls). |
 | **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/43 |
 | **Lesson learned** | *(fill at close)* |
 
 ### IMP-013 — Phase 5e Telegram delivery
@@ -321,7 +321,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-009 | Chief of Staff / Hive Coordinator | Don | DONE | [#40](https://github.com/ElChopa11/market-memory/pull/40) Phase 5a desk boundaries |
 | IMP-010 | Data & Market Memory Desk | Don/Data | DONE | [#41](https://github.com/ElChopa11/market-memory/pull/41) Phase 5b Polygon + HL structure |
 | IMP-011 | Quant & Market Structure Desk | Don/Quant | DONE | [#42](https://github.com/ElChopa11/market-memory/pull/42) Phase 5c quant factors |
-| IMP-012 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 5d desk runners — this PR |
+| IMP-012 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | [#43](https://github.com/ElChopa11/market-memory/pull/43) Phase 5d desk runners |
 | IMP-013 | Chief of Staff / Hive Coordinator | Don | READY | Phase 5e Telegram — parked; do not implement here |
 
 `IN_PROGRESS` count: **0**. IMP-000–IMP-011 are `DONE`. IMP-012 is `IN_REVIEW` (DoD met in this PR). IMP-013 is `READY` (parked until 012 merges).
