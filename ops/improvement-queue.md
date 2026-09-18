@@ -756,8 +756,28 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | New calls; Quant Board rewrite; universe expansion; `live.yaml`; signing; Redis; paid data; closing OPEN incidents; reopening IMP-005 keys; execution. |
 | **Dependencies** | IMP-008 DONE (#38). IMP-031 DONE (#56). |
 | **Risk level** | Low (docs). Process risk if operators still read membership cards as calls. |
-| **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
+| **Status** | DONE |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/57 |
+| **Lesson learned** | Merged to `main` (#57, 2026-09-18). Call-card field-1 uses Quant closed-set only: BTC/NVDA/JPM **DEFER**; AVGO/MSFT/META/XOM **INSUFFICIENT_DATA**; ETH/UNI **MONITOR**; AAVE/SMH/XLF **DEFER**; RESEARCH_PRIORITY none. Stale HL dayNtl/OI appendix-only / **DO NOT SIZE**. Canonical watchlist `monitor.yaml` lock is IMP-033. Do not reopen call-card language. |
+
+### IMP-033 — Canonical watchlist monitor.yaml (Principal lock)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-033 |
+| **Priority** | P1 |
+| **Type** | config/desk product |
+| **Desk** | Ops + Research |
+| **Owner** | Ops/Don |
+| **Problem** | IMP-020 daily scan is DONE (#52) but membership / tiers / clusters are not yet encoded in a versioned `config/watchlist/monitor.yaml` Principal lock. The scan still keys off `config/universe.yaml` + `config/desks/watchlist.yaml`. Ops (sole publisher) holds Telegram until the scan is config-backed. Membership still risks being misread as a call. |
+| **Evidence** | Principal lock already in [`config/universe.yaml`](../config/universe.yaml): `in_universe` crypto BTC + equities NVDA AVGO MSFT META JPM XOM; `watch_only` crypto ETH UNI AAVE + equities SMH XLF; `deferred_must_cut` stays archived. IMP-020 DONE (#52); [ADR 0009](../ADR/0009-phase6c4-watchlist.md); [docs/runbooks/watchlist.md](../docs/runbooks/watchlist.md). Sister agent *Canonical watchlist monitor.yaml Principal lock* owns the YAML implementation. IMP-032 DONE (#57). Confirmed no other IMP-* `IN_PROGRESS` at intake. |
+| **Proposed outcome** | Versioned `config/watchlist/monitor.yaml` encoding the Principal lock with tiers/clusters for crypto then base. `lab watchlist scan` (or equivalent) reads this config. Membership is not a call. No universe expand. OPEN incidents untouched. Ops holds Telegram until the scan is config-backed. |
+| **Definition of done** | Queue: IMP-032 DONE (#57). This item the only implementation thread. Plan [plans/IMP-033-watchlist-monitor-yaml.md](plans/IMP-033-watchlist-monitor-yaml.md). `config/watchlist/monitor.yaml` + tiers/clusters merged. `lab watchlist scan` (or equivalent) config-backed. Tests. OPEN incidents unchanged (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV). No `live.yaml` / signing / credentials / delivery send-path edits. Ops does not publish until config-backed. Do not reopen IMP-020. |
+| **Non-goals** | Reopening IMP-020; re-implementing the monitor product; universe ticker expansion; treating membership as a call or Quant verdict; closing OPEN incidents; `live.yaml`; signing; wallets; Redis; delivery send-path changes; auto-publish Telegram before config-backed; paid data. |
+| **Dependencies** | IMP-020 DONE (#52). IMP-021 DONE (#53) — Ops holds send until config-backed. IMP-032 DONE (#57). Sister implementation agent *Canonical watchlist monitor.yaml Principal lock* (PR when linked). |
+| **Risk level** | Low–medium (language; publishing before config-backed). |
+| **Status** | IN_PROGRESS |
+| **PR** | *(this intake PR — paper only)*; implementation PR: sister agent *Canonical watchlist monitor.yaml Principal lock* (link when opened) |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -799,9 +819,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-029 | Quant | Quant | BACKLOG | Trial EODHD or Polygon Starter for 5y/delisted — **Principal paid** |
 | IMP-030 | Quant + Ops | Quant / Ops | DONE | [#55](https://github.com/ElChopa11/market-memory/pull/55) Phase 6e scorecards + queue automation |
 | IMP-031 | Quant | Quant | DONE | [#56](https://github.com/ElChopa11/market-memory/pull/56) Phase 6f strategy decay-watch |
-| IMP-032 | Ops + Quant | Don/Ops+Quant | IN_REVIEW | Call-card language vs Quant SoT 2026-09-18 — this PR |
+| IMP-032 | Ops + Quant | Don/Ops+Quant | DONE | [#57](https://github.com/ElChopa11/market-memory/pull/57) call-card language vs Quant SoT |
+| IMP-033 | Ops + Research | Ops/Don | IN_PROGRESS | Canonical watchlist monitor.yaml Principal lock — intake this PR; implementation sister agent (link when opened) |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-021 and IMP-030–IMP-031 are `DONE`. IMP-032 is `IN_REVIEW` (this PR). IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed). Single implementation thread.
+`IN_PROGRESS` count: **1**. IMP-000–IMP-021 and IMP-030–IMP-032 are `DONE`. IMP-033 is `IN_PROGRESS` (this intake PR — paper only; implementation PR is the sister agent *Canonical watchlist monitor.yaml Principal lock*, link when opened). IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed). Single implementation thread.
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
@@ -843,7 +864,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 DONE** (#34).
 
-Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032** (this PR).
+Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57).
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
@@ -851,7 +872,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 IN_REVIEW** (this PR).
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist `monitor.yaml` Principal lock is **IMP-033 IN_PROGRESS** (this intake PR; implementation is the sister agent — do not reopen IMP-020).
 
 Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md)). Adopt/trial intake is **IMP-022–IMP-029 BACKLOG**. No adapters in the evaluation PR. Do not take those items `IN_PROGRESS` while 6c-1..6c-5 occupy the implementation thread.
 
@@ -882,4 +903,6 @@ Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-0
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
 - IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
 - IMP-032 intakes call-card vs Quant SoT language alignment (Lunch Money Research L2). IMP-031 DONE (#56). OPEN incidents untouched. Locked universe unchanged. Paper only. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). Do not invent new calls.
+- IMP-032 merged as #57 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-033.
+- IMP-033 intakes canonical watchlist `monitor.yaml` (Principal lock + tiers/clusters). IMP-020 stays DONE (#52) — do not reopen. Paper only. No send. OPEN incidents untouched. Implementation is the sister agent *Canonical watchlist monitor.yaml Principal lock* (PR when linked). Single-threaded: IMP-033 is the only `IN_PROGRESS` item. Confirmed no other IMP-* `IN_PROGRESS` at intake.
 - Source evaluation 2026-09-18 (docs-only) intakes IMP-022–IMP-029 as `BACKLOG` adopt/trial recommendations. Does not modify IMP-018/6c-1 cutover, does not close OPEN incidents, does not add adapters or keys. Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) are Principal decision.

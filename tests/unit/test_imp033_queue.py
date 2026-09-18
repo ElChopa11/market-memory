@@ -1,0 +1,120 @@
+"""IMP-033 queue intake: canonical watchlist monitor.yaml Principal lock.
+
+Paper only. Does not reopen IMP-020. OPEN incidents stay OPEN.
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from mm_desks.queue import check_queue, load_queue
+
+ROOT = Path(__file__).resolve().parents[2]
+QUEUE = ROOT / "ops" / "improvement-queue.md"
+PLAN = ROOT / "ops" / "plans" / "IMP-033-watchlist-monitor-yaml.md"
+LIVE = ROOT / "config" / "risk" / "environments" / "live.yaml"
+UNIVERSE = ROOT / "config" / "universe.yaml"
+OPEN_INCIDENTS = (
+    "SCHED-001",
+    "BRIEF-TAG-20260918",
+    "SRC-STOOQ-404",
+    "SRC-FRED-MISSING-ENV",
+)
+
+
+def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
+    queue = QUEUE.read_text(encoding="utf-8")
+    board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
+    assert any("IMP-032" in line and "DONE" in line for line in board_lines)
+    assert any("#57" in line for line in board_lines if "IMP-032" in line)
+    assert not any("IMP-032" in line and "IN_REVIEW" in line for line in board_lines)
+    assert not any("IMP-032" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-020" in line and "DONE" in line for line in board_lines)
+    assert any("#52" in line for line in board_lines if "IMP-020" in line)
+    in_progress = re.findall(r"\| \*\*Status\*\* \| IN_PROGRESS \|", queue)
+    assert in_progress == ["| **Status** | IN_PROGRESS |"]
+    assert "`IN_PROGRESS` count: **1**" in queue
+    for item_id in OPEN_INCIDENTS:
+        assert item_id in queue
+    assert queue.count("| **Status** | OPEN |") >= 4
+    assert "sydney-morning-digest-8am" in queue
+    assert PLAN.is_file()
+    live = LIVE.read_text(encoding="utf-8")
+    assert "live_trading_enabled: false" in live
+
+
+def test_imp033_required_fields_and_lock() -> None:
+    queue = QUEUE.read_text(encoding="utf-8")
+    start = queue.index("### IMP-033 — Canonical watchlist monitor.yaml (Principal lock)")
+    end = queue.index("## Status board")
+    block = queue[start:end]
+    for field in (
+        "ID",
+        "Priority",
+        "Type",
+        "Desk",
+        "Owner",
+        "Problem",
+        "Evidence",
+        "Proposed outcome",
+        "Definition of done",
+        "Non-goals",
+        "Dependencies",
+        "Risk level",
+        "Status",
+        "PR",
+        "Lesson learned",
+    ):
+        assert f"| **{field}** |" in block, field
+    assert "| **Priority** | P1 |" in block
+    assert "| **Type** | config/desk product |" in block
+    assert "Ops + Research" in block
+    assert "Ops/Don" in block
+    assert "| **Status** | IN_PROGRESS |" in block
+    assert "config/watchlist/monitor.yaml" in block
+    assert "tiers/clusters" in block
+    assert "crypto then base" in block
+    assert "membership is not a call" in block.lower()
+    assert "no universe expand" in block.lower() or "No universe expand" in block
+    assert "Do not reopen IMP-020" in block
+    assert "Ops does not publish until config-backed" in block
+    assert "paper only" in block.lower()
+    for item_id in OPEN_INCIDENTS:
+        assert item_id in block
+    universe = UNIVERSE.read_text(encoding="utf-8")
+    assert "in_universe:" in universe
+    assert "watch_only:" in universe
+    assert "deferred_must_cut:" in universe
+    assert "BTC" in universe
+    for name in ("NVDA", "AVGO", "MSFT", "META", "JPM", "XOM"):
+        assert name in universe
+    for name in ("ETH", "UNI", "AAVE", "SMH", "XLF"):
+        assert name in universe
+
+
+def test_imp033_plan_points_at_imp020_and_sister() -> None:
+    plan = PLAN.read_text(encoding="utf-8")
+    assert "Do not reopen IMP-020" in plan
+    assert "IMP-020-phase6c4-watchlist.md" in plan
+    assert "0009-phase6c4-watchlist.md" in plan
+    assert "docs/runbooks/watchlist.md" in plan
+    assert "config/watchlist/monitor.yaml" in plan
+    assert "Canonical watchlist monitor.yaml Principal lock" in plan
+    assert "live_trading_enabled: false" in plan
+    assert "No send" in plan or "no send" in plan.lower() or "holds Telegram" in plan
+    assert "OPEN incidents untouched" in plan
+
+
+def test_queue_helper_single_in_progress_no_auto_merge() -> None:
+    report = load_queue(ROOT)
+    assert report.ok, report.errors
+    assert report.in_progress == ("IMP-033",)
+    assert report.auto_merge is False
+    assert report.auto_waive is False
+    open_ids = {item.item_id for item in report.items if item.kind == "incident" and item.status == "OPEN"}
+    assert set(OPEN_INCIDENTS) <= open_ids
+    parsed = check_queue(QUEUE.read_text(encoding="utf-8"))
+    assert parsed.in_progress == ("IMP-033",)
+    assert not parsed.errors
