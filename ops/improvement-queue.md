@@ -476,9 +476,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | 6c-2 naming; 6c-3 math (already #47); 6c-4 watchlist; 6c-5 delivery expansion; 6d listings; live/signing; Redis; new paid deps. |
 | **Dependencies** | IMP-016 DONE (#47). |
 | **Risk level** | Medium (cutover misses a sleeve). |
-| **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
-| **Lesson learned** | *(fill at close)* |
+| **Status** | DONE |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/49 |
+| **Lesson learned** | Merged to `main` (#49, 2026-09-18). Publishing roster is exactly five desks (`intel` `research` `quant` `ic_risk` `ops`). Coord/Don is orchestration only. Delivery is Ops-owned. Naming/display layer is IMP-019. Do not reopen the roster cutover. |
 
 ### IMP-019 — Phase 6c-2 naming layer
 
@@ -490,15 +490,15 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Ops |
 | **Owner** | Don/Ops |
 | **Problem** | 6c-1 cuts the roster. Display names / Principal-facing naming layer are still Phase-5 strings in places. |
-| **Evidence** | Principal 6c-2 (not this PR). |
-| **Proposed outcome** | Naming layer on the five-desk roster. |
-| **Definition of done** | *(filled in the 6c-2 PR)*. Not started in IMP-018. |
-| **Non-goals** | Reopening the 6c-1 roster; 6c-4/5; 6d; live/signing. |
-| **Dependencies** | IMP-018 must be DONE. |
+| **Evidence** | Principal 6c-2; IMP-018 DONE #49. |
+| **Proposed outcome** | Single naming module + `config/desks/naming.yaml` for the five-desk roster, PLAYBOOK artifact labels, Coord orchestration labels, and sleeve/gate titles. Used by artifacts, Telegram headers, mesh envelopes, CLI, and runbooks. |
+| **Definition of done** | Canonical slugs + display names for intel/research/quant/ic_risk/ops (+ coord orchestration labels). Artifact type machine ids vs human labels (`DAILY_BIAS`…`STATE_CARD`). Unknown slug fails closed. Publishing paths resolve through `mm_common.naming`. Runbooks on five-desk vocabulary. Tests green. `--no-send`. No 6c-4/5/6d. |
+| **Non-goals** | Reopening the 6c-1 roster; 6c-4 watchlist; 6c-5 delivery expansion; 6d listings; live/signing; Redis; new paid deps. |
+| **Dependencies** | IMP-018 DONE (#49). |
 | **Risk level** | Low. |
-| **Status** | PARKED |
-| **PR** | — |
-| **Lesson learned** | Parked. Do not implement 6c-2 in IMP-018. |
+| **Status** | IN_REVIEW |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
 
 ### IMP-020 — Phase 6c-4 watchlist monitor
 
@@ -702,8 +702,6 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 
 ---
 
----
-
 ## Status board
 
 
@@ -727,8 +725,8 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-015 | Macro & Cross-Asset Desk + Data & Market Memory Desk | Don/Macro+Data | DONE | [#46](https://github.com/ElChopa11/market-memory/pull/46) Phase 6b flow+macro+regime |
 | IMP-016 | Ops (was CoS) | Don | DONE | [#47](https://github.com/ElChopa11/market-memory/pull/47) Phase 6c PLAYBOOK + fan-out + 6c-0 |
 | IMP-017 | Research (listings sleeve) | Ops/Research | PARKED | Phase 6d listings/IPO — blocked until 6c-1..6c-5 |
-| IMP-018 | Ops | Don/Ops | IN_REVIEW | Phase 6c-1 desk consolidation 11→5 — this PR |
-| IMP-019 | Ops | Don/Ops | PARKED | Phase 6c-2 naming layer |
+| IMP-018 | Ops | Don/Ops | DONE | [#49](https://github.com/ElChopa11/market-memory/pull/49) Phase 6c-1 desk consolidation 11→5 |
+| IMP-019 | Ops | Don/Ops | IN_REVIEW | Phase 6c-2 naming layer — this PR |
 | IMP-020 | Research | Research | PARKED | Phase 6c-4 watchlist monitor |
 | IMP-021 | Ops | Ops | PARKED | Phase 6c-5 delivery expansion |
 | IMP-022 | Ops + Intel | Ops (Principal for secrets) / Intel | BACKLOG | Adopt FRED env + ALFRED — evaluation 2026-09-18; do not start during 6c-1..6c-5 |
@@ -740,7 +738,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-028 | Intel + Quant | Intel / Quant | BACKLOG | Polygon SI / options OI audit; paid SKUs **Principal** |
 | IMP-029 | Quant | Quant | BACKLOG | Trial EODHD or Polygon Starter for 5y/delisted — **Principal paid** |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-016 are `DONE`. IMP-018 is `IN_REVIEW` (this PR). IMP-017/019/020/021 are `PARKED`. IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters in that PR). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-016 and IMP-018 are `DONE`. IMP-019 is `IN_REVIEW` (this PR). IMP-017/020/021 are `PARKED`. IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters in that PR). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed).
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
@@ -790,7 +788,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 IN_REVIEW** (this PR). Phase 6d listings/IPO is **IMP-017 PARKED** until 6c-1..6c-5 complete. Do not start 6d in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 IN_REVIEW** (this PR). Phase 6d listings/IPO is **IMP-017 PARKED** until 6c-1..6c-5 complete. Do not start 6d, 6c-4, or 6c-5 in this PR.
 
 Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md)). Adopt/trial intake is **IMP-022–IMP-029 BACKLOG**. No adapters in the evaluation PR. Do not take those items `IN_PROGRESS` while 6c-1..6c-5 occupy the implementation thread.
 
@@ -813,5 +811,6 @@ Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-0
 - IMP-014 merged as #45 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-015.
 - IMP-015 merged as #46 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-016.
 - IMP-016 merged as #47 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-018.
-- IMP-018 intakes Phase 6c-1 desk consolidation (11→5) per Principal resume-build order 2026-09-19. OPEN incidents logged (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV). IMP-017 remains PARKED until 6c-1..6c-5 complete. Bus = Postgres NOTIFY, no Redis. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge).
+- IMP-018 merged as #49 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-019.
+- IMP-019 intakes Phase 6c-2 naming / display layer per Principal resume-build (ops / Operation Lunch Money). IMP-018 DONE (#49). IMP-017/020/021 remain PARKED. Bus = Postgres NOTIFY, no Redis. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge).
 - Source evaluation 2026-09-18 (docs-only) intakes IMP-022–IMP-029 as `BACKLOG` adopt/trial recommendations. Does not modify IMP-018/6c-1 cutover, does not close OPEN incidents, does not add adapters or keys. Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) are Principal decision.

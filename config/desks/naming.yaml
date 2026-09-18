@@ -1,0 +1,148 @@
+# Canonical desk + PLAYBOOK artifact naming (Phase 6c-2 / IMP-019).
+# Machine ids (slugs / artifact type ids) are stable. Human labels live here
+# and in mm_common.naming — tests fail closed if they drift.
+# Coord is orchestration only (not a publishing desk). Delivery is Ops-owned.
+# Do not add watchlist (6c-4), delivery expansion (6c-5), or listings (6d) here.
+
+version: "imp-019.1"
+
+publishing_desks:
+  - slug: intel
+    display: Intel (Market Intelligence)
+    short: Intel
+    tier: "2"
+    kind: publishing
+    notes: Ingest + flow + macro + Pulse sleeves
+  - slug: research
+    display: Research (Investment Research)
+    short: Research
+    tier: "3"
+    kind: publishing
+    notes: Crypto + equities + chart sleeves
+  - slug: quant
+    display: Quant
+    short: Quant
+    tier: "4"
+    kind: publishing
+    notes: Closed-verdict triage; factor math; not a call
+  - slug: ic_risk
+    display: IC/Risk (Investment Committee & Risk)
+    short: IC/Risk
+    tier: "5-6"
+    kind: publishing
+    notes: Two gates (Skeptic + Risk), not two desks
+  - slug: ops
+    display: Ops
+    short: Ops
+    tier: "1"
+    kind: publishing
+    notes: Queue, pack assemble, delivery. Coord/Don orchestrates — not a sixth desk
+
+orchestration:
+  - slug: coord
+    display: Coord (orchestration)
+    short: Coord
+    tier: "1"
+    kind: orchestration
+    notes: Don/Coord is orchestration only. Channel coord.assemble is not a desk slug.
+
+routes:
+  - slug: alerts
+    display: Alerts
+    short: Alerts
+    tier: "1"
+    kind: route
+    notes: Ops-owned Telegram sink. Not a publishing desk.
+
+sleeves:
+  - slug: crypto
+    display: Research (Investment Research) / crypto sleeve
+    short: crypto sleeve
+    tier: 3a
+    kind: sleeve
+    notes: Maps into research. Not a publishing desk.
+  - slug: equities
+    display: Research (Investment Research) / equities sleeve
+    short: equities sleeve
+    tier: 3b
+    kind: sleeve
+    notes: Maps into research. Not a publishing desk.
+  - slug: chart
+    display: Research (Investment Research) / chart product
+    short: chart product
+    tier: "3"
+    kind: sleeve
+    notes: Chart is a Research product, not a desk.
+  - slug: flow
+    display: Intel (Market Intelligence) / flow sleeve
+    short: flow sleeve
+    tier: "2"
+    kind: sleeve
+    notes: Maps into intel. Not a publishing desk.
+  - slug: macro
+    display: Intel (Market Intelligence) / macro sleeve
+    short: macro sleeve
+    tier: "2"
+    kind: sleeve
+    notes: Maps into intel. Not a publishing desk.
+  - slug: briefing
+    display: Intel (Market Intelligence) / Pulse sleeve
+    short: Pulse sleeve
+    tier: "2"
+    kind: sleeve
+    notes: Maps into intel. Not a publishing desk.
+
+gates:
+  - slug: skeptic
+    display: IC/Risk / Skeptic gate
+    short: Skeptic gate
+    tier: "5"
+    kind: gate
+    notes: Gate inside ic_risk, not a desk.
+  - slug: risk
+    display: IC/Risk / Risk gate
+    short: Risk gate
+    tier: "6"
+    kind: gate
+    notes: Gate inside ic_risk, not a desk.
+
+artifacts:
+  - id: DAILY_BIAS
+    display: Daily Bias
+    desk: research
+    notes: Instrument / direction / conviction / level
+  - id: EDGE_SCAN
+    display: Edge Scan
+    desk: research
+    notes: SCAN_CARD fields + optional writer prose
+  - id: INTEL_PACKET
+    display: Intel Packet
+    desk: intel
+    notes: Feeds, missing, idea detail
+  - id: CHART_ARTIFACT
+    display: Chart Artifact
+    desk: research
+    notes: Levels + PNG; chart is a Research product
+  - id: OFFICIAL_BRIEF
+    display: Official Brief
+    desk: ops
+    notes: 30-second executive cut
+  - id: STATE_CARD
+    display: State Card
+    desk: ops
+    notes: Flat / armed / in / cooling + permission + rearm
+
+sleeve_map:
+  crypto: research
+  equities: research
+  chart: research
+  flow: intel
+  macro: intel
+  briefing: intel
+  skeptic: ic_risk
+  risk: ic_risk
+  coord: ops
+
+channels:
+  assemble: coord.assemble
+  dq: dq.event

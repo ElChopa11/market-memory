@@ -9,13 +9,15 @@ from typing import Any
 
 import yaml
 
-from mm_desks.roster import (
+from mm_desks.naming import (
     ASSEMBLE_CHANNEL,
     DESK_META,
     DQ_CHANNEL,
     IC_RISK,
     INTEL,
-    OPS,
+    desk_display as naming_desk_display,
+    desk_tier as naming_desk_tier,
+    require_publishing_desk,
 )
 
 DEFAULT_CADENCE_REL = Path("config/desks/cadence.yaml")
@@ -76,7 +78,7 @@ def _load(repo_root: str) -> CadenceConfig:
             )
         )
         return CadenceConfig(
-            version="imp-018.1",
+            version="imp-019.1",
             regime_placeholder=REGIME_PLACEHOLDER,
             channels=channels,
             desks=desks,
@@ -115,7 +117,7 @@ def _load(repo_root: str) -> CadenceConfig:
             )
         )
     return CadenceConfig(
-        version=str(raw.get("version") or "imp-018.1"),
+        version=str(raw.get("version") or "imp-019.1"),
         regime_placeholder=str(raw.get("regime_placeholder") or REGIME_PLACEHOLDER),
         channels=channels,
         desks=desks,
@@ -128,6 +130,7 @@ def load_cadence(repo_root: Path | None = None) -> CadenceConfig:
 
 
 def cadence_for(slug: str, repo_root: Path | None = None) -> DeskCadence:
+    require_publishing_desk(slug)
     cfg = load_cadence(repo_root)
     return cfg.desks.get(slug) or _fallback_desk(slug)
 
@@ -137,11 +140,11 @@ def all_channels(repo_root: Path | None = None) -> tuple[str, ...]:
 
 
 def desk_display(slug: str) -> str:
-    return DESK_META.get(slug, (slug, "?"))[0]
+    return naming_desk_display(slug)
 
 
 def desk_tier(slug: str) -> str:
-    return DESK_META.get(slug, (slug, "?"))[1]
+    return naming_desk_tier(slug)
 
 
 def clear_cadence_cache() -> None:

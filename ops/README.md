@@ -31,7 +31,8 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Phase 6a PG LISTEN/NOTIFY mesh (IMP-014) is **DONE** (#45).
 - Phase 6b flow/macro/regime (IMP-015) is **DONE** (#46).
 - Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 (IMP-016) is **DONE** (#47).
-- Phase 6c-1 five-desk roster (IMP-018) is **IN_REVIEW** (this PR).
+- Phase 6c-1 five-desk roster (IMP-018) is **DONE** (#49).
+- Phase 6c-2 naming layer (IMP-019) is **IN_REVIEW** (this PR).
 - Phase 6d listings/IPO (IMP-017) is **PARKED** until 6c-1..6c-5 complete.
 - Source evaluation 2026-09-18 (IMP-022–IMP-029) is **BACKLOG** docs recommendation. Do not implement adapters in that PR.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

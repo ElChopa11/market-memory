@@ -16,7 +16,7 @@ from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
 from mm_research_kit.state_machine import TransitionLog
 
-ENGINE_VERSION = "imp-018.1"
+ENGINE_VERSION = "imp-019.1"
 LIVE_TRADING_ENABLED = False
 REGIME_PLACEHOLDER = "unset"
 OP_OBSERVATION = "observation"

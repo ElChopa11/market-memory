@@ -8,11 +8,11 @@ from mm_desks.crypto import run as run_crypto
 from mm_desks.equities import run as run_equities
 from mm_desks.combine import combine_outputs
 from mm_desks.protocol import DeskContext, DeskOutput
-from mm_desks.roster import RESEARCH, DESK_META
+from mm_desks.naming import RESEARCH, desk_display, desk_tier
 
 SLUG = RESEARCH
-TIER = DESK_META[RESEARCH][1]
-DISPLAY_NAME = DESK_META[RESEARCH][0]
+TIER = desk_tier(RESEARCH)
+DISPLAY_NAME = desk_display(RESEARCH)
 
 
 def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:

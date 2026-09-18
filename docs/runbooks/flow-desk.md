@@ -11,7 +11,7 @@ uv run lab desk run --desk intel --fixture tests/fixtures/phase6b/frozen_day.jso
 uv run pytest tests/unit/test_phase6b_flow.py tests/adversarial/test_phase6b_point_in_time.py
 ```
 
-Mesh publish uses the existing Postgres `LISTEN/NOTIFY` bus (`desk.flow.output`). Coord still assembles if flow is missing or killed.
+Mesh publish uses the existing Postgres `LISTEN/NOTIFY` bus (`desk.intel.output`). Ops still assembles if Intel is missing or killed.
 
 ## Metrics
 

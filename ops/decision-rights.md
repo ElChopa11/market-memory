@@ -115,13 +115,13 @@ Research desk owns crypto / equities sleeves. Intel owns flow / macro. Data prop
 | AGENTS.md role | Desk in this model |
 |---|---|
 | Principal | Principal (Tier 0) |
-| Coordinator | Chief of Staff / Hive Coordinator (Don) (Tier 1) |
-| Intel / ingest | Data & Market Memory Desk (Tier 2) |
-| Research | Crypto Desk (3a); Equities & Post-IPO Desk (3b); Macro & Cross-Asset Desk (not numbered) |
-| Quant | Quant & Market Structure Desk (Tier 4) |
-| Skeptic | Independent Skeptic (Tier 5) |
-| Briefing | Macro & Cross-Asset Desk (Pulse) |
-| Risk | Risk (independent veto) (Tier 6) |
+| Coordinator | Ops (Don/Coord orchestrates; not a publishing desk) |
+| Intel / ingest | Intel (Market Intelligence) |
+| Research | Research (Investment Research) — crypto / equities / chart sleeves |
+| Quant | Quant |
+| Skeptic | IC/Risk / Skeptic gate (Tier 5) |
+| Briefing | Intel / Pulse sleeve |
+| Risk | IC/Risk / Risk gate (Tier 6) |
 | Paper | Lab control under Principal — Paper Ledger (Tier 7) |
 | Execution | Execution & Fund Ops (**future only**) |
 | Unicorn | Adjacent later cell; not a desk here |

@@ -34,7 +34,7 @@ Within `window_minutes` of a **high-importance** calendar event, ideas are tagge
 
 ## Envelope header
 
-`stamp_output` / `apply_regime_to_context` copy a successful tag onto every desk envelope. Mesh channels: `desk.macro.output`, `desk.macro.alert`, `dq.event` on degrade.
+`stamp_output` / `apply_regime_to_context` copy a successful tag onto every desk envelope. Mesh channels: `desk.intel.output`, `desk.intel.alert`, `dq.event` on degrade.
 
 ## Import walls
 

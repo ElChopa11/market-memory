@@ -16,7 +16,8 @@ from typing import Any
 from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
 from mm_desks.bus import Bus, DeskHealth, EnvelopeStore, InMemoryBus, InMemoryEnvelopeStore, NotifyEvent
-from mm_desks.cadence import CHANNEL_ASSEMBLE, DESK_META, all_channels
+from mm_desks.cadence import CHANNEL_ASSEMBLE, all_channels
+from mm_desks.naming import DESK_META
 from mm_desks.envelope import (
     ERROR_CLASS_KILLED,
     ERROR_CLASS_MISSING,

@@ -1,4 +1,4 @@
-"""Flow / liquidity desk (Phase 6b). Derived metrics from existing HL + equity tape."""
+"""Intel flow sleeve (Phase 6b). Derived metrics from existing HL + equity tape. Not a publishing desk."""
 
 from __future__ import annotations
 
@@ -22,9 +22,11 @@ from mm_quant.models import MarketPanel, StructurePoint
 from mm_quant.panel import panel_from_mapping
 from mm_common.time import parse_utc
 
+from mm_desks.naming import sleeve_display, sleeve_tier
+
 SLUG = "flow"
-TIER = "flow"
-DISPLAY_NAME = "Flow / Liquidity Desk"
+TIER = sleeve_tier(SLUG)
+DISPLAY_NAME = sleeve_display(SLUG)
 
 
 def _point(raw: dict[str, Any], *, fixture_id: str | None) -> StructurePoint:

@@ -29,6 +29,7 @@ from mm_desks.ladder import (
     run_content_hash,
     stamp_run_hash,
 )
+from mm_desks.naming import artifact_desk
 from mm_desks.llm.budget import ERROR_BUDGET_EXCEEDED, TokenBudget, load_token_budget, write_day_disable_flag
 from mm_desks.llm.client import LlmClient, LlmResult
 from mm_desks.llm.context import build_writer_payload, cap_rows
@@ -370,7 +371,7 @@ def run_playbook(
             )
             result = client.complete(
                 artifact_type="EDGE_SCAN",
-                desk_slug="ops",
+                desk_slug=artifact_desk("EDGE_SCAN"),
                 run_id=run_id,
                 prompt=prompt,
                 user_payload=payload,
@@ -475,7 +476,7 @@ def run_playbook(
         prompt = load_prompt("OFFICIAL_BRIEF", repo_root)
         result = client.complete(
             artifact_type="OFFICIAL_BRIEF",
-            desk_slug="ops",
+            desk_slug=artifact_desk("OFFICIAL_BRIEF"),
             run_id=run_id,
             prompt=prompt,
             user_payload=build_writer_payload(

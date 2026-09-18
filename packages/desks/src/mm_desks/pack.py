@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from mm_common.time import in_ops_tz
+from mm_desks.naming import PIPELINE, desk_display
 from mm_desks.protocol import DeskContext, DeskOutput
 from mm_desks.universe import membership_of
 
@@ -53,24 +54,24 @@ def _gaps(ctx: DeskContext) -> list[str]:
     intel = _desk(ctx, "intel")
     if intel:
         for source_id in intel.payload.get("required_missing") or []:
-            rows.append(f"| {source_id} missing | Intel assemble DEGRADED | Intel (Market Intelligence) |")
+            rows.append(f"| {source_id} missing | Intel assemble DEGRADED | {desk_display('intel')} |")
         for feed in intel.payload.get("feeds") or []:
             if feed.get("status") != "ok":
                 rows.append(
-                    f"| {feed.get('source_id')} {feed.get('status')} | not invented | Intel (Market Intelligence) |"
+                    f"| {feed.get('source_id')} {feed.get('status')} | not invented | {desk_display('intel')} |"
                 )
     quant = _desk(ctx, "quant")
     if quant:
         for card in quant.payload.get("cards") or []:
             for gap in card.get("gaps") or []:
-                rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | Quant |")
+                rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | {desk_display('quant')} |")
     for slug in ("intel", "research", "quant", "ic_risk"):
         out = _desk(ctx, slug)
         if out is not None and out.status == "FAILED":
             err = out.error_class or "desk_error"
             rows.append(f"| {slug} {err} | Ops assembled with desk FAILED | {out.desk} |")
     if _desk(ctx, "ops") is None:
-        rows.append("| ops pack | waiting on Ops assemble | Ops |")
+        rows.append(f"| ops pack | waiting on Ops assemble | {desk_display('ops')} |")
     if not rows:
         rows.append("| none listed | — | — |")
     seen: set[str] = set()
@@ -139,14 +140,14 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "Research / desk product copy for the Principal. **Not an order. Not Execution. Not a Skeptic or Risk self-clear.**",
         "",
-        f"- **Engine:** imp-018.1",
+        f"- **Engine:** imp-019.1",
         f"- **Fixture:** {day.fixture_id}",
         "",
         "## HEADER",
         "",
         f"- **As-of (Australia/Sydney):** {in_ops_tz(as_of).isoformat()}",
         f"- **Knowledge watermark (as_of_knowledge):** {as_of.isoformat()}",
-        "- **Authoring desk / tier:** Intel | Research | Quant | IC/Risk (two gates) | Ops pack",
+        f"- **Authoring desk / tier:** {' | '.join(desk_display(slug) for slug in PIPELINE)}",
         f"- **Universe membership:** `{membership}`",
         f"- **Lifecycle status:** `{lifecycle}`",
         f"- **Intent / thesis id:** {thesis.slug if thesis else '—'}",

@@ -1,8 +1,8 @@
-# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro sleeves (Phase 6b) + five-desk roster (Phase 6c-1)
+# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro sleeves (Phase 6b) + five-desk roster (Phase 6c-1) + naming (Phase 6c-2)
 
-Private research lab control plane. **Five publishing desks.** Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are Intel sleeves (**Phase 6b**). Hive PLAYBOOK + Ops-owned Telegram fan-out are **Phase 6c** (`lab playbook run`, `lab deliver fanout`; default `--no-send`). No live trading. **No Redis.**
+Private research lab control plane. **Five publishing desks.** Names are single-sourced in [`config/desks/naming.yaml`](../../config/desks/naming.yaml) and `mm_common.naming`. Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are Intel sleeves (**Phase 6b**). Hive PLAYBOOK + Ops-owned Telegram fan-out are **Phase 6c** (`lab playbook run`, `lab deliver fanout`; default `--no-send`). No live trading. **No Redis.**
 
-Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0007-phase6c1-desk-roster.md](../../ADR/0007-phase6c1-desk-roster.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md).
+Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). ADR: [ADR/0008-phase6c2-naming.md](../../ADR/0008-phase6c2-naming.md), [ADR/0007-phase6c1-desk-roster.md](../../ADR/0007-phase6c1-desk-roster.md). Permissions: [AGENTS.md](../../AGENTS.md). Telegram runbook: [telegram.md](telegram.md).
 
 ## 6c-1 cutover (11 → 5)
 
@@ -18,7 +18,22 @@ Principal resume-build order 2026-09-19. Publishing roster is exactly:
 
 Don/Coord is orchestration only (`coord.assemble` is a bus channel, not a desk). `lab desk run --desk crypto|flow|macro|skeptic|risk|coord` is rejected.
 
-Rollback: revert the IMP-018 PR. No live path to unwind.
+Rollback: revert the IMP-018 PR for roster; revert IMP-019 for display names. No live path to unwind.
+
+## Naming (Phase 6c-2)
+
+Do not invent desk titles in artifacts, Telegram headers, mesh envelopes, CLI help, or runbooks. Lookup:
+
+| Machine id | Human label |
+|---|---|
+| `intel` | Intel (Market Intelligence) |
+| `research` | Research (Investment Research) |
+| `quant` | Quant |
+| `ic_risk` | IC/Risk (Investment Committee & Risk) |
+| `ops` | Ops |
+| `coord` | Coord (orchestration) — **not a publishing desk** |
+
+PLAYBOOK types (`DAILY_BIAS`, `EDGE_SCAN`, `INTEL_PACKET`, `CHART_ARTIFACT`, `OFFICIAL_BRIEF`, `STATE_CARD`) keep those machine ids; human labels are Daily Bias, Edge Scan, Intel Packet, Chart Artifact, Official Brief, State Card. Unknown slug → fail closed.
 
 ## What operators can do
 
@@ -136,6 +151,6 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 ## Not this phase
 
-Listings/IPO (IMP-017 / 6d, parked until 6c-1..6c-5). Scorecards automation (6e). Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. 6c-2 naming, 6c-4 watchlist, 6c-5 delivery expansion. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
+Listings/IPO (IMP-017 / 6d, parked until 6c-1..6c-5). Scorecards automation (6e). Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. 6c-4 watchlist, 6c-5 delivery expansion. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
 
 Telegram: [telegram.md](telegram.md). LLM budget: [llm-budget.md](llm-budget.md). PLAYBOOK: [../playbook.md](../playbook.md). Factor math: [quant-desk.md](quant-desk.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

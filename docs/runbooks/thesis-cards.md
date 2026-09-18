@@ -1,6 +1,6 @@
-# Crypto / Equities thesis cards
+# Crypto / Equities thesis cards (Research sleeves)
 
-Dedicated desk cards for Crypto Desk and Equities & Post-IPO Desk. **Research only. Not a trading decision.**
+Dedicated Research sleeves for crypto and equities (not publishing desks). **Research only. Not a trading decision.** Canonical desk: Research (Investment Research) / `research`.
 
 Plan: [ops/plans/IMP-007-thesis-card-templates.md](../../ops/plans/IMP-007-thesis-card-templates.md).
 
@@ -10,8 +10,8 @@ Generic `templates/thesis.md` remains the **lifecycle spine** (`lab thesis new` 
 
 | Desk | Template | Copied into workspace as |
 |---|---|---|
-| Crypto Desk | `templates/crypto-thesis-card.md` | `crypto-thesis-card.md` |
-| Equities & Post-IPO Desk | `templates/equities-thesis-card.md` | `equities-thesis-card.md` |
+| Research (Investment Research) / crypto sleeve | `templates/crypto-thesis-card.md` | `crypto-thesis-card.md` |
+| Research (Investment Research) / equities sleeve | `templates/equities-thesis-card.md` | `equities-thesis-card.md` |
 
 ```bash
 uv run lab thesis new \

@@ -33,7 +33,11 @@ def test_coord_mirror_keeps_content_hash() -> None:
     assert result.coord_mirror.payload.content_hash == result.primary.payload.content_hash
     assert result.content_hash == result.primary.payload.content_hash
     assert "ops mirror" in result.coord_mirror.payload.text
-    assert result.primary.payload.text == markdown
+    from mm_common.naming import telegram_header
+
+    header = telegram_header("research")
+    assert result.primary.payload.text.startswith(header)
+    assert markdown in result.primary.payload.text
 
 
 def test_unknown_uid_silent_drop_audit() -> None:

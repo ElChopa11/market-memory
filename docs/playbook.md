@@ -63,7 +63,7 @@ Every artifact carries `trade_math_hash`. Recompute or drift → `error_class=ma
 - Drawdown ladder ([`config/risk/drawdown.yaml`](../config/risk/drawdown.yaml)): rolling −8% sleeve halves; −15% dry + review. **n=1 changes nothing.**
 - Closed idea → fill [`templates/post-mortem.md`](../templates/post-mortem.md) before that instrument publishes a new idea (`PostMortemRequired` otherwise).
 
-## Chart desk
+## Chart product (Research sleeve)
 
 Levels are computed **once** and quoted by others (`mm_desks.chart.compute_levels`). PNG is a deterministic stdlib encode (no matplotlib). Filename = `{content_hash}.png`. Missing bars stay missing (not invented).
 
@@ -73,7 +73,7 @@ See [runbooks/llm-budget.md](runbooks/llm-budget.md). Writer prose uses placehol
 
 ## Delivery
 
-`lab deliver fanout --desk crypto --from-markdown PATH --as-of … --no-send` posts the desk channel and a Coord mirror with the **same** `content_hash` plus footer. Never re-render. Inbound is read-only (`/status` `/desk` `/brief` `/idea` `/gaps` `/halt`). Unknown uid is a silent drop + audit.
+`lab deliver fanout --desk research --from-markdown PATH --as-of … --no-send` posts the desk channel and an Ops mirror with the **same** `content_hash` plus footer. Never re-render. Inbound is read-only (`/status` `/desk` `/brief` `/idea` `/gaps` `/halt`). Unknown uid is a silent drop + audit.
 
 ## Not this phase
 

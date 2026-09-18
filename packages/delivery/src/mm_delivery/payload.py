@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from mm_common.hashing import canonical_json, sha256_hex
+from mm_common.naming import require_route_slug
 from mm_common.time import as_utc
 from mm_delivery.config import CHAT_ID_ENV, TelegramSettings, resolve_chat_id_env
 from mm_delivery.format import chunk_markdown_v2
@@ -90,6 +91,7 @@ def build_payload(
     content_hash_override: str | None = None,
 ) -> DeliveryPayload:
     """Exact Telegram chunks + idempotency key. Secrets stay in env, not in this object."""
+    require_route_slug(desk)
     watermark = as_utc(as_of)
     content_hash = content_hash_override or sha256_hex(markdown.encode("utf-8"))
     key = idempotency_key(desk=desk, as_of=watermark, content_hash=content_hash)

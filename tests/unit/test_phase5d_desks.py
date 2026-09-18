@@ -140,11 +140,11 @@ def test_illegal_transition_rejected() -> None:
             ctx,
             from_status="in_skeptic",
             to_status="paper",
-            actor="Risk (independent veto)",
+            actor="IC/Risk / Risk gate",
             reason="should not promote",
             ts=day.as_of_knowledge,
             risk_decision="block",
-            author="Crypto Desk",
+            author="Research",
         )
 
 

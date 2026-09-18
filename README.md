@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 6 in progress (6c-1 five-desk roster on PG LISTEN/NOTIFY mesh).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). Phase 6b flow/macro/regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). **No live trading, no order signing, no wallet code.** IMP-018 is this tree. Phase 6d listings/IPO is parked as IMP-017 until 6c-1..6c-5 complete.
+**Status: Phase 6 in progress (6c-2 naming layer on the five-desk roster).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). Phase 6b flow/macro/regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). **No live trading, no order signing, no wallet code.** IMP-019 is this tree. Phase 6d listings/IPO is parked as IMP-017 until 6c-1..6c-5 complete.
 
 ## Start here
 
@@ -37,6 +37,8 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ADR/0004-desk-mesh-pg-notify.md](ADR/0004-desk-mesh-pg-notify.md) | Phase 6a desk mesh; bus = Postgres LISTEN/NOTIFY (no Redis) |
 | [ADR/0005-flow-macro-regime.md](ADR/0005-flow-macro-regime.md) | Phase 6b flow/liquidity + macro regime tag (no Redis) |
 | [ADR/0006-phase6c-playbook-telegram.md](ADR/0006-phase6c-playbook-telegram.md) | Phase 6c PLAYBOOK + per-desk Telegram + deterministic-first LLM |
+| [ADR/0007-phase6c1-desk-roster.md](ADR/0007-phase6c1-desk-roster.md) | Phase 6c-1 five-desk roster (11→5) |
+| [ADR/0008-phase6c2-naming.md](ADR/0008-phase6c2-naming.md) | Phase 6c-2 naming / display layer |
 
 Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17). Ingest membership stays full: Hyperliquid **BTC, ETH, UNI, AAVE** perps; equities **NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM** are a Phase 3 briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority** — **in-universe membership** (thesis priority; not a Quant verdict): BTC, NVDA, AVGO, MSFT, META, JPM, XOM; **watch-only** (still ingested / still in membership; no thesis-priority): ETH, UNI, AAVE, SMH, XLF (Skeptic PR #14 / call cards PR #13 / FAIL-patch PR #23). Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY) stay archived. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 

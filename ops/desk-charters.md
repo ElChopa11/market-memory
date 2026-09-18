@@ -2,7 +2,7 @@
 
 Market Memory is a **private research lab**, not a managed fund and not an autonomous trading system. These charters encode a hedge-fund-style desk model for how work is owned **today** (Phase 5a: desk boundaries over Phase 4 backtest + paper/shadow ledger). They do not raise external capital, enable live trading, or authorise any desk to place orders.
 
-**Canonical desk names (Principal lock, Phase 6c-1)** — use these strings in reports, the improvement queue, and PR titles. Exactly **five** publishing desks:
+**Canonical desk names (Principal lock, Phase 6c-1 + 6c-2)** — use `mm_common.naming` / [`config/desks/naming.yaml`](../config/desks/naming.yaml). Exactly **five** publishing desks:
 
 | Desk | Slug | Notes |
 |---|---|---|
@@ -61,7 +61,8 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | Phase 6a PG NOTIFY mesh (IMP-014) | Redis; live path |
 | Phase 6b flow/macro/regime (IMP-015) | live path |
 | Phase 6c per-desk Telegram + PLAYBOOK (IMP-016 DONE #47) | live path; live LLM HTTP |
-| Phase 6c-1 five-desk roster (IMP-018) | 6c-2 naming; 6c-4 watchlist; 6c-5 delivery expansion; 6d listings |
+| Phase 6c-1 five-desk roster (IMP-018 DONE #49) | 6c-4 watchlist; 6c-5 delivery expansion; 6d listings |
+| Phase 6c-2 naming layer (IMP-019) | live path; 6c-4/5; 6d |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 
@@ -176,7 +177,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Crypto Desk
+## Research sleeves (crypto / equities / chart) — not publishing desks
+
+As of Phase 6c-1 these are **Research** sleeves. Historical "Crypto Desk" / "Equities & Post-IPO Desk" titles are retired.
+
+### Crypto sleeve
 
 **Mandate.** Digital-asset research, initially Hyperliquid market structure: spot/perp structure, funding, open interest, basis, liquidations, flows, on-chain; crypto catalysts and regimes; verified sector/protocol research; source-linked crypto research cards.
 
@@ -200,7 +205,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Equities & Post-IPO Desk
+### Equities sleeve
 
 **Mandate.** Equity, thematic, and post-IPO research: filings, earnings, guidance, peers, lock-ups, dilution, liquidity, event calendars; post-IPO underperformance and reclaim screens; relative-value; distinguish genuine recovery vs bounce.
 
@@ -225,7 +230,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Macro & Cross-Asset Desk
+## Intel sleeves (flow / macro / Pulse) — not publishing desks
+
+As of Phase 6c-1 these are **Intel** sleeves. Historical "Macro & Cross-Asset Desk" as a publishing desk is retired.
+
+## Macro & Cross-Asset (Intel sleeve)
 
 **Mandate.** Rates, USD, energy, commodities, vol, indices, liquidity; US pre-market / open / close context; event calendars; cross-asset divergences; regimes that reframe crypto and equity signals.
 
@@ -281,7 +290,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Independent Skeptic
+## IC/Risk gates (Skeptic + Risk) — not two desks
+
+Skeptic and Risk remain **independent gates** inside `ic_risk`. They are not publishing desks.
+
+## Independent Skeptic (gate)
 
 **Mandate.** Invalidate research. Check leakage, false causality, crowding, duplicate beta, stale data, liquidity, and already-priced narratives. Every thesis needs one **observable** invalidation. Approve, reject, or return. This is the independent review office — not a research-authoring desk.
 
@@ -307,7 +320,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ---
 
-## Risk (independent veto)
+## Risk (gate; independent veto)
 
 **Mandate.** Concentration by economic idea, correlation, liquidity, drawdown, leverage, data freshness, scenario risk. Deterministic risk-policy **config**. Blocks unsafe progression. Paper-trade proposals only after research + Skeptic clearance (and only when the Principal has authorised paper). Independent veto: **a BLOCK is terminal** until Principal override (Principal cannot be bypassed by the proposing desk; **no self-approve**).
 

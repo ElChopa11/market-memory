@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -10,18 +10,17 @@ from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
 from mm_desks.dq import assert_no_letter_grade, completeness, populated_count, publish_allowed
 from mm_desks.envelope import DeskEnvelope
+from mm_desks.naming import (
+    ARTIFACT_TYPES,
+    artifact_desk,
+    artifact_display,
+    require_artifact_type,
+    require_publishing_desk,
+)
 from mm_quant.trade_math import TradeMathMismatch
 
-ARTIFACT_TYPES = (
-    "DAILY_BIAS",
-    "EDGE_SCAN",
-    "INTEL_PACKET",
-    "CHART_ARTIFACT",
-    "OFFICIAL_BRIEF",
-    "STATE_CARD",
-)
 MAX_IDEAS = 3
-ENGINE_VERSION = "imp-016.1"
+ENGINE_VERSION = "imp-019.1"
 
 
 @dataclass(frozen=True)
@@ -32,16 +31,22 @@ class LadderArtifact:
     trade_math_hash: str
     as_of_knowledge: datetime
     payload: dict[str, Any]
-    desk: str = "playbook"
+    desk: str = ""
     status: str = "OK"
     gaps: tuple[str, ...] = ()
     completeness: float = 1.0
 
     def __post_init__(self) -> None:
-        if self.artifact_type not in ARTIFACT_TYPES:
-            raise ValueError(f"unknown artifact type {self.artifact_type!r}")
+        require_artifact_type(self.artifact_type)
+        owner = self.desk or artifact_desk(self.artifact_type)
+        require_publishing_desk(owner)
+        object.__setattr__(self, "desk", owner)
         object.__setattr__(self, "as_of_knowledge", as_utc(self.as_of_knowledge))
         assert_no_letter_grade(self.payload)
+
+    @property
+    def display_name(self) -> str:
+        return artifact_display(self.artifact_type)
 
     def canonical(self) -> dict[str, Any]:
         return {
@@ -68,6 +73,7 @@ class LadderArtifact:
 
 
 def required_fields_for(artifact_type: str, spec: dict[str, Any] | None = None) -> tuple[str, ...]:
+    require_artifact_type(artifact_type)
     defaults = {
         "DAILY_BIAS": ("instrument", "direction", "conviction", "level", "trade_math_hash"),
         "EDGE_SCAN": ("instrument", "catalyst", "source", "as_of", "invalidator", "trade_math_hash"),
@@ -95,13 +101,16 @@ def make_artifact(
     as_of: datetime,
     payload: dict[str, Any],
     run_content_hash: str = "",
-    desk: str = "playbook",
+    desk: str = "",
     spec: dict[str, Any] | None = None,
     threshold: float = 0.8,
     status: str = "OK",
 ) -> LadderArtifact:
     payload = dict(payload)
     payload.setdefault("trade_math_hash", trade_math_hash)
+    require_artifact_type(artifact_type)
+    owner = desk or artifact_desk(artifact_type)
+    require_publishing_desk(owner)
     ratio, missing = score_artifact(artifact_type, payload, spec)
     art_status = status
     if not publish_allowed(ratio, threshold) and artifact_type != "OFFICIAL_BRIEF":
@@ -113,7 +122,7 @@ def make_artifact(
         trade_math_hash=trade_math_hash,
         as_of_knowledge=as_of,
         payload=payload,
-        desk=desk,
+        desk=owner,
         status=art_status,
         gaps=missing,
         completeness=ratio,
@@ -161,8 +170,10 @@ def artifact_to_envelope(artifact: LadderArtifact, *, envelope_id: str | None = 
     from mm_common.time import in_ops_tz
 
     body = artifact.as_envelope_body()
+    owner = require_publishing_desk(artifact.desk or artifact_desk(artifact.artifact_type))
+    require_artifact_type(artifact.artifact_type)
     header_body = {
-        "desk": f"ladder.{artifact.artifact_type.lower()}",
+        "desk": owner.slug,
         "as_of_utc": artifact.as_of_knowledge.isoformat(),
         "as_of_sydney": in_ops_tz(artifact.as_of_knowledge).isoformat(),
         "status": artifact.status,

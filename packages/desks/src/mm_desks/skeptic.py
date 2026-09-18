@@ -1,4 +1,4 @@
-"""Skeptic desk (Tier 5): adversarial checklist. FAIL return or FAIL archive."""
+"""IC/Risk Skeptic gate. Adversarial checklist. FAIL return or FAIL archive. Not a desk."""
 
 from __future__ import annotations
 
@@ -11,9 +11,11 @@ from mm_desks.protocol import DeskArtifact, DeskContext, DeskOutput, FAILED, OK
 from mm_research_kit.errors import GateError
 from mm_research_kit.state_machine import skeptic_fail_target
 
+from mm_desks.naming import sleeve_display, sleeve_tier
+
 SLUG = "skeptic"
-TIER = "5"
-DISPLAY_NAME = "Independent Skeptic"
+TIER = sleeve_tier(SLUG)
+DISPLAY_NAME = sleeve_display(SLUG)
 
 _PLACEHOLDERS = frozenset({"", "-", "n/a", "na", "none", "null", "tbd", "todo", "?", "unknown"})
 

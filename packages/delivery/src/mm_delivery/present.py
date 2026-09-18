@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
+from mm_common.naming import telegram_header, with_telegram_header
+
 UNKNOWN = "?"
 
 
@@ -77,6 +79,15 @@ def monospace_table(headers: Sequence[str], rows: Sequence[Sequence[Any]], *, ga
                     gaps.append(headers[i] if i < len(headers) else f"col{i}")
         lines.append(fmt(padded[: len(headers)]))
     return "```\n" + "\n".join(lines) + "\n```"
+
+
+def desk_header(slug: str, *, artifact_type: str | None = None) -> str:
+    """Telegram / pack banner from the naming layer. Unknown slug fails closed."""
+    return telegram_header(slug, artifact_type=artifact_type)
+
+
+def headed_markdown(markdown: str, slug: str, *, artifact_type: str | None = None) -> str:
+    return with_telegram_header(markdown, slug, artifact_type=artifact_type)
 
 
 def ideas_header(n_shown: int, n_total: int) -> str:

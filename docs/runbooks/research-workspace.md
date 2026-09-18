@@ -110,7 +110,7 @@ Quant Review Board (IMP-001): `uv run lab quant-review --fixture … --no-db` �
 
 Locked-membership pass (IMP-008): `uv run lab quant-review --locked-membership --no-db` → `research/quant/2026-09-18/`. Covers `config/universe.yaml` only. Not a screenshot-universe rewrite.
 
-Post-IPO / reclaim screen (IMP-006, Equities desk): `uv run lab equities reclaim-screen --fixture … --no-db` → `research/screens/post-ipo-reclaim/YYYY-MM-DD.md`. Research triage only — not a trading decision. Runbook: [post-ipo-reclaim.md](post-ipo-reclaim.md).
+Post-IPO / reclaim screen (IMP-006, Research / equities sleeve): `uv run lab equities reclaim-screen --fixture … --no-db` → `research/screens/post-ipo-reclaim/YYYY-MM-DD.md`. Research triage only — not a trading decision. Runbook: [post-ipo-reclaim.md](post-ipo-reclaim.md).
 
 Dedicated crypto / equities thesis cards (IMP-007): `templates/crypto-thesis-card.md` and `templates/equities-thesis-card.md`. `lab thesis new --instrument BTC` copies the matching desk card beside generic `thesis.md`. Runbook: [thesis-cards.md](thesis-cards.md).
 

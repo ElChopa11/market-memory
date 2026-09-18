@@ -22,6 +22,7 @@ from mm_desks.protocol import ENGINE_VERSION, DeskContext, DeskOutput
 from mm_desks.quant import QuantDesk
 from mm_desks.research import ResearchDesk
 from mm_desks.roster import OPS, PIPELINE
+from mm_desks.naming import require_publishing_desk
 from mm_delivery.payload import SEND_ENABLED, prepare_payload
 from mm_delivery.deliver import deliver
 from mm_research_kit.state_machine import TransitionLog
@@ -135,6 +136,7 @@ def run_desks(
 ) -> DeskRunResult:
     watermark = as_utc(as_of)
     for slug in slugs:
+        require_publishing_desk(slug)
         if slug not in _DESKS:
             raise ValueError(f"unknown desk slug {slug!r}; choose from {list(PIPELINE)}")
         output = stamp_output(_DESKS[slug].run(watermark, ctx), ctx)

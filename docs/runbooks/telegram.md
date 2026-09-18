@@ -67,7 +67,7 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 ## Fan-out (Phase 6c)
 
-`lab deliver fanout --desk <slug>` delivers the desk channel then an Ops mirror of the **same** `content_hash` plus a footer. The body is not re-rendered. Chart PNG caption uses filename `{content_hash}.png`. Publishing slugs: `intel` `research` `quant` `ic_risk` `ops`.
+`lab deliver fanout --desk <slug>` delivers the desk channel then an Ops mirror of the **same** `content_hash` plus a footer. The body is not re-rendered. Chart PNG caption uses filename `{content_hash}.png`. Publishing slugs (from `mm_common.naming`): `intel` `research` `quant` `ic_risk` `ops`. Telegram header is `{display} · {slug}`. Unknown slug fails closed.
 
 ## Import walls
 
