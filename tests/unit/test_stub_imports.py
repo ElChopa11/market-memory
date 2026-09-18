@@ -22,7 +22,7 @@ import mm_source_health
 import mm_unicorn
 
 ROOT = Path(__file__).resolve().parents[2]
-PHASE5 = {mm_desks, mm_quant, mm_delivery}
+PHASE5 = {mm_desks, mm_quant, mm_delivery, mm_risk}
 PHASE4 = {mm_memory, mm_backtest, mm_paper, mm_lab_cli, mm_source_health}
 PHASE3 = {mm_briefing}
 PHASE1 = {mm_ingest, mm_provenance}

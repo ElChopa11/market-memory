@@ -13,6 +13,10 @@ dependencies = [
   "mm-backtest",
   "mm-paper",
   "mm-source-health",
+  "mm-desks",
+  "mm-quant",
+  "mm-risk",
+  "mm-delivery",
 ]
 
 [project.scripts]

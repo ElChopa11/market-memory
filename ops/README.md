@@ -24,6 +24,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Quant locked-membership RESEARCH_PRIORITY pass (IMP-008) is **DONE** (#38).
 - Phase 5a desk boundaries (IMP-009) is **DONE** (#40). Tiers 0–7; import walls.
 - Phase 5b Polygon equities + HL structure (IMP-010) is **DONE** (#41).
-- Phase 5c quant factor library (IMP-011) is **IN_REVIEW** (this PR).
-- Phase 5d desk runners (IMP-012) is **READY** (parked). Do not implement in 5c.
+- Phase 5c quant factor library (IMP-011) is **DONE** (#42).
+- Phase 5d desk runners (IMP-012) is **IN_REVIEW** (this PR).
+- Phase 5e Telegram delivery (IMP-013) is **READY** (parked). Do not implement send in 5d.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

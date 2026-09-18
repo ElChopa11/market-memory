@@ -2,7 +2,7 @@
 
 Research-only factor math for the Quant & Market Structure Desk (Tier 4). **Not a trading decision. Not Execution. Not a desk runner.**
 
-The Quant Review Board (IMP-001 / IMP-008) still lives in `mm_research_kit.quant_review` and still emits closed verdicts. This runbook is the **factor layer** in `packages/quant` (`mm_quant`). Wiring factors into desk orchestration is Phase **5d** (IMP-012, parked).
+The Quant Review Board (IMP-001 / IMP-008) still lives in `mm_research_kit.quant_review` and still emits closed verdicts. This runbook is the **factor layer** in `packages/quant` (`mm_quant`). Wiring factors into desk orchestration is Phase **5d** (`lab desk run --all --fixture --no-send`).
 
 ## What operators can do
 

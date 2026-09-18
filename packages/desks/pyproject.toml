@@ -1,9 +1,16 @@
 [project]
 name = "mm-desks"
 version = "0.1.0"
-description = "Phase 5a desk skeletons (Crypto 3a / Equities 3b). No runners, no adapters."
+description = "Phase 5d desk runners (Crypto 3a / Equities 3b + Intel/Quant/Skeptic/Risk/Coord). No Telegram send, no execution."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+  "mm-quant",
+  "mm-research-kit",
+  "mm-risk",
+  "mm-delivery",
+  "pyyaml>=6.0",
+]
 
 [build-system]
 requires = ["hatchling"]

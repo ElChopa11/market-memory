@@ -1,7 +1,20 @@
-"""Phase 0 stub.
+"""Phase 5d deterministic allow/block library (Tier 6).
 
-Deterministic allow/block risk engine (stub). Must not call an LLM at order time or submit orders.
+Not the risk *service* (apps/risk-service stays a stub). No LLM. No orders.
 """
 
-__phase__ = 0
+from mm_risk.config import RiskConfig, load_risk_config
+from mm_risk.engine import evaluate
+from mm_risk.models import RiskIntent, RiskResult
+
+__phase__ = 5
 LIVE_TRADING_ENABLED = False
+
+__all__ = [
+    "LIVE_TRADING_ENABLED",
+    "RiskConfig",
+    "RiskIntent",
+    "RiskResult",
+    "evaluate",
+    "load_risk_config",
+]

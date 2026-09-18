@@ -1,9 +1,13 @@
 # mm-desks
 
-Phase 5a **skeleton**. Crypto (Tier 3a) and Equities (Tier 3b) import-boundary package.
+Phase 5d **desk runners**. Crypto (Tier 3a) and Equities (Tier 3b) plus Intel assemble, Quant, Skeptic, Risk, and Coord pack.
 
-**Must not:** depend on the `mm_execution` module or signing; run desk products; fetch Polygon; submit orders; self-approve Skeptic/Risk.
+Protocol: `run(as_of, ctx) -> DeskOutput` with `OK|DEGRADED|FAILED`, `completeness_pct`, `provenance_ids`, artifacts.
 
-Full runners are a later phase. Equities Polygon ingest is IMP-010 / Phase 5b and lives in `mm_ingest` (Intel), not this package.
+```bash
+uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --no-db
+```
+
+**Must not:** depend on the `mm_execution` module or signing; fetch Polygon (Intel/`mm_ingest`); submit orders; self-approve Skeptic/Risk; send Telegram (Phase 5e).
 
 See [../../docs/runbooks/desks.md](../../docs/runbooks/desks.md) and [../../AGENTS.md](../../AGENTS.md).

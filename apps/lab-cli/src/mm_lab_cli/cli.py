@@ -13,6 +13,7 @@ from pathlib import Path
 from mm_common.time import parse_utc, utcnow
 from mm_lab_cli.backtest import add_backtest_parser, dispatch_backtest
 from mm_lab_cli.briefing import add_brief_parser, dispatch_brief
+from mm_lab_cli.desk import add_desk_parser, dispatch_desk
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.equities import add_equities_parser, dispatch_equities
 from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_review
@@ -99,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
     _add_research_common(rec)
 
     add_brief_parser(sub)
+    add_desk_parser(sub)
     add_backtest_parser(sub)
     add_paper_parser(sub)
     add_quant_review_parser(sub)
@@ -120,6 +122,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_research_command(dispatch_skeptic, args)
     if args.cmd == "brief":
         return dispatch_brief(args)
+    if args.cmd == "desk":
+        return dispatch_desk(args)
     if args.cmd == "backtest":
         return dispatch_backtest(args)
     if args.cmd == "paper":
@@ -143,7 +147,7 @@ def _add_research_common(parser: argparse.ArgumentParser) -> None:
 
 
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 5b — Polygon equities + HL structure; Phase 4 backtest + paper remain)")
+    print("market-memory lab CLI (Phase 5d — desk runners; 5c factors + 5b ingest + Phase 4 backtest/paper remain)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
@@ -157,6 +161,7 @@ def cmd_status() -> int:
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
     print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
     print("Equities screen: lab equities reclaim-screen --fixture PATH --no-db (Post-IPO / reclaim triage; not a trading decision)")
+    print("Desk run: lab desk run --all --fixture PATH --no-send (deterministic pack; Telegram send is 5e)")
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")

@@ -256,9 +256,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Desk runners (IMP-012); Telegram/5e; signing; `live.yaml`; reopening IMP-010 adapters; paid deps; LLM at decision time; order endpoints. |
 | **Dependencies** | IMP-010 DONE (#41). |
 | **Risk level** | Medium (look-ahead in factors). |
-| **Status** | IN_REVIEW |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/42 |
-| **Lesson learned** | *(fill at close)* |
+| **Lesson learned** | Merged to `main` (#42). `mm_quant` factor library with PIT watermarks, YAML regime thresholds, QuantCard, degrade-never-invent. Desk runners stayed out of 5c and are IMP-012. |
 
 ### IMP-012 — Phase 5d desk runners
 
@@ -269,16 +269,36 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Orchestration / desk product |
 | **Desk** | Chief of Staff / Hive Coordinator |
 | **Owner** | Don |
-| **Problem** | Factor math lands in 5c; desk packages are still 5a skeletons. Runners must not sneak into the factor PR. |
-| **Evidence** | IMP-009 skeletons; ADR 0002 follow-on 5d; IMP-011 this PR. |
-| **Proposed outcome** | Coordinator-run desk jobs that read Memory at an `as_of_knowledge` watermark and call `mm_quant`. Research artifacts only. |
-| **Definition of done** | *(filled in the 5d PR)*. Plan stub: [plans/IMP-012-phase5d-desk-runners.md](plans/IMP-012-phase5d-desk-runners.md). Not started while IMP-011 is open. |
-| **Non-goals** | Telegram/5e; signing; `live.yaml`; reopening IMP-011 factor math; Phase 6 bus; order endpoints. |
-| **Dependencies** | IMP-011 (this PR) must be DONE. |
+| **Problem** | Factor math landed in 5c; desk packages were still 5a skeletons. Runners must not sneak into the factor PR. |
+| **Evidence** | IMP-009 skeletons; ADR 0002 follow-on 5d; IMP-011 DONE #42. |
+| **Proposed outcome** | Coordinator-run desk jobs: each desk `run(as_of, ctx) -> DeskOutput`. Intel assemble, Crypto/Equities notes, Quant calls `mm_quant`, Skeptic FAIL return/archive, Risk allow/block from versioned config, Coord pack into the output contract. `--no-send` only. |
+| **Definition of done** | Queue hygiene: IMP-011 DONE (#42). This item the only implementation thread. Desk protocol `OK\|DEGRADED\|FAILED` + completeness_pct + provenance_ids + artifacts; Intel/Crypto/Equities/Quant/Skeptic/Risk/Coord wired; lifecycle transitions logged (actor, ts, reason) and illegal edges rejected; `lab desk run --desk <slug>\|--all --fixture --no-send` deterministic content hash; fixtures for happy / missing-feed DEGRADED / Skeptic FAIL / Risk BLOCK; import-boundary CI holds; runbook + README 5d; no Telegram send, no `live.yaml`, no signing, no Phase 6 bus. `uv run pytest` + lifecycle. |
+| **Non-goals** | Telegram/5e; signing; `live.yaml`; reopening IMP-011 factor math; Phase 6 bus; order endpoints; Redis; paid deps. |
+| **Dependencies** | IMP-011 DONE (#42). |
 | **Risk level** | Medium (runners can skip gates or look like calls). |
+| **Status** | IN_REVIEW |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-013 — Phase 5e Telegram delivery
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-013 |
+| **Priority** | P2 |
+| **Type** | Delivery / schedules |
+| **Desk** | Chief of Staff / Hive Coordinator |
+| **Owner** | Don |
+| **Problem** | 5d prepares `--no-send` payload strings only. Principal briefing still has no Telegram Bot API send, schedules, or secrets handling. |
+| **Evidence** | ADR 0002 follow-on 5e; `packages/delivery` `SEND_ENABLED = False`; IMP-012 this PR. |
+| **Proposed outcome** | Telegram client + schedules + secret handling in a Principal-scoped 5e PR. Send remains off until that PR. |
+| **Definition of done** | *(filled in the 5e PR)*. Plan stub: [plans/IMP-013-phase5e-telegram.md](plans/IMP-013-phase5e-telegram.md). Not started while IMP-012 is open. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Phase 6 PG NOTIFY bus; reopening IMP-012 runners except queue hygiene. |
+| **Dependencies** | IMP-012 (this PR) must be DONE. |
+| **Risk level** | Medium (secrets, ToS, alert spam). |
 | **Status** | READY |
 | **PR** | — |
-| **Lesson learned** | Parked. Do not implement in IMP-011. |
+| **Lesson learned** | Parked. Do not implement Telegram send in IMP-012. |
 
 ---
 
@@ -300,10 +320,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-008 | Quant & Market Structure Desk | Don/Quant | DONE | [#38](https://github.com/ElChopa11/market-memory/pull/38) merged |
 | IMP-009 | Chief of Staff / Hive Coordinator | Don | DONE | [#40](https://github.com/ElChopa11/market-memory/pull/40) Phase 5a desk boundaries |
 | IMP-010 | Data & Market Memory Desk | Don/Data | DONE | [#41](https://github.com/ElChopa11/market-memory/pull/41) Phase 5b Polygon + HL structure |
-| IMP-011 | Quant & Market Structure Desk | Don/Quant | IN_REVIEW | [#42](https://github.com/ElChopa11/market-memory/pull/42) Phase 5c quant factors |
-| IMP-012 | Chief of Staff / Hive Coordinator | Don | READY | Phase 5d desk runners — parked; do not implement here |
+| IMP-011 | Quant & Market Structure Desk | Don/Quant | DONE | [#42](https://github.com/ElChopa11/market-memory/pull/42) Phase 5c quant factors |
+| IMP-012 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 5d desk runners — this PR |
+| IMP-013 | Chief of Staff / Hive Coordinator | Don | READY | Phase 5e Telegram — parked; do not implement here |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-010 are `DONE`. IMP-011 is `IN_REVIEW` (DoD met in this PR). IMP-012 is `READY` (parked until 011 merges).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-011 are `DONE`. IMP-012 is `IN_REVIEW` (DoD met in this PR). IMP-013 is `READY` (parked until 012 merges).
 
 
 ---
@@ -348,7 +369,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 IN_REVIEW** (5c, this PR). Desk runners are **IMP-012 READY** (parked; 5d). Do not start 5d in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 IN_REVIEW** (5d, this PR). Telegram delivery is **IMP-013 READY** (parked; 5e). Do not start 5e in this PR.
 
 ## Reconciliation notes
 
@@ -363,4 +384,5 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-008 merged as #38 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-009.
 - IMP-009 merged as #40 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-010.
 - IMP-010 merged as #41 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-011.
-- IMP-011 intakes Phase 5c quant factors (Principal-approved 5a–5e; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-012 is READY/parked for 5d.
+- IMP-011 merged as #42 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-012.
+- IMP-012 intakes Phase 5d desk runners (Principal-approved 5a–5e; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-013 is READY/parked for 5e.
