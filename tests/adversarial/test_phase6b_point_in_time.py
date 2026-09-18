@@ -50,3 +50,5 @@ def test_macro_ignores_future_vix_and_uningested_event() -> None:
     later = compute_macro(series=macro_series(ctx_t), calendar=macro_calendar(ctx_t), watermark=AFTER, config=cfg)
     assert later.regime.tag != a.regime.tag
     assert later.event_risk.tagged is True
+    assert later.event_risk.rule_id == "event_risk"
+    assert later.event_risk.event_name and "FOMC" in later.event_risk.event_name

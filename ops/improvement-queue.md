@@ -337,7 +337,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-014 DONE (#45). |
 | **Risk level** | Medium (vendor ToS, over-reading regime as a call). |
 | **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/46 |
 | **Lesson learned** | *(fill at close)* |
 
 ### IMP-016 — Phase 6c per-desk Telegram fan-out

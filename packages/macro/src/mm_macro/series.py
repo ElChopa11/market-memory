@@ -10,7 +10,11 @@ from mm_macro.models import CalendarEvent, MacroPoint
 
 def visible_points(points: tuple[MacroPoint, ...] | list[MacroPoint], watermark: datetime) -> tuple[MacroPoint, ...]:
     cut = as_utc(watermark)
-    return tuple(row for row in points if row.as_of_knowledge <= cut)
+    return tuple(
+        row
+        for row in points
+        if row.as_of_knowledge <= cut and (row.ingested_at is None or row.ingested_at <= cut)
+    )
 
 
 def latest_value(points: tuple[MacroPoint, ...] | list[MacroPoint], instrument: str, watermark: datetime) -> MacroPoint | None:
@@ -31,6 +35,10 @@ def visible_events(events: tuple[CalendarEvent, ...] | list[CalendarEvent], wate
     out: list[CalendarEvent] = []
     for row in events:
         known = row.as_of_knowledge or row.ingested_at
-        if known is None or known <= cut:
+        ingested = row.ingested_at or row.as_of_knowledge
+        # Knowledge clock is as_of_knowledge lockstep with ingested_at; never invent from an unknown clock.
+        if known is None or ingested is None:
+            continue
+        if known <= cut and ingested <= cut:
             out.append(row)
     return tuple(out)
