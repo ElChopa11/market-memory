@@ -356,9 +356,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6d listings/IPO; 6e scorecards automation; 6f strategy decay-watch remainder; reopening IMP-015 except queue hygiene; live LLM HTTP provider; paid Telegram/LLM SDKs. |
 | **Dependencies** | IMP-015 DONE (#46). |
 | **Risk level** | Medium (secrets, ToS, alert spam, LLM backfill). |
-| **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
-| **Lesson learned** | *(fill at close)* |
+| **Status** | DONE |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/47 |
+| **Lesson learned** | Merged to `main` (#47). Per-desk Telegram fan-out, PLAYBOOK ladder, Quant-owned trade math, 6c-0 token budget + grounding. Listings/IPO stayed out of 6c. |
 
 ### IMP-017 — Phase 6d listings / IPO desk
 
@@ -370,15 +370,15 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Equities & Post-IPO Desk |
 | **Owner** | Don/Equities |
 | **Problem** | 6c ships PLAYBOOK + Telegram fan-out. There is still no listings / IPO desk product. |
-| **Evidence** | ADR 0006; IMP-016 this PR; Principal-locked 6d. |
+| **Evidence** | ADR 0006; IMP-016 DONE #47; Principal 2026-09-19 resume-build order (6c-1..6c-5 before 6d). |
 | **Proposed outcome** | Listings / IPO desk runner on the existing mesh + 6c fan-out. Honest unavailable. Closed Quant verdicts. PLAYBOOK math inherited. |
-| **Definition of done** | *(filled in the 6d PR)*. Plan stub: [plans/IMP-017-phase6d-listings-ipo.md](plans/IMP-017-phase6d-listings-ipo.md). Not started while IMP-016 is open. |
-| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6e–6f products; reopening IMP-016 except queue hygiene; implementing listings in 6c. |
-| **Dependencies** | IMP-016 (this PR) must be DONE. |
+| **Definition of done** | *(filled in the 6d PR when unparked)*. Plan stub: [plans/IMP-017-phase6d-listings-ipo.md](plans/IMP-017-phase6d-listings-ipo.md). |
+| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6e–6f products; finishing 6d while 6c-1..6c-5 are open. |
+| **Dependencies** | IMP-016 DONE (#47). Blocked on **6c-1 roster cutover + 6c-2..6c-5** per Principal 2026-09-19 resume-build order. |
 | **Risk level** | Medium (language, missing listing feeds). |
 | **Status** | PARKED |
-| **PR** | — |
-| **Lesson learned** | Parked. Do not implement listings/IPO in IMP-016. |
+| **PR** | *(WIP draft; parked — after 6c-1..6c-5)* |
+| **Lesson learned** | PARKED. Blocked on 6c-1 roster cutover + 6c-2..6c-5 per Principal 2026-09-19 resume-build order. Do not start new 6d features until that sequence is done. |
 
 ---
 
@@ -405,10 +405,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-013 | Chief of Staff / Hive Coordinator | Don | DONE | [#44](https://github.com/ElChopa11/market-memory/pull/44) Phase 5e Telegram |
 | IMP-014 | Chief of Staff / Hive Coordinator | Don | DONE | [#45](https://github.com/ElChopa11/market-memory/pull/45) Phase 6a PG NOTIFY mesh |
 | IMP-015 | Macro & Cross-Asset Desk + Data & Market Memory Desk | Don/Macro+Data | DONE | [#46](https://github.com/ElChopa11/market-memory/pull/46) Phase 6b flow+macro+regime |
-| IMP-016 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 token budget/grounding — this PR |
-| IMP-017 | Equities & Post-IPO Desk | Don/Equities | PARKED | Phase 6d listings/IPO — parked |
+| IMP-016 | Chief of Staff / Hive Coordinator | Don | DONE | [#47](https://github.com/ElChopa11/market-memory/pull/47) Phase 6c PLAYBOOK + Telegram fan-out + 6c-0 |
+| IMP-017 | Equities & Post-IPO Desk | Don/Equities | PARKED | Phase 6d listings/IPO — blocked on 6c-1 roster cutover + 6c-2..6c-5 (Principal 2026-09-19) |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-015 are `DONE`. IMP-016 is `IN_REVIEW` (DoD met in this PR). IMP-017 is `PARKED` (until 016 merges).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-016 are `DONE` (#47). IMP-017 is `PARKED` (blocked on 6c-1 roster cutover + 6c-2..6c-5 per Principal 2026-09-19 resume-build order).
 
 
 ---
@@ -453,7 +453,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 is **IMP-016 IN_REVIEW** (this PR). Phase 6d listings/IPO is **IMP-017 PARKED**. Do not start 6d in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 is **IMP-016 DONE** (#47). Phase 6d listings/IPO is **IMP-017 PARKED** (blocked on 6c-1 roster cutover + 6c-2..6c-5 per Principal 2026-09-19 resume-build order).
 
 ## Reconciliation notes
 
@@ -473,4 +473,4 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-013 merged as #44 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-014.
 - IMP-014 merged as #45 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-015.
 - IMP-015 merged as #46 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-016.
-- IMP-016 intakes Phase 6c per-desk Telegram + PLAYBOOK + addendum 6c-0 (token budget, grounding, prompt versioning pulled from 6f). Principal-locked 6a–6f; bus = Postgres NOTIFY, no Redis; one phase per PR. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-017 is PARKED for 6d (listings/IPO). Strategy decay-watch remainder stays 6f.
+- IMP-016 merged as #47. IMP-017 Phase 6d listings/IPO is **PARKED**: blocked on 6c-1 roster cutover + 6c-2..6c-5 per Principal 2026-09-19 resume-build order. Do not start new 6d features. Strategy decay-watch remainder stays 6f.

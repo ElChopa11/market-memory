@@ -24,12 +24,18 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     author = thesis.author if thesis else "Crypto Desk"
     cfg = load_risk_config(ctx.repo_root, environment=spec.environment)
     flow = ctx.prior.get("flow")
+    listings = ctx.prior.get("listings")
     macro = ctx.prior.get("macro")
     instrument = spec.instrument
     liquidity_verdict = None
     if flow is not None:
         verdicts = (flow.payload or {}).get("verdicts") or {}
         liquidity_verdict = verdicts.get(instrument) or verdicts.get(instrument.upper())
+    if listings is not None:
+        listing_verdicts = (listings.payload or {}).get("verdicts") or {}
+        listed = listing_verdicts.get(instrument) or listing_verdicts.get(instrument.upper())
+        if listed:
+            liquidity_verdict = str(listed)
     event_risk = False
     if macro is not None:
         event_risk = bool(((macro.payload or {}).get("event_risk") or {}).get("tagged"))

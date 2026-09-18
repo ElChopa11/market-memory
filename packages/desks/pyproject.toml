@@ -8,6 +8,7 @@ dependencies = [
   "mm-quant",
   "mm-flow",
   "mm-macro",
+  "mm-listings",
   "mm-research-kit",
   "mm-risk",
   "mm-delivery",

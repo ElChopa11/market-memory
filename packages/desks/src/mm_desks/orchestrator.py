@@ -16,6 +16,7 @@ from mm_desks.equities import EquitiesDesk
 from mm_desks.fixture import load_frozen_day
 from mm_desks.flow import FlowDesk
 from mm_desks.intel import IntelDesk
+from mm_desks.listings import ListingsDesk
 from mm_desks.macro import MacroDesk
 from mm_desks.models import FrozenDay
 from mm_desks.protocol import ENGINE_VERSION, DeskContext, DeskOutput
@@ -30,6 +31,7 @@ PIPELINE: tuple[str, ...] = (
     "intel",
     "crypto",
     "equities",
+    "listings",
     "flow",
     "macro",
     "quant",
@@ -42,6 +44,7 @@ _DESKS = {
     "intel": IntelDesk(),
     "crypto": CryptoDesk(),
     "equities": EquitiesDesk(),
+    "listings": ListingsDesk(),
     "flow": FlowDesk(),
     "macro": MacroDesk(),
     "quant": QuantDesk(),

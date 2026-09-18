@@ -16,6 +16,7 @@ disable_flag: config/llm/disabled.flag
 per_desk_share:
   skeptic: 0.40
   coord: 0.30
+  listings: 0.10
   crypto: 0.15
   equities: 0.15
 

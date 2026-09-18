@@ -63,6 +63,10 @@ desks:
     enabled: true
     chat_id_env: TELEGRAM_CHAT_ID_EQUITIES
     thread_id: null
+  listings:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_LISTINGS
+    thread_id: null
   quant:
     enabled: true
     chat_id_env: TELEGRAM_CHAT_ID_QUANT

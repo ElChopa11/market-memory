@@ -1,0 +1,16 @@
+# Listings / IPO desk (Phase 6d / IMP-017).
+# Research-only. Base rates come from our own Market Memory history.
+# n < n_min → no base-rate claim. Never invent a print.
+
+version: "imp-017.1"
+kind: listings_ipo_desk
+desk: Equities & Post-IPO Desk
+n_min: 20
+reclaim_window_days: 90
+path_windows_days: [30, 90]
+lockup_near_days: 21
+thin_history_days: 20
+no_listing_day_is_complete: true
+
+# Liquidity clips reused from flow YAML when present; these are research notionals.
+clip_sizes_usd: [10000, 50000, 100000, 250000]

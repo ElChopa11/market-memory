@@ -61,7 +61,7 @@ def _gaps(ctx: DeskContext) -> list[str]:
         for card in quant.payload.get("cards") or []:
             for gap in card.get("gaps") or []:
                 rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | Quant & Market Structure Desk |")
-    for slug in ("intel", "crypto", "equities", "flow", "macro", "quant", "skeptic", "risk"):
+    for slug in ("intel", "crypto", "equities", "listings", "flow", "macro", "quant", "skeptic", "risk"):
         out = _desk(ctx, slug)
         if out is not None and out.status == "FAILED":
             err = out.error_class or "desk_error"
@@ -87,6 +87,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
     intel = _desk(ctx, "intel")
     quant = _desk(ctx, "quant")
     flow = _desk(ctx, "flow")
+    listings = _desk(ctx, "listings")
     macro = _desk(ctx, "macro")
     skeptic = _desk(ctx, "skeptic")
     risk = _desk(ctx, "risk")
@@ -117,7 +118,9 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         regime_tag = str(intel.regime or "unset")
     event_risk = ((macro.payload.get("event_risk") if macro else None) or {})
     flow_verdicts = (flow.payload.get("verdicts") if flow else None) or {}
+    listing_verdicts = (listings.payload.get("verdicts") if listings else None) or {}
     flow_label = ", ".join(f"{k}={v}" for k, v in flow_verdicts.items()) or "unavailable"
+    listing_label = ", ".join(f"{k}={v}" for k, v in listing_verdicts.items()) or "no listing day"
     intent_row = "none"
     if thesis and thesis.intent:
         inv = thesis.invalidation or _UNAVAILABLE
@@ -175,6 +178,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         f"- **Reason code(s):** {quant_reasons}",
         "- **Relative-value / reclaim / structure (not executable-arb unless criteria are complete):** factor layer only",
         f"- **Liquidity verdict(s):** {flow_label}",
+        f"- **Listings liquidity:** {listing_label}",
         f"- **EVENT_RISK:** {'yes' if event_risk.get('tagged') else 'no'} "
         f"(`{event_risk.get('rule_id') or 'event_risk'}`)",
         "",

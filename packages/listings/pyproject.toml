@@ -1,0 +1,16 @@
+[project]
+name = "mm-listings"
+version = "0.1.0"
+description = "Phase 6d listings / IPO desk library (research-only; no execution)."
+requires-python = ">=3.12"
+dependencies = [
+  "mm-common",
+  "mm-provenance",
+  "mm-quant",
+  "mm-flow",
+  "pyyaml>=6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

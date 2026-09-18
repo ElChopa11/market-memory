@@ -1,6 +1,6 @@
 # PLAN — IMP-017 Phase 6d listings / IPO desk
 
-**Report status:** READY (parked until IMP-016 merges). **Do not implement in the 6c PR.**  
+**Report status:** PARKED. Blocked on 6c-1 roster cutover + 6c-2..6c-5 per Principal 2026-09-19 resume-build order. **Do not start new 6d features.**  
 **Owner:** Don / Equities & Post-IPO Desk  
 **Scope (when started):** Phase 6d — listings / IPO desk product on top of the 6c PLAYBOOK + Telegram fan-out. No live trading. No execution. No `live.yaml`. No Redis.
 
@@ -20,8 +20,8 @@ Live trading. Signing. `live.yaml`. Redis. Scorecards automation (6e). Strategy 
 
 ## Dependencies
 
-IMP-016 Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 — this item stays READY/PARKED until that PR is `DONE`.
+IMP-016 Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 is **DONE** (#47). This item stays **PARKED** until 6c-1 roster cutover + 6c-2..6c-5 complete (Principal 2026-09-19 resume-build order).
 
 ## Status
 
-READY (parked; single-threaded — do not move to `IN_PROGRESS` while IMP-016 is open).
+PARKED (blocked on 6c-1 roster cutover + 6c-2..6c-5 per Principal 2026-09-19 resume-build order).

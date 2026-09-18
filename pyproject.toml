@@ -21,6 +21,7 @@ dependencies = [
   "mm-quant",
   "mm-flow",
   "mm-macro",
+  "mm-listings",
   "mm-delivery",
   "mm-lab-cli",
   "mm-ingest-worker",
@@ -56,6 +57,7 @@ mm-desks = { workspace = true }
 mm-quant = { workspace = true }
 mm-flow = { workspace = true }
 mm-macro = { workspace = true }
+mm-listings = { workspace = true }
 mm-delivery = { workspace = true }
 mm-lab-cli = { workspace = true }
 mm-ingest-worker = { workspace = true }

@@ -2,7 +2,7 @@
 # Principal lock: bus = Postgres LISTEN/NOTIFY (no Redis).
 # Regime header is filled from the Macro desk when IMP-015 succeeds.
 
-version: "imp-015.1"
+version: "imp-017.1"
 regime_placeholder: unset
 default:
   cadence: daily
@@ -16,6 +16,8 @@ channels:
   - desk.crypto.alert
   - desk.equities.output
   - desk.equities.alert
+  - desk.listings.output
+  - desk.listings.alert
   - desk.flow.output
   - desk.flow.alert
   - desk.macro.output
@@ -48,6 +50,12 @@ desks:
     op: observation
     output_channel: desk.equities.output
     alert_channel: desk.equities.alert
+  listings:
+    cadence: daily
+    op: observation
+    output_channel: desk.listings.output
+    alert_channel: desk.listings.alert
+    dq_channel: dq.event
   flow:
     cadence: daily
     op: observation

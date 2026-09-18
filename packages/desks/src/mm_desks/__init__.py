@@ -6,6 +6,7 @@ must not import this package. Telegram send is `mm_delivery.deliver` (Phase 5e /
 
 from mm_desks.crypto import CRYPTO_DESK, CRYPTO_TIER
 from mm_desks.equities import EQUITIES_DESK, EQUITIES_TIER
+from mm_desks.listings import DISPLAY_NAME as LISTINGS_DESK
 from mm_desks.mesh import mesh_from_fixture
 from mm_desks.orchestrator import PIPELINE, run_desks, run_from_fixture
 from mm_desks.playbook import run_playbook_from_fixture
@@ -20,6 +21,7 @@ __all__ = [
     "DEGRADED",
     "EQUITIES_DESK",
     "EQUITIES_TIER",
+    "LISTINGS_DESK",
     "FAILED",
     "LIVE_TRADING_ENABLED",
     "OK",

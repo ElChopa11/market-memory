@@ -24,6 +24,7 @@ DESK_META: dict[str, tuple[str, str]] = {
     "intel": ("Data & Market Memory Desk", "2"),
     "crypto": ("Crypto Desk", "3a"),
     "equities": ("Equities & Post-IPO Desk", "3b"),
+    "listings": ("Listings / IPO Desk", "listings"),
     "flow": ("Flow / Liquidity Desk", "flow"),
     "macro": ("Macro & Cross-Asset Desk", "macro"),
     "quant": ("Quant & Market Structure Desk", "4"),
@@ -54,7 +55,7 @@ class CadenceConfig:
 def _fallback_desk(slug: str) -> DeskCadence:
     output = CHANNEL_ASSEMBLE if slug == "coord" else CHANNEL_OUTPUT.format(slug=slug)
     alert = CHANNEL_ALERT.format(slug=slug)
-    dq = CHANNEL_DQ if slug in {"intel", "flow", "macro"} else None
+    dq = CHANNEL_DQ if slug in {"intel", "flow", "macro", "listings"} else None
     op = "paper" if slug == "risk" else DEFAULT_OP
     return DeskCadence(
         slug=slug,

@@ -52,6 +52,8 @@ def infer_n(output: DeskOutput) -> int:
         return len(payload.get("cards") or [])
     if output.slug == "flow":
         return len(payload.get("snapshots") or payload.get("instruments") or [])
+    if output.slug == "listings":
+        return len(payload.get("ideas") or []) + len(payload.get("index_events") or [])
     if output.slug == "macro":
         return len(payload.get("series") or [])
     if output.slug == "coord":
@@ -98,7 +100,7 @@ def infer_sources_missing(output: DeskOutput) -> tuple[tuple[str, ...], tuple[st
 def infer_universe(output: DeskOutput, ctx: DeskContext | None) -> str:
     if output.universe and output.universe != "mixed":
         return output.universe
-    if output.slug in {"intel", "coord", "quant", "skeptic", "risk", "flow", "macro"}:
+    if output.slug in {"intel", "coord", "quant", "skeptic", "risk", "flow", "macro", "listings"}:
         return "mixed"
     if ctx is not None and ctx.thesis is not None:
         return membership_of(ctx.thesis.instrument, ctx.repo_root)
