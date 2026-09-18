@@ -1,6 +1,6 @@
 # PLAN — IMP-012 Phase 5d desk runners
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#43).  
 **Owner:** Don / Chief of Staff (Coordinator) with Crypto / Equities / Quant / Skeptic / Risk as consumers  
 **Scope:** Desk orchestration that calls `mm_quant` + frozen Memory/fixture facts and writes desk artifacts. No Telegram. No execution. No `live.yaml`.
 
@@ -34,4 +34,4 @@ Telegram / 5e. Signing. `live.yaml`. Paid data. Reopening IMP-011 factor math ex
 
 ## Status
 
-IN_REVIEW (this PR). IMP-011 is DONE (#42). IMP-013 Phase 5e is READY/PARKED — do not implement Telegram send here.
+DONE (#43). IMP-013 Phase 5e is the following implementation thread.

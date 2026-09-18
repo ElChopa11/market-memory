@@ -1,0 +1,188 @@
+"""lab deliver — Phase 5e Telegram delivery. Dry-run default. No live API in pytest."""
+
+from __future__ import annotations
+
+import json
+import sys
+from argparse import Namespace
+from pathlib import Path
+
+from mm_common.time import parse_utc, utcnow
+from mm_delivery.deliver import deliver
+from mm_delivery.inbound import handle_inbound
+from mm_delivery.payload import SEND_ENABLED
+from mm_desks.orchestrator import PIPELINE, run_from_fixture
+
+
+def add_deliver_parser(sub) -> None:
+    deliver_p = sub.add_parser("deliver", help="deliver a desk pack (default --no-send; Telegram Bot API)")
+    deliver_sub = deliver_p.add_subparsers(dest="deliver_cmd")
+
+    pack_p = deliver_sub.add_parser("pack", help="build Telegram payload from a Coord pack or markdown")
+    _add_pack_args(pack_p)
+
+    test_p = deliver_sub.add_parser(
+        "test",
+        help="manual real send of a one-line ping (operator-only; pytest never hits live API)",
+    )
+    test_p.add_argument("--desk", default="coord", help="desk slug (route + TELEGRAM_CHAT_ID[_DESK])")
+    test_p.add_argument("--repo-root", type=Path, default=Path("."))
+    test_p.add_argument("--out", type=Path, help="write payload under briefs/ (default: repo root)")
+    test_p.add_argument("--ignore-quiet-hours", action="store_true")
+    test_p.add_argument(
+        "--i-mean-it",
+        action="store_true",
+        help="required for a live POST; without it, writes payload only",
+    )
+
+    inbound_p = deliver_sub.add_parser("inbound", help="read-only inbound stub (/status /brief /desk)")
+    inbound_p.add_argument("text", help="inbound message text")
+
+    _add_pack_args(deliver_p)
+
+
+def _add_pack_args(parser) -> None:
+    parser.add_argument("--desk", default="coord", help="desk slug to route (default coord)")
+    parser.add_argument("--fixture", type=Path, help="frozen-day fixture; runs desk pipeline then delivers pack")
+    parser.add_argument("--from-markdown", type=Path, help="deliver this markdown file instead of a fixture pack")
+    parser.add_argument("--as-of", help="UTC as_of_knowledge (required with --from-markdown)")
+    parser.add_argument("--no-send", action="store_true", help="dry-run (default)")
+    parser.add_argument("--send", action="store_true", help="gated live send (requires TELEGRAM_BOT_TOKEN)")
+    parser.add_argument("--out", type=Path, help="write exact payload under briefs/YYYY-MM-DD/")
+    parser.add_argument("--repo-root", type=Path, default=Path("."))
+    parser.add_argument("--no-db", action="store_true")
+    parser.add_argument("--ignore-quiet-hours", action="store_true")
+
+
+def dispatch_deliver(args: Namespace) -> int:
+    cmd = getattr(args, "deliver_cmd", None)
+    if cmd == "inbound":
+        reply = handle_inbound(str(args.text))
+        print(json.dumps(reply.canonical(), sort_keys=True))
+        return 0 if reply.ok else 2
+    if cmd == "test":
+        return _cmd_test(args)
+    if cmd in {None, "pack"}:
+        return _cmd_pack(args)
+    print("usage: lab deliver pack|test|inbound", file=sys.stderr)
+    return 2
+
+
+def _want_send(args: Namespace) -> bool | None:
+    send = bool(getattr(args, "send", False))
+    no_send = bool(getattr(args, "no_send", False))
+    if send and no_send:
+        print("lab deliver: use --send or --no-send, not both", file=sys.stderr)
+        return None
+    return send
+
+
+def _cmd_pack(args: Namespace) -> int:
+    send = _want_send(args)
+    if send is None:
+        return 2
+    if SEND_ENABLED:
+        print("lab deliver: SEND_ENABLED must stay false; pass --send into deliver()", file=sys.stderr)
+        return 2
+    root = Path(args.repo_root).resolve()
+    desk = str(getattr(args, "desk", None) or "coord")
+    loaded = _load_source(args, root, desk)
+    if loaded is None:
+        return 2
+    markdown, as_of, completeness, session_date, extra = loaded
+    out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
+    result = deliver(
+        markdown,
+        desk=desk,
+        as_of=as_of,
+        send=send,
+        kind="desk_pack",
+        completeness_pct=completeness,
+        repo=root,
+        out_root=out_root,
+        session_date=session_date,
+        respect_quiet_hours=not bool(getattr(args, "ignore_quiet_hours", False)),
+    )
+    payload = result.as_public_dict()
+    payload["no_send"] = not send
+    payload.update(extra)
+    print(json.dumps(payload, sort_keys=True, indent=2))
+    if send and not result.sent:
+        return 2
+    return 0
+
+
+def _cmd_test(args: Namespace) -> int:
+    live = bool(getattr(args, "i_mean_it", False))
+    root = Path(args.repo_root).resolve()
+    desk = str(args.desk)
+    as_of = utcnow()
+    markdown = (
+        "delivery test ping from lab deliver test\n"
+        "Not an order. Not Execution. Live trading remains HARD-GATED.\n"
+    )
+    out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
+    result = deliver(
+        markdown,
+        desk=desk,
+        as_of=as_of,
+        send=live,
+        kind="test",
+        completeness_pct=100.0,
+        repo=root,
+        out_root=out_root,
+        session_date=as_of.date().isoformat(),
+        respect_quiet_hours=not bool(getattr(args, "ignore_quiet_hours", False)),
+    )
+    payload = result.as_public_dict()
+    payload["no_send"] = not live
+    payload["test"] = True
+    print(json.dumps(payload, sort_keys=True, indent=2))
+    if live and not result.sent:
+        return 2
+    return 0
+
+
+def _load_source(args: Namespace, root: Path, desk: str):
+    fixture = getattr(args, "fixture", None)
+    from_md = getattr(args, "from_markdown", None)
+    if bool(fixture) == bool(from_md):
+        print("lab deliver pack: require exactly one of --fixture or --from-markdown", file=sys.stderr)
+        return None
+    if from_md:
+        path = Path(from_md)
+        if not path.is_file():
+            print(f"markdown not found: {path}", file=sys.stderr)
+            return None
+        as_of_raw = getattr(args, "as_of", None)
+        if not as_of_raw:
+            print("lab deliver --from-markdown requires --as-of", file=sys.stderr)
+            return None
+        as_of = parse_utc(str(as_of_raw))
+        markdown = path.read_text(encoding="utf-8")
+        return markdown, as_of, 100.0, as_of.date().isoformat(), {}
+    if desk not in PIPELINE and desk not in {"macro", "briefing"}:
+        print(f"unknown desk {desk!r}; choose from {', '.join(PIPELINE)}", file=sys.stderr)
+        return None
+    result = run_from_fixture(
+        Path(fixture),
+        repo_root=root,
+        slugs=PIPELINE,
+        send=False,
+    )
+    markdown = result.pack_markdown or ""
+    if desk != "coord":
+        for row in result.desks:
+            if row.slug != desk:
+                continue
+            for art in row.artifacts:
+                if art.kind == "markdown" and art.content:
+                    markdown = art.content
+                    break
+    completeness = 100.0
+    for row in result.desks:
+        if row.slug == desk or (desk == "coord" and row.slug == "coord"):
+            completeness = float(row.completeness_pct)
+            break
+    extra = {"fixture_id": result.fixture_id, "desk_content_hash": result.content_hash}
+    return markdown, result.as_of_knowledge, completeness, result.session_date, extra

@@ -1,9 +1,7 @@
 # mm-delivery
 
-Phase 5d **no-send** payload strings. Telegram Bot API send, schedules, and secrets are **Phase 5e** (IMP-013).
+Phase 5e **Telegram Bot API** delivery for desk packs. Dry-run (`--no-send`) is default. `SEND_ENABLED` stays false so send is never implicit.
 
-**Must not (this phase):** send messages; hold bot tokens; depend on the `mm_execution` module; schedule live jobs.
+**Must not:** import `mm_execution`; hold tokens in git; alert without a numeric threshold; hit live Telegram from pytest.
 
-`SEND_ENABLED` stays false until a Principal-scoped 5e PR. `prepare_payload` builds dry-run strings only.
-
-See [../../ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md).
+See [../../docs/runbooks/telegram.md](../../docs/runbooks/telegram.md) and [../../ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md).

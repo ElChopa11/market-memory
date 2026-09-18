@@ -17,6 +17,7 @@ from mm_common.http import (
     classify_exception,
     classify_http_status,
     http_get,
+    http_post,
     is_retryable,
     missing_env_notes,
 )
@@ -143,3 +144,13 @@ def test_tos_blocked_not_retried() -> None:
     result = http_get(_client(handler), "https://stooq.com/q/l/", sleep=lambda _: None)
     assert result.error_class == ERROR_TOS_OR_BLOCKED
     assert calls["n"] == 1
+
+
+def test_http_post_json_succeeds_on_200() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        return httpx.Response(200, json={"ok": True})
+
+    result = http_post(_client(handler), "https://telegram.test/sendMessage", json_body={"text": "x"})
+    assert result.ok is True
+    assert result.json_payload == {"ok": True}

@@ -1,4 +1,4 @@
-"""Idempotent HTTP GET helpers for Pulse + source-health.
+"""Idempotent HTTP GET/POST helpers for Pulse, source-health, and Telegram delivery.
 
 Classify failures; bounded retries only on timeout / connect / 429 / 5xx.
 Callers must not scrape HTML, invent prints, or log secrets.
@@ -122,13 +122,81 @@ def http_get(
     parse_json: bool = False,
 ) -> HttpGetResult:
     """GET with bounded retries. 404 / 401 / 403 are terminal (do not scrape around them)."""
+    return _request(
+        client,
+        "GET",
+        url,
+        params=params,
+        max_attempts=max_attempts,
+        backoff_s=backoff_s,
+        sleep=sleep,
+        parse_json=parse_json,
+    )
+
+
+def http_post(
+    client: httpx.Client,
+    url: str,
+    *,
+    json_body: Mapping[str, Any] | None = None,
+    data: Mapping[str, Any] | None = None,
+    files: Any = None,
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    backoff_s: float = DEFAULT_BACKOFF_S,
+    sleep: Callable[[float], None] = time.sleep,
+    parse_json: bool = True,
+) -> HttpGetResult:
+    """POST with the same closed error classes and bounded retries as GET."""
+    return _request(
+        client,
+        "POST",
+        url,
+        json_body=json_body,
+        data=data,
+        files=files,
+        max_attempts=max_attempts,
+        backoff_s=backoff_s,
+        sleep=sleep,
+        parse_json=parse_json,
+    )
+
+
+def _request(
+    client: httpx.Client,
+    method: str,
+    url: str,
+    *,
+    params: Mapping[str, Any] | None = None,
+    json_body: Mapping[str, Any] | None = None,
+    data: Mapping[str, Any] | None = None,
+    files: Any = None,
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    backoff_s: float = DEFAULT_BACKOFF_S,
+    sleep: Callable[[float], None] = time.sleep,
+    parse_json: bool = False,
+) -> HttpGetResult:
     started = time.perf_counter()
     attempts_allowed = max(1, int(max_attempts))
     last: HttpGetResult | None = None
+    verb = method.upper()
     for attempt in range(1, attempts_allowed + 1):
         try:
-            response = client.get(url, params=dict(params) if params else None)
-        except Exception as exc:  # noqa: BLE001 — classify, do not raise into Pulse
+            if verb == "GET":
+                response = client.get(url, params=dict(params) if params else None)
+            elif verb == "POST":
+                kwargs: dict[str, Any] = {}
+                if json_body is not None:
+                    kwargs["json"] = dict(json_body)
+                if data is not None:
+                    kwargs["data"] = dict(data)
+                if files is not None:
+                    kwargs["files"] = files
+                if params:
+                    kwargs["params"] = dict(params)
+                response = client.post(url, **kwargs)
+            else:
+                raise ValueError(f"unsupported HTTP method {method!r}")
+        except Exception as exc:  # noqa: BLE001 — classify, do not raise into Pulse/delivery
             error_class = classify_exception(exc)
             last = HttpGetResult(
                 error_class=error_class,

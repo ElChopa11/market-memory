@@ -8,6 +8,7 @@ Protocol: `run(as_of, ctx) -> DeskOutput` with `OK|DEGRADED|FAILED`, `completene
 uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --no-db
 ```
 
-**Must not:** depend on the `mm_execution` module or signing; fetch Polygon (Intel/`mm_ingest`); submit orders; self-approve Skeptic/Risk; send Telegram (Phase 5e).
+**Must not:** depend on the `mm_execution` module or signing; fetch Polygon (Intel/`mm_ingest`); submit orders; self-approve Skeptic/Risk. Telegram send is Coordinator `lab deliver` (IMP-013), not this package.
+
 
 See [../../docs/runbooks/desks.md](../../docs/runbooks/desks.md) and [../../AGENTS.md](../../AGENTS.md).

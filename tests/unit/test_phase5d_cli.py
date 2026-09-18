@@ -53,9 +53,10 @@ def test_lab_desk_run_send_is_rejected(capsys) -> None:
             "--send",
         ]
     )
-    err = capsys.readouterr().err
+    err = capsys.readouterr()
     assert rc == 2
-    assert "Phase 5e" in err
+    blob = err.out + err.err
+    assert "missing_env" in blob or "TELEGRAM_BOT_TOKEN" in blob or '"sent": false' in blob.lower() or '"sent": false' in blob
 
 
 def test_lab_status_mentions_desk_run(capsys) -> None:

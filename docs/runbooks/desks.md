@@ -1,8 +1,8 @@
-# Desk runners (Phase 5d)
+# Desk runners (Phase 5d) + Telegram delivery (Phase 5e)
 
-Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Telegram Bot API send is **Phase 5e**. No live trading.
+Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Telegram Bot API send is **Phase 5e** (`lab deliver`; default `--no-send`). No live trading.
 
-Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md).
+Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md).
 
 ## What operators can do
 
@@ -17,7 +17,7 @@ uv run lab desk run --desk intel --fixture tests/fixtures/phase5d/frozen_day.jso
 uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --out /tmp/desk-run --no-db
 ```
 
-`--send` is rejected. `mm_delivery.SEND_ENABLED` stays false until IMP-013.
+`--send` on `lab desk run` is a gated Coord-pack POST (token required; pytest fail-closed). Default remains `--no-send`. `mm_delivery.SEND_ENABLED` stays false so send is never implicit. See [telegram.md](telegram.md).
 
 Same fixture twice → identical `content_hash`.
 
@@ -40,7 +40,7 @@ Pipeline (no skipped gates):
 Intel → 3a Crypto | 3b Equities → Quant → Skeptic → Risk → Coord pack
 ```
 
-Paper / Principal remain human gates. Runners do **not** open paper or send Telegram.
+Paper / Principal remain human gates. Runners do **not** open paper. Telegram send is a separate Coordinator step (`lab deliver`), default dry-run.
 
 ## Desks
 
@@ -52,7 +52,7 @@ Paper / Principal remain human gates. Runners do **not** open paper or send Tele
 | `quant` | 4 | Calls `mm_quant` FactorRegistry + QuantCard. Closed verdict set. Not a call. |
 | `skeptic` | 5 | Adversarial checklist. FAIL **return** (`revise` → `in_research`) or FAIL **archive** (`reject` → `rejected`). No self-approve. |
 | `risk` | 6 | Deterministic allow/block from `config/risk/*`. Explains `rule_id` + `config_version`. **BLOCK is terminal** without Principal override. No LLM. |
-| `coord` | 1 | Calendar stub + pack assembly into [templates/output-contract.md](../../templates/output-contract.md). Prepares `--no-send` payload strings only. |
+| `coord` | 1 | Calendar stub + pack assembly into [templates/output-contract.md](../../templates/output-contract.md). Prepares payload strings; Telegram send is `lab deliver`. |
 
 ## Lifecycle
 
@@ -88,6 +88,6 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 ## Not this phase
 
-Telegram Bot API send (IMP-013 / 5e). Phase 6 PG NOTIFY bus. New market-data adapters. Live trading, signing, Redis, paid deps. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
+Phase 6a PG NOTIFY bus (IMP-014, parked). New market-data adapters. Live trading, signing, Redis, paid deps. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
 
-Factor math: [quant-desk.md](quant-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).
+Telegram: [telegram.md](telegram.md). Factor math: [quant-desk.md](quant-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

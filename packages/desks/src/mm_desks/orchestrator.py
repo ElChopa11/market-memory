@@ -19,7 +19,8 @@ from mm_desks.protocol import ENGINE_VERSION, DeskContext, DeskOutput
 from mm_desks.quant import QuantDesk
 from mm_desks.risk import RiskDesk
 from mm_desks.skeptic import SkepticDesk
-from mm_delivery.payload import SEND_ENABLED, assert_no_send, prepare_payload
+from mm_delivery.payload import SEND_ENABLED, prepare_payload
+from mm_delivery.deliver import deliver
 from mm_research_kit.state_machine import TransitionLog
 
 PIPELINE: tuple[str, ...] = ("intel", "crypto", "equities", "quant", "skeptic", "risk", "coord")
@@ -168,7 +169,11 @@ def run_from_fixture(
     workspace: Path | None = None,
     send: bool = False,
 ) -> DeskRunResult:
-    assert_no_send(send_requested=send)
+    if send:
+        raise RuntimeError("desk runners never send; use mm_delivery.deliver after the pack")
+    from mm_delivery.payload import assert_no_send
+
+    assert_no_send(send_requested=False)
     day: FrozenDay = load_frozen_day(path, repo_root=repo_root)
     ctx = DeskContext(
         repo_root=repo_root,
@@ -181,8 +186,8 @@ def run_from_fixture(
     return run_desks(as_of=day.as_of_knowledge, ctx=ctx, slugs=chosen)
 
 
-def write_dry_run(result: DeskRunResult, *, out_root: Path) -> dict[str, str]:
-    """Write pack + no-send payload under briefs/YYYY-MM-DD/. No network."""
+def write_dry_run(result: DeskRunResult, *, out_root: Path, repo_root: Path | None = None) -> dict[str, str]:
+    """Write pack + no-send + telegram payload under briefs/YYYY-MM-DD/. No network."""
     day_dir = out_root / "briefs" / result.session_date
     day_dir.mkdir(parents=True, exist_ok=True)
     pack_path = day_dir / "desk-pack.md"
@@ -201,8 +206,29 @@ def write_dry_run(result: DeskRunResult, *, out_root: Path) -> dict[str, str]:
                 continue
             target = day_dir / f"{desk.slug}-{Path(artifact.relpath).name}"
             target.write_text(artifact.content, encoding="utf-8")
-    return {
+    paths = {
         "pack": str(pack_path),
         "sha256": str(hash_path),
         "no_send": str(payload_path),
     }
+    completeness = 100.0
+    for row in result.desks:
+        if row.slug == "coord":
+            completeness = float(row.completeness_pct)
+            break
+    delivery = deliver(
+        result.pack_markdown or "",
+        desk="coord",
+        as_of=result.as_of_knowledge,
+        send=False,
+        kind="desk_pack",
+        completeness_pct=completeness,
+        repo=repo_root,
+        out_root=out_root,
+        session_date=result.session_date,
+        respect_quiet_hours=False,
+    )
+    if delivery.written:
+        paths.update(delivery.written)
+    paths["telegram_payload_hash"] = delivery.payload_hash
+    return paths

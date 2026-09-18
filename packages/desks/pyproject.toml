@@ -1,7 +1,7 @@
 [project]
 name = "mm-desks"
 version = "0.1.0"
-description = "Phase 5d desk runners (Crypto 3a / Equities 3b + Intel/Quant/Skeptic/Risk/Coord). No Telegram send, no execution."
+description = "Phase 5d desk runners (Crypto 3a / Equities 3b + Intel/Quant/Skeptic/Risk/Coord). Telegram send is mm_delivery."
 requires-python = ">=3.12"
 dependencies = [
   "mm-common",

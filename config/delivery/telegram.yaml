@@ -1,0 +1,92 @@
+# Telegram Bot API delivery (Phase 5e / IMP-013).
+# Secrets are env-only. Never put TELEGRAM_BOT_TOKEN or chat ids in this file.
+# Per-desk override: TELEGRAM_CHAT_ID_<DESK> (e.g. TELEGRAM_CHAT_ID_CRYPTO).
+# Default chat: TELEGRAM_CHAT_ID. Token: TELEGRAM_BOT_TOKEN.
+
+channel: telegram
+parse_mode: MarkdownV2
+max_message_chars: 4096
+disable_web_page_preview: true
+
+api:
+  base_url: https://api.telegram.org
+  timeout_seconds: 8
+  max_attempts: 2
+  backoff_s: 0.25
+
+rate_limit:
+  max_requests_per_minute: 20
+
+quiet_hours:
+  enabled: true
+  timezone: Australia/Sydney
+  start: "22:00"
+  end: "07:00"
+
+dedupe:
+  ttl_seconds: 86400
+
+# Never alert without a numeric threshold.
+thresholds:
+  require_threshold_config: true
+  desk_pack:
+    enabled: true
+    min_completeness_pct: 1
+  alert:
+    enabled: true
+    min_events: 1
+  test:
+    enabled: true
+    min_completeness_pct: 0
+
+schedule:
+  timezone: Australia/Sydney
+  desk_pack:
+    enabled: true
+    local_time: "07:30"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+
+desks:
+  coord:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID
+    thread_id: null
+  intel:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_INTEL
+    thread_id: null
+  crypto:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_CRYPTO
+    thread_id: null
+  equities:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_EQUITIES
+    thread_id: null
+  quant:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_QUANT
+    thread_id: null
+  skeptic:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_SKEPTIC
+    thread_id: null
+  risk:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_RISK
+    thread_id: null
+  macro:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_MACRO
+    thread_id: null
+  briefing:
+    enabled: true
+    chat_id_env: TELEGRAM_CHAT_ID_BRIEFING
+    thread_id: null
+
+inbound:
+  enabled: false
+  allowlist:
+    - /status
+    - /brief
+    - /desk
