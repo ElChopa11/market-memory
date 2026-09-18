@@ -17,6 +17,10 @@ from mm_research_kit.quant_review.models import (
     QuantReasonCode,
     QuantVerdict,
 )
+from mm_research_kit.quant_review.locked_membership import (
+    build_locked_membership_board,
+    write_locked_membership_pass,
+)
 from mm_research_kit.quant_review.universe import normalize_symbol, universe_from_mapping
 
 __all__ = [
@@ -36,4 +40,6 @@ __all__ = [
     "snapshot_from_mapping",
     "universe_from_mapping",
     "write_board",
+    "build_locked_membership_board",
+    "write_locked_membership_pass",
 ]

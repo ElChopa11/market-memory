@@ -48,6 +48,34 @@ def test_lab_quant_review_writes_board(tmp_path: Path, capsys) -> None:
     assert payload["verdicts"]["CRCL"] != "RESEARCH_PRIORITY"
 
 
+def test_lab_quant_review_locked_membership_writes_twelve_cards(tmp_path: Path, capsys) -> None:
+    research = tmp_path / "research"
+    rc = main(
+        [
+            "quant-review",
+            "--locked-membership",
+            "--repo-root",
+            str(ROOT),
+            "--research-root",
+            str(research),
+            "--no-db",
+        ]
+    )
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["card_count"] == 12
+    assert payload["research_priority_names"] == []
+    assert payload["engine"] == "imp-008.locked-membership-desk-pass"
+    board = Path(payload["board"])
+    text = board.read_text(encoding="utf-8")
+    assert "Locked membership only" in text
+    compact = text.split("## Compact verdicts", 1)[1].split("## RESEARCH_PRIORITY", 1)[0]
+    for name in ("HYPE", "SOL", "XRP", "GLD", "LLY"):
+        assert f"| {name} |" not in compact
+    assert (research / "quant" / "2026-09-18" / "cards" / "UNI.md").is_file()
+    assert "RESEARCH_PRIORITY (≤3; 0 this review)" in text
+
+
 def test_lab_quant_review_empty_snapshot_insufficient(tmp_path: Path, capsys) -> None:
     rc = main(
         [

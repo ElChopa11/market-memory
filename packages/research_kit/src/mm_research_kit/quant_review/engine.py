@@ -155,6 +155,7 @@ def run_board(
     prior_cards: tuple[QuantCard, ...] = (),
     prior_board: str | None = None,
     generated_at: datetime | None = None,
+    universe_config: str = "config/quant_review_universe.yaml",
 ) -> BoardResult:
     generated = as_utc(generated_at or review_at or utcnow())
     review_clock = as_utc(review_at or snapshot.as_of_knowledge)
@@ -205,6 +206,7 @@ def run_board(
         concentration_warnings=concentration,
         what_changed=changed,
         prior_board=prior_board,
+        universe_config=universe_config,
     )
     assert_language_clean(markdown)
     for card in cards:

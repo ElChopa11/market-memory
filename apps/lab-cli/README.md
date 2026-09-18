@@ -21,5 +21,6 @@ uv run lab backtest run --fixture tests/fixtures/backtest/clean_bars.json --stra
 uv run lab paper open THESIS-0001 --size 0.01 --max-loss "500 USDC" --invalidation "daily close < 60k" --no-db
 uv run lab paper list --no-db
 uv run lab quant-review --fixture tests/fixtures/quant_review/watchlist_snapshot_20260917.yaml --no-db
+uv run lab quant-review --locked-membership --no-db
 uv run lab equities reclaim-screen --fixture tests/fixtures/equities/post_ipo_reclaim_snapshot.yaml --no-db
 ```

@@ -132,7 +132,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Problem** | Historical Principal-universe field names and queue prose (`active_calls` / “active call”, MAKE-as-recommendation) conflate **universe membership** with Quant/trade recommendations. IMP-001 locked closed verdicts and banned investment-call language; leftover keys still read like calls. |
 | **Evidence** | `config/universe.yaml` former `active_calls` / `watch_only`; `research/queue/` packs; IMP-001 language gate (`packages/research_kit/.../language.py`); desk charter Quant section. |
 | **Proposed outcome** | Canonical Principal membership vocabulary only: `in_universe` / `watch_only` (plus `membership` = full locked ingest/briefing set). Quant verdicts stay the closed set `RESEARCH_PRIORITY \| MONITOR \| DEFER \| REJECT \| INSUFFICIENT_DATA`. Membership sets unchanged. |
-| **Definition of done** | Plan file; inventory then rename/rewrite lab-owned config/docs/templates/queue prose; loaders/tests/schemas on new keys; regression that canonical membership config keys are not `active_calls`; language gates intact (and cheap template lint if present); `uv run pytest` + lifecycle; non-draft PR to main; do not merge. |
+| **Definition of done** | Plan file; inventory then rename/rewrite lab-owned config/docs/templates/queue prose; loaders/tests/schemas on new keys; regression that canonical membership config keys are not `active_calls`; language gates intact (and cheap template lint if present); `uv run pytest` + lifecycle; merged to main as #35. |
 | **Non-goals** | No merge of #34; no Pulse/Stooq/FRED code; no universe expansion (ticker set stays the same); no Quant Board rewrite; no MAKE/buy/sell recommendations; no sizing; no execution; no live.yaml; no secrets; no paid data; no Telegram; no invented market prints. |
 | **Dependencies** | IMP-001 DONE (#31). |
 | **Risk level** | Low (rename/docs). Process risk if operators still read membership as a call. |
@@ -172,13 +172,33 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Problem** | Charters name crypto and equity thesis cards, but only generic `templates/thesis.md` exists. Cards lack IMP-001 closed verdicts, IMP-005 membership vocabulary, provenance fields, and an Independent Skeptic stub. Queue packs are not reusable desk cards. |
 | **Evidence** | [desk-charters.md](desk-charters.md) Crypto / Equities artifacts; this queue’s former Gap row; generic `templates/thesis.md`; IMP-001 closed verdicts; IMP-005 `in_universe` / `watch_only`. |
 | **Proposed outcome** | Dedicated `templates/crypto-thesis-card.md` and `templates/equities-thesis-card.md`. Generic `thesis.md` stays the lifecycle spine. `lab thesis new` copies the matching desk card for locked membership names. |
-| **Definition of done** | Queue hygiene: IMP-004/005/006 DONE; this item `IN_PROGRESS` (only one). Plan file; two templates with closed verdicts, membership keys, provenance, Skeptic stub, explicit non-goals; short runbook; language lint + unit tests; `uv run pytest` + lifecycle; non-draft PR to main; do not merge. |
+| **Definition of done** | Queue hygiene: IMP-004/005/006 DONE. Plan file; two templates with closed verdicts, membership keys, provenance, Skeptic stub, explicit non-goals; short runbook; language lint + unit tests; `uv run pytest` + lifecycle; merged to main as #37. |
 | **Non-goals** | No Pulse/Stooq/FRED; no execution/signing/`live.yaml`/risk-limit edits; no paid data; no ToS-violating scrapes; no universe expansion; no Telegram; no secrets; no MAKE/buy/sell/sizing; no replacing `thesis.md`; no Quant Board rewrite. |
 | **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-006 DONE (#36) for Equities screen vs card boundary. |
 | **Risk level** | Low (templates). Process risk if operators treat a desk card as a call or skip Skeptic. |
-| **Status** | IN_PROGRESS |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/37 |
-| **Lesson learned** | *(fill at close)* |
+| **Lesson learned** | Merged to `main` (#37). Dedicated `templates/crypto-thesis-card.md` and `templates/equities-thesis-card.md` sit beside generic `thesis.md`. `lab thesis new --instrument` copies the matching desk card for locked membership names. Do not reopen template work. |
+
+### IMP-008 — Quant RESEARCH_PRIORITY pass (locked universe only)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-008 |
+| **Priority** | P1 |
+| **Type** | Desk product / Quant pass |
+| **Desk** | Quant & Market Structure Desk |
+| **Owner** | Don/Quant |
+| **Problem** | IMP-001 Board scored a screenshot/TV watchlist (36 names), not the Principal-locked membership. There is no fresh RESEARCH_PRIORITY pass on `in_universe` ∪ `watch_only` as-of 2026-09-18 Sydney. IMP-007 hygiene was still showing IN_PROGRESS after #37 merged. |
+| **Evidence** | `config/universe.yaml`; `research/quant/2026-09-17/`; Skeptic scorecard PR #22; FAIL patches PR #23; WATCHLIST-DD cut-review; source-health 2026-09-17 (Stooq/FRED degraded); SEC PR 2026-90 (2026-09-17). |
+| **Proposed outcome** | Dated locked-membership Quant Review Board + per-name cards. Closed verdicts only. Zero forced RESEARCH_PRIORITY. UNI/AAVE re-evaluated against SEC PR 2026-90 only if falsifiable. IMP-007 marked DONE. |
+| **Definition of done** | IMP-007 DONE (#37). This item the only implementation thread while open. Plan file. Board covers BTC, NVDA, AVGO, MSFT, META, JPM, XOM, ETH, UNI, AAVE, SMH, XLF. No deferred_must_cut members. Counts + RESEARCH_PRIORITY list (or none). Language gate. Tests. `uv run pytest` + lifecycle. PR to main. No secrets, no live path, no paid-data. |
+| **Non-goals** | Screenshot-board rewrite; universe expansion; thesis-card reopen; Pulse/Stooq scrape; paid data; execution/`live.yaml`; MAKE/buy/sell/sizing; inventing prints. |
+| **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-007 DONE (#37). |
+| **Risk level** | Medium (language and membership can be misread as calls). Residual: equity tape still missing. |
+| **Status** | IN_REVIEW |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/38 |
+| **Lesson learned** | Locked-membership pass is a desk re-score, not a rubber-stamp of screenshot-engine overlay rel. RESEARCH_PRIORITY names: **none**. MONITOR: ETH (BTC-beta), UNI (SEC PR 2026-90 mapping test). DEFER: BTC, NVDA, JPM, AAVE, SMH, XLF. INSUFFICIENT_DATA: AVGO, MSFT, META, XOM. Stooq/FRED remain degraded. |
 
 ---
 
@@ -194,9 +214,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-004 | Data & Market Memory Desk + Macro & Cross-Asset Desk | Don/Data+Macro | DONE | [#34](https://github.com/ElChopa11/market-memory/pull/34) — Pulse source hardening |
 | IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
 | IMP-006 | Equities & Post-IPO Desk | Don/Equities | DONE | [#36](https://github.com/ElChopa11/market-memory/pull/36) merged |
-| IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | IN_PROGRESS | [#37](https://github.com/ElChopa11/market-memory/pull/37) — dedicated thesis-card templates |
+| IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | DONE | [#37](https://github.com/ElChopa11/market-memory/pull/37) merged |
+| IMP-008 | Quant & Market Structure Desk | Don/Quant | IN_REVIEW | [#38](https://github.com/ElChopa11/market-memory/pull/38) — locked-membership RESEARCH_PRIORITY pass |
 
-`IN_PROGRESS` count: **1** (IMP-007 thesis-card templates). IMP-000–IMP-006 are `DONE`.
+`IN_PROGRESS` count: **0**. IMP-000–IMP-007 are `DONE`. IMP-008 is `IN_REVIEW` (DoD met in this PR).
 
 
 ---
@@ -208,10 +229,10 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 | Area | Desk | Owner (accountable) |
 |---|---|---|
 | Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory Desk | Data desk (unassigned human; Coordinator until named) |
-| Crypto thesis / HL structure research | Crypto Desk | Don/Research (IMP-007 thesis cards) |
-| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Research (IMP-006 screen DONE; IMP-007 thesis cards) |
+| Crypto thesis / HL structure research | Crypto Desk | Don/Research (IMP-007 thesis cards DONE #37) |
+| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Research (IMP-006 screen DONE; IMP-007 thesis cards DONE #37) |
 | US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE; IMP-004 DONE) |
-| Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE) |
+| Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE; IMP-008 locked-membership pass IN_REVIEW) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
 | `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
 | Paper ledger `lab paper` | Principal-gated lab control | Principal enables; Coordinator operates CLI |
@@ -237,7 +258,9 @@ Historical “active calls” language debt was a Gap; it is now **IMP-005 DONE*
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
-Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-007 IN_PROGRESS**. Generic `thesis.md` stays the lifecycle spine.
+Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-007 DONE** (#37). Generic `thesis.md` stays the lifecycle spine. Do not reopen.
+
+Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 IN_REVIEW**. Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
 ## Reconciliation notes
 
@@ -248,4 +271,5 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 - IMP-005 merged as #35 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-006.
 - IMP-006 merged as #36 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-004 rebase onto `main`.
 - IMP-004 (#34) rebased onto `main` after #35/#36; Pulse/source-health hardening lands here. Membership vocab stays `in_universe` / `watch_only`.
-- IMP-007 intakes the former thesis-template Gap. Single-threaded: only this item is `IN_PROGRESS`.
+- IMP-007 merged as #37 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-008.
+- IMP-008 intakes the locked-membership RESEARCH_PRIORITY pass (as-of 2026-09-18 Sydney). Screenshot/TV universe is unchanged. Single-threaded: no item remains `IN_PROGRESS` after this PR (`IN_REVIEW` pending merge).

@@ -1,0 +1,62 @@
+# Quant Review Board universe for locked-membership passes (IMP-008).
+# NOT the screenshot/TV watchlist in config/quant_review_universe.yaml.
+# Membership source of truth remains config/universe.yaml (ticker set unchanged).
+# Do not add deferred_must_cut names. Do not treat membership as a Quant verdict.
+version: "2026-09-17"
+status: locked_membership
+kind: quant_review_locked_membership
+locked_ingest_universe: config/universe.yaml
+provenance:
+  - id: universe-yaml-2026-09-17
+    kind: config
+    description: Principal-locked membership from config/universe.yaml (in_universe ∪ watch_only)
+    captured_for: IMP-008
+notes:
+  - Locked membership only. Membership is not a Quant verdict.
+  - in_universe thesis-priority membership: BTC, NVDA, AVGO, MSFT, META, JPM, XOM.
+  - watch_only (still membership; no thesis-priority): ETH, UNI, AAVE, SMH, XLF.
+  - deferred_must_cut names are learning records and are not board members.
+  - Screenshot/TV watchlist remains config/quant_review_universe.yaml (IMP-001). This file does not replace it.
+  - Sector labels are operational peer groups for Track B, not fundamental research.
+  - Peers stay inside locked membership. Do not import screenshot-only names as peers.
+
+symbol_map:
+  BTCUSDC.P: BTC
+  BTC: BTC
+  ETHUSDC.P: ETH
+  ETH: ETH
+  UNIUSDC.P: UNI
+  UNI: UNI
+  AAVEUSDC.P: AAVE
+  AAVE: AAVE
+  NVDA: NVDA
+  AVGO: AVGO
+  MSFT: MSFT
+  META: META
+  JPM: JPM
+  XOM: XOM
+  SMH: SMH
+  XLF: XLF
+
+peer_groups:
+  crypto_perp: [BTC, ETH, UNI, AAVE]
+  ai_infra: [NVDA, AVGO, SMH]
+  mega_quality: [MSFT, META]
+  financials: [JPM, XLF]
+  energy: [XOM]
+
+arb_pairs: []
+
+instruments:
+  - {symbol: BTC, raw_symbols: [BTC, BTCUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [ETH, UNI, AAVE], tracks: [A, B], post_ipo: false, membership: in_universe}
+  - {symbol: NVDA, raw_symbols: [NVDA], asset_class: equity, venue: unknown, sector: ai_infra, benchmark: NVDA, peers: [AVGO, SMH], tracks: [A, B], post_ipo: false, membership: in_universe}
+  - {symbol: AVGO, raw_symbols: [AVGO], asset_class: equity, venue: unknown, sector: ai_infra, benchmark: NVDA, peers: [NVDA, SMH], tracks: [A, B], post_ipo: false, membership: in_universe}
+  - {symbol: MSFT, raw_symbols: [MSFT], asset_class: equity, venue: unknown, sector: mega_quality, benchmark: MSFT, peers: [META], tracks: [A, B], post_ipo: false, membership: in_universe}
+  - {symbol: META, raw_symbols: [META], asset_class: equity, venue: unknown, sector: mega_quality, benchmark: MSFT, peers: [MSFT], tracks: [A, B], post_ipo: false, membership: in_universe}
+  - {symbol: JPM, raw_symbols: [JPM], asset_class: equity, venue: unknown, sector: financials, benchmark: JPM, peers: [XLF], tracks: [A, B], post_ipo: false, membership: in_universe}
+  - {symbol: XOM, raw_symbols: [XOM], asset_class: equity, venue: unknown, sector: energy, benchmark: XOM, peers: [], tracks: [A, B], post_ipo: false, membership: in_universe}
+  - {symbol: ETH, raw_symbols: [ETH, ETHUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, UNI, AAVE], tracks: [A, B], post_ipo: false, membership: watch_only}
+  - {symbol: UNI, raw_symbols: [UNI, UNIUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH, AAVE], tracks: [A, B], post_ipo: false, membership: watch_only}
+  - {symbol: AAVE, raw_symbols: [AAVE, AAVEUSDC.P], asset_class: crypto_perp, venue: hyperliquid, sector: crypto_perp, benchmark: BTC, peers: [BTC, ETH, UNI], tracks: [A, B], post_ipo: false, membership: watch_only}
+  - {symbol: SMH, raw_symbols: [SMH], asset_class: etf, venue: unknown, sector: ai_infra, benchmark: NVDA, peers: [NVDA, AVGO], tracks: [A, B], post_ipo: false, membership: watch_only}
+  - {symbol: XLF, raw_symbols: [XLF], asset_class: etf, venue: unknown, sector: financials, benchmark: JPM, peers: [JPM], tracks: [A, B], post_ipo: false, membership: watch_only}

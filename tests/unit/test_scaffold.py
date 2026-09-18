@@ -77,6 +77,8 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-005-active-call-language-debt.md",
         "ops/plans/IMP-006-post-ipo-reclaim-screen.md",
         "ops/plans/IMP-007-thesis-card-templates.md",
+        "ops/plans/IMP-008-quant-locked-research-priority-pass.md",
+        "config/quant_review_locked_universe.yaml",
         "config/equities/post_ipo_reclaim.yaml",
         "docs/runbooks/post-ipo-reclaim.md",
         "docs/runbooks/thesis-cards.md",
