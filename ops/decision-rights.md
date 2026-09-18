@@ -90,10 +90,10 @@ RACI shorthand on the same rows: **R** does the work, **A** is accountable (matc
 ## Pipeline vs rights
 
 ```text
-Data → Research desk → Quant → Skeptic → Risk → Principal
+Intel → Research → Quant → IC/Risk (Skeptic gate then Risk gate) → Principal
 ```
 
-Research desk = Crypto / Equities & Post-IPO / Macro & Cross-Asset as applicable. Data proposes facts; Quant issues a verdict + reason code (not a trade); Independent Skeptic is `pass` | `revise` | `reject`; Risk holds independent veto (no autonomous limit change). After Principal: paper only if authorised; Execution & Fund Ops only if separately authorised (future-only).
+Research desk owns crypto / equities sleeves. Intel owns flow / macro. Data proposes facts; Quant issues a verdict + reason code (not a trade); Independent Skeptic is a **gate** inside IC/Risk (`pass` | `revise` | `reject`); Risk is the second IC/Risk gate (independent veto). After Principal: paper only if authorised; Execution & Fund Ops only if separately authorised (future-only).
 
 **Research priority ≠ trading decision.** `RESEARCH_PRIORITY` does not authorise paper or live.
 

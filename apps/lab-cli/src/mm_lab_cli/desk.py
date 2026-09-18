@@ -18,8 +18,8 @@ def add_desk_parser(sub) -> None:
     desk = sub.add_parser("desk", help="run desk orchestrator (default --no-send)")
     desk_sub = desk.add_subparsers(dest="desk_cmd")
     run_p = desk_sub.add_parser("run", help="run one desk or --all against a frozen-day fixture")
-    run_p.add_argument("--desk", help="desk slug: intel|crypto|equities|flow|macro|quant|skeptic|risk|coord")
-    run_p.add_argument("--all", action="store_true", dest="all_desks", help="run Intel→3a|3b→flow→macro→Quant→Skeptic→Risk→Coord")
+    run_p.add_argument("--desk", help="desk slug: intel|research|quant|ic_risk|ops")
+    run_p.add_argument("--all", action="store_true", dest="all_desks", help="run Intel→Research→Quant→IC/Risk→Ops")
     run_p.add_argument("--fixture", type=Path, required=True, help="frozen-day JSON/YAML")
     run_p.add_argument("--no-send", action="store_true", help="dry-run payloads only (default)")
     run_p.add_argument("--send", action="store_true", help="gated Telegram send of the Coord pack")
@@ -76,14 +76,14 @@ def dispatch_desk(args: Namespace) -> int:
         written = write_dry_run(result, out_root=out_root, repo_root=root)
     completeness = 100.0
     for row in result.desks:
-        if row.slug == "coord":
+        if row.slug == "ops":
             completeness = float(row.completeness_pct)
             break
     delivery = None
     if result.pack_markdown:
         delivery = deliver(
             result.pack_markdown,
-            desk="coord",
+            desk="ops",
             as_of=result.as_of_knowledge,
             send=send,
             kind="desk_pack",

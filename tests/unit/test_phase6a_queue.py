@@ -48,7 +48,10 @@ def test_readme_phase6_in_progress_6a() -> None:
     assert "unset" in cadence
     assert "coord.assemble" in cadence
     assert "dq.event" in cadence
-    assert "desk.flow.output" in cadence
+    assert "desk.intel.output" in cadence
+    assert "desk.research.output" in cadence
+    assert "desk.ic_risk.output" in cadence
+    assert "desk.ops.output" in cadence
     adr = (ROOT / "ADR" / "0004-desk-mesh-pg-notify.md").read_text(encoding="utf-8")
     assert "LISTEN/NOTIFY" in adr
     assert "Redis" in adr

@@ -20,12 +20,12 @@ def test_mesh_double_run_identical_hashes() -> None:
     assert first.content_hash == second.content_hash
     assert len(first.content_hash) == 64
     by_desk = {env.desk: env for env in first.assemble.envelopes}
-    assert set(by_desk) >= {"intel", "crypto", "equities", "flow", "macro", "quant", "skeptic", "risk"}
+    assert set(by_desk) == {"intel", "research", "quant", "ic_risk"}
     for env in first.assemble.envelopes:
         assert env.status != FAILED
         assert env.error_class is None
         assert env.regime == "risk_on_usd_mid"
-    assert first.assemble.coord.channel == CHANNEL_ASSEMBLE
+    assert first.assemble.coord.channel == "desk.ops.output"
     assert first.assemble.pack_markdown
     assert "HEADER" in first.assemble.pack_markdown
 
@@ -42,8 +42,8 @@ def test_killed_desk_assemble_failed_error_class() -> None:
     pack = result.assemble.pack_markdown
     assert "intel" in pack
     assert ERROR_CLASS_KILLED in pack or "FAILED" in pack
-    assert "crypto" in result.as_public_dict()["desks"]
-    assert result.as_public_dict()["desks"]["crypto"]["status"] != FAILED
+    assert "research" in result.as_public_dict()["desks"]
+    assert result.as_public_dict()["desks"]["research"]["status"] != FAILED
     # Double-run still stable while one desk is killed.
     again = mesh_from_fixture(FIXTURE, repo_root=ROOT, killed=("intel",))
     assert again.content_hash == result.content_hash
@@ -94,8 +94,9 @@ def test_in_memory_bus_notifies_output_and_dq_on_degraded() -> None:
 def test_channels_include_principal_topics() -> None:
     channels = all_channels(ROOT)
     assert "desk.intel.output" in channels
-    assert "desk.flow.output" in channels
-    assert "desk.macro.output" in channels
-    assert "desk.crypto.alert" in channels
+    assert "desk.research.output" in channels
+    assert "desk.quant.output" in channels
+    assert "desk.ic_risk.output" in channels
+    assert "desk.ops.output" in channels
     assert "coord.assemble" in channels
     assert "dq.event" in channels

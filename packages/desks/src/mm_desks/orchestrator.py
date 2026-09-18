@@ -1,4 +1,7 @@
-"""Run one desk or the Intel → 3a|3b → Quant → Skeptic → Risk → Coord pipeline."""
+"""Run the five-desk pipeline: Intel → Research → Quant → IC/Risk → Ops.
+
+Don/Coord is orchestration only — not a publishing desk. Delivery is Ops-owned.
+"""
 
 from __future__ import annotations
 
@@ -9,45 +12,26 @@ from typing import Any
 
 from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
-from mm_desks.coord import CoordDesk
-from mm_desks.crypto import CryptoDesk
 from mm_desks.envelope import apply_regime_to_context, stamp_output
-from mm_desks.equities import EquitiesDesk
 from mm_desks.fixture import load_frozen_day
-from mm_desks.flow import FlowDesk
+from mm_desks.ic_risk import IcRiskDesk
 from mm_desks.intel import IntelDesk
-from mm_desks.macro import MacroDesk
 from mm_desks.models import FrozenDay
+from mm_desks.ops import OpsDesk
 from mm_desks.protocol import ENGINE_VERSION, DeskContext, DeskOutput
 from mm_desks.quant import QuantDesk
-from mm_desks.risk import RiskDesk
-from mm_desks.skeptic import SkepticDesk
+from mm_desks.research import ResearchDesk
+from mm_desks.roster import OPS, PIPELINE
 from mm_delivery.payload import SEND_ENABLED, prepare_payload
 from mm_delivery.deliver import deliver
 from mm_research_kit.state_machine import TransitionLog
 
-PIPELINE: tuple[str, ...] = (
-    "intel",
-    "crypto",
-    "equities",
-    "flow",
-    "macro",
-    "quant",
-    "skeptic",
-    "risk",
-    "coord",
-)
-
 _DESKS = {
     "intel": IntelDesk(),
-    "crypto": CryptoDesk(),
-    "equities": EquitiesDesk(),
-    "flow": FlowDesk(),
-    "macro": MacroDesk(),
+    "research": ResearchDesk(),
     "quant": QuantDesk(),
-    "skeptic": SkepticDesk(),
-    "risk": RiskDesk(),
-    "coord": CoordDesk(),
+    "ic_risk": IcRiskDesk(),
+    "ops": OpsDesk(),
 }
 
 
@@ -157,12 +141,12 @@ def run_desks(
         ctx.prior[slug] = output
     apply_regime_to_context(ctx)
     ordered = tuple(ctx.prior[slug] for slug in slugs if slug in ctx.prior)
-    coord = ctx.prior.get("coord")
+    ops = ctx.prior.get(OPS)
     pack_md = ""
-    if coord is not None:
-        pack_md = str(coord.payload.get("pack_markdown") or "")
-        if coord.artifacts:
-            pack_md = coord.artifacts[0].content
+    if ops is not None:
+        pack_md = str(ops.payload.get("pack_markdown") or "")
+        if ops.artifacts:
+            pack_md = ops.artifacts[0].content
     events = tuple(ctx.events)
     digest = _hash_pack(pack_md, ordered, events)
     return DeskRunResult(
@@ -229,12 +213,12 @@ def write_dry_run(result: DeskRunResult, *, out_root: Path, repo_root: Path | No
     }
     completeness = 100.0
     for row in result.desks:
-        if row.slug == "coord":
+        if row.slug == OPS:
             completeness = float(row.completeness_pct)
             break
     delivery = deliver(
         result.pack_markdown or "",
-        desk="coord",
+        desk=OPS,
         as_of=result.as_of_knowledge,
         send=False,
         kind="desk_pack",

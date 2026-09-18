@@ -12,7 +12,7 @@ def test_queue_marks_014_done_015_in_review_016_parked() -> None:
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-014" in line and "DONE" in line for line in board_lines)
     assert any("IMP-015" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-016" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-016" in line and "DONE" in line for line in board_lines)
     assert not any("IMP-016" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-014" in line and "IN_REVIEW" in line for line in board_lines)
     assert "NOTIFY" in queue
@@ -45,8 +45,8 @@ def test_readme_phase6_in_progress_6b() -> None:
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
     cadence = (ROOT / "config" / "desks" / "cadence.yaml").read_text(encoding="utf-8")
-    assert "desk.flow.output" in cadence
-    assert "desk.macro.output" in cadence
+    assert "desk.intel.output" in cadence
+    assert "desk.research.output" in cadence
     defaults = (ROOT / "config" / "risk" / "defaults.yaml").read_text(encoding="utf-8")
     assert "untradeable_at_size" in defaults
     assert "event_risk" in defaults

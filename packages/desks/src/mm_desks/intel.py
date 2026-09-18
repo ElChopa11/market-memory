@@ -1,10 +1,13 @@
-"""Intel desk (Tier 2): read-only assemble of ingest/health facts. No theses."""
+"""Intel desk (Market Intelligence): feed assemble + flow/macro sleeves. No theses."""
 
 from __future__ import annotations
 
 from datetime import datetime
 
+from mm_desks.combine import combine_outputs
 from mm_desks.fixture import REQUIRED_FEEDS
+from mm_desks.flow import run as run_flow
+from mm_desks.macro import run as run_macro
 from mm_desks.models import FrozenDay
 from mm_desks.protocol import (
     DeskArtifact,
@@ -13,13 +16,14 @@ from mm_desks.protocol import (
     completeness_pct,
     status_from_slots,
 )
+from mm_desks.roster import DESK_META, INTEL
 
-SLUG = "intel"
-TIER = "2"
-DISPLAY_NAME = "Data & Market Memory Desk"
+SLUG = INTEL
+TIER = DESK_META[INTEL][1]
+DISPLAY_NAME = DESK_META[INTEL][0]
 
 
-def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
+def run_feeds(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     day: FrozenDay = ctx.fixture
     feeds = day.feeds
     expected = len(feeds)
@@ -35,7 +39,7 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
         "",
         f"- **Knowledge watermark (as_of_knowledge):** {as_of.isoformat()}",
         f"- **Fixture:** {day.fixture_id}",
-        "- **Role:** facts only. No thesis, no Quant verdict, no order.",
+        "- **Role:** Market Intelligence facts only. No thesis, no Quant verdict, no order.",
         "",
         "| source_id | status | freshness | required | observation_id | notes |",
         "| --- | --- | --- | --- | --- | --- |",
@@ -69,6 +73,29 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
         as_of_knowledge=as_of,
         notes=tuple(notes),
         payload=payload,
+    )
+
+
+def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
+    feeds = run_feeds(as_of, ctx)
+    flow = run_flow(as_of, ctx)
+    macro = run_macro(as_of, ctx)
+    payload = {
+        **feeds.payload,
+        "sleeves": ("feeds", "flow", "macro"),
+        "flow": flow.payload,
+        "macro": macro.payload,
+        "regime_tag": macro.payload.get("regime_tag") or macro.regime,
+        "event_risk": (macro.payload or {}).get("event_risk") or {},
+    }
+    return combine_outputs(
+        desk=DISPLAY_NAME,
+        slug=SLUG,
+        tier=TIER,
+        as_of=as_of,
+        parts=(feeds, flow, macro),
+        payload=payload,
+        regime=str(payload.get("regime_tag") or "unset"),
     )
 
 

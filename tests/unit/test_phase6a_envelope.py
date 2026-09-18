@@ -22,7 +22,7 @@ def test_desk_output_header_has_principal_fields() -> None:
     assert header["status"] == OK
     assert header["n"] >= 1
     assert header["completeness"] == 100.0
-    assert header["regime"] == REGIME_PLACEHOLDER
+    assert header["regime"] == "risk_on_usd_mid"
     assert header["op"] == "observation"
     assert header["universe"] == "mixed"
     assert "hyperliquid.info" in header["sources"]
@@ -49,18 +49,18 @@ def test_double_run_same_as_of_identical_envelope_hash() -> None:
 
 
 def test_envelope_round_trip_canonical() -> None:
-    result = run_from_fixture(FIXTURE, repo_root=ROOT, slugs=("crypto",))
-    crypto = result.desks[0]
-    again = output_from_canonical(crypto.canonical())
-    assert again.content_hash() == crypto.content_hash()
-    assert again.header() == crypto.header()
+    result = run_from_fixture(FIXTURE, repo_root=ROOT, slugs=("research",))
+    research = result.desks[0]
+    again = output_from_canonical(research.canonical())
+    assert again.content_hash() == research.content_hash()
+    assert again.header() == research.header()
     assert again.op in {"paper", "observation"}
 
 
 def test_risk_envelope_op_is_paper() -> None:
-    result = run_from_fixture(FIXTURE, repo_root=ROOT, slugs=("intel", "crypto", "equities", "quant", "skeptic", "risk"))
-    risk = {row.slug: row for row in result.desks}["risk"]
-    assert risk.op == "paper"
-    env = envelope_from_output(risk, repo_root=ROOT)
-    assert env.channel == "desk.risk.output"
+    result = run_from_fixture(FIXTURE, repo_root=ROOT, slugs=("intel", "research", "quant", "ic_risk"))
+    ic = {row.slug: row for row in result.desks}["ic_risk"]
+    assert ic.op == "paper"
+    env = envelope_from_output(ic, repo_root=ROOT)
+    assert env.channel == "desk.ic_risk.output"
     assert env.op == "paper"

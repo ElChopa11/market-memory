@@ -16,8 +16,7 @@ from typing import Any
 from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
 from mm_desks.bus import Bus, DeskHealth, EnvelopeStore, InMemoryBus, InMemoryEnvelopeStore, NotifyEvent
-from mm_desks.cadence import DESK_META, all_channels
-from mm_desks.coord import CoordDesk, PIPELINE_FOR_PACK
+from mm_desks.cadence import CHANNEL_ASSEMBLE, DESK_META, all_channels
 from mm_desks.envelope import (
     ERROR_CLASS_KILLED,
     ERROR_CLASS_MISSING,
@@ -29,10 +28,10 @@ from mm_desks.envelope import (
     stamp_output,
 )
 from mm_desks.fixture import load_frozen_day
+from mm_desks.ops import OpsDesk
 from mm_desks.orchestrator import PIPELINE, run_from_fixture
 from mm_desks.protocol import FAILED, OK, DeskContext, DeskOutput, ENGINE_VERSION
-
-MESH_DESKS: tuple[str, ...] = PIPELINE_FOR_PACK
+from mm_desks.roster import MESH_DESKS, OPS
 
 
 @dataclass(frozen=True)
@@ -61,6 +60,8 @@ class AssembleResult:
             "status": self.status,
             "completeness_pct": self.completeness_pct,
             "pack_present": bool(self.pack_markdown),
+            "ops_envelope_id": self.coord.envelope_id,
+            "ops_content_hash": self.coord.content_hash,
             "coord_envelope_id": self.coord.envelope_id,
             "coord_content_hash": self.coord.content_hash,
             "desks": {
@@ -180,12 +181,14 @@ class CoordMeshWorker:
                     repo_root=self.repo_root,
                 )
         apply_regime_to_context(ctx)
-        coord_out = stamp_output(CoordDesk().run(watermark, ctx), ctx)
-        coord_env = envelope_from_output(coord_out, repo_root=self.repo_root)
-        self.publish(coord_env)
+        ops_out = stamp_output(OpsDesk().run(watermark, ctx), ctx)
+        coord_env = envelope_from_output(ops_out, repo_root=self.repo_root)
+        published = self.publish(coord_env)
+        if CHANNEL_ASSEMBLE not in published.channels:
+            self.bus.notify(CHANNEL_ASSEMBLE, coord_env.notify_payload())
         pack_md = ""
-        if coord_out.artifacts:
-            pack_md = coord_out.artifacts[0].content
+        if ops_out.artifacts:
+            pack_md = ops_out.artifacts[0].content
         digest = sha256_hex(
             canonical_json(
                 {
@@ -201,8 +204,8 @@ class CoordMeshWorker:
             health=dict(self.health),
             pack_markdown=pack_md,
             content_hash=digest,
-            status=coord_out.status,
-            completeness_pct=coord_out.completeness_pct,
+            status=ops_out.status,
+            completeness_pct=ops_out.completeness_pct,
         )
 
 
@@ -248,13 +251,13 @@ def publish_desk_outputs(
 ) -> list[PublishResult]:
     skip_set = set(skip)
     for output in outputs:
-        if output.slug in skip_set or output.slug == "coord":
+        if output.slug in skip_set or output.slug == OPS:
             continue
         ctx.prior[output.slug] = output
     apply_regime_to_context(ctx)
     published: list[PublishResult] = []
     for output in outputs:
-        if output.slug in skip_set or output.slug == "coord":
+        if output.slug in skip_set or output.slug == OPS:
             continue
         stamped = stamp_output(ctx.prior.get(output.slug, output), ctx)
         ctx.prior[output.slug] = stamped
@@ -273,7 +276,7 @@ def mesh_from_fixture(
 ) -> MeshDryResult:
     """Fixture-only mesh: run desks, publish envelopes, Coord assembles from the store."""
     day = load_frozen_day(path, repo_root=repo_root)
-    run_slugs = tuple(slug for slug in PIPELINE if slug != "coord" and slug not in set(killed))
+    run_slugs = tuple(slug for slug in PIPELINE if slug != OPS and slug not in set(killed))
     run = run_from_fixture(path, repo_root=repo_root, slugs=run_slugs, send=False)
     ctx = DeskContext(repo_root=repo_root, fixture=day, thesis=day.thesis)
     worker = CoordMeshWorker(

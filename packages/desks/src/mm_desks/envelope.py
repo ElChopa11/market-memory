@@ -1,7 +1,7 @@
 """Phase 6 desk envelope: Principal header + content_hash idempotency.
 
 Header fields: desk, as_of (UTC + Sydney), status, n, completeness, regime
-(from the Macro desk when Phase 6b succeeds; otherwise the 6a `unset`
+(from Intel's macro sleeve when Phase 6b/6c-1 succeeds; otherwise the 6a `unset`
 placeholder), op=paper|observation, universe, sources/missing.
 Body is a passthrough of the Phase 5d DeskOutput canonical payload.
 ``envelope_id`` is not hashed — re-run same as_of → identical content_hash
@@ -45,17 +45,20 @@ NOTIFY_MAX_BYTES = 8000
 def infer_n(output: DeskOutput) -> int:
     payload = output.payload or {}
     if output.slug == "intel":
-        return len(payload.get("feeds") or [])
-    if output.slug in {"crypto", "equities"}:
+        feeds = len(payload.get("feeds") or [])
+        flow = payload.get("flow") if isinstance(payload.get("flow"), dict) else {}
+        macro = payload.get("macro") if isinstance(payload.get("macro"), dict) else {}
+        return feeds + len(flow.get("snapshots") or flow.get("instruments") or []) + len(
+            macro.get("series") or []
+        )
+    if output.slug == "research":
         return len(payload.get("tape") or [])
     if output.slug == "quant":
         return len(payload.get("cards") or [])
-    if output.slug == "flow":
-        return len(payload.get("snapshots") or payload.get("instruments") or [])
-    if output.slug == "macro":
-        return len(payload.get("series") or [])
-    if output.slug == "coord":
-        prior = payload.get("desks") or payload.get("assembled_desks")
+    if output.slug == "ic_risk":
+        return 2
+    if output.slug == "ops":
+        prior = payload.get("assembled_desks") or payload.get("desks")
         if isinstance(prior, list):
             return len(prior)
         return int(output.n or 0) or len(output.artifacts)
@@ -98,34 +101,46 @@ def infer_sources_missing(output: DeskOutput) -> tuple[tuple[str, ...], tuple[st
 def infer_universe(output: DeskOutput, ctx: DeskContext | None) -> str:
     if output.universe and output.universe != "mixed":
         return output.universe
-    if output.slug in {"intel", "coord", "quant", "skeptic", "risk", "flow", "macro"}:
-        return "mixed"
+    if output.slug in {"intel", "ops", "quant", "ic_risk", "research"}:
+        if output.slug != "research":
+            return "mixed"
     if ctx is not None and ctx.thesis is not None:
         return membership_of(ctx.thesis.instrument, ctx.repo_root)
     return "mixed"
 
 
-def resolved_regime(output: DeskOutput, ctx: DeskContext | None) -> str:
-    """Use a successful macro tag; never overwrite a real tag with `unset`."""
-    if output.regime and output.regime not in {REGIME_PLACEHOLDER, "", "unavailable"}:
-        return output.regime
-    if ctx is None:
-        return output.regime or REGIME_PLACEHOLDER
+def _macro_tag_from_ctx(ctx: DeskContext) -> str:
+    intel = ctx.prior.get("intel")
+    if intel is not None:
+        payload = intel.payload or {}
+        nested = payload.get("macro") if isinstance(payload.get("macro"), dict) else {}
+        tag = str(nested.get("regime_tag") or payload.get("regime_tag") or intel.regime or "")
+        if tag and tag not in {REGIME_PLACEHOLDER, "unavailable"}:
+            return tag
     macro = ctx.prior.get("macro")
     if macro is not None:
         tag = str((macro.payload or {}).get("regime_tag") or macro.regime or "")
         if tag and tag not in {REGIME_PLACEHOLDER, "unavailable"}:
             return tag
+    return ""
+
+
+def resolved_regime(output: DeskOutput, ctx: DeskContext | None) -> str:
+    """Use a successful Intel macro tag; never overwrite a real tag with `unset`."""
+    if output.regime and output.regime not in {REGIME_PLACEHOLDER, "", "unavailable"}:
+        return output.regime
+    if ctx is None:
+        return output.regime or REGIME_PLACEHOLDER
+    tag = _macro_tag_from_ctx(ctx)
+    if tag:
+        return tag
     return load_cadence(ctx.repo_root).regime_placeholder or REGIME_PLACEHOLDER
 
 
 def apply_regime_to_context(ctx: DeskContext) -> None:
-    """Copy a successful macro regime tag onto every desk output in ``ctx.prior``."""
-    macro = ctx.prior.get("macro")
-    if macro is None:
-        return
-    tag = str((macro.payload or {}).get("regime_tag") or macro.regime or "")
-    if not tag or tag in {REGIME_PLACEHOLDER, "unavailable"}:
+    """Copy a successful Intel macro regime tag onto every desk output in ``ctx.prior``."""
+    tag = _macro_tag_from_ctx(ctx)
+    if not tag:
         return
     for slug, output in list(ctx.prior.items()):
         if output.regime != tag:

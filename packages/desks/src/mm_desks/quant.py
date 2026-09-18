@@ -13,10 +13,13 @@ from mm_desks.protocol import (
 )
 from mm_quant.card import build_quant_card, render_quant_card
 from mm_quant.config import load_quant_config
+from mm_desks.roster import DESK_META, QUANT
 
-SLUG = "quant"
-TIER = "4"
-DISPLAY_NAME = "Quant & Market Structure Desk"
+from mm_desks.roster import DESK_META, QUANT
+
+SLUG = QUANT
+TIER = DESK_META[QUANT][1]
+DISPLAY_NAME = DESK_META[QUANT][0]
 
 _CLOSED = ("RESEARCH_PRIORITY", "MONITOR", "DEFER", "REJECT", "INSUFFICIENT_DATA")
 

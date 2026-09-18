@@ -14,8 +14,10 @@ from mm_delivery.idempotency import DedupeStore
 from mm_delivery.payload import DeliveryPayload, build_payload
 from mm_delivery.telegram import TelegramClient
 
-COORD_MIRROR_FOOTER = "\n\n_coord mirror — same content_hash; not re-rendered_"
+OPS_MIRROR_FOOTER = "\n\n_ops mirror — same content_hash; not re-rendered_"
+COORD_MIRROR_FOOTER = OPS_MIRROR_FOOTER
 ALERTS_DESK = "alerts"
+OPS_DESK = "ops"
 
 
 @dataclass(frozen=True)
@@ -38,8 +40,11 @@ class FanoutResult:
 
 def coord_mirror_text(markdown: str, *, content_hash: str) -> str:
     """Append footer only. Never re-render the body. Hash stays the original."""
-    footer = f"{COORD_MIRROR_FOOTER}\n`{content_hash}`"
+    footer = f"{OPS_MIRROR_FOOTER}\n`{content_hash}`"
     return markdown + footer
+
+
+ops_mirror_text = coord_mirror_text
 
 
 def fanout_desk(
@@ -81,12 +86,12 @@ def fanout_desk(
     )
     notes: list[str] = []
     mirror = None
-    if desk != "coord":
+    if desk != OPS_DESK:
         mirrored = coord_mirror_text(markdown, content_hash=primary.payload.content_hash)
         # Build payload then overwrite content_hash to the ORIGINAL (never re-render).
         mirror = deliver(
             mirrored,
-            desk="coord",
+            desk=OPS_DESK,
             as_of=as_of,
             send=send,
             kind="desk_pack",
@@ -100,7 +105,7 @@ def fanout_desk(
             content_hash_override=primary.payload.content_hash,
             failed_sink=failed_sink,
         )
-        notes.append("coord mirror uses original content_hash + footer")
+        notes.append("ops mirror uses original content_hash + footer")
     return FanoutResult(
         desk=desk,
         primary=primary,

@@ -1,4 +1,4 @@
-"""Phase 6c queue hygiene: IMP-015 DONE, IMP-016 this PR, IMP-017 parked."""
+"""Phase 6c queue hygiene: IMP-016 DONE (#47), 6c-1 this PR, IMP-017 parked."""
 
 from __future__ import annotations
 
@@ -7,14 +7,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_queue_marks_015_done_016_in_review_017_parked() -> None:
+def test_queue_marks_015_done_016_done_017_parked() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-015" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-016" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-016" in line and "DONE" in line for line in board_lines)
     assert any("IMP-017" in line and ("READY" in line or "PARKED" in line) for line in board_lines)
     assert not any("IMP-017" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-015" in line and "IN_REVIEW" in line for line in board_lines)
+    assert not any("IMP-016" in line and "IN_REVIEW" in line for line in board_lines)
 
 
 def test_phase6c_plan_adr_prompts_and_config_exist() -> None:

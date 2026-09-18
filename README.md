@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 6 in progress (6c per-desk Telegram + PLAYBOOK + token budget/grounding on PG LISTEN/NOTIFY mesh).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). Phase 6b flow/macro/regime is **IMP-015 DONE** (#46). **No live trading, no order signing, no wallet code.** IMP-016 is this tree. Phase 6d listings/IPO is parked as IMP-017.
+**Status: Phase 6 in progress (6c-1 five-desk roster on PG LISTEN/NOTIFY mesh).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). Phase 6b flow/macro/regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). **No live trading, no order signing, no wallet code.** IMP-018 is this tree. Phase 6d listings/IPO is parked as IMP-017 until 6c-1..6c-5 complete.
 
 ## Start here
 
@@ -150,7 +150,7 @@ scripts/          bootstrap + lifecycle checker
 3. Market Pulse (merged)
 4. Backtest + paper ledger (merged)
 5. **complete** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check **merged (IMP-010, #41)**. 5c quant factors **merged (IMP-011, #42)**. 5d desk runners **merged (IMP-012, #43)**. 5e Telegram delivery **merged (IMP-013, #44)**.
-6. **in progress (6c)** — per-desk Telegram fan-out + PLAYBOOK + token budget/grounding (IMP-016, this tree). 6a mesh **DONE** (#45). 6b flow/macro **DONE** (#46). 6d listings/IPO is IMP-017 (READY/PARKED). Tiny manually approved live remains later and hard-gated.
+6. **in progress (6c-1)** — five-desk roster (IMP-018, this tree). 6a mesh **DONE** (#45). 6b flow/macro **DONE** (#46). 6c PLAYBOOK + fan-out **DONE** (#47). 6d listings/IPO is IMP-017 (PARKED until 6c-1..6c-5). Tiny manually approved live remains later and hard-gated.
 7. Learning loop
 
-Out of scope for Phase 6c: Redis, listings/IPO desk, scorecards automation, strategy decay-watch remainder, `live.yaml` changes, order/signing code, paid deps, live LLM HTTP provider, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM as calculator/router.
+Out of scope for Phase 6c-1: 6c-2 naming, 6c-4 watchlist, 6c-5 delivery expansion, Redis, listings/IPO desk, scorecards automation, strategy decay-watch remainder, `live.yaml` changes, order/signing code, paid deps, live LLM HTTP provider, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM as calculator/router.

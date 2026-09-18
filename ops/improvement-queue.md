@@ -10,7 +10,7 @@ This queue is the operating system, not an investment book. It does not authoris
 2. **One `IN_PROGRESS` implementation item.** Review (`IN_REVIEW`) of docs is allowed while implementation stays parked.
 3. **No duplicate research.** If an artifact already answers the question, close or merge the item with a lesson.
 4. **Reusable artifacts.** Prefer templates, schema records, and desk products over one-off commentary.
-5. Status vocabulary: `BACKLOG` → `READY` → `IN_PROGRESS` → `IN_REVIEW` → `DONE` | `PARKED` | `REJECTED`.
+5. Status vocabulary: `OPEN` (ops incident, not closed) → `BACKLOG` → `READY` → `IN_PROGRESS` → `IN_REVIEW` → `DONE` | `PARKED` | `REJECTED`. `OPEN` items are logged incidents; they are **not** closed and do not occupy the single `IN_PROGRESS` implementation slot.
 
 ## Required fields (every item)
 
@@ -19,6 +19,86 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 ---
 
 ## Active / seeded items
+
+### SCHED-001 — Sydney 08:00 digest never fired
+
+| Field | Value |
+|---|---|
+| **ID** | SCHED-001 |
+| **Priority** | P1 |
+| **Type** | Scheduler reliability |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | Sydney 08:00 digest was configured and never fired. Root cause unknown. |
+| **Evidence** | Routine `sydney-morning-digest-8am` showed never-run while sibling NY-cron briefs completed. Do not treat as closed. |
+| **Proposed outcome** | Find why the Sydney 08:00 job did not fire; restore or document the miss without closing until verified. |
+| **Definition of done** | Root cause recorded; job either fires on the next Sydney 08:00 window or the miss is explained with a fix queued. Still OPEN until then. |
+| **Non-goals** | Closing the ticket on config-exists-therefore-done; live trading; 6c-5 delivery expansion. |
+| **Dependencies** | None. |
+| **Risk level** | Medium (missed Principal digest). |
+| **Status** | OPEN |
+| **PR** | — |
+| **Lesson learned** | *(open — do not close)* |
+
+### BRIEF-TAG-20260918 — Fri 18 Sep pre-market fired ~90m pre-open
+
+| Field | Value |
+|---|---|
+| **ID** | BRIEF-TAG-20260918 |
+| **Priority** | P2 |
+| **Type** | Scorecard hygiene / tagging |
+| **Desk** | Ops / Quant scorecard |
+| **Owner** | Ops/Quant scorecard |
+| **Problem** | Fri 18 Sep pre-market artifact fired ~90m pre-open (08:00 NY / 22:00 Syd) vs current 30m-pre-open anchor (09:00 NY / 23:00 Syd). Like-for-like scorecard compare is invalid. |
+| **Evidence** | Config `config/schedules/market-pulse.yaml` `pre_open.local_time: "08:00"` America/New_York; Principal 30m-pre-open anchor is 09:00 NY / 23:00 Syd. |
+| **Proposed outcome** | Tag that artifact so scorecards do not compare like-for-like vs 30m-pre-open packs. |
+| **Definition of done** | Artifact tagged; scorecard docs note the 90m vs 30m mismatch; item stays OPEN until the tag is applied. |
+| **Non-goals** | Rewriting Pulse; 6c-5; treating the 18 Sep pack as a 30m-pre-open golden. |
+| **Dependencies** | None. |
+| **Risk level** | Low (comparability). |
+| **Status** | OPEN |
+| **PR** | — |
+| **Lesson learned** | *(open — do not close)* |
+
+### SRC-STOOQ-404 — stooq http_404, 2 consecutive
+
+| Field | Value |
+|---|---|
+| **ID** | SRC-STOOQ-404 |
+| **Priority** | P1 |
+| **Type** | Source health |
+| **Desk** | Intel |
+| **Owner** | Intel |
+| **Problem** | Stooq HTTP 404, two consecutive observations. Pulse/source-health already classify `http_404` as terminal (IMP-004). Still OPEN. |
+| **Evidence** | [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) Stooq canary HTTP 404; IMP-002/IMP-003/IMP-004 lessons. Two consecutive. |
+| **Proposed outcome** | Intel owns the source: confirm whether 404 is IP/ToS/path; keep honest unavailable; no scrape fallback. |
+| **Definition of done** | Consecutive-404 record in this queue; Intel note on next source-health run; not closed by IMP-004 (hardening already shipped). |
+| **Non-goals** | ToS-violating scrape URLs; paid data; inventing prints. |
+| **Dependencies** | IMP-004 DONE (#34) — classification exists; this is the open consecutive-404 incident. |
+| **Risk level** | Low–medium (optional Pulse slot stays unavailable). |
+| **Status** | OPEN |
+| **PR** | — |
+| **Lesson learned** | *(open — do not close)* |
+
+### SRC-FRED-MISSING-ENV — fred missing_env
+
+| Field | Value |
+|---|---|
+| **ID** | SRC-FRED-MISSING-ENV |
+| **Priority** | P1 |
+| **Type** | Secrets / env |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | FRED `missing_env` (`FRED_API_KEY` unset). |
+| **Evidence** | Source-health 2026-09-17 FRED `missing_env`; IMP-002/IMP-003 lessons. |
+| **Proposed outcome** | Set `FRED_API_KEY` in repo secrets + env. **Queued for Principal — Don does not decide secrets.** |
+| **Definition of done** | Principal sets the env/secret; next source-health is not `missing_env`. Stays OPEN until Principal acts. |
+| **Non-goals** | Committing the key; Don/Coord deciding secrets; inventing FRED prints. |
+| **Dependencies** | Principal (secrets). |
+| **Risk level** | Low (honest unavailable until keyed). |
+| **Status** | OPEN |
+| **PR** | — |
+| **Lesson learned** | *(open — queued for Principal; Don does not decide secrets)* |
 
 ### IMP-000 — Desk operating model docs
 
@@ -356,9 +436,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6d listings/IPO; 6e scorecards automation; 6f strategy decay-watch remainder; reopening IMP-015 except queue hygiene; live LLM HTTP provider; paid Telegram/LLM SDKs. |
 | **Dependencies** | IMP-015 DONE (#46). |
 | **Risk level** | Medium (secrets, ToS, alert spam, LLM backfill). |
-| **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
-| **Lesson learned** | *(fill at close)* |
+| **Status** | DONE |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/47 |
+| **Lesson learned** | Merged to `main` (#47). Per-desk fan-out + PLAYBOOK ladder + 6c-0 token budget/grounding. Phase 6c-1 desk consolidation (11→5) is IMP-018. 6c-3 ladder/math stays on main via #47. |
 
 ### IMP-017 — Phase 6d listings / IPO desk
 
@@ -367,18 +447,98 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **ID** | IMP-017 |
 | **Priority** | P2 |
 | **Type** | Desk product |
-| **Desk** | Equities & Post-IPO Desk |
-| **Owner** | Don/Equities |
-| **Problem** | 6c ships PLAYBOOK + Telegram fan-out. There is still no listings / IPO desk product. |
-| **Evidence** | ADR 0006; IMP-016 this PR; Principal-locked 6d. |
-| **Proposed outcome** | Listings / IPO desk runner on the existing mesh + 6c fan-out. Honest unavailable. Closed Quant verdicts. PLAYBOOK math inherited. |
-| **Definition of done** | *(filled in the 6d PR)*. Plan stub: [plans/IMP-017-phase6d-listings-ipo.md](plans/IMP-017-phase6d-listings-ipo.md). Not started while IMP-016 is open. |
-| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6e–6f products; reopening IMP-016 except queue hygiene; implementing listings in 6c. |
-| **Dependencies** | IMP-016 (this PR) must be DONE. |
+| **Desk** | Research (Investment Research) — listings sleeve; not a sixth desk |
+| **Owner** | Ops (queue) / Research (when unparked) |
+| **Problem** | 6c ships PLAYBOOK + Telegram fan-out. There is still no listings / IPO desk product. Principal 2026-09-19: 6d is blocked until 6c-1..6c-5 complete. |
+| **Evidence** | ADR 0006; ADR 0007; IMP-016 DONE #47; Principal resume-build order 2026-09-19. |
+| **Proposed outcome** | Listings / IPO product on the five-desk roster + 6c fan-out. Honest unavailable. Closed Quant verdicts. PLAYBOOK math inherited. |
+| **Definition of done** | *(filled in the 6d PR)*. Plan stub: [plans/IMP-017-phase6d-listings-ipo.md](plans/IMP-017-phase6d-listings-ipo.md). Not started until 6c-1..6c-5 complete. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6e–6f products; implementing listings in 6c-1. |
+| **Dependencies** | IMP-018 (6c-1), IMP-019 (6c-2), IMP-016/6c-3 (#47 DONE), IMP-020 (6c-4), IMP-021 (6c-5) must be DONE. |
 | **Risk level** | Medium (language, missing listing feeds). |
 | **Status** | PARKED |
 | **PR** | — |
-| **Lesson learned** | Parked. Do not implement listings/IPO in IMP-016. |
+| **Lesson learned** | Parked. Blocked until 6c-1..6c-5 complete per Principal order. Do not implement listings/IPO in this PR. |
+
+### IMP-018 — Phase 6c-1 desk consolidation (11 → 5)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-018 |
+| **Priority** | P0 |
+| **Type** | Desk operating model / cutover |
+| **Desk** | Ops |
+| **Owner** | Don/Ops |
+| **Problem** | Publishing roster still has Phase-5/6a slugs (crypto, equities, flow, macro, skeptic, risk, coord-as-desk, chart, briefing). Principal hive is five desks. |
+| **Evidence** | Principal resume-build order 2026-09-19; IMP-016 DONE #47. |
+| **Proposed outcome** | Exactly five publishing desks: Intel, Research, Quant, IC/Risk (two gates), Ops. Coord/Don orchestration only. Delivery Ops-owned. |
+| **Definition of done** | Queue OPEN incidents logged; 5-desk roster on main path; cadence/telegram/runners/tests/runbooks/charters updated; import-boundary statement-match test; `--no-send` fixtures; no 6c-2/4/5/6d. |
+| **Non-goals** | 6c-2 naming; 6c-3 math (already #47); 6c-4 watchlist; 6c-5 delivery expansion; 6d listings; live/signing; Redis; new paid deps. |
+| **Dependencies** | IMP-016 DONE (#47). |
+| **Risk level** | Medium (cutover misses a sleeve). |
+| **Status** | IN_REVIEW |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-019 — Phase 6c-2 naming layer
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-019 |
+| **Priority** | P2 |
+| **Type** | Presentation / naming |
+| **Desk** | Ops |
+| **Owner** | Don/Ops |
+| **Problem** | 6c-1 cuts the roster. Display names / Principal-facing naming layer are still Phase-5 strings in places. |
+| **Evidence** | Principal 6c-2 (not this PR). |
+| **Proposed outcome** | Naming layer on the five-desk roster. |
+| **Definition of done** | *(filled in the 6c-2 PR)*. Not started in IMP-018. |
+| **Non-goals** | Reopening the 6c-1 roster; 6c-4/5; 6d; live/signing. |
+| **Dependencies** | IMP-018 must be DONE. |
+| **Risk level** | Low. |
+| **Status** | PARKED |
+| **PR** | — |
+| **Lesson learned** | Parked. Do not implement 6c-2 in IMP-018. |
+
+### IMP-020 — Phase 6c-4 watchlist monitor
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-020 |
+| **Priority** | P2 |
+| **Type** | Desk product |
+| **Desk** | Research |
+| **Owner** | Research |
+| **Problem** | No 6c-4 watchlist monitor. |
+| **Evidence** | Principal 6c-4 (not this PR). |
+| **Proposed outcome** | Watchlist monitor on the five-desk roster. |
+| **Definition of done** | *(filled in the 6c-4 PR)*. Not started in IMP-018. |
+| **Non-goals** | 6c-5 delivery expansion; 6d; live/signing. |
+| **Dependencies** | IMP-018; IMP-019 as applicable. 6c-3 math already on main (#47). |
+| **Risk level** | Medium. |
+| **Status** | PARKED |
+| **PR** | — |
+| **Lesson learned** | Parked. Do not implement 6c-4 in IMP-018. |
+
+### IMP-021 — Phase 6c-5 delivery expansion
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-021 |
+| **Priority** | P2 |
+| **Type** | Delivery |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | 6c-1 only cuts Telegram routes over to five desks. Further delivery expansion is 6c-5. |
+| **Evidence** | Principal 6c-5 (not this PR). |
+| **Proposed outcome** | Delivery expansion on Ops-owned Telegram. |
+| **Definition of done** | *(filled in the 6c-5 PR)*. Not started in IMP-018. |
+| **Non-goals** | 6d listings; live/signing; Redis. |
+| **Dependencies** | IMP-018. |
+| **Risk level** | Medium (secrets, ToS). |
+| **Status** | PARKED |
+| **PR** | — |
+| **Lesson learned** | Parked. Do not implement 6c-5 in IMP-018 beyond cutover compile/tests. |
 
 ---
 
@@ -405,10 +565,21 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-013 | Chief of Staff / Hive Coordinator | Don | DONE | [#44](https://github.com/ElChopa11/market-memory/pull/44) Phase 5e Telegram |
 | IMP-014 | Chief of Staff / Hive Coordinator | Don | DONE | [#45](https://github.com/ElChopa11/market-memory/pull/45) Phase 6a PG NOTIFY mesh |
 | IMP-015 | Macro & Cross-Asset Desk + Data & Market Memory Desk | Don/Macro+Data | DONE | [#46](https://github.com/ElChopa11/market-memory/pull/46) Phase 6b flow+macro+regime |
-| IMP-016 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 token budget/grounding — this PR |
-| IMP-017 | Equities & Post-IPO Desk | Don/Equities | PARKED | Phase 6d listings/IPO — parked |
+| IMP-016 | Ops (was CoS) | Don | DONE | [#47](https://github.com/ElChopa11/market-memory/pull/47) Phase 6c PLAYBOOK + fan-out + 6c-0 |
+| IMP-017 | Research (listings sleeve) | Ops/Research | PARKED | Phase 6d listings/IPO — blocked until 6c-1..6c-5 |
+| IMP-018 | Ops | Don/Ops | IN_REVIEW | Phase 6c-1 desk consolidation 11→5 — this PR |
+| IMP-019 | Ops | Don/Ops | PARKED | Phase 6c-2 naming layer |
+| IMP-020 | Research | Research | PARKED | Phase 6c-4 watchlist monitor |
+| IMP-021 | Ops | Ops | PARKED | Phase 6c-5 delivery expansion |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-015 are `DONE`. IMP-016 is `IN_REVIEW` (DoD met in this PR). IMP-017 is `PARKED` (until 016 merges).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-016 are `DONE`. IMP-018 is `IN_REVIEW` (this PR). IMP-017/019/020/021 are `PARKED`. OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed).
+
+| ID | Desk | Owner | Status | Notes |
+|---|---|---|---|---|
+| SCHED-001 | Ops | Ops | OPEN | Sydney 08:00 digest never fired |
+| BRIEF-TAG-20260918 | Ops / Quant scorecard | Ops/Quant | OPEN | 18 Sep pack ~90m pre-open vs 30m anchor |
+| SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive |
+| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | OPEN | fred missing_env; Don does not decide secrets |
 
 
 ---
@@ -419,14 +590,12 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 
 | Area | Desk | Owner (accountable) |
 |---|---|---|
-| Market Memory, ingest, provenance, schemas, PIT | Data & Market Memory Desk | Data desk (unassigned human; Coordinator until named) |
-| Crypto thesis / HL structure research | Crypto Desk | Don/Research (IMP-007 thesis cards DONE #37) |
-| Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Research (IMP-006 screen DONE; IMP-007 thesis cards DONE #37) |
-| US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE; IMP-004 DONE) |
-| Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE; IMP-008 locked-membership pass DONE #38) |
-| `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
-| `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
-| Paper ledger `lab paper` | Principal-gated lab control | Principal enables; Coordinator operates CLI |
+| Market Memory, ingest, provenance, schemas, PIT, flow, macro, Pulse | Intel (Market Intelligence) | Intel |
+| Crypto / equity / chart research cards and screens | Research (Investment Research) | Research |
+| Quant Review Board / cards / factor math | Quant | Quant |
+| Skeptic gate + Risk gate | IC/Risk (two gates, not two desks) | IC/Risk |
+| Queue, delivery, pack assemble | Ops | Ops (Don/Coord orchestrates; not a publishing desk) |
+| Paper ledger `lab paper` | Principal-gated lab control | Principal enables; Ops operates CLI |
 | `packages/execution`, `apps/execution-service` | Execution & Fund Ops | **Dormant / future only** |
 | Fund ledger, tax, investor reporting | Execution & Fund Ops | **Absent / future only** |
 
@@ -453,7 +622,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 is **IMP-016 IN_REVIEW** (this PR). Phase 6d listings/IPO is **IMP-017 PARKED**. Do not start 6d in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 IN_REVIEW** (this PR). Phase 6d listings/IPO is **IMP-017 PARKED** until 6c-1..6c-5 complete. Do not start 6d in this PR.
 
 ## Reconciliation notes
 
@@ -473,4 +642,5 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-013 merged as #44 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-014.
 - IMP-014 merged as #45 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-015.
 - IMP-015 merged as #46 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-016.
-- IMP-016 intakes Phase 6c per-desk Telegram + PLAYBOOK + addendum 6c-0 (token budget, grounding, prompt versioning pulled from 6f). Principal-locked 6a–6f; bus = Postgres NOTIFY, no Redis; one phase per PR. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-017 is PARKED for 6d (listings/IPO). Strategy decay-watch remainder stays 6f.
+- IMP-016 merged as #47 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-018.
+- IMP-018 intakes Phase 6c-1 desk consolidation (11→5) per Principal resume-build order 2026-09-19. OPEN incidents logged (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV). IMP-017 remains PARKED until 6c-1..6c-5 complete. Bus = Postgres NOTIFY, no Redis. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge).

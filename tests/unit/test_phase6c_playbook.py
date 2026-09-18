@@ -117,7 +117,7 @@ def test_template_only_artifacts_forbid_llm() -> None:
         try:
             client.complete(
                 artifact_type=kind,
-                desk_slug="coord",
+            desk_slug="ops",
                 run_id="x",
                 prompt=prompt,
                 user_payload={},

@@ -49,19 +49,19 @@ def test_threshold_change_changes_tag() -> None:
 
 
 def test_macro_desk_happy_path_regime_and_no_event_risk() -> None:
-    result = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("macro",))
-    macro = result.desks[0]
-    assert macro.status == OK
-    assert macro.regime == "risk_on_usd_mid"
-    assert macro.payload["regime_tag"] == "risk_on_usd_mid"
-    assert macro.payload["event_risk"]["tagged"] is False
-    assert set(macro.payload["missing"]) == set()
+    result = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("intel",))
+    intel = result.desks[0]
+    macro = intel.payload["macro"]
+    assert intel.status == OK
+    assert intel.regime == "risk_on_usd_mid"
+    assert macro["regime_tag"] == "risk_on_usd_mid"
+    assert macro["event_risk"]["tagged"] is False
+    assert set(macro["missing"]) == set()
 
 
 def test_event_risk_within_window_exposes_rule_id() -> None:
-    result = run_from_fixture(EVENT, repo_root=ROOT, slugs=("macro",))
-    macro = result.desks[0]
-    er = macro.payload["event_risk"]
+    result = run_from_fixture(EVENT, repo_root=ROOT, slugs=("intel",))
+    er = result.desks[0].payload["macro"]["event_risk"]
     assert er["tagged"] is True
     assert er["rule_id"] == "event_risk"
     assert er["size_haircut_pct"] is not None
@@ -69,12 +69,13 @@ def test_event_risk_within_window_exposes_rule_id() -> None:
 
 
 def test_missing_macro_feeds_degraded() -> None:
-    result = run_from_fixture(MISSING, repo_root=ROOT, slugs=("macro",))
-    macro = result.desks[0]
-    assert macro.status == DEGRADED
-    assert macro.regime == "unset"
-    assert "VIX" in macro.payload["missing"]
-    assert "DXY" in macro.payload["missing"]
+    result = run_from_fixture(MISSING, repo_root=ROOT, slugs=("intel",))
+    intel = result.desks[0]
+    macro = intel.payload["macro"]
+    assert intel.status == DEGRADED
+    assert intel.regime == "unset"
+    assert "VIX" in macro["missing"]
+    assert "DXY" in macro["missing"]
 
 
 def test_compute_macro_pit_ignores_future_points() -> None:

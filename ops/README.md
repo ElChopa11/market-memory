@@ -29,6 +29,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Phase 5e Telegram delivery (IMP-013) is **DONE** (#44).
 - Phase 6a PG LISTEN/NOTIFY mesh (IMP-014) is **DONE** (#45).
 - Phase 6b flow/macro/regime (IMP-015) is **DONE** (#46).
-- Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 (IMP-016) is **IN_REVIEW** (this PR).
-- Phase 6d listings/IPO (IMP-017) is **PARKED**. Do not implement listings in 6c.
+- Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 (IMP-016) is **DONE** (#47).
+- Phase 6c-1 five-desk roster (IMP-018) is **IN_REVIEW** (this PR).
+- Phase 6d listings/IPO (IMP-017) is **PARKED** until 6c-1..6c-5 complete.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

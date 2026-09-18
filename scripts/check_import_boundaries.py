@@ -26,18 +26,29 @@ FORBIDDEN_BUS_IMPORTS = frozenset({"redis", "aioredis", "walrus"})
 FORBIDDEN_SNIPPETS = ("sign_l1_action", "hl_trade", "submit_order", "private_key")
 
 
+def imported_top_levels_from_source(text: str) -> set[str]:
+    """AST-only. Comments and string literals mentioning mm_execution do not count."""
+    names: set[str] = set()
+    tree = ast.parse(text)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module.split(".")[0])
+    return names
+
+
+def execution_imports_from_source(text: str) -> set[str]:
+    return imported_top_levels_from_source(text) & FORBIDDEN_EXECUTION_IMPORTS
+
+
 def _imported_top_levels(root: Path) -> set[str]:
     names: set[str] = set()
     if not root.is_dir():
         return names
     for path in root.rglob("*.py"):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    names.add(alias.name.split(".")[0])
-            elif isinstance(node, ast.ImportFrom) and node.module:
-                names.add(node.module.split(".")[0])
+        names |= imported_top_levels_from_source(path.read_text(encoding="utf-8"))
     return names
 
 

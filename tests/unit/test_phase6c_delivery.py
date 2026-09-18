@@ -22,7 +22,7 @@ def test_coord_mirror_keeps_content_hash() -> None:
     markdown = "desk note BTC (observed)"
     result = fanout_desk(
         markdown,
-        desk="crypto",
+        desk="research",
         as_of=AS_OF,
         send=False,
         completeness_pct=100.0,
@@ -32,7 +32,7 @@ def test_coord_mirror_keeps_content_hash() -> None:
     assert result.coord_mirror is not None
     assert result.coord_mirror.payload.content_hash == result.primary.payload.content_hash
     assert result.content_hash == result.primary.payload.content_hash
-    assert "coord mirror" in result.coord_mirror.payload.text
+    assert "ops mirror" in result.coord_mirror.payload.text
     assert result.primary.payload.text == markdown
 
 
@@ -81,7 +81,7 @@ def test_exhausted_retries_write_failed_sink() -> None:
 
     result = deliver(
         "ping",
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=True,
         completeness_pct=100.0,

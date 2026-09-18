@@ -159,7 +159,7 @@ def _add_research_common(parser: argparse.ArgumentParser) -> None:
 
 
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 6 in progress — 6c per-desk Telegram + PLAYBOOK + LLM budget; Phase 5 complete; Phase 4 backtest/paper remain)")
+    print("market-memory lab CLI (Phase 6 in progress — 6c-1 five-desk roster; 6c PLAYBOOK + LLM budget on main; Phase 5 complete; Phase 4 backtest/paper remain)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")

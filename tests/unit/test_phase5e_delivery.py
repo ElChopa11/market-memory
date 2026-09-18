@@ -25,7 +25,7 @@ AS_OF = parse_utc("2026-09-18T00:00:00Z")
 def _payload():
     settings = load_telegram_settings(ROOT)
     markdown = FIXTURE_MD.read_text(encoding="utf-8")
-    return build_payload(markdown, desk="coord", as_of=AS_OF, settings=settings, kind="desk_pack")
+    return build_payload(markdown, desk="ops", as_of=AS_OF, settings=settings, kind="desk_pack")
 
 
 def test_send_enabled_stays_false() -> None:
@@ -48,7 +48,7 @@ def test_dry_run_payload_golden_is_byte_stable() -> None:
     assert "bot" not in envelope.lower() or "sendMessage" in envelope
     assert payload.chat_id_env == "TELEGRAM_CHAT_ID"
     assert payload.idempotency_key == idempotency_key(
-        desk="coord", as_of=AS_OF, content_hash=payload.content_hash
+        desk="ops", as_of=AS_OF, content_hash=payload.content_hash
     )
 
 
@@ -56,7 +56,7 @@ def test_dry_run_writes_exact_bytes(tmp_path: Path) -> None:
     markdown = FIXTURE_MD.read_text(encoding="utf-8")
     first = deliver(
         markdown,
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=False,
         completeness_pct=100.0,
@@ -67,7 +67,7 @@ def test_dry_run_writes_exact_bytes(tmp_path: Path) -> None:
     )
     second = deliver(
         markdown,
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=False,
         completeness_pct=100.0,
@@ -89,7 +89,7 @@ def test_send_without_token_fails_closed(tmp_path: Path) -> None:
     markdown = FIXTURE_MD.read_text(encoding="utf-8")
     result = deliver(
         markdown,
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=True,
         completeness_pct=100.0,
@@ -122,7 +122,7 @@ def test_idempotent_rerun_does_not_double_post() -> None:
     now = parse_utc("2026-09-18T02:00:00Z")
     first = deliver(
         markdown,
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=True,
         completeness_pct=100.0,
@@ -135,7 +135,7 @@ def test_idempotent_rerun_does_not_double_post() -> None:
     )
     second = deliver(
         markdown,
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=True,
         completeness_pct=100.0,
@@ -159,7 +159,7 @@ def test_rate_limit_skips_send() -> None:
     client = TelegramClient("test-token", base_url="https://telegram.test")
     result = deliver(
         markdown,
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=True,
         completeness_pct=100.0,
@@ -186,17 +186,17 @@ def test_thread_id_is_forwarded() -> None:
     # clone route with thread
     from dataclasses import replace
 
-    route = settings.route("coord")
+    route = settings.route("ops")
     assert route is not None
     desks = dict(settings.desks)
-    desks["coord"] = replace(route, thread_id=42)
+    desks["ops"] = replace(route, thread_id=42)
     settings = replace(settings, desks=desks)
     http = httpx.Client(transport=httpx.MockTransport(handler), timeout=2.0)
     client = TelegramClient("test-token", base_url="https://telegram.test", client=http)
     markdown = FIXTURE_MD.read_text(encoding="utf-8")
     result = deliver(
         markdown,
-        desk="coord",
+        desk="ops",
         as_of=AS_OF,
         send=True,
         completeness_pct=100.0,

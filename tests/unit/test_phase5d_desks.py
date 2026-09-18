@@ -43,9 +43,10 @@ def test_happy_path_all_desks_ok_and_hash_stable() -> None:
     assert "RISK STATUS" in first.pack_markdown
     assert "CALENDAR (stub)" in first.pack_markdown
     assert "US session open (stub)" in first.pack_markdown
-    assert "`pass`" in first.pack_markdown or "`pass`" in by_slug["skeptic"].artifacts[0].content
-    assert by_slug["risk"].payload["decision"] == "allow"
-    assert by_slug["skeptic"].payload["verdict"] == "pass"
+    ic = by_slug["ic_risk"]
+    assert "`pass`" in first.pack_markdown or "`pass`" in ic.artifacts[0].content
+    assert ic.payload["risk"]["decision"] == "allow"
+    assert ic.payload["skeptic"]["verdict"] == "pass"
     assert by_slug["quant"].payload["verdict"] in {
         "RESEARCH_PRIORITY",
         "MONITOR",
@@ -66,11 +67,11 @@ def test_missing_feed_is_degraded_never_invent() -> None:
     intel_md = by_slug["intel"].artifacts[0].content
     assert "polygon" in intel_md
     assert "unavailable" in intel_md
-    assert by_slug["equities"].status == DEGRADED
+    assert by_slug["research"].status == DEGRADED
     pack = result.pack_markdown
     assert "polygon" in pack
     assert "unavailable" in pack
-    assert by_slug["coord"].status == DEGRADED
+    assert by_slug["ops"].status == DEGRADED
     # Double-run still stable while degraded.
     again = _run("missing_feed.json")
     assert again.content_hash == result.content_hash
@@ -79,9 +80,10 @@ def test_missing_feed_is_degraded_never_invent() -> None:
 def test_skeptic_fail_returns_to_in_research() -> None:
     result = _run("skeptic_fail.json")
     by_slug = _by_slug(result)
-    assert by_slug["skeptic"].payload["verdict"] == "revise"
-    assert by_slug["skeptic"].payload["fail_mode"] == "return"
-    assert by_slug["skeptic"].payload["thesis_status"] == "in_research"
+    skeptic = by_slug["ic_risk"].payload["skeptic"]
+    assert skeptic["verdict"] == "revise"
+    assert skeptic["fail_mode"] == "return"
+    assert skeptic["thesis_status"] == "in_research"
     events = [event for event in result.events if event.to_status == "in_research"]
     assert events
     assert events[0].actor == "Independent Skeptic"
@@ -99,9 +101,9 @@ def test_skeptic_fail_archive_on_circular_invalidation() -> None:
     day.thesis.invalidation = "price is wrong because the thesis says so"
     ctx = DeskContext(repo_root=ROOT, fixture=day, thesis=day.thesis)
     result = run_desks(as_of=day.as_of_knowledge, ctx=ctx, slugs=PIPELINE)
-    skeptic = {row.slug: row for row in result.desks}["skeptic"]
-    assert skeptic.payload["verdict"] == "reject"
-    assert skeptic.payload["fail_mode"] == "archive"
+    ic = {row.slug: row for row in result.desks}["ic_risk"]
+    assert ic.payload["skeptic"]["verdict"] == "reject"
+    assert ic.payload["skeptic"]["fail_mode"] == "archive"
     assert day.thesis.status == "rejected"
     assert any(event.to_status == "rejected" for event in result.events)
 
@@ -109,9 +111,10 @@ def test_skeptic_fail_archive_on_circular_invalidation() -> None:
 def test_risk_block_is_terminal() -> None:
     result = _run("risk_block.json")
     by_slug = _by_slug(result)
-    assert by_slug["risk"].payload["decision"] == "block"
-    assert by_slug["risk"].payload["rule_id"] == RULE_NOT_ALLOWLISTED
-    assert by_slug["risk"].payload["terminal"] is True
+    risk = by_slug["ic_risk"].payload["risk"]
+    assert risk["decision"] == "block"
+    assert risk["rule_id"] == RULE_NOT_ALLOWLISTED
+    assert risk["terminal"] is True
     assert "BLOCK" in result.pack_markdown
     assert any("Risk BLOCK" in event.reason for event in result.events)
     # Paper was requested and refused.

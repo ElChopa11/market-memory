@@ -2,37 +2,33 @@
 
 Market Memory is a **private research lab**, not a managed fund and not an autonomous trading system. These charters encode a hedge-fund-style desk model for how work is owned **today** (Phase 5a: desk boundaries over Phase 4 backtest + paper/shadow ledger). They do not raise external capital, enable live trading, or authorise any desk to place orders.
 
-**Canonical desk names (Principal lock)** — use these strings in reports, the improvement queue, and PR titles:
+**Canonical desk names (Principal lock, Phase 6c-1)** — use these strings in reports, the improvement queue, and PR titles. Exactly **five** publishing desks:
 
-| Desk | Notes |
-|---|---|
-| Principal | Sole mandate, risk budget, promotion, execution enablement |
-| Chief of Staff / Hive Coordinator | Operating system (Don); not an investment desk |
-| Data & Market Memory Desk | Trusted information infrastructure (Intel + Memory) |
-| Crypto Desk | Digital-asset research |
-| Equities & Post-IPO Desk | Equity / thematic / post-IPO research |
-| Macro & Cross-Asset Desk | Rates, USD, energy, vol, US session context (not a numbered delivery tier) |
-| Quant & Market Structure Desk | Triage only; closed verdict set |
-| Independent Skeptic | Cannot author and approve the same thesis |
-| Risk (independent veto) | Blocks unsafe progression; never creates theses |
-| Paper Ledger | Shadow ledger; not Execution |
-| Execution & Fund Ops | **Future-only** until Principal separately activates |
+| Desk | Slug | Notes |
+|---|---|---|
+| Intel (Market Intelligence) | `intel` | Ingest + flow + macro + Pulse sleeves |
+| Research (Investment Research) | `research` | Crypto + equities + chart sleeves (retired 3a/3b desks) |
+| Quant | `quant` | Closed verdict set; not a call |
+| IC/Risk (Investment Committee & Risk) | `ic_risk` | Two **gates** (Skeptic + Risk), not two desks |
+| Ops | `ops` | Queue, pack assemble, delivery. Don/Coord orchestrates — not a sixth desk |
 
-### Delivery tiers (0–7)
+Principal, Paper Ledger, and Execution & Fund Ops remain cells / gates, not publishing desks.
 
-Principal lock for Phase 5. Hive roles stay in [AGENTS.md](../AGENTS.md). Runbook: [docs/runbooks/desks.md](../docs/runbooks/desks.md). ADR: [ADR/0002-desk-delivery-architecture.md](../ADR/0002-desk-delivery-architecture.md).
+### Delivery tiers (gates 0–7) vs desks
 
-| Tier | Cell | Desk name | Package skeleton (5a) |
+Principal lock for permissions. Publishing roster is the five desks above. Runbook: [docs/runbooks/desks.md](../docs/runbooks/desks.md). ADR: [ADR/0002-desk-delivery-architecture.md](../ADR/0002-desk-delivery-architecture.md), [ADR/0007-phase6c1-desk-roster.md](../ADR/0007-phase6c1-desk-roster.md).
+
+| Tier | Cell | Desk / sleeve | Package |
 |---|---|---|---|
-| 0 | Principal | Principal | (human; no package) |
-| 1 | Ops / CoS | Chief of Staff / Hive Coordinator | `apps/lab-cli` (existing) |
-| 2 | Intel | Data & Market Memory Desk | `packages/ingest` (existing; no opine imports) |
-| 3a | Crypto | Crypto Desk | `packages/desks` (`mm_desks.crypto` stub) |
-| 3b | Equities | Equities & Post-IPO Desk | `packages/desks` (`mm_desks.equities` stub) |
-| 4 | Quant | Quant & Market Structure Desk | `packages/quant` (IMP-011 factor library; 5d Quant desk calls it) |
-| 5 | Skeptic | Independent Skeptic | `packages/research_kit` skeptic (existing) |
-| 6 | Risk | Risk (independent veto) | `packages/risk` (stub service; config exists) |
-| 7 | Paper Ledger | Paper Ledger (lab control) | `packages/paper` (existing) |
+| 0 | Principal | Principal (human; no package) | — |
+| 1 | Ops | Ops (`mm_desks.ops`); Coord/Don is orchestration only | `apps/lab-cli` |
+| 2 | Intel | Intel (Market Intelligence) | `packages/ingest` + `mm_desks.intel` (flow/macro sleeves) |
+| 3a | Crypto sleeve | Research (not a desk) | `mm_desks.crypto` helper |
+| 3b | Equities sleeve | Research (not a desk) | `mm_desks.equities` helper |
+| 4 | Quant | Quant | `packages/quant` |
+| 5 | Skeptic gate | IC/Risk | `mm_desks.skeptic` helper |
+| 6 | Risk gate | IC/Risk | `packages/risk` + `mm_desks.risk` helper |
+| 7 | Paper Ledger | Lab control (not a publishing desk) | `packages/paper` |
 
 **Not a numbered tier in 5a:** Macro & Cross-Asset (Pulse still operates), Unicorn, Execution & Fund Ops (future-only), Delivery/Telegram (`packages/delivery` skeleton; **send is 5e**).
 
@@ -64,7 +60,8 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | Phase 5e Telegram delivery (IMP-013) | Phase 6 mesh; live path |
 | Phase 6a PG NOTIFY mesh (IMP-014) | Redis; live path |
 | Phase 6b flow/macro/regime (IMP-015) | live path |
-| Phase 6c per-desk Telegram + PLAYBOOK (IMP-016) | 6d listings; live path; live LLM HTTP |
+| Phase 6c per-desk Telegram + PLAYBOOK (IMP-016 DONE #47) | live path; live LLM HTTP |
+| Phase 6c-1 five-desk roster (IMP-018) | 6c-2 naming; 6c-4 watchlist; 6c-5 delivery expansion; 6d listings |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 
@@ -73,10 +70,10 @@ Paper trading exists as a **shadow ledger bound to theses**. It is not Execution
 No skipped gates. A Quant `RESEARCH_PRIORITY` verdict is triage, not permission to trade.
 
 ```text
-Data → Research desk → Quant → Skeptic → Risk → Principal
+Intel → Research → Quant → IC/Risk (Skeptic gate then Risk gate) → Ops pack
 ```
 
-Research desk is Crypto / Equities & Post-IPO / Macro & Cross-Asset as applicable. No skipped gates. After Principal: paper trading only when authorised; constrained Execution & Fund Ops only when separately authorised (future-only).
+Research desk owns crypto / equities / chart sleeves. Intel owns flow / macro / Pulse sleeves. No skipped gates. After Principal: paper trading only when authorised; constrained Execution & Fund Ops only when separately authorised (future-only).
 
 | Gate | Question the gate answers | What it is not |
 |---|---|---|

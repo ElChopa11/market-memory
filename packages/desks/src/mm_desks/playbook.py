@@ -370,7 +370,7 @@ def run_playbook(
             )
             result = client.complete(
                 artifact_type="EDGE_SCAN",
-                desk_slug="coord",
+                desk_slug="ops",
                 run_id=run_id,
                 prompt=prompt,
                 user_payload=payload,
@@ -475,7 +475,7 @@ def run_playbook(
         prompt = load_prompt("OFFICIAL_BRIEF", repo_root)
         result = client.complete(
             artifact_type="OFFICIAL_BRIEF",
-            desk_slug="coord",
+            desk_slug="ops",
             run_id=run_id,
             prompt=prompt,
             user_payload=build_writer_payload(

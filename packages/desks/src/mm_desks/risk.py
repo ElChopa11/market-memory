@@ -23,16 +23,24 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     thesis = ctx.thesis
     author = thesis.author if thesis else "Crypto Desk"
     cfg = load_risk_config(ctx.repo_root, environment=spec.environment)
-    flow = ctx.prior.get("flow")
-    macro = ctx.prior.get("macro")
+    intel = ctx.prior.get("intel")
+    intel_payload = (intel.payload or {}) if intel is not None else {}
+    flow_payload = intel_payload.get("flow") if isinstance(intel_payload.get("flow"), dict) else None
+    if flow_payload is None and ctx.prior.get("flow") is not None:
+        flow_payload = ctx.prior["flow"].payload or {}
+    macro_payload = intel_payload.get("macro") if isinstance(intel_payload.get("macro"), dict) else None
+    if macro_payload is None and ctx.prior.get("macro") is not None:
+        macro_payload = ctx.prior["macro"].payload or {}
     instrument = spec.instrument
     liquidity_verdict = None
-    if flow is not None:
-        verdicts = (flow.payload or {}).get("verdicts") or {}
+    if flow_payload is not None:
+        verdicts = flow_payload.get("verdicts") or {}
         liquidity_verdict = verdicts.get(instrument) or verdicts.get(instrument.upper())
     event_risk = False
-    if macro is not None:
-        event_risk = bool(((macro.payload or {}).get("event_risk") or {}).get("tagged"))
+    if macro_payload is not None:
+        event_risk = bool((macro_payload.get("event_risk") or {}).get("tagged"))
+    elif intel_payload.get("event_risk"):
+        event_risk = bool((intel_payload.get("event_risk") or {}).get("tagged"))
     intent = RiskIntent(
         instrument=spec.instrument,
         invalidation=spec.invalidation,
