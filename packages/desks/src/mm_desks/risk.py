@@ -1,4 +1,4 @@
-"""Risk desk (Tier 6): deterministic allow/block from versioned config. No LLM."""
+"""IC/Risk Risk gate: deterministic allow/block from versioned config. No LLM. Not a desk."""
 
 from __future__ import annotations
 
@@ -12,16 +12,18 @@ from mm_risk.config import load_risk_config
 from mm_risk.engine import evaluate
 from mm_risk.models import RiskIntent
 
+from mm_desks.naming import sleeve_display, sleeve_tier
+
 SLUG = "risk"
-TIER = "6"
-DISPLAY_NAME = "Risk (independent veto)"
+TIER = sleeve_tier(SLUG)
+DISPLAY_NAME = sleeve_display(SLUG)
 
 
 def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     day = ctx.fixture
     spec = day.risk
     thesis = ctx.thesis
-    author = thesis.author if thesis else "Crypto Desk"
+    author = thesis.author if thesis else sleeve_display("crypto")
     cfg = load_risk_config(ctx.repo_root, environment=spec.environment)
     intel = ctx.prior.get("intel")
     intel_payload = (intel.payload or {}) if intel is not None else {}

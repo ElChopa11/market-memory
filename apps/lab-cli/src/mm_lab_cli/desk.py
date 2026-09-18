@@ -9,7 +9,8 @@ import json
 from argparse import Namespace
 from pathlib import Path
 
-from mm_desks.orchestrator import PIPELINE, run_from_fixture, write_dry_run
+from mm_desks.naming import PIPELINE, publishing_slugs_help, require_publishing_desk
+from mm_desks.orchestrator import run_from_fixture, write_dry_run
 from mm_delivery.deliver import deliver
 from mm_delivery.payload import SEND_ENABLED, assert_no_send
 
@@ -18,7 +19,7 @@ def add_desk_parser(sub) -> None:
     desk = sub.add_parser("desk", help="run desk orchestrator (default --no-send)")
     desk_sub = desk.add_subparsers(dest="desk_cmd")
     run_p = desk_sub.add_parser("run", help="run one desk or --all against a frozen-day fixture")
-    run_p.add_argument("--desk", help="desk slug: intel|research|quant|ic_risk|ops")
+    run_p.add_argument("--desk", help=f"desk slug: {publishing_slugs_help()}")
     run_p.add_argument("--all", action="store_true", dest="all_desks", help="run Intel→Research→Quant→IC/Risk→Ops")
     run_p.add_argument("--fixture", type=Path, required=True, help="frozen-day JSON/YAML")
     run_p.add_argument("--no-send", action="store_true", help="dry-run payloads only (default)")
@@ -58,9 +59,12 @@ def dispatch_desk(args: Namespace) -> int:
     if not all_desks and not slug:
         print("lab desk run: require --desk SLUG or --all", file=sys.stderr)
         return 2
-    if slug and slug not in PIPELINE:
-        print(f"unknown desk {slug!r}; choose from {', '.join(PIPELINE)}", file=sys.stderr)
-        return 2
+    if slug:
+        try:
+            require_publishing_desk(slug)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
     slugs = PIPELINE if all_desks else (slug,)
     root = Path(args.repo_root).resolve()
     result = run_from_fixture(

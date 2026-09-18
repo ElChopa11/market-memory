@@ -16,11 +16,11 @@ from mm_desks.protocol import (
     completeness_pct,
     status_from_slots,
 )
-from mm_desks.roster import DESK_META, INTEL
+from mm_desks.naming import INTEL, desk_display, desk_tier
 
 SLUG = INTEL
-TIER = DESK_META[INTEL][1]
-DISPLAY_NAME = DESK_META[INTEL][0]
+TIER = desk_tier(INTEL)
+DISPLAY_NAME = desk_display(INTEL)
 
 
 def run_feeds(as_of: datetime, ctx: DeskContext) -> DeskOutput:

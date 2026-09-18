@@ -1,6 +1,6 @@
 # Post-IPO / reclaim screen
 
-Standing Equities & Post-IPO Desk product. Read-only **research triage**. **Not a trading decision.**
+Standing Research (Investment Research) / equities sleeve product. Read-only **research triage**. **Not a trading decision.** Not a publishing desk.
 
 Plan: [ops/plans/IMP-006-post-ipo-reclaim-screen.md](../../ops/plans/IMP-006-post-ipo-reclaim-screen.md).
 

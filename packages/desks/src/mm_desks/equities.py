@@ -1,4 +1,4 @@
-"""Equities desk (Tier 3b). Polygon client lives in mm_ingest (Intel). No orders."""
+"""Research equities sleeve (not a publishing desk). Polygon client lives in mm_ingest. No orders."""
 
 from __future__ import annotations
 
@@ -14,11 +14,13 @@ from mm_desks.protocol import (
 )
 from mm_desks.universe import membership_of, universe_equities
 
-EQUITIES_TIER = "3b"
-EQUITIES_DESK = "Equities & Post-IPO Desk"
+from mm_desks.naming import sleeve_display, sleeve_tier
+
+SLUG = "equities"
+EQUITIES_TIER = sleeve_tier(SLUG)
+EQUITIES_DESK = sleeve_display(SLUG)
 MUST_NOT = ("execution-import", "signing-surface", "vendor-client-in-desks")
 POLYGON_CLIENT_PHASE = "5b"
-SLUG = "equities"
 
 
 def _equity_rows(day: FrozenDay, ctx: DeskContext) -> tuple[TapeRow, ...]:
@@ -42,7 +44,7 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     notes = tuple(f"{name}: tape unavailable; not invented" for name in expected_names if name not in covered)
     provenance = tuple(row.observation_id for row in rows if row.observation_id)
     lines = [
-        f"# Equities desk note — {day.session_date}",
+        f"# {EQUITIES_DESK} note — {day.session_date}",
         "",
         f"- **Knowledge watermark (as_of_knowledge):** {as_of.isoformat()}",
         f"- **Desk / tier:** {EQUITIES_DESK} / {EQUITIES_TIER}",

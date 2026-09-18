@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from mm_common.naming import ALERTS, OPS, require_route_slug, telegram_header, with_telegram_header
 from mm_delivery.config import TelegramSettings, chat_id_from_env, load_telegram_settings
 from mm_delivery.deliver import DeliveryResult, deliver
 from mm_delivery.format import escape_markdown_v2
@@ -16,8 +17,8 @@ from mm_delivery.telegram import TelegramClient
 
 OPS_MIRROR_FOOTER = "\n\n_ops mirror — same content_hash; not re-rendered_"
 COORD_MIRROR_FOOTER = OPS_MIRROR_FOOTER
-ALERTS_DESK = "alerts"
-OPS_DESK = "ops"
+ALERTS_DESK = ALERTS
+OPS_DESK = OPS
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,8 @@ class FanoutResult:
     def as_public_dict(self) -> dict[str, Any]:
         return {
             "desk": self.desk,
+            "desk_display": require_route_slug(self.desk).display,
+            "header": telegram_header(self.desk),
             "content_hash": self.content_hash,
             "primary": self.primary.as_public_dict(),
             "coord_mirror": None if self.coord_mirror is None else self.coord_mirror.as_public_dict(),
@@ -66,8 +69,10 @@ def fanout_desk(
     failed_sink: list[dict[str, Any]] | None = None,
 ) -> FanoutResult:
     cfg = settings or load_telegram_settings(repo)
+    require_route_slug(desk)
+    headed = with_telegram_header(markdown, desk)
     primary = deliver(
-        markdown,
+        headed,
         desk=desk,
         as_of=as_of,
         send=send,
@@ -87,7 +92,7 @@ def fanout_desk(
     notes: list[str] = []
     mirror = None
     if desk != OPS_DESK:
-        mirrored = coord_mirror_text(markdown, content_hash=primary.payload.content_hash)
+        mirrored = coord_mirror_text(headed, content_hash=primary.payload.content_hash)
         # Build payload then overwrite content_hash to the ORIGINAL (never re-render).
         mirror = deliver(
             mirrored,

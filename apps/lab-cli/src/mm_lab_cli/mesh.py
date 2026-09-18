@@ -8,7 +8,7 @@ from pathlib import Path
 
 from mm_desks.cadence import all_channels
 from mm_desks.mesh import mesh_from_fixture
-from mm_desks.orchestrator import PIPELINE
+from mm_desks.naming import require_publishing_desk
 
 
 def add_mesh_parser(sub) -> None:
@@ -40,10 +40,12 @@ def dispatch_mesh(args: Namespace) -> int:
         return 2
 
     killed = tuple(args.kill_desk or ())
-    unknown = [slug for slug in killed if slug not in PIPELINE]
-    if unknown:
-        print(f"unknown kill-desk {unknown}; choose from {', '.join(PIPELINE)}", file=sys.stderr)
-        return 2
+    for slug in killed:
+        try:
+            require_publishing_desk(slug)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
 
     root = Path(args.repo_root).resolve()
     store = None

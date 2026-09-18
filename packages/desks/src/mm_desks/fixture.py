@@ -120,7 +120,7 @@ def _thesis(raw: dict[str, Any] | None) -> ThesisSnapshot:
     return ThesisSnapshot(
         slug=str(data.get("slug") or "THESIS-5D-FIXTURE"),
         status=str(data.get("status") or "in_skeptic"),
-        author=str(data.get("author") or "Crypto Desk"),
+        author=str(data.get("author") or "Research"),
         instrument=str(data.get("instrument") or "BTC").upper(),
         invalidation=str(data.get("invalidation") or ""),
         max_loss=str(data.get("max_loss") or ""),

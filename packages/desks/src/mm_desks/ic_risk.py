@@ -7,12 +7,12 @@ from datetime import datetime
 from mm_desks.combine import combine_outputs, worst_status
 from mm_desks.protocol import DeskContext, DeskOutput
 from mm_desks.risk import run as run_risk_gate
-from mm_desks.roster import DESK_META, GATES_IN_IC_RISK, IC_RISK
+from mm_desks.naming import GATES_IN_IC_RISK, IC_RISK, desk_display, desk_tier
 from mm_desks.skeptic import run as run_skeptic_gate
 
 SLUG = IC_RISK
-TIER = DESK_META[IC_RISK][1]
-DISPLAY_NAME = DESK_META[IC_RISK][0]
+TIER = desk_tier(IC_RISK)
+DISPLAY_NAME = desk_display(IC_RISK)
 
 
 def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:

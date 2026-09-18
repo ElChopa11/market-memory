@@ -1,10 +1,10 @@
 # Crypto thesis card (research-only)
 
-Crypto Desk research artifact. Companion to generic `thesis.md` (lifecycle spine). Not a trade instruction, allocation decision, or execution approval.
+Research (Investment Research) / crypto sleeve artifact. Companion to generic `thesis.md` (lifecycle spine). Not a trade instruction, allocation decision, or execution approval.
 
 - **Thesis id:**
 - **Status / version:** draft
-- **Desk:** Crypto Desk
+- **Desk:** Research (Investment Research) / crypto sleeve
 - **Author role:** Research
 - **Instrument:**
 - **Asset class:** crypto_perp

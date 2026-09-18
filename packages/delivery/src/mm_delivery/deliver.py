@@ -9,6 +9,7 @@ from typing import Any
 
 from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.http import ERROR_MISSING_ENV, missing_env_notes
+from mm_common.naming import require_route_slug
 from mm_common.time import as_utc, utcnow
 from mm_delivery.config import (
     BOT_TOKEN_ENV,
@@ -48,7 +49,7 @@ class DeliveryResult:
         return self.payload.payload_hash()
 
     def as_public_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "as_of": self.payload.as_of,
             "channel": self.payload.channel,
             "chunks": len(self.payload.chunks),
@@ -63,6 +64,9 @@ class DeliveryResult:
             "sent": self.sent,
             "written": self.written or {},
         }
+        if self.payload.desk:
+            payload["desk_display"] = require_route_slug(self.payload.desk).display
+        return payload
 
 
 def write_payload_files(payload: DeliveryPayload, *, out_root: Path, session_date: str) -> dict[str, str]:

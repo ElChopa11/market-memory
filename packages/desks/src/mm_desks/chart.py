@@ -1,4 +1,4 @@
-"""Chart desk: deterministic levels computed ONCE and quoted by others. PNG filename = content_hash."""
+"""Chart product (Research sleeve): deterministic levels computed ONCE and quoted by others. PNG filename = content_hash. Not a publishing desk."""
 
 from __future__ import annotations
 

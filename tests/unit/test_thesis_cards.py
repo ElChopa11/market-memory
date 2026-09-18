@@ -127,7 +127,7 @@ def test_create_thesis_copies_crypto_card(tmp_path: Path) -> None:
     assert not (created.path / EQUITIES_CARD).is_file()
     text = card.read_text(encoding="utf-8")
     assert get_field(text, "Principal membership") == "in_universe"
-    assert get_field(text, "Desk") == "Crypto Desk"
+    assert get_field(text, "Desk") == "Research (Investment Research) / crypto sleeve"
     assert get_field(text, "Instrument") == "BTC"
     assert get_field(text, "Working Quant verdict") == "unset"
     assert language_violations(text) == []
@@ -145,7 +145,7 @@ def test_create_thesis_copies_equities_card_for_watch_only(tmp_path: Path) -> No
     assert not (created.path / CRYPTO_CARD).is_file()
     text = card.read_text(encoding="utf-8")
     assert get_field(text, "Principal membership") == "watch_only"
-    assert get_field(text, "Desk") == "Equities & Post-IPO Desk"
+    assert get_field(text, "Desk") == "Research (Investment Research) / equities sleeve"
     assert "lab equities reclaim-screen" in text
     assert language_violations(text) == []
 

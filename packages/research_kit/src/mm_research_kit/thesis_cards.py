@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from mm_common.naming import sleeve_display
 from mm_research_kit.artifacts import copy_template, isoformat_now, write_text
 from mm_research_kit.markdown import set_field
 from mm_research_kit.quant_review.language import assert_language_clean
@@ -66,7 +67,7 @@ def plan_desk_card(instrument: str) -> DeskCardPlan | None:
         return DeskCardPlan(
             template=CRYPTO_CARD,
             destination=CRYPTO_CARD,
-            desk="Crypto Desk",
+            desk=sleeve_display("crypto"),
             asset_class="crypto_perp",
             membership=membership_for(inst),
         )
@@ -74,7 +75,7 @@ def plan_desk_card(instrument: str) -> DeskCardPlan | None:
         return DeskCardPlan(
             template=EQUITIES_CARD,
             destination=EQUITIES_CARD,
-            desk="Equities & Post-IPO Desk",
+            desk=sleeve_display("equities"),
             asset_class="equity",
             membership=membership_for(inst),
         )

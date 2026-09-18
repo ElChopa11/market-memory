@@ -1,9 +1,10 @@
-# Desk mesh cadence (Phase 6c-1 / IMP-018). Five publishing desks.
+# Desk mesh cadence (Phase 6c-1 roster + 6c-2 naming). Five publishing desks.
 # Principal lock: bus = Postgres LISTEN/NOTIFY (no Redis).
 # Coord/Don is orchestration only — not a publishing desk.
 # Regime header is filled from Intel's macro sleeve when that run succeeds.
+# Display names: config/desks/naming.yaml (not this file).
 
-version: "imp-018.1"
+version: "imp-019.1"
 regime_placeholder: unset
 default:
   cadence: daily

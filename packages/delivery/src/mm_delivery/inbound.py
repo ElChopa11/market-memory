@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from mm_common.naming import roster_lines
+
 ALLOWED_COMMANDS = ("/status", "/brief", "/desk", "/idea", "/gaps", "/halt")
 TRADING_COMMANDS = (
     "/buy",
@@ -100,7 +102,9 @@ def handle_inbound(
     replies = {
         "/status": "lab status: live trading HARD-GATED; delivery default is --no-send",
         "/brief": "lab brief: last OFFICIAL_BRIEF is on disk under briefs/; inbound does not fetch markets",
-        "/desk": "desk: use `lab desk run --no-send`; inbound does not run desks or send orders",
+        "/desk": "desk: "
+        + "; ".join(roster_lines())
+        + ". Coord is orchestration only. Use `lab desk run --no-send`; inbound does not run desks or send orders",
         "/idea": "idea: last STATE_CARD permission is read-only; inbound never trades",
         "/gaps": "gaps: named unknowns from the last playbook run; never invented",
         "/halt": "halt: read-only; check config/halt.flag — inbound cannot place or cancel orders",

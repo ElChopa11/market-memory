@@ -10,6 +10,7 @@ from mm_desks.llm.budget import ERROR_BUDGET_EXCEEDED, ERROR_DAY_DISABLED, Token
 from mm_desks.llm.grounding import GroundingError, assert_numeric_lock, validate_llm_payload
 from mm_desks.llm.ledger import LlmCallRecord
 from mm_desks.llm.prompts import PromptFile
+from mm_desks.naming import ARTIFACT_TYPES, require_publishing_desk, require_artifact_type
 
 TEMPLATE_ONLY = frozenset({"DAILY_BIAS", "STATE_CARD", "CHART_ARTIFACT", "SCAN_CARD", "INTEL_PACKET"})
 
@@ -73,6 +74,9 @@ class LlmClient:
         latency_ms: float = 0.0,
         cost: float = 0.0,
     ) -> LlmResult:
+        require_publishing_desk(desk_slug)
+        if artifact_type in ARTIFACT_TYPES:
+            require_artifact_type(artifact_type)
         if artifact_type in TEMPLATE_ONLY:
             raise LlmForbidden(f"{artifact_type} is template-only (zero LLM)")
         if self.completer is None:

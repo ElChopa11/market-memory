@@ -1,10 +1,10 @@
 # Equities thesis card (research-only)
 
-Equities & Post-IPO Desk research artifact. Companion to generic `thesis.md` (lifecycle spine). Not a trade instruction, allocation decision, or execution approval.
+Research (Investment Research) / equities sleeve artifact. Companion to generic `thesis.md` (lifecycle spine). Not a trade instruction, allocation decision, or execution approval.
 
 - **Thesis id:**
 - **Status / version:** draft
-- **Desk:** Equities & Post-IPO Desk
+- **Desk:** Research (Investment Research) / equities sleeve
 - **Author role:** Research
 - **Instrument:**
 - **Asset class:** equity

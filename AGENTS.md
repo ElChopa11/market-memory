@@ -2,7 +2,9 @@
 
 This file is the permission constitution for humans and LLM agents working in `market-memory`. It is stricter than convenience.
 
-**Phase 6c-1 (IMP-018):** Publishing roster cut over to **exactly five desks**: Intel (Market Intelligence), Research (Investment Research), Quant, IC/Risk (Investment Committee & Risk — two gates, not two desks), Ops. Don/Coord is orchestration only. Delivery is Ops-owned. Flow/macro remain Intel sleeves (`mm_flow` / `mm_macro`). Crypto/equities/chart remain Research sleeves. **No** live trading, no wallet code, no `hl_trade` / signing, **no** listings/IPO (6d / IMP-017, parked until 6c-1..6c-5), **no** 6c-2 naming / 6c-4 watchlist / 6c-5 delivery expansion in this phase.
+**Phase 6c-2 (IMP-019):** Canonical desk slugs + display names in `mm_common.naming` / `config/desks/naming.yaml`. PLAYBOOK artifact machine ids vs human labels. Unknown slug fails closed. **No** live trading, no wallet code, no `hl_trade` / signing, **no** listings/IPO (6d / IMP-017, parked until 6c-1..6c-5), **no** 6c-4 watchlist / 6c-5 delivery expansion in this phase.
+
+**Phase 6c-1 (IMP-018 DONE #49):** Publishing roster cut over to **exactly five desks**: Intel (Market Intelligence), Research (Investment Research), Quant, IC/Risk (Investment Committee & Risk — two gates, not two desks), Ops. Don/Coord is orchestration only. Delivery is Ops-owned.
 
 **Phase 6c (IMP-016 DONE #47):** Per-desk Telegram fan-out + presentation + chart *product* + inbound in `packages/delivery`. Hive PLAYBOOK ladder in `packages/desks` (`mm_desks.playbook`). Quant-owned trade math in `mm_quant.trade_math`. Addendum 6c-0: LLM is WRITER/CRITIC only.
 
@@ -44,7 +46,7 @@ Gate numbers 0–7 in the table below remain the permission constitution (Skepti
 | 6 | Risk | Deterministic allow/block from config; explain `rule_id` + `config_version`; **BLOCK is terminal** without Principal override | Call LLMs at decision time; submit orders; silently change `live.yaml`; approve own exception; author theses |
 | 7 | Paper Ledger | Shadow ledger bound to theses; open only with invalidation + max loss after Skeptic `pass` | Live keys; bypass Skeptic/Risk; treat paper as Execution |
 
-Hive aliases that are **not** numbered delivery tiers: Briefing (Macro Pulse; still a desk), Unicorn (later), Execution & Fund Ops (**future-only**).
+Hive aliases that are **not** numbered delivery tiers: Briefing (Macro Pulse; Intel sleeve), Unicorn (later), Execution & Fund Ops (**future-only**).
 
 ## Role matrix (hive ↔ tier)
 

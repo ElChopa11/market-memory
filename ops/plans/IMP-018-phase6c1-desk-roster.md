@@ -1,6 +1,6 @@
 # PLAN — IMP-018 Phase 6c-1 desk consolidation (11 → 5)
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#49).  
 **Owner:** Don / Ops (orchestration)  
 **Scope:** Phase 6c-1 — roster cutover to exactly five publishing desks matching the Principal hive. No live trading. No execution. No `live.yaml`. No Redis. No 6c-2 naming layer, 6c-4 watchlist, 6c-5 delivery expansion, or 6d listings.
 

@@ -1,4 +1,4 @@
-"""Crypto desk (Tier 3a). Artifacts from Memory/fixture tape. No orders, no HL client."""
+"""Research crypto sleeve (not a publishing desk). Tape notes from Memory/fixture. No orders."""
 
 from __future__ import annotations
 
@@ -14,10 +14,12 @@ from mm_desks.protocol import (
 )
 from mm_desks.universe import membership_of, universe_crypto
 
-CRYPTO_TIER = "3a"
-CRYPTO_DESK = "Crypto Desk"
-MUST_NOT = ("execution-import", "signing-surface", "live-order")
+from mm_desks.naming import sleeve_display, sleeve_tier
+
 SLUG = "crypto"
+CRYPTO_TIER = sleeve_tier(SLUG)
+CRYPTO_DESK = sleeve_display(SLUG)
+MUST_NOT = ("execution-import", "signing-surface", "live-order")
 
 
 def _crypto_rows(day: FrozenDay, ctx: DeskContext) -> tuple[TapeRow, ...]:
@@ -41,7 +43,7 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     notes = tuple(f"{name}: tape unavailable; not invented" for name in expected_names if name not in covered)
     provenance = tuple(row.observation_id for row in rows if row.observation_id)
     lines = [
-        f"# Crypto desk note — {day.session_date}",
+        f"# {CRYPTO_DESK} note — {day.session_date}",
         "",
         f"- **Knowledge watermark (as_of_knowledge):** {as_of.isoformat()}",
         f"- **Desk / tier:** {CRYPTO_DESK} / {CRYPTO_TIER}",

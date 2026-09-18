@@ -7,6 +7,7 @@ import sys
 from argparse import Namespace
 from pathlib import Path
 
+from mm_common.naming import require_publishing_desk, require_route_slug, route_slugs_help
 from mm_common.time import parse_utc, utcnow
 from mm_delivery.deliver import deliver
 from mm_delivery.inbound import handle_inbound
@@ -25,7 +26,7 @@ def add_deliver_parser(sub) -> None:
         "test",
         help="manual real send of a one-line ping (operator-only; pytest never hits live API)",
     )
-    test_p.add_argument("--desk", default="ops", help="desk slug (route + TELEGRAM_CHAT_ID[_DESK])")
+    test_p.add_argument("--desk", default="ops", help=f"desk slug (route + TELEGRAM_CHAT_ID[_DESK]); {route_slugs_help()}")
     test_p.add_argument("--repo-root", type=Path, default=Path("."))
     test_p.add_argument("--out", type=Path, help="write payload under briefs/ (default: repo root)")
     test_p.add_argument("--ignore-quiet-hours", action="store_true")
@@ -46,7 +47,7 @@ def add_deliver_parser(sub) -> None:
 
 
 def _add_pack_args(parser) -> None:
-    parser.add_argument("--desk", default="ops", help="desk slug to route (default ops)")
+    parser.add_argument("--desk", default="ops", help=f"desk slug to route (default ops; {route_slugs_help()})")
     parser.add_argument("--fixture", type=Path, help="frozen-day fixture; runs desk pipeline then delivers pack")
     parser.add_argument("--from-markdown", type=Path, help="deliver this markdown file instead of a fixture pack")
     parser.add_argument("--as-of", help="UTC as_of_knowledge (required with --from-markdown)")
@@ -182,6 +183,11 @@ def _load_source(args: Namespace, root: Path, desk: str):
         print("lab deliver pack: require exactly one of --fixture or --from-markdown", file=sys.stderr)
         return None
     if from_md:
+        try:
+            require_route_slug(desk)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return None
         path = Path(from_md)
         if not path.is_file():
             print(f"markdown not found: {path}", file=sys.stderr)
@@ -193,8 +199,10 @@ def _load_source(args: Namespace, root: Path, desk: str):
         as_of = parse_utc(str(as_of_raw))
         markdown = path.read_text(encoding="utf-8")
         return markdown, as_of, 100.0, as_of.date().isoformat(), {}
-    if desk not in PIPELINE:
-        print(f"unknown desk {desk!r}; choose from {', '.join(PIPELINE)}", file=sys.stderr)
+    try:
+        require_publishing_desk(desk)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
         return None
     result = run_from_fixture(
         Path(fixture),

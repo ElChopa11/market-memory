@@ -15,12 +15,12 @@ from mm_desks.protocol import (
     completeness_pct,
     status_from_slots,
 )
-from mm_desks.roster import MESH_DESKS, OPS, DESK_META
+from mm_desks.naming import MESH_DESKS, OPS, desk_display, desk_tier
 from mm_delivery.payload import prepare_payload
 
 SLUG = OPS
-TIER = DESK_META[OPS][1]
-DISPLAY_NAME = DESK_META[OPS][0]
+TIER = desk_tier(OPS)
+DISPLAY_NAME = desk_display(OPS)
 
 PIPELINE_FOR_PACK = MESH_DESKS
 

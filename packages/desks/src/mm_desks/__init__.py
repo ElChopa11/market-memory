@@ -6,6 +6,7 @@ must not import this package. Telegram send is `mm_delivery.deliver` (Ops-owned)
 """
 
 from mm_desks.mesh import mesh_from_fixture
+from mm_desks.naming import sleeve_display, sleeve_tier
 from mm_desks.orchestrator import PIPELINE, run_desks, run_from_fixture
 from mm_desks.playbook import run_playbook_from_fixture
 from mm_desks.protocol import DEGRADED, FAILED, OK, DeskOutput, DeskStatus
@@ -15,11 +16,10 @@ from mm_desks.roster import IC_RISK, INTEL, OPS, PUBLISHING_DESKS, QUANT
 __phase__ = 6
 LIVE_TRADING_ENABLED = False
 
-# Retired sleeve aliases (crypto/equities are Research, not publishing desks).
-CRYPTO_DESK = "Research (Investment Research) / crypto sleeve"
-CRYPTO_TIER = "3a"
-EQUITIES_DESK = "Research (Investment Research) / equities sleeve"
-EQUITIES_TIER = "3b"
+CRYPTO_DESK = sleeve_display("crypto")
+CRYPTO_TIER = sleeve_tier("crypto")
+EQUITIES_DESK = sleeve_display("equities")
+EQUITIES_TIER = sleeve_tier("equities")
 
 __all__ = [
     "CRYPTO_DESK",

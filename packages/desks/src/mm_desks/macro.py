@@ -1,4 +1,4 @@
-"""Macro & Cross-Asset desk (Phase 6b). Regime tag + EVENT_RISK. Never invent."""
+"""Intel macro sleeve (Phase 6b). Regime tag + EVENT_RISK. Not a publishing desk. Never invent."""
 
 from __future__ import annotations
 
@@ -22,9 +22,11 @@ from mm_macro.engine import CATALOG, compute_macro
 from mm_macro.models import CalendarEvent, MacroPoint
 from mm_macro.observations import snapshot_envelopes
 
+from mm_desks.naming import sleeve_display, sleeve_tier
+
 SLUG = "macro"
-TIER = "macro"
-DISPLAY_NAME = "Macro & Cross-Asset Desk"
+TIER = sleeve_tier(SLUG)
+DISPLAY_NAME = sleeve_display(SLUG)
 
 
 def _load_json(path: Path) -> Any:
