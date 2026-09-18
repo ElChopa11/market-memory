@@ -11,7 +11,7 @@ from mm_common.enums import DataQuality, EvidenceType, SourceKind, ThesisStatus
 from mm_common.ids import new_ulid
 from mm_common.schemas import ClaimIdentity, ObservationEnvelope
 from mm_memory.db import make_engine
-from mm_memory.migrate import current_revision
+from mm_memory.migrate import alembic_head, current_revision
 from mm_memory.models import SkepticReview, Thesis, ThesisEvidence
 from mm_memory.repository import ObservationRepository
 from mm_memory.thesis_repository import ThesisRepository, UnknownObservationError
@@ -59,7 +59,7 @@ def test_phase2_tables_exist(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     tables = set(inspect(engine).get_table_names())
     assert {"thesis", "thesis_evidence", "skeptic_review", "thesis_status_event"} <= tables
-    assert current_revision(postgres_dsn) == "0007_phase6a_desk_mesh"
+    assert current_revision(postgres_dsn) == alembic_head()
 
 
 def test_thesis_evidence_and_rejected_retention(db_session, tmp_path: Path) -> None:

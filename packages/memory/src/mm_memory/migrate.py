@@ -25,6 +25,21 @@ def upgrade_head(dsn: str | None = None) -> None:
     command.upgrade(alembic_config(dsn), "head")
 
 
+def alembic_head() -> str:
+    """Script-directory head revision. Tests should assert against this, not a frozen id.
+
+    Reads migration files only — does not connect to Postgres.
+    """
+    from alembic.script import ScriptDirectory
+
+    cfg = Config()
+    cfg.set_main_option("script_location", str(MIGRATIONS_DIR))
+    heads = ScriptDirectory.from_config(cfg).get_heads()
+    if len(heads) != 1:
+        raise RuntimeError(f"expected a single Alembic head, got {heads!r}")
+    return heads[0]
+
+
 def current_revision(dsn: str | None = None) -> str | None:
     from alembic.runtime.migration import MigrationContext
     from sqlalchemy import create_engine
