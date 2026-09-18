@@ -245,7 +245,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** Ad-hoc queue packs (`research/queue/QUANT-20260917-active-calls.md` — historical filename; membership vocabulary after IMP-005) and builder, universe shortlists, fail-pair / expectations scorecards. Fixture backtest harness (`packages/backtest`) is evaluation infrastructure, not the Board.
 
-**Gap.** Board generator exists (IMP-001 DONE). Locked-membership RESEARCH_PRIORITY pass is IMP-008. Remaining: Quant pack rewrite (templates / pack workflow — still a Gap). Post-IPO reclaim **screen product** is Equities desk IMP-006 (uses Quant closed verdicts; does not rewrite the Board). Dedicated crypto/equity thesis-card templates are IMP-007 (**DONE** #37). Do not treat membership (`in_universe`) as a Quant verdict.
+**Gap.** Board generator exists (IMP-001 DONE). Locked-membership RESEARCH_PRIORITY pass is IMP-008 (**DONE** #38). Remaining: Quant pack rewrite (templates / pack workflow — still a Gap). Post-IPO reclaim **screen product** is Equities desk IMP-006 (uses Quant closed verdicts; does not rewrite the Board). Dedicated crypto/equity thesis-card templates are IMP-007 (**DONE** #37). Do not treat membership (`in_universe`) as a Quant verdict.
 
 ---
 
