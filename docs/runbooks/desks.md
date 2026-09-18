@@ -1,8 +1,8 @@
-# Desk runners (Phase 5d) + Telegram delivery (Phase 5e)
+# Desk runners (Phase 5d) + mesh (Phase 6a) + Telegram (Phase 5e)
 
-Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Telegram Bot API send is **Phase 5e** (`lab deliver`; default `--no-send`). No live trading.
+Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Telegram Bot API send is **Phase 5e** (`lab deliver`; default `--no-send`). No live trading. **No Redis.**
 
-Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md).
+Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0004-desk-mesh-pg-notify.md](../../ADR/0004-desk-mesh-pg-notify.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md).
 
 ## What operators can do
 
@@ -15,11 +15,33 @@ uv run lab desk run --desk intel --fixture tests/fixtures/phase5d/frozen_day.jso
 
 # Writes dry-run pack + sha256 + no-send payload under briefs/YYYY-MM-DD/
 uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --out /tmp/desk-run --no-db
+
+# Mesh: publish envelopes + Coord assemble (in-memory bus; --dsn for Postgres LISTEN/NOTIFY)
+uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
+uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --kill-desk intel --no-db
+uv run lab mesh channels
 ```
 
 `--send` on `lab desk run` is a gated Coord-pack POST (token required; pytest fail-closed). Default remains `--no-send`. `mm_delivery.SEND_ENABLED` stays false so send is never implicit. See [telegram.md](telegram.md).
 
-Same fixture twice → identical `content_hash`.
+Same fixture twice → identical `content_hash` (desk run and mesh dry).
+
+## Mesh (Phase 6a)
+
+Principal lock: **bus = Postgres LISTEN/NOTIFY**. Redis is not used.
+
+| Piece | Behaviour |
+|---|---|
+| Envelope header | `desk`, `as_of` UTC + Sydney, `status`, `n`, `completeness`, `regime=unset` (6b fills it), `op=paper\|observation`, `universe`, `sources` / `missing` |
+| Cadence | `config/desks/cadence.yaml` (default `daily`) |
+| `content_hash` | SHA-256 of canonical header+body. ULID `envelope_id` is not hashed. |
+| Persist | Market Memory `desk_envelope` + `desk_health` |
+| NOTIFY | Lightweight keys only (`id`, `desk`, `as_of`, `content_hash`, `channel`, `status`) |
+| Channels | `desk.<slug>.output`, `desk.<slug>.alert`, `coord.assemble`, `dq.event` |
+| Coord worker | Subscribe, track health, assemble pack from Memory |
+| Missing desk | Assemble anyway: that desk `FAILED` + `error_class` (`desk_killed` / `desk_missing`) |
+
+`--no-db` uses an in-memory bus with the same channel names. Pass `--dsn` (or `POSTGRES_DSN`) after `lab migrate` to exercise real NOTIFY.
 
 ## Protocol
 
@@ -88,6 +110,6 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 ## Not this phase
 
-Phase 6a PG NOTIFY bus (IMP-014, parked). New market-data adapters. Live trading, signing, Redis, paid deps. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
+Phase 6b flow/macro/regime (IMP-015, parked). Per-desk Telegram fan-out (6c). Listings/IPO desk (6d). Scorecards (6e). Decay/prompt versioning (6f). Live trading, signing, Redis, paid deps. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
 
 Telegram: [telegram.md](telegram.md). Factor math: [quant-desk.md](quant-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

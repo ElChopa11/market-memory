@@ -28,7 +28,7 @@ Without an explicit 5e ADR, later work can fold a Postgres `LISTEN/NOTIFY` bus, 
 
 - **Positive:** Coord packs from 5d can reach Telegram under the same env names the Principal already uses; pytest cannot hit `api.telegram.org`.
 - **Negative:** Operators cron `lab deliver`; there is no bus yet.
-- **Follow-ups:** IMP-014 Phase 6a PG NOTIFY mesh — READY/PARKED. Do not fold it into 5e.
+- **Follow-ups:** IMP-014 Phase 6a PG NOTIFY mesh — this tree. Do not fold 6b–6f into 6a.
 
 ## Notes
 

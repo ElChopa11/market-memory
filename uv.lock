@@ -462,6 +462,7 @@ source = { editable = "packages/desks" }
 dependencies = [
     { name = "mm-common" },
     { name = "mm-delivery" },
+    { name = "mm-memory" },
     { name = "mm-quant" },
     { name = "mm-research-kit" },
     { name = "mm-risk" },
@@ -472,6 +473,7 @@ dependencies = [
 requires-dist = [
     { name = "mm-common", editable = "packages/common" },
     { name = "mm-delivery", editable = "packages/delivery" },
+    { name = "mm-memory", editable = "packages/memory" },
     { name = "mm-quant", editable = "packages/quant" },
     { name = "mm-research-kit", editable = "packages/research_kit" },
     { name = "mm-risk", editable = "packages/risk" },

@@ -1,0 +1,66 @@
+# Desk mesh cadence (Phase 6a / IMP-014).
+# Principal lock: bus = Postgres LISTEN/NOTIFY (no Redis).
+# Regime header stays the placeholder until IMP-015 / Phase 6b.
+
+version: "imp-014.1"
+regime_placeholder: unset
+default:
+  cadence: daily
+  op: observation
+
+# NOTIFY channels. Payloads are lightweight ids/keys; envelopes live in Market Memory.
+channels:
+  - desk.intel.output
+  - desk.intel.alert
+  - desk.crypto.output
+  - desk.crypto.alert
+  - desk.equities.output
+  - desk.equities.alert
+  - desk.quant.output
+  - desk.quant.alert
+  - desk.skeptic.output
+  - desk.skeptic.alert
+  - desk.risk.output
+  - desk.risk.alert
+  - desk.coord.output
+  - desk.coord.alert
+  - coord.assemble
+  - dq.event
+
+desks:
+  intel:
+    cadence: daily
+    op: observation
+    output_channel: desk.intel.output
+    alert_channel: desk.intel.alert
+    dq_channel: dq.event
+  crypto:
+    cadence: daily
+    op: observation
+    output_channel: desk.crypto.output
+    alert_channel: desk.crypto.alert
+  equities:
+    cadence: daily
+    op: observation
+    output_channel: desk.equities.output
+    alert_channel: desk.equities.alert
+  quant:
+    cadence: daily
+    op: observation
+    output_channel: desk.quant.output
+    alert_channel: desk.quant.alert
+  skeptic:
+    cadence: daily
+    op: observation
+    output_channel: desk.skeptic.output
+    alert_channel: desk.skeptic.alert
+  risk:
+    cadence: daily
+    op: paper
+    output_channel: desk.risk.output
+    alert_channel: desk.risk.alert
+  coord:
+    cadence: daily
+    op: observation
+    output_channel: coord.assemble
+    alert_channel: desk.coord.alert

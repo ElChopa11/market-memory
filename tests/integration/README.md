@@ -1,6 +1,6 @@
 # Integration tests
 
-Postgres-backed migrate + fixture ingest + `what_did_we_know` replay + Market Pulse brief index + Phase 4 `research_run` / `paper_trade`.
+Postgres-backed migrate + fixture ingest + `what_did_we_know` replay + Market Pulse brief index + Phase 4 `research_run` / `paper_trade` + Phase 6a `desk_envelope` LISTEN/NOTIFY.
 
 Requires `POSTGRES_DSN` (CI provides a Postgres 16 service). Tests skip if Postgres is unreachable.
 

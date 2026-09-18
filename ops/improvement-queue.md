@@ -296,29 +296,49 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Live trading; signing; `live.yaml`; Phase 6 PG NOTIFY bus; Redis; paid Telegram SDKs; reopening IMP-012 runners except queue hygiene. |
 | **Dependencies** | IMP-012 DONE (#43). |
 | **Risk level** | Medium (secrets, ToS, alert spam). |
-| **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
-| **Lesson learned** | *(fill at close)* |
+| **Status** | DONE |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/44 |
+| **Lesson learned** | Merged to `main` (#44). Telegram Bot API client over httpx; `--no-send` default; secrets env-only. Multi-channel mesh stayed out of 5e and is IMP-014. |
 
 ### IMP-014 — Phase 6a PG LISTEN/NOTIFY mesh
 
 | Field | Value |
 |---|---|
 | **ID** | IMP-014 |
-| **Priority** | P3 |
+| **Priority** | P1 |
 | **Type** | Control plane / bus |
 | **Desk** | Chief of Staff / Hive Coordinator |
 | **Owner** | Don |
-| **Problem** | 5e delivers Telegram as a single Coordinator channel. Per-desk workers and extra channels have no durable notify bus. |
-| **Evidence** | ADR 0003; IMP-013 this PR. |
-| **Proposed outcome** | Postgres `LISTEN/NOTIFY` (or equivalent) mesh so desk products fan out. Telegram remains one sink. |
-| **Definition of done** | *(filled in the 6a PR)*. Plan stub: [plans/IMP-014-phase6a-pg-notify-mesh.md](plans/IMP-014-phase6a-pg-notify-mesh.md). Not started while IMP-013 is open. |
-| **Non-goals** | Live trading; signing; `live.yaml`; Redis-as-SoT; reopening IMP-013 except queue hygiene. |
-| **Dependencies** | IMP-013 (this PR) must be DONE. |
-| **Risk level** | Medium (fan-out, duplicate sends). |
+| **Problem** | 5e delivers Telegram as a single Coordinator channel. Per-desk workers and extra channels have no durable notify bus. Principal locked Phase 6a–6f with **bus = Postgres LISTEN/NOTIFY (no Redis)**. |
+| **Evidence** | ADR 0003; IMP-013 DONE #44; Principal Phase 6 lock (PG NOTIFY, no Redis). |
+| **Proposed outcome** | Desk protocol hardening (cadence + envelope + `content_hash`) and a Postgres `LISTEN/NOTIFY` mesh so desk products fan out. Telegram remains one sink. |
+| **Definition of done** | Queue hygiene: IMP-013 DONE (#44). This item the only implementation thread. Envelope header (desk, as_of UTC+Sydney, status, n, completeness, regime placeholder, op=paper\|observation, universe, sources/missing); `content_hash` idempotency (same as_of → identical hash unless new observations); PG NOTIFY channels `desk.<slug>.output` / `alert`, `coord.assemble`, `dq.event`; persist envelopes in Memory (NOTIFY is ids only); Coord worker stub assembles from Memory; missing/killed desk → FAILED + error_class; `lab mesh dry` + `lab desk run` fixtures; ADR 0004 + runbook mesh section; README Phase 6 in progress (6a); IMP-015 parked; import walls; no Redis; `uv run pytest` + lifecycle. |
+| **Non-goals** | Redis; flow/macro packages (IMP-015 / 6b); per-desk Telegram fan-out (6c); listings/IPO desk (6d); scorecards (6e); decay/prompt versioning (6f); live trading; signing; `live.yaml`; order endpoints; paid deps. |
+| **Dependencies** | IMP-013 DONE (#44). |
+| **Risk level** | Medium (fan-out, duplicate notifies). |
+| **Status** | IN_REVIEW |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-015 — Phase 6b flow + macro + regime
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-015 |
+| **Priority** | P2 |
+| **Type** | Data / macro |
+| **Desk** | Macro & Cross-Asset Desk + Data & Market Memory Desk |
+| **Owner** | Don/Macro+Data |
+| **Problem** | 6a ships envelope `regime: unset`. Flow and macro market-data packages do not exist. Cross-asset regime notes were deferred from IMP-002. |
+| **Evidence** | ADR 0004; IMP-014 this PR; IMP-002 lesson (regime note deferred). |
+| **Proposed outcome** | Read-only flow + macro ingest into Memory and a real regime tag on envelopes. Telegram remains a sink. |
+| **Definition of done** | *(filled in the 6b PR)*. Plan stub: [plans/IMP-015-phase6b-flow-macro-regime.md](plans/IMP-015-phase6b-flow-macro-regime.md). Not started while IMP-014 is open. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6c–6f products; reopening IMP-014 except queue hygiene. |
+| **Dependencies** | IMP-014 (this PR) must be DONE. |
+| **Risk level** | Medium (vendor ToS, over-reading regime as a call). |
 | **Status** | READY |
 | **PR** | — |
-| **Lesson learned** | Parked. Do not implement the mesh in IMP-013. |
+| **Lesson learned** | Parked. Do not implement flow/macro/regime in IMP-014. |
 
 ---
 
@@ -342,10 +362,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-010 | Data & Market Memory Desk | Don/Data | DONE | [#41](https://github.com/ElChopa11/market-memory/pull/41) Phase 5b Polygon + HL structure |
 | IMP-011 | Quant & Market Structure Desk | Don/Quant | DONE | [#42](https://github.com/ElChopa11/market-memory/pull/42) Phase 5c quant factors |
 | IMP-012 | Chief of Staff / Hive Coordinator | Don | DONE | [#43](https://github.com/ElChopa11/market-memory/pull/43) Phase 5d desk runners |
-| IMP-013 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 5e Telegram — this PR |
-| IMP-014 | Chief of Staff / Hive Coordinator | Don | READY | Phase 6a PG NOTIFY mesh — parked; do not implement here |
+| IMP-013 | Chief of Staff / Hive Coordinator | Don | DONE | [#44](https://github.com/ElChopa11/market-memory/pull/44) Phase 5e Telegram |
+| IMP-014 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 6a PG NOTIFY mesh — this PR |
+| IMP-015 | Macro & Cross-Asset Desk + Data & Market Memory Desk | Don/Macro+Data | READY | Phase 6b flow+macro+regime — parked; do not implement here |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-012 are `DONE`. IMP-013 is `IN_REVIEW` (DoD met in this PR). IMP-014 is `READY` (parked until 013 merges).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-013 are `DONE`. IMP-014 is `IN_REVIEW` (DoD met in this PR). IMP-015 is `READY` (parked until 014 merges).
 
 
 ---
@@ -390,7 +411,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 IN_REVIEW** (5e, this PR). Phase 6a PG NOTIFY mesh is **IMP-014 READY** (parked). Do not start 6a in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 IN_REVIEW** (6a, this PR). Phase 6b flow+macro+regime is **IMP-015 READY** (parked). Do not start 6b in this PR.
 
 ## Reconciliation notes
 
@@ -407,4 +428,5 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-010 merged as #41 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-011.
 - IMP-011 merged as #42 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-012.
 - IMP-012 merged as #43 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-013.
-- IMP-013 intakes Phase 5e Telegram delivery (Principal-approved 5a–5e; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-014 is READY/parked for 6a.
+- IMP-013 merged as #44 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-014.
+- IMP-014 intakes Phase 6a PG LISTEN/NOTIFY mesh (Principal-locked 6a–6f; bus = Postgres NOTIFY, no Redis; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-015 is READY/parked for 6b.

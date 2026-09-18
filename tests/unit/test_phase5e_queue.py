@@ -11,10 +11,8 @@ def test_queue_marks_012_done_013_in_review_014_parked() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-012" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-013" in line and "IN_REVIEW" in line for line in board_lines)
-    assert any("IMP-014" in line and ("READY" in line or "PARKED" in line) for line in board_lines)
-    assert not any("IMP-014" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert not any("IMP-012" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-013" in line and "DONE" in line for line in board_lines)
+    assert any("IMP-014" in line and "IN_REVIEW" in line for line in board_lines)
     assert "IMP-013" in queue
     assert "Telegram" in queue
 
@@ -35,7 +33,7 @@ def test_phase5e_plan_runbook_and_config_exist() -> None:
         assert (ROOT / rel).is_file(), rel
 
 
-def test_readme_phase5_complete_phase6_parked() -> None:
+def test_readme_phase5_complete_phase6_started() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Phase 5" in readme
     assert "complete" in readme.lower() or "5e" in readme

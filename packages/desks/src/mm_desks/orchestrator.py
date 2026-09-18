@@ -15,6 +15,7 @@ from mm_desks.equities import EquitiesDesk
 from mm_desks.fixture import load_frozen_day
 from mm_desks.intel import IntelDesk
 from mm_desks.models import FrozenDay
+from mm_desks.envelope import stamp_output
 from mm_desks.protocol import ENGINE_VERSION, DeskContext, DeskOutput
 from mm_desks.quant import QuantDesk
 from mm_desks.risk import RiskDesk
@@ -138,7 +139,7 @@ def run_desks(
     for slug in slugs:
         if slug not in _DESKS:
             raise ValueError(f"unknown desk slug {slug!r}; choose from {list(PIPELINE)}")
-        output = _DESKS[slug].run(watermark, ctx)
+        output = stamp_output(_DESKS[slug].run(watermark, ctx), ctx)
         ctx.prior[slug] = output
     ordered = tuple(ctx.prior[slug] for slug in slugs if slug in ctx.prior)
     coord = ctx.prior.get("coord")

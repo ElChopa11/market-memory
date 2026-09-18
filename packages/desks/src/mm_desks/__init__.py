@@ -1,4 +1,4 @@
-"""Phase 5d desk runners (Tier 3a/3b orchestration plus Intel/Quant/Skeptic/Risk/Coord).
+"""Phase 5d desk runners + Phase 6a PG LISTEN/NOTIFY mesh (no Redis).
 
 Must not depend on the mm_execution module or signing surfaces. Intel ingest
 must not import this package. Telegram send is `mm_delivery.deliver` (Phase 5e).
@@ -6,10 +6,11 @@ must not import this package. Telegram send is `mm_delivery.deliver` (Phase 5e).
 
 from mm_desks.crypto import CRYPTO_DESK, CRYPTO_TIER
 from mm_desks.equities import EQUITIES_DESK, EQUITIES_TIER
+from mm_desks.mesh import mesh_from_fixture
 from mm_desks.orchestrator import PIPELINE, run_desks, run_from_fixture
 from mm_desks.protocol import DEGRADED, FAILED, OK, DeskOutput, DeskStatus
 
-__phase__ = 5
+__phase__ = 6
 LIVE_TRADING_ENABLED = False
 
 __all__ = [
@@ -24,6 +25,7 @@ __all__ = [
     "PIPELINE",
     "DeskOutput",
     "DeskStatus",
+    "mesh_from_fixture",
     "run_desks",
     "run_from_fixture",
 ]

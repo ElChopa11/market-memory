@@ -20,6 +20,7 @@ INTEL_PACKAGE = "ingest"
 
 FORBIDDEN_EXECUTION_IMPORTS = frozenset({"mm_execution", "mm_execution_service"})
 FORBIDDEN_INTEL_OPINE_IMPORTS = frozenset({"mm_research_kit", "mm_desks", "mm_quant", "mm_delivery"})
+FORBIDDEN_BUS_IMPORTS = frozenset({"redis", "aioredis", "walrus"})
 FORBIDDEN_SNIPPETS = ("sign_l1_action", "hl_trade", "submit_order", "private_key")
 
 
@@ -58,7 +59,15 @@ def check() -> list[str]:
         bad = imported & FORBIDDEN_EXECUTION_IMPORTS
         if bad:
             errors.append(f"{name} imports execution surface: {sorted(bad)}")
+        bus = imported & FORBIDDEN_BUS_IMPORTS
+        if bus:
+            errors.append(f"{name} imports Redis/bus client (Principal lock is PG NOTIFY): {sorted(bus)}")
         errors.extend(_snippet_hits(src))
+    memory_src = ROOT / "packages" / "memory" / "src"
+    memory_imported = _imported_top_levels(memory_src)
+    memory_bus = memory_imported & FORBIDDEN_BUS_IMPORTS
+    if memory_bus:
+        errors.append(f"memory imports Redis/bus client (Principal lock is PG NOTIFY): {sorted(memory_bus)}")
     ingest_src = ROOT / "packages" / INTEL_PACKAGE / "src"
     imported = _imported_top_levels(ingest_src)
     bad = imported & FORBIDDEN_INTEL_OPINE_IMPORTS
@@ -74,7 +83,7 @@ def main() -> int:
         for err in errors:
             print(f"  - {err}", file=sys.stderr)
         return 1
-    print("import-boundary check passed (research/desks/quant/delivery vs execution; Intel vs opine)")
+    print("import-boundary check passed (research/desks/quant/delivery vs execution; Intel vs opine; no Redis bus)")
     return 0
 
 

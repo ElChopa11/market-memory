@@ -1,7 +1,7 @@
-"""Desk runner protocol (Phase 5d / IMP-012).
+"""Desk runner protocol (Phase 5d / IMP-012, mesh header in Phase 6a / IMP-014).
 
 Each desk implements ``run(as_of, ctx) -> DeskOutput``. Research-only.
-Must not depend on the execution package or signing surfaces. Telegram send is Coordinator delivery (`mm_delivery.deliver`), not the runner.
+Must not depend on the execution package or signing surfaces. Telegram send is Coordinator delivery (`mm_delivery.deliver`), not the runner. The mesh bus is Postgres LISTEN/NOTIFY (no Redis).
 """
 
 from __future__ import annotations
@@ -16,8 +16,12 @@ from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
 from mm_research_kit.state_machine import TransitionLog
 
-ENGINE_VERSION = "imp-012.1"
+ENGINE_VERSION = "imp-014.1"
 LIVE_TRADING_ENABLED = False
+REGIME_PLACEHOLDER = "unset"
+OP_OBSERVATION = "observation"
+OP_PAPER = "paper"
+OP_VALUES = (OP_OBSERVATION, OP_PAPER)
 
 OK = "OK"
 DEGRADED = "DEGRADED"
@@ -63,16 +67,48 @@ class DeskOutput:
     as_of_knowledge: datetime
     notes: tuple[str, ...] = ()
     payload: dict[str, Any] = field(default_factory=dict)
+    cadence: str = "daily"
+    op: str = "observation"
+    regime: str = "unset"
+    error_class: str | None = None
+    universe: str = "mixed"
+    sources: tuple[str, ...] = ()
+    missing: tuple[str, ...] = ()
+    n: int | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "as_of_knowledge", as_utc(self.as_of_knowledge))
         object.__setattr__(self, "provenance_ids", tuple(sorted(self.provenance_ids)))
+        object.__setattr__(self, "sources", tuple(self.sources))
+        object.__setattr__(self, "missing", tuple(self.missing))
         if self.status not in DESK_STATUS_VALUES:
             raise ValueError(f"unknown desk status {self.status!r}")
+        if self.op not in OP_VALUES:
+            raise ValueError(f"op must be paper|observation, got {self.op!r}")
         pct = float(self.completeness_pct)
         if pct < 0 or pct > 100:
             raise ValueError("completeness_pct must be in [0, 100]")
         object.__setattr__(self, "completeness_pct", round(pct, 2))
+        if self.n is None:
+            object.__setattr__(self, "n", len(self.artifacts))
+
+    def header(self) -> dict[str, Any]:
+        """Principal Phase 6 message header (regime is a 6a placeholder)."""
+        from mm_common.time import in_ops_tz
+
+        return {
+            "desk": self.slug,
+            "as_of_utc": self.as_of_knowledge.isoformat(),
+            "as_of_sydney": in_ops_tz(self.as_of_knowledge).isoformat(),
+            "status": self.status,
+            "n": int(self.n or 0),
+            "completeness": self.completeness_pct,
+            "regime": self.regime,
+            "op": self.op,
+            "universe": self.universe,
+            "sources": list(self.sources),
+            "missing": list(self.missing),
+        }
 
     def canonical(self) -> dict[str, Any]:
         return {
@@ -86,6 +122,14 @@ class DeskOutput:
             "as_of_knowledge": self.as_of_knowledge.isoformat(),
             "notes": list(self.notes),
             "payload": self.payload,
+            "cadence": self.cadence,
+            "op": self.op,
+            "regime": self.regime,
+            "error_class": self.error_class,
+            "universe": self.universe,
+            "sources": list(self.sources),
+            "missing": list(self.missing),
+            "n": int(self.n or 0),
         }
 
     def content_hash(self) -> str:

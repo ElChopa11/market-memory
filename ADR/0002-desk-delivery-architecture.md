@@ -79,7 +79,7 @@ Equities default Polygon is an **ADR note for 5b**, not a dependency or client i
 
 - **Positive:** Later slices have a named wall; Skeptic/Risk outcomes are explicit; Principal briefing copy has one contract; Intel cannot grow opinions by import.
 - **Negative:** Three stub packages until 5c–5e fill them; Macro is not a numbered tier (operators must not treat that as “Macro is retired”).
-- **Follow-ups:** IMP-010 / Phase 5b Polygon + HL structure — **DONE** (#41). IMP-011 / Phase 5c quant factors — **DONE** (#42). IMP-012 / Phase 5d desk runners — **DONE** (#43). 5e (IMP-013) owns Telegram send (this tree). Multi-channel mesh is Phase 6a / IMP-014 (parked). Do not fold the mesh into 5e.
+- **Follow-ups:** IMP-010 / Phase 5b Polygon + HL structure — **DONE** (#41). IMP-011 / Phase 5c quant factors — **DONE** (#42). IMP-012 / Phase 5d desk runners — **DONE** (#43). IMP-013 / Phase 5e Telegram — **DONE** (#44). Multi-channel mesh is Phase 6a / IMP-014 (this tree).
 
 ## Notes
 
