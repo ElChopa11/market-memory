@@ -196,9 +196,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Screenshot-board rewrite; universe expansion; thesis-card reopen; Pulse/Stooq scrape; paid data; execution/`live.yaml`; MAKE/buy/sell/sizing; inventing prints. |
 | **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-007 DONE (#37). |
 | **Risk level** | Medium (language and membership can be misread as calls). Residual: equity tape still missing. |
-| **Status** | IN_REVIEW |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/38 |
-| **Lesson learned** | Locked-membership pass is a desk re-score, not a rubber-stamp of screenshot-engine overlay rel. RESEARCH_PRIORITY names: **none**. MONITOR: ETH (BTC-beta), UNI (SEC PR 2026-90 mapping test). DEFER: BTC, NVDA, JPM, AAVE, SMH, XLF. INSUFFICIENT_DATA: AVGO, MSFT, META, XOM. Stooq/FRED remain degraded. |
+| **Lesson learned** | Merged to `main` (#38). Locked-membership desk re-score, not a rubber-stamp of screenshot-engine overlay rel. RESEARCH_PRIORITY names: **none**. MONITOR: ETH (BTC-beta), UNI (SEC PR 2026-90 mapping test). DEFER: BTC, NVDA, JPM, AAVE, SMH, XLF. INSUFFICIENT_DATA: AVGO, MSFT, META, XOM. Stooq/FRED remain degraded. Do not reopen as a screenshot-board rewrite. |
 
 ---
 
@@ -215,9 +215,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
 | IMP-006 | Equities & Post-IPO Desk | Don/Equities | DONE | [#36](https://github.com/ElChopa11/market-memory/pull/36) merged |
 | IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | DONE | [#37](https://github.com/ElChopa11/market-memory/pull/37) merged |
-| IMP-008 | Quant & Market Structure Desk | Don/Quant | IN_REVIEW | [#38](https://github.com/ElChopa11/market-memory/pull/38) — locked-membership RESEARCH_PRIORITY pass |
+| IMP-008 | Quant & Market Structure Desk | Don/Quant | DONE | [#38](https://github.com/ElChopa11/market-memory/pull/38) merged |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-007 are `DONE`. IMP-008 is `IN_REVIEW` (DoD met in this PR).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-008 are `DONE`.
 
 
 ---
@@ -232,7 +232,7 @@ Short form. Full table: [desk-charters.md — capability map](desk-charters.md#c
 | Crypto thesis / HL structure research | Crypto Desk | Don/Research (IMP-007 thesis cards DONE #37) |
 | Equity / post-IPO cards and screens | Equities & Post-IPO Desk | Don/Research (IMP-006 screen DONE; IMP-007 thesis cards DONE #37) |
 | US Market Pulse, calendar, macro config | Macro & Cross-Asset Desk | Don (IMP-002 DONE; IMP-004 DONE) |
-| Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE; IMP-008 locked-membership pass IN_REVIEW) |
+| Quant Review Board / cards | Quant & Market Structure Desk | Don/Quant (IMP-001 DONE; IMP-008 locked-membership pass DONE #38) |
 | `skeptic-review.md` / `lab skeptic` | Independent Skeptic | Independent reviewer (not the author) |
 | `config/risk/*`, halt, live.yaml guard | Risk (independent veto) | Risk (Principal owns live.yaml) |
 | Paper ledger `lab paper` | Principal-gated lab control | Principal enables; Coordinator operates CLI |
@@ -260,7 +260,7 @@ Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do 
 
 Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-007 DONE** (#37). Generic `thesis.md` stays the lifecycle spine. Do not reopen.
 
-Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 IN_REVIEW**. Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
+Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict. Do not reopen.
 
 ## Reconciliation notes
 
@@ -272,4 +272,4 @@ Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008
 - IMP-006 merged as #36 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-004 rebase onto `main`.
 - IMP-004 (#34) rebased onto `main` after #35/#36; Pulse/source-health hardening lands here. Membership vocab stays `in_universe` / `watch_only`.
 - IMP-007 merged as #37 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-008.
-- IMP-008 intakes the locked-membership RESEARCH_PRIORITY pass (as-of 2026-09-18 Sydney). Screenshot/TV universe is unchanged. Single-threaded: no item remains `IN_PROGRESS` after this PR (`IN_REVIEW` pending merge).
+- IMP-008 merged as #38 while the queue still said `IN_REVIEW` — hygiene fixed here. Screenshot/TV universe is unchanged. Single-threaded: no item remains `IN_PROGRESS`.

@@ -1,6 +1,6 @@
 # PLAN — IMP-008 Quant RESEARCH_PRIORITY pass (locked universe only)
 
-**Report status:** PR READY  
+**Report status:** DONE (#38)  
 **Owner:** Don/Quant (Quant & Market Structure Desk)  
 **As-of:** 2026-09-18 (Australia/Sydney, AEST)  
 **Scope:** desk re-score of **locked membership** in `config/universe.yaml`. Screenshot/TV board (IMP-001) is not rewritten. No orders, wallets, live keys, paid data, universe expansion, or execution.
