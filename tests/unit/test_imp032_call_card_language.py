@@ -132,10 +132,12 @@ def test_hl_stamps_quarantined_appendix_do_not_size() -> None:
     for stamp in ("$3.05B", "$2.90B", "$1.37B", "$2.37B", "$31.2M", "$12.9M"):
         assert stamp in appendix, stamp
         assert stamp not in body, f"{stamp} leaked into card bodies"
-    assert "dayNtl" not in body
     assert "dayNtlVlm" in appendix
-    # Card bodies may mention OI collapse as an invalidation mechanic, but not live OI$ stamps.
-    assert "OI$ ~" not in body
+    # Numbered cards must not carry live-looking HL stamps; header may point at the appendix.
+    for section in _sections().values():
+        assert "dayNtl" not in section["body"]
+        assert "OI$ ~" not in section["body"]
+        assert "DO NOT SIZE" in section["body"]
     assert "OI$ declining" in body
     for section in _sections().values():
         assert "see [appendix]" in section["body"] or "DO NOT SIZE" in section["body"]
