@@ -1,0 +1,21 @@
+# Listings / IPO screen (Phase 6d / IMP-017).
+# Research-owned product on the five-desk roster. Not a sixth desk.
+# Base rates come from our own Market Memory history.
+# n < n_min → no base-rate claim. Never invent a print.
+# Screen-only names. Does not expand Principal membership.
+
+version: "imp-017.1"
+kind: listings_ipo_screen
+desk: research
+n_min: 20
+reclaim_window_days: 90
+path_windows_days: [30, 90]
+lockup_near_days: 21
+thin_history_days: 20
+no_listing_day_is_complete: true
+promote: false
+llm: false
+send: false
+
+# Liquidity clips reused from flow YAML when present; these are research notionals.
+clip_sizes_usd: [10000, 50000, 100000, 250000]

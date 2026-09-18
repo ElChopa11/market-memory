@@ -55,6 +55,18 @@ def add_deliver_parser(sub) -> None:
     watch_p.add_argument("--no-db", action="store_true")
     watch_p.add_argument("--ignore-quiet-hours", action="store_true")
 
+    list_p = deliver_sub.add_parser(
+        "listings",
+        help="Ops-owned fan-out of a Research listings / IPO screen (default --no-send)",
+    )
+    list_p.add_argument("--fixture", type=Path, required=True, help="frozen-day JSON used by lab listings scan")
+    list_p.add_argument("--no-send", action="store_true", help="dry-run (default)")
+    list_p.add_argument("--send", action="store_true", help="gated live send (requires TELEGRAM_BOT_TOKEN)")
+    list_p.add_argument("--out", type=Path, help="write listings artifacts + telegram payload")
+    list_p.add_argument("--repo-root", type=Path, default=Path("."))
+    list_p.add_argument("--no-db", action="store_true")
+    list_p.add_argument("--ignore-quiet-hours", action="store_true")
+
     _add_pack_args(deliver_p)
 
 
@@ -107,11 +119,13 @@ def dispatch_deliver(args: Namespace) -> int:
         return 0
     if cmd == "watchlist":
         return _cmd_watchlist(args)
+    if cmd == "listings":
+        return _cmd_listings(args)
     if cmd == "test":
         return _cmd_test(args)
     if cmd in {None, "pack"}:
         return _cmd_pack(args)
-    print("usage: lab deliver pack|fanout|watchlist|test|inbound", file=sys.stderr)
+    print("usage: lab deliver pack|fanout|watchlist|listings|test|inbound", file=sys.stderr)
     return 2
 
 
@@ -189,6 +203,43 @@ def _cmd_watchlist(args: Namespace) -> int:
     payload["product"] = "watchlist"
     payload["n_llm_calls"] = run.llm_calls
     payload["watchlist_content_hash"] = run.content_hash
+    payload["written"] = written
+    print(json.dumps(payload, sort_keys=True, indent=2))
+    if send and not result.primary.sent:
+        return 2
+    return 0 if run.status != "FAILED" else 2
+
+
+def _cmd_listings(args: Namespace) -> int:
+    send = _want_send(args)
+    if send is None:
+        return 2
+    if SEND_ENABLED:
+        print("lab deliver: SEND_ENABLED must stay false; pass --send into deliver()", file=sys.stderr)
+        return 2
+    from mm_desks.listings import run_listings_from_fixture, write_listings_artifacts
+    from mm_delivery.listings import deliver_listings
+
+    root = Path(args.repo_root).resolve()
+    run = run_listings_from_fixture(Path(args.fixture), repo_root=root)
+    written: dict[str, str] = {}
+    out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
+    if getattr(args, "out", None):
+        written = write_listings_artifacts(run, out_root=out_root)
+    result = deliver_listings(
+        run.canonical(),
+        as_of=run.as_of_knowledge,
+        send=bool(send),
+        repo=root,
+        out_root=out_root,
+    )
+    payload = result.as_public_dict()
+    payload["no_send"] = not send
+    payload["send"] = bool(result.primary.sent)
+    payload["publisher"] = "ops"
+    payload["product"] = "listings"
+    payload["n_llm_calls"] = run.llm_calls
+    payload["listings_content_hash"] = run.content_hash
     payload["written"] = written
     print(json.dumps(payload, sort_keys=True, indent=2))
     if send and not result.primary.sent:

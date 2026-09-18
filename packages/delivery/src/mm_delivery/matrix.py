@@ -7,6 +7,7 @@ and not the publisher. Delivery owner is Ops.
 from __future__ import annotations
 
 from mm_common.naming import (
+    LISTINGS,
     OPS,
     PUBLISHING_DESKS,
     RESEARCH,
@@ -21,6 +22,7 @@ from mm_common.naming import (
 from mm_delivery.config import TelegramSettings
 
 WATCHLIST_PRODUCT = WATCHLIST
+LISTINGS_PRODUCT = LISTINGS
 PUBLISHER = OPS
 
 
@@ -48,18 +50,23 @@ def assert_channel_matrix(settings: TelegramSettings) -> None:
         require_publishing_desk(slug)
         if slug not in settings.desks:
             raise UnknownNameError(f"publishing desk {slug!r} missing from telegram.yaml")
-    product = settings.product(WATCHLIST_PRODUCT)
+    _assert_research_sleeve_product(settings, WATCHLIST_PRODUCT)
+    _assert_research_sleeve_product(settings, LISTINGS_PRODUCT)
+
+
+def _assert_research_sleeve_product(settings: TelegramSettings, slug: str) -> None:
+    product = settings.product(slug)
     if product is None:
-        raise UnknownNameError("watchlist delivery product missing from telegram.yaml")
+        raise UnknownNameError(f"{slug} delivery product missing from telegram.yaml")
     if product.desk != RESEARCH:
         raise UnknownNameError(
-            f"watchlist product desk must be {RESEARCH!r} (naming sleeve_map); got {product.desk!r}"
+            f"{slug} product desk must be {RESEARCH!r} (naming sleeve_map); got {product.desk!r}"
         )
-    if product.sleeve != WATCHLIST:
-        raise UnknownNameError(f"watchlist product sleeve must be {WATCHLIST!r}")
+    if product.sleeve != slug:
+        raise UnknownNameError(f"{slug} product sleeve must be {slug!r}")
     if SLEEVE_MAP.get(product.sleeve) != RESEARCH:
-        raise UnknownNameError("watchlist sleeve must map to research")
-    if product.kind != WATCHLIST:
-        raise UnknownNameError(f"watchlist product kind must be {WATCHLIST!r}")
-    if settings.thresholds.spec(WATCHLIST) is None:
-        raise UnknownNameError("watchlist kind needs a numeric threshold (never alert without one)")
+        raise UnknownNameError(f"{slug} sleeve must map to research")
+    if product.kind != slug:
+        raise UnknownNameError(f"{slug} product kind must be {slug!r}")
+    if settings.thresholds.spec(slug) is None:
+        raise UnknownNameError(f"{slug} kind needs a numeric threshold (never alert without one)")

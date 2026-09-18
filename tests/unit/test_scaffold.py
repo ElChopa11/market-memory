@@ -44,6 +44,7 @@ REQUIRED_PACKAGES = [
     "flow",
     "macro",
     "delivery",
+    "listings",
 ]
 
 
@@ -94,9 +95,11 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-015-phase6b-flow-macro-regime.md",
         "ops/plans/IMP-016-phase6c-telegram-fanout.md",
         "ops/plans/IMP-020-phase6c4-watchlist.md",
+        "ops/plans/IMP-017-phase6d-listings-ipo.md",
         "ADR/0004-desk-mesh-pg-notify.md",
         "ADR/0005-flow-macro-regime.md",
         "ADR/0009-phase6c4-watchlist.md",
+        "ADR/0011-phase6d-listings.md",
         "config/desks/cadence.yaml",
         "config/flow/liquidity.yaml",
         "config/macro/regimes.yaml",
@@ -110,6 +113,7 @@ def test_core_docs_present() -> None:
         "docs/runbooks/post-ipo-reclaim.md",
         "docs/runbooks/thesis-cards.md",
         "docs/runbooks/desks.md",
+        "docs/runbooks/listings.md",
         "docs/runbooks/telegram.md",
         "docs/runbooks/flow-desk.md",
         "docs/runbooks/macro-desk.md",

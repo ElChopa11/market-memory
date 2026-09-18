@@ -1,0 +1,14 @@
+# Fixture / operator calendar of upcoming listings and filing events.
+# Public filing types only (S-1 / F-1). Not a paid data vendor.
+# as_of_knowledge lockstep with ingested_at. Future rows stay invisible until ingested.
+# Screen-only names. Does not expand Principal membership.
+
+version: "imp-017.1"
+kind: listings_calendar
+source: fixture
+notes:
+  - "Screen-only names. Does not expand Principal membership."
+  - "Missing fields stay unavailable. Never invent pricing or float."
+
+deals: []
+filings: []

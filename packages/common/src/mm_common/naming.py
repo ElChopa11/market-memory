@@ -4,7 +4,7 @@ Machine ids (desk slugs, PLAYBOOK artifact types) are stable. Human labels are
 looked up here and nowhere else. Unknown ids fail closed.
 
 Coord is orchestration only — not a publishing desk. Delivery is Ops-owned.
-Sleeves (crypto, equities, chart, watchlist, flow, macro, briefing) and gates (skeptic,
+Sleeves (crypto, equities, chart, watchlist, listings, flow, macro, briefing) and gates (skeptic,
 risk) are labels, not extra desks.
 
 Must not hold secrets, place orders, or talk to Hyperliquid.
@@ -21,6 +21,7 @@ QUANT = "quant"
 IC_RISK = "ic_risk"
 OPS = "ops"
 WATCHLIST = "watchlist"
+LISTINGS = "listings"
 
 COORD = "coord"
 ALERTS = "alerts"
@@ -80,7 +81,7 @@ _PUBLISHING: tuple[NamedSlug, ...] = (
         short="Research",
         tier="3",
         kind=KIND_PUBLISHING,
-        notes="Crypto + equities + chart sleeves",
+        notes="Crypto + equities + chart + watchlist + listings sleeves",
     ),
     NamedSlug(
         slug=QUANT,
@@ -187,6 +188,14 @@ _SLEEVES: tuple[NamedSlug, ...] = (
         kind=KIND_SLEEVE,
         notes="Daily scan of locked universe (in_universe ∪ watch_only). Not a call. Not a sixth desk.",
     ),
+    NamedSlug(
+        slug="listings",
+        display="Research (Investment Research) / listings IPO screen",
+        short="listings / IPO screen",
+        tier="3",
+        kind=KIND_SLEEVE,
+        notes="IPO / direct listing / index-event screen. Not a call. Not a sixth desk. Not universe promotion.",
+    ),
 )
 
 _GATES: tuple[NamedSlug, ...] = (
@@ -238,6 +247,7 @@ SLEEVE_MAP: dict[str, str] = {
     "equities": RESEARCH,
     "chart": RESEARCH,
     "watchlist": RESEARCH,
+    "listings": RESEARCH,
     "flow": INTEL,
     "macro": INTEL,
     "briefing": INTEL,
@@ -414,7 +424,7 @@ def as_config_dict() -> dict[str, Any]:
         return payload
 
     return {
-        "version": "imp-020.1",
+        "version": "imp-017.1",
         "publishing_desks": [named(row) for row in _PUBLISHING],
         "orchestration": [named(row) for row in _ORCHESTRATION],
         "routes": [named(row) for row in _ROUTES],

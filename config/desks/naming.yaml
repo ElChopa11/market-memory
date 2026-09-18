@@ -3,9 +3,10 @@
 # and in mm_common.naming — tests fail closed if they drift.
 # Coord is orchestration only (not a publishing desk). Delivery is Ops-owned.
 # 6c-4 adds the watchlist monitor product (Research sleeve). 6c-5 delivers that
-# artifact over Ops-owned Telegram. Do not add listings (6d) here.
+# artifact over Ops-owned Telegram. 6d adds the listings / IPO screen (Research
+# sleeve, not a sixth desk).
 
-version: "imp-020.1"
+version: "imp-017.1"
 
 publishing_desks:
   - slug: intel
@@ -19,7 +20,7 @@ publishing_desks:
     short: Research
     tier: "3"
     kind: publishing
-    notes: Crypto + equities + chart sleeves
+    notes: Crypto + equities + chart + watchlist + listings sleeves
   - slug: quant
     display: Quant
     short: Quant
@@ -98,6 +99,12 @@ sleeves:
     tier: "3"
     kind: sleeve
     notes: Daily scan of locked universe (in_universe ∪ watch_only). Not a call. Not a sixth desk.
+  - slug: listings
+    display: Research (Investment Research) / listings IPO screen
+    short: listings / IPO screen
+    tier: "3"
+    kind: sleeve
+    notes: IPO / direct listing / index-event screen. Not a call. Not a sixth desk. Not universe promotion.
 
 gates:
   - slug: skeptic
@@ -144,6 +151,7 @@ sleeve_map:
   equities: research
   chart: research
   watchlist: research
+  listings: research
   flow: intel
   macro: intel
   briefing: intel

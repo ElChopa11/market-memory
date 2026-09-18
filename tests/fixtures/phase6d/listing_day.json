@@ -1,0 +1,255 @@
+{
+  "fixture_id": "phase6d-listing-day-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T00:05:00Z",
+  "what_changed": "fixture listings screen; no live tape; screen-only names",
+  "panel_path": "tests/fixtures/phase6d/crcl_panel.json",
+  "intel": {
+    "inventory": [
+      "hyperliquid.info",
+      "hyperliquid.structure",
+      "coingecko",
+      "binance.public",
+      "stooq",
+      "fred",
+      "polygon",
+      "calendar.yaml",
+      "postgres",
+      "object_store"
+    ],
+    "feeds": [
+      {
+        "source_id": "hyperliquid.info",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-hl-info-0001"
+      },
+      {
+        "source_id": "hyperliquid.structure",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-BTC-funding-0001"
+      },
+      {
+        "source_id": "coingecko",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cg-0001"
+      },
+      {
+        "source_id": "binance.public",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-bn-0001"
+      },
+      {
+        "source_id": "stooq",
+        "status": "unavailable",
+        "freshness": "unavailable",
+        "observation_id": null,
+        "notes": "SRC-STOOQ-404 stays OPEN"
+      },
+      {
+        "source_id": "fred",
+        "status": "unavailable",
+        "freshness": "unavailable",
+        "observation_id": null,
+        "notes": "SRC-FRED-MISSING-ENV stays OPEN"
+      },
+      {
+        "source_id": "polygon",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-poly-CRCL-0001"
+      },
+      {
+        "source_id": "calendar.yaml",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cal-0001"
+      },
+      {
+        "source_id": "postgres",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-pg-0001"
+      },
+      {
+        "source_id": "object_store",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-obj-0001"
+      }
+    ]
+  },
+  "thesis": {
+    "slug": "THESIS-6D-LISTINGS",
+    "status": "in_research",
+    "author": "Research",
+    "instrument": "CRCL",
+    "invalidation": "close below listing-day VWAP for two sessions",
+    "max_loss": "research-only; paper stays closed",
+    "membership": "screen_only"
+  },
+  "listings": {
+    "missing_feed": false,
+    "trade_math_by_instrument": {
+      "CRCL": "inherited-from-quant-crcl-fixture-hash"
+    },
+    "deals": [
+      {
+        "instrument": "CRCL",
+        "kind": "ipo",
+        "as_of_knowledge": "2026-06-01T21:00:00Z",
+        "ingested_at": "2026-06-01T21:00:00Z",
+        "pricing_low": 18.0,
+        "pricing_high": 22.0,
+        "offer_price": 20.0,
+        "deal_size_usd": 800000000,
+        "float_pct": 0.12,
+        "shares_offered": 40000000,
+        "shares_outstanding": 333333333,
+        "lead_underwriters": [
+          "GS",
+          "JPM"
+        ],
+        "expected_pricing_date": "2026-05-31",
+        "listing_date": "2026-06-01",
+        "lockup_expiry": "2026-12-01",
+        "index_inclusion_eligible": true,
+        "filing_type": "S-1",
+        "filing_as_of": "2026-04-01T00:00:00Z",
+        "borrow_available": null,
+        "spread_bps": null,
+        "depth_usd": null,
+        "adv_notional": null,
+        "observation_id": "fx-deal-CRCL",
+        "source": "fixture"
+      },
+      {
+        "instrument": "NEWCO",
+        "kind": "direct",
+        "as_of_knowledge": "2026-09-10T00:00:00Z",
+        "ingested_at": "2026-09-10T00:00:00Z",
+        "pricing_low": null,
+        "pricing_high": null,
+        "offer_price": null,
+        "deal_size_usd": null,
+        "float_pct": null,
+        "shares_offered": null,
+        "shares_outstanding": null,
+        "lead_underwriters": [],
+        "expected_pricing_date": "2026-09-22",
+        "listing_date": null,
+        "lockup_expiry": null,
+        "index_inclusion_eligible": null,
+        "filing_type": "S-1",
+        "observation_id": "fx-deal-NEWCO",
+        "source": "fixture"
+      },
+      {
+        "instrument": "FUTUREX",
+        "kind": "ipo",
+        "as_of_knowledge": "2026-09-26T00:00:00Z",
+        "ingested_at": "2026-09-26T00:00:00Z",
+        "offer_price": 50.0,
+        "listing_date": "2026-09-26",
+        "observation_id": "fx-deal-FUTUREX-lookahead",
+        "source": "fixture"
+      }
+    ],
+    "filings": [
+      {
+        "instrument": "NEWCO",
+        "filing_type": "S-1",
+        "as_of_knowledge": "2026-09-10T00:00:00Z",
+        "ingested_at": "2026-09-10T00:00:00Z",
+        "filed_at": "2026-09-09T16:00:00Z",
+        "name": "S-1 registration",
+        "observation_id": "fx-filing-NEWCO"
+      }
+    ],
+    "index_events": [
+      {
+        "instrument": "NEWCO",
+        "kind": "add",
+        "index_name": "fixture-screen-index",
+        "effective_date": "2026-10-01",
+        "as_of_knowledge": "2026-09-12T00:00:00Z",
+        "ingested_at": "2026-09-12T00:00:00Z",
+        "observation_id": "fx-index-NEWCO"
+      },
+      {
+        "instrument": "GHOST",
+        "kind": "add",
+        "index_name": "lookahead-index",
+        "effective_date": "2026-10-15",
+        "as_of_knowledge": "2026-09-26T00:00:00Z",
+        "ingested_at": "2026-09-26T00:00:00Z",
+        "observation_id": "fx-index-GHOST-lookahead"
+      }
+    ],
+    "history": [
+      {
+        "instrument": "AAA",
+        "listing_date": "2025-01-15",
+        "as_of_knowledge": "2025-04-16T00:00:00Z",
+        "ingested_at": "2025-04-16T00:00:00Z",
+        "offer_price": 10,
+        "ret_30d": 0.0,
+        "ret_90d": 0.0,
+        "reclaimed_offer": true,
+        "reclaimed_day1_vwap": false,
+        "observation_id": "fx-hist-AAA"
+      },
+      {
+        "instrument": "BBB",
+        "listing_date": "2025-01-15",
+        "as_of_knowledge": "2025-04-16T00:00:00Z",
+        "ingested_at": "2025-04-16T00:00:00Z",
+        "offer_price": 11,
+        "ret_30d": 0.02,
+        "ret_90d": 0.03,
+        "reclaimed_offer": false,
+        "reclaimed_day1_vwap": false,
+        "observation_id": "fx-hist-BBB"
+      },
+      {
+        "instrument": "CCC",
+        "listing_date": "2025-01-15",
+        "as_of_knowledge": "2025-04-16T00:00:00Z",
+        "ingested_at": "2025-04-16T00:00:00Z",
+        "offer_price": 12,
+        "ret_30d": 0.04,
+        "ret_90d": 0.06,
+        "reclaimed_offer": true,
+        "reclaimed_day1_vwap": false,
+        "observation_id": "fx-hist-CCC"
+      },
+      {
+        "instrument": "DDD",
+        "listing_date": "2025-01-15",
+        "as_of_knowledge": "2025-04-16T00:00:00Z",
+        "ingested_at": "2025-04-16T00:00:00Z",
+        "offer_price": 13,
+        "ret_30d": 0.06,
+        "ret_90d": 0.09,
+        "reclaimed_offer": false,
+        "reclaimed_day1_vwap": false,
+        "observation_id": "fx-hist-DDD"
+      },
+      {
+        "instrument": "EEE",
+        "listing_date": "2025-01-15",
+        "as_of_knowledge": "2025-04-16T00:00:00Z",
+        "ingested_at": "2025-04-16T00:00:00Z",
+        "offer_price": 14,
+        "ret_30d": 0.08,
+        "ret_90d": 0.12,
+        "reclaimed_offer": true,
+        "reclaimed_day1_vwap": false,
+        "observation_id": "fx-hist-EEE"
+      }
+    ]
+  }
+}

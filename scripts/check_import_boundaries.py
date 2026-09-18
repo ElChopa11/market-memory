@@ -15,12 +15,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-OPINE_PACKAGES = ("research_kit", "desks", "quant", "delivery", "flow", "macro")
+OPINE_PACKAGES = ("research_kit", "desks", "quant", "delivery", "flow", "macro", "listings")
 INTEL_PACKAGE = "ingest"
 
 FORBIDDEN_EXECUTION_IMPORTS = frozenset({"mm_execution", "mm_execution_service"})
 FORBIDDEN_INTEL_OPINE_IMPORTS = frozenset(
-    {"mm_research_kit", "mm_desks", "mm_quant", "mm_delivery", "mm_flow", "mm_macro"}
+    {"mm_research_kit", "mm_desks", "mm_quant", "mm_delivery", "mm_flow", "mm_macro", "mm_listings"}
 )
 FORBIDDEN_BUS_IMPORTS = frozenset({"redis", "aioredis", "walrus"})
 FORBIDDEN_SNIPPETS = ("sign_l1_action", "hl_trade", "submit_order", "private_key")
@@ -96,7 +96,7 @@ def main() -> int:
         for err in errors:
             print(f"  - {err}", file=sys.stderr)
         return 1
-    print("import-boundary check passed (research/desks/quant/delivery/flow/macro vs execution; Intel vs opine; no Redis bus)")
+    print("import-boundary check passed (research/desks/quant/delivery/flow/macro/listings vs execution; Intel vs opine; no Redis bus)")
     return 0
 
 

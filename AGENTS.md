@@ -2,7 +2,9 @@
 
 This file is the permission constitution for humans and LLM agents working in `market-memory`. It is stricter than convenience.
 
-**Phase 6c-5 (IMP-021):** Ops-owned Telegram delivery expansion. Channel matrix + presentation bound to `mm_common.naming`. Watchlist monitor artifacts from IMP-020 fan out `--no-send`. Coord is not the publisher. **No** live trading, no wallet code, no `hl_trade` / signing, **no** listings/IPO (6d / IMP-017, parked until 6c-1..6c-5 complete).
+**Phase 6d (IMP-017):** Research listings / IPO screen (not a sixth desk). Naming via `mm_common.naming`. Ops-owned `lab deliver listings --no-send`. Quant math inherited. IC/Risk gates still required. **No** live trading, no wallet code, no `hl_trade` / signing.
+
+**Phase 6c-5 (IMP-021 DONE #53):** Ops-owned Telegram delivery expansion. Channel matrix + presentation bound to `mm_common.naming`. Watchlist monitor artifacts from IMP-020 fan out `--no-send`. Coord is not the publisher.
 
 **Phase 6c-4 (IMP-020 DONE #52):** Research watchlist monitor + daily scan of locked `in_universe` ∪ `watch_only`. Deterministic artifact with `as_of_knowledge` + `content_hash`. Naming via `mm_common.naming`.
 
@@ -12,16 +14,16 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 **Phase 6c (IMP-016 DONE #47):** Per-desk Telegram fan-out + presentation + chart *product* + inbound in `packages/delivery`. Hive PLAYBOOK ladder in `packages/desks` (`mm_desks.playbook`). Quant-owned trade math in `mm_quant.trade_math`. Addendum 6c-0: LLM is WRITER/CRITIC only.
 
-Desk operating model (private research lab, not a fund): [ops/desk-charters.md](ops/desk-charters.md), [ops/decision-rights.md](ops/decision-rights.md), [ops/improvement-queue.md](ops/improvement-queue.md), [docs/runbooks/desks.md](docs/runbooks/desks.md), [docs/runbooks/flow-desk.md](docs/runbooks/flow-desk.md), [docs/runbooks/macro-desk.md](docs/runbooks/macro-desk.md), [docs/runbooks/telegram.md](docs/runbooks/telegram.md), [docs/runbooks/llm-budget.md](docs/runbooks/llm-budget.md), [docs/playbook.md](docs/playbook.md). Hive roles in this file remain the permission constitution; desks are how work is assigned. **No desk overrides the Principal.** Execution & Fund Ops is future-only. Delivery (Telegram) is Ops-owned (Phase 5e + 6c fan-out). Listings/IPO is **Phase 6d** (IMP-017, parked until 6c-1..6c-5).
+Desk operating model (private research lab, not a fund): [ops/desk-charters.md](ops/desk-charters.md), [ops/decision-rights.md](ops/decision-rights.md), [ops/improvement-queue.md](ops/improvement-queue.md), [docs/runbooks/desks.md](docs/runbooks/desks.md), [docs/runbooks/flow-desk.md](docs/runbooks/flow-desk.md), [docs/runbooks/macro-desk.md](docs/runbooks/macro-desk.md), [docs/runbooks/telegram.md](docs/runbooks/telegram.md), [docs/runbooks/llm-budget.md](docs/runbooks/llm-budget.md), [docs/runbooks/listings.md](docs/runbooks/listings.md), [docs/playbook.md](docs/playbook.md). Hive roles in this file remain the permission constitution; desks are how work is assigned. **No desk overrides the Principal.** Execution & Fund Ops is future-only. Delivery (Telegram) is Ops-owned (Phase 5e + 6c fan-out). Listings/IPO is **Phase 6d** (IMP-017, Research sleeve).
 
 ## Non-negotiables
 
-1. **Research cannot access trading credentials.** No API wallet keys, no agent-wallet secrets, no treasury material, no `.env` live keys, no vault paths for execution. Research tools are Market Memory read + artifact write. `packages/research_kit`, `packages/desks`, `packages/quant`, `packages/delivery`, `packages/flow`, and `packages/macro` must not import `mm_execution`, ingest private keys, or grow a signing surface.
+1. **Research cannot access trading credentials.** No API wallet keys, no agent-wallet secrets, no treasury material, no `.env` live keys, no vault paths for execution. Research tools are Market Memory read + artifact write. `packages/research_kit`, `packages/desks`, `packages/quant`, `packages/delivery`, `packages/flow`, `packages/macro`, and `packages/listings` must not import `mm_execution`, ingest private keys, or grow a signing surface.
 2. Risk is **code + versioned config**. No LLM at order time.
 3. Execution accepts only a typed `OrderIntent` that already passed Risk (when Execution exists).
 4. No process both **authors a thesis** and **approves risk** for that thesis. **No self-approve** at any gate (Skeptic, Risk, Principal override).
 5. Promotions are git-reviewed and Principal-signed.
-6. Do not commit secrets. Do not add Hyperliquid signing, order submission, or exchange-module usage. Ingest is public `/info` only. Intel (Tier 2) must not import opine packages (`mm_research_kit`, `mm_desks`, `mm_quant`, `mm_delivery`, `mm_flow`, `mm_macro`).
+6. Do not commit secrets. Do not add Hyperliquid signing, order submission, or exchange-module usage. Ingest is public `/info` only. Intel (Tier 2) must not import opine packages (`mm_research_kit`, `mm_desks`, `mm_quant`, `mm_delivery`, `mm_flow`, `mm_macro`, `mm_listings`).
 7. Do not edit `config/risk/environments/live.yaml` unless the Principal requested it and the `principal-review` path in `.github/workflows/risk-config-guard.yml` is followed.
 
 ### Delivery desks (Phase 6c-1 Principal hive)
@@ -88,4 +90,4 @@ Hive aliases that are **not** numbered delivery tiers: Briefing (Macro Pulse; In
 
 Before claiming a research stage is done, run `./scripts/check-lifecycle.sh` and meet [docs/research-lifecycle.md](docs/research-lifecycle.md).
 
-Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6c-5 scope respected (Ops-owned delivery expansion; watchlist fan-out from IMP-020; naming from IMP-019; five-desk roster from IMP-018; 6c PLAYBOOK/fan-out already on main via #47; no execution/signing, no risk service, no live path, no Redis, no 6d listings, no live LLM HTTP), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.
+Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6d scope respected (listings/IPO Research sleeve on the five-desk roster; naming from IMP-019; Ops delivery from IMP-021; 6c PLAYBOOK/fan-out already on main via #47; no execution/signing, no risk service, no live path, no Redis, no 6e/6f, no live LLM HTTP), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.
