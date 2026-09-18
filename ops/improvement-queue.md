@@ -217,7 +217,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-008 DONE (#38). |
 | **Risk level** | Low (docs/CI). Process risk if 5b is started in this PR. |
 | **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/40 |
 | **Lesson learned** | *(fill at close)* |
 
 ### IMP-010 — Phase 5b Polygon equities + HL structure
@@ -258,7 +258,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-006 | Equities & Post-IPO Desk | Don/Equities | DONE | [#36](https://github.com/ElChopa11/market-memory/pull/36) merged |
 | IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | DONE | [#37](https://github.com/ElChopa11/market-memory/pull/37) merged |
 | IMP-008 | Quant & Market Structure Desk | Don/Quant | DONE | [#38](https://github.com/ElChopa11/market-memory/pull/38) merged |
-| IMP-009 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 5a desk boundaries (this PR) |
+| IMP-009 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | [#40](https://github.com/ElChopa11/market-memory/pull/40) Phase 5a desk boundaries |
 | IMP-010 | Data & Market Memory Desk | Don/Data | READY | Phase 5b Polygon + HL structure — parked; do not implement here |
 
 `IN_PROGRESS` count: **0**. IMP-000–IMP-008 are `DONE`. IMP-009 is `IN_REVIEW` (DoD met in this PR). IMP-010 is `READY` (parked until 009 merges).
