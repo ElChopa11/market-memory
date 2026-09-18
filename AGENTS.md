@@ -2,7 +2,9 @@
 
 This file is the permission constitution for humans and LLM agents working in `market-memory`. It is stricter than convenience.
 
-**Phase 6c-2 (IMP-019):** Canonical desk slugs + display names in `mm_common.naming` / `config/desks/naming.yaml`. PLAYBOOK artifact machine ids vs human labels. Unknown slug fails closed. **No** live trading, no wallet code, no `hl_trade` / signing, **no** listings/IPO (6d / IMP-017, parked until 6c-1..6c-5), **no** 6c-4 watchlist / 6c-5 delivery expansion in this phase.
+**Phase 6c-4 (IMP-020):** Research watchlist monitor + daily scan of locked `in_universe` ∪ `watch_only`. Deterministic artifact with `as_of_knowledge` + `content_hash`. Naming via `mm_common.naming`. **No** live trading, no wallet code, no `hl_trade` / signing, **no** listings/IPO (6d / IMP-017, parked until 6c-1..6c-5), **no** 6c-5 delivery expansion in this phase.
+
+**Phase 6c-2 (IMP-019 DONE #51):** Canonical desk slugs + display names in `mm_common.naming` / `config/desks/naming.yaml`. PLAYBOOK artifact machine ids vs human labels. Unknown slug fails closed.
 
 **Phase 6c-1 (IMP-018 DONE #49):** Publishing roster cut over to **exactly five desks**: Intel (Market Intelligence), Research (Investment Research), Quant, IC/Risk (Investment Committee & Risk — two gates, not two desks), Ops. Don/Coord is orchestration only. Delivery is Ops-owned.
 
@@ -84,4 +86,4 @@ Hive aliases that are **not** numbered delivery tiers: Briefing (Macro Pulse; In
 
 Before claiming a research stage is done, run `./scripts/check-lifecycle.sh` and meet [docs/research-lifecycle.md](docs/research-lifecycle.md).
 
-Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6c-1 scope respected (five-desk roster + OPEN queue incidents; 6c PLAYBOOK/fan-out already on main via #47; no execution/signing, no risk service, no live path, no Redis, no 6d listings, no 6c-2/4/5 products, no live LLM HTTP), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.
+Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6c-4 scope respected (watchlist monitor + daily scan of locked `in_universe` ∪ `watch_only`; naming from IMP-019; 6c PLAYBOOK/fan-out already on main via #47; no execution/signing, no risk service, no live path, no Redis, no 6d listings, no 6c-5 delivery expansion, no live LLM HTTP), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.

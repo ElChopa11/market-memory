@@ -2,9 +2,10 @@
 # Machine ids (slugs / artifact type ids) are stable. Human labels live here
 # and in mm_common.naming — tests fail closed if they drift.
 # Coord is orchestration only (not a publishing desk). Delivery is Ops-owned.
-# Do not add watchlist (6c-4), delivery expansion (6c-5), or listings (6d) here.
+# 6c-4 adds the watchlist monitor product (Research sleeve). Do not add
+# delivery expansion (6c-5) or listings (6d) here.
 
-version: "imp-019.1"
+version: "imp-020.1"
 
 publishing_desks:
   - slug: intel
@@ -91,6 +92,12 @@ sleeves:
     tier: "2"
     kind: sleeve
     notes: Maps into intel. Not a publishing desk.
+  - slug: watchlist
+    display: Research (Investment Research) / watchlist monitor
+    short: watchlist monitor
+    tier: "3"
+    kind: sleeve
+    notes: Daily scan of locked universe (in_universe ∪ watch_only). Not a call. Not a sixth desk.
 
 gates:
   - slug: skeptic
@@ -136,6 +143,7 @@ sleeve_map:
   crypto: research
   equities: research
   chart: research
+  watchlist: research
   flow: intel
   macro: intel
   briefing: intel

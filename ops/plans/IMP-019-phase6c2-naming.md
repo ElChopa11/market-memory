@@ -1,6 +1,6 @@
 # PLAN — IMP-019 Phase 6c-2 naming / display layer
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#51).  
 **Owner:** Don / Ops (orchestration)  
 **Scope:** Phase 6c-2 — single naming/namespace layer on the five-desk roster. No live trading. No execution. No `live.yaml`. No Redis. No 6c-4 watchlist, 6c-5 delivery expansion, or 6d listings.
 

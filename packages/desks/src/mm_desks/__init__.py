@@ -9,6 +9,7 @@ from mm_desks.mesh import mesh_from_fixture
 from mm_desks.naming import sleeve_display, sleeve_tier
 from mm_desks.orchestrator import PIPELINE, run_desks, run_from_fixture
 from mm_desks.playbook import run_playbook_from_fixture
+from mm_desks.watchlist import run_watchlist_from_fixture
 from mm_desks.protocol import DEGRADED, FAILED, OK, DeskOutput, DeskStatus
 from mm_desks.research import RESEARCH, DISPLAY_NAME as RESEARCH_DESK
 from mm_desks.roster import IC_RISK, INTEL, OPS, PUBLISHING_DESKS, QUANT
@@ -44,4 +45,5 @@ __all__ = [
     "run_desks",
     "run_from_fixture",
     "run_playbook_from_fixture",
+    "run_watchlist_from_fixture",
 ]

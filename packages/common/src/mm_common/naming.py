@@ -4,7 +4,7 @@ Machine ids (desk slugs, PLAYBOOK artifact types) are stable. Human labels are
 looked up here and nowhere else. Unknown ids fail closed.
 
 Coord is orchestration only — not a publishing desk. Delivery is Ops-owned.
-Sleeves (crypto, equities, chart, flow, macro, briefing) and gates (skeptic,
+Sleeves (crypto, equities, chart, watchlist, flow, macro, briefing) and gates (skeptic,
 risk) are labels, not extra desks.
 
 Must not hold secrets, place orders, or talk to Hyperliquid.
@@ -20,6 +20,7 @@ RESEARCH = "research"
 QUANT = "quant"
 IC_RISK = "ic_risk"
 OPS = "ops"
+WATCHLIST = "watchlist"
 
 COORD = "coord"
 ALERTS = "alerts"
@@ -178,6 +179,14 @@ _SLEEVES: tuple[NamedSlug, ...] = (
         kind=KIND_SLEEVE,
         notes="Maps into intel. Not a publishing desk.",
     ),
+    NamedSlug(
+        slug="watchlist",
+        display="Research (Investment Research) / watchlist monitor",
+        short="watchlist monitor",
+        tier="3",
+        kind=KIND_SLEEVE,
+        notes="Daily scan of locked universe (in_universe ∪ watch_only). Not a call. Not a sixth desk.",
+    ),
 )
 
 _GATES: tuple[NamedSlug, ...] = (
@@ -228,6 +237,7 @@ SLEEVE_MAP: dict[str, str] = {
     "crypto": RESEARCH,
     "equities": RESEARCH,
     "chart": RESEARCH,
+    "watchlist": RESEARCH,
     "flow": INTEL,
     "macro": INTEL,
     "briefing": INTEL,
@@ -388,7 +398,7 @@ def as_config_dict() -> dict[str, Any]:
         return payload
 
     return {
-        "version": "imp-019.1",
+        "version": "imp-020.1",
         "publishing_desks": [named(row) for row in _PUBLISHING],
         "orchestration": [named(row) for row in _ORCHESTRATION],
         "routes": [named(row) for row in _ROUTES],
