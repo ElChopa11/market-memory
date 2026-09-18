@@ -6,7 +6,7 @@ Phase 5c **quant factor library** (IMP-011). Quant & Market Structure Desk (Tier
 
 **Must not:** depend on the `mm_execution` module or signing; call a trade; submit an order; skip Skeptic; invent missing feeds.
 
-The working Quant Review Board remains `mm_research_kit.quant_review` (IMP-001 / IMP-008). This package does **not** replace Board verdicts. Desk runners that wire factors into desks are Phase 5d (IMP-012, parked).
+The working Quant Review Board remains `mm_research_kit.quant_review` (IMP-001 / IMP-008). This package does **not** replace Board verdicts. Desk runners that wire factors into desks are Phase 5d (`lab desk run`, IMP-012).
 
 ## Layout
 

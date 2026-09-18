@@ -87,6 +87,7 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-010-phase5b-polygon-hl-structure.md",
         "ops/plans/IMP-011-phase5c-quant-factors.md",
         "ops/plans/IMP-012-phase5d-desk-runners.md",
+        "ops/plans/IMP-013-phase5e-telegram.md",
         "config/quant/factors.yaml",
         "config/quant/regime.yaml",
         "docs/runbooks/quant-desk.md",

@@ -1,9 +1,11 @@
 [project]
 name = "mm-delivery"
 version = "0.1.0"
-description = "Phase 5a delivery skeleton. Telegram send is Phase 5e."
+description = "Phase 5d no-send payload strings. Telegram Bot API send is Phase 5e."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  "mm-common",
+]
 
 [build-system]
 requires = ["hatchling"]

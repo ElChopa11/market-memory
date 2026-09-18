@@ -1,0 +1,80 @@
+{
+  "fixture_id": "phase5d-skeptic-fail-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T00:05:00Z",
+  "what_changed": "skeptic FAIL return on look-ahead",
+  "panel_path": "tests/fixtures/phase5c/panel.json",
+  "intel": {
+    "feeds": [
+      {"source_id": "hyperliquid.info", "status": "ok", "freshness": "fresh", "observation_id": "fx-hl-info-0001"},
+      {"source_id": "hyperliquid.structure", "status": "ok", "freshness": "fresh", "observation_id": "fx-BTC-funding-0001"},
+      {"source_id": "coingecko", "status": "ok", "freshness": "fresh", "observation_id": "fx-cg-0001"},
+      {"source_id": "binance.public", "status": "ok", "freshness": "fresh", "observation_id": "fx-bn-0001"},
+      {"source_id": "stooq", "status": "ok", "freshness": "fresh", "observation_id": "fx-stooq-0001"},
+      {"source_id": "fred", "status": "ok", "freshness": "fresh", "observation_id": "fx-fred-0001"},
+      {"source_id": "polygon", "status": "ok", "freshness": "fresh", "observation_id": "fx-poly-NVDA-0001"},
+      {"source_id": "calendar.yaml", "status": "ok", "freshness": "fresh", "observation_id": "fx-cal-0001"},
+      {"source_id": "postgres", "status": "ok", "freshness": "fresh", "observation_id": "fx-pg-0001"},
+      {"source_id": "object_store", "status": "ok", "freshness": "fresh", "observation_id": "fx-obj-0001"}
+    ]
+  },
+  "crypto": {
+    "tape": [
+      {
+        "instrument": "BTC",
+        "asset_class": "crypto",
+        "membership": "in_universe",
+        "metric": "funding",
+        "value": "0.00012",
+        "source": "hyperliquid.info",
+        "freshness": "fresh",
+        "observation_id": "fx-BTC-funding-0001"
+      }
+    ]
+  },
+  "equities": {
+    "tape": [
+      {
+        "instrument": "NVDA",
+        "asset_class": "equity",
+        "membership": "in_universe",
+        "metric": "close",
+        "value": "120.5",
+        "source": "polygon",
+        "freshness": "fresh",
+        "observation_id": "fx-NVDA-0000"
+      }
+    ]
+  },
+  "quant": {
+    "instruments": ["BTC"]
+  },
+  "calendar": [],
+  "thesis": {
+    "slug": "THESIS-5D-SKEPTIC-FAIL",
+    "status": "in_skeptic",
+    "author": "Crypto Desk",
+    "reviewer": "Independent Skeptic",
+    "instrument": "BTC",
+    "membership": "in_universe",
+    "horizon": "5d",
+    "intent": "Intent that used a bar after the knowledge watermark.",
+    "invalidation": "funding prints negative for three consecutive 8h windows",
+    "max_loss": "2% of dedicated research budget",
+    "evidence_ids": ["fx-BTC-funding-0001"],
+    "look_ahead": true,
+    "leakage": false,
+    "already_priced": false,
+    "crowding": "noted",
+    "invalidation_quality": "ok"
+  },
+  "risk": {
+    "environment": "paper",
+    "intent": {
+      "instrument": "BTC",
+      "invalidation": "funding prints negative for three consecutive 8h windows",
+      "max_loss": "2% of dedicated research budget",
+      "leverage": 1.0
+    }
+  }
+}

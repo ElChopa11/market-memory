@@ -35,4 +35,4 @@ Desk runners (5d / IMP-012). Telegram / 5e. Signing. `live.yaml`. Paid data. Reo
 
 ## Status
 
-IN_REVIEW (this PR). IMP-010 is DONE (#41). IMP-012 Phase 5d is READY/PARKED — do not implement here.
+IN_REVIEW (IMP-011 merged as #42). IMP-012 Phase 5d is the following implementation thread.

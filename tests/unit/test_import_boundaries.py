@@ -78,5 +78,7 @@ def test_skeleton_packages_are_hard_gated() -> None:
     }
     assert mm_delivery.SEND_ENABLED is False
     assert not hasattr(mm_delivery, "send")
+    assert hasattr(mm_delivery, "prepare_payload")
+    assert hasattr(mm_desks, "run_from_fixture")
     assert not hasattr(mm_desks, "polygon")
     assert not hasattr(mm_quant, "sign")
