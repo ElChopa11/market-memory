@@ -81,6 +81,26 @@ def test_imp033_required_fields_and_lock() -> None:
     assert "Do not reopen IMP-020" in block
     assert "Ops does not publish until config-backed" in block
     assert "paper only" in block.lower()
+    assert "| **Status** | IN_PROGRESS |" in block
+    assert "NASDAQ:SPCX" in block
+    assert "Space Exploration Technologies Corp" in block
+    assert "NOT SPAC ETF" in block
+    assert "cluster `idio`" in block
+    assert "NASDAQ:CBRS" in block
+    assert "Cerebras Systems Inc" in block
+    assert "semis_ai" in block
+    assert "MOVED from idio" in block
+    assert "SAMSUN" in block and "KOSDA" in block and "PURR" in block
+    assert "VVVUSD" in block and "CHIPIUSD" in block
+    assert "until Principal paste" in block
+    assert "NEW_LISTING" in block
+    assert "n/a (insufficient history:" in block
+    assert 'never "?"' in block
+    assert "UNTRADEABLE_AT_SIZE" in block
+    assert "LOCKUP WATCH" in block or "EDGAR confirm" in block
+    assert "do not assume 180d" in block
+    assert "gate 5 blackout" in block
+    assert "bc-3c465873" in block
     for item_id in OPEN_INCIDENTS:
         assert item_id in block
     universe = UNIVERSE.read_text(encoding="utf-8")
@@ -92,6 +112,9 @@ def test_imp033_required_fields_and_lock() -> None:
         assert name in universe
     for name in ("ETH", "UNI", "AAVE", "SMH", "XLF"):
         assert name in universe
+    # Paper intake does not invent or expand membership.
+    for invented in ("SPCX", "CBRS", "SAMSUN", "KOSDA", "PURR", "VVVUSD", "CHIPIUSD"):
+        assert invented not in universe
 
 
 def test_imp033_plan_points_at_imp020_and_sister() -> None:
@@ -102,9 +125,20 @@ def test_imp033_plan_points_at_imp020_and_sister() -> None:
     assert "docs/runbooks/watchlist.md" in plan
     assert "config/watchlist/monitor.yaml" in plan
     assert "Canonical watchlist monitor.yaml Principal lock" in plan
+    assert "bc-3c465873" in plan
     assert "live_trading_enabled: false" in plan
     assert "No send" in plan or "no send" in plan.lower() or "holds Telegram" in plan
     assert "OPEN incidents untouched" in plan
+    assert "NASDAQ:SPCX" in plan
+    assert "NASDAQ:CBRS" in plan
+    assert "semis_ai" in plan
+    assert "SAMSUN" in plan and "CHIPIUSD" in plan
+    assert "Do not invent" in plan or "do not invent" in plan.lower()
+    assert "NEW_LISTING" in plan
+    assert "n/a (insufficient history:" in plan
+    assert "EDGAR confirm" in plan
+    assert "do not assume 180d" in plan
+    assert "gate 5 blackout" in plan
 
 
 def test_queue_helper_single_in_progress_no_auto_merge() -> None:
