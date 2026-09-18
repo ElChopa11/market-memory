@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from mm_common.http import DEFAULT_BACKOFF_S, DEFAULT_MAX_ATTEMPTS, DEFAULT_TIMEOUT
+from mm_common.naming import OPS
 
 BOT_TOKEN_ENV = "TELEGRAM_BOT_TOKEN"
 CHAT_ID_ENV = "TELEGRAM_CHAT_ID"
@@ -67,6 +68,18 @@ class DeskRoute:
     enabled: bool
     chat_id_env: str
     thread_id: int | None
+
+
+@dataclass(frozen=True)
+class DeliveryProduct:
+    """Ops-owned delivery of an existing desk artifact. Does not invent content."""
+
+    slug: str
+    desk: str
+    kind: str
+    sleeve: str | None
+    enabled: bool
+    inherit_content_hash: bool
 
 
 @dataclass(frozen=True)
@@ -142,11 +155,18 @@ class TelegramSettings:
     desks: dict[str, DeskRoute]
     schedule: tuple[ScheduleJob, ...]
     inbound: InboundSettings
+    products: dict[str, DeliveryProduct]
+    owner: str = OPS
+    publisher: str = OPS
+    coordinator: str = "orchestration_only"
     bot_token_env: str = BOT_TOKEN_ENV
     default_chat_id_env: str = CHAT_ID_ENV
 
     def route(self, slug: str) -> DeskRoute | None:
         return self.desks.get(slug)
+
+    def product(self, slug: str) -> DeliveryProduct | None:
+        return self.products.get(slug)
 
 
 def default_config_path(root: Path | None = None) -> Path:
@@ -238,7 +258,21 @@ def load_telegram_settings(root: Path | None = None, *, path: Path | None = None
         enabled=_bool(inbound_block.get("enabled"), False),
         allowlist=tuple(str(x) for x in allow),
     )
-    return TelegramSettings(
+    products: dict[str, DeliveryProduct] = {}
+    raw_products = data.get("products") if isinstance(data.get("products"), dict) else {}
+    for slug, spec in raw_products.items():
+        if not isinstance(spec, dict):
+            continue
+        sleeve_raw = spec.get("sleeve")
+        products[str(slug)] = DeliveryProduct(
+            slug=str(slug),
+            desk=str(spec.get("desk") or ""),
+            kind=str(spec.get("kind") or slug),
+            sleeve=None if sleeve_raw in (None, "") else str(sleeve_raw),
+            enabled=_bool(spec.get("enabled"), True),
+            inherit_content_hash=_bool(spec.get("inherit_content_hash"), True),
+        )
+    settings = TelegramSettings(
         channel=str(data.get("channel") or "telegram"),
         parse_mode=parse_mode,
         max_message_chars=max_chars,
@@ -251,7 +285,15 @@ def load_telegram_settings(root: Path | None = None, *, path: Path | None = None
         desks=desks,
         schedule=tuple(jobs),
         inbound=inbound,
+        products=products,
+        owner=str(data.get("owner") or OPS),
+        publisher=str(data.get("publisher") or OPS),
+        coordinator=str(data.get("coordinator") or "orchestration_only"),
     )
+    from mm_delivery.matrix import assert_channel_matrix
+
+    assert_channel_matrix(settings)
+    return settings
 
 
 def bot_token_from_env(environ: dict[str, str] | None = None) -> str | None:

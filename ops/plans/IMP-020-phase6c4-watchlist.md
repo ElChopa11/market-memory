@@ -1,6 +1,6 @@
 # PLAN — IMP-020 Phase 6c-4 watchlist monitor + daily scan
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#52).  
 **Owner:** Research (Investment Research)  
 **Scope:** Phase 6c-4 — daily watchlist monitor over the Principal-locked universe (`in_universe` ∪ `watch_only`). No live trading. No execution. No `live.yaml`. No Redis. No 6c-5 delivery expansion. No 6d listings. No universe promotion.
 

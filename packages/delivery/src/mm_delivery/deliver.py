@@ -96,7 +96,7 @@ def _record_failed(sink: list[dict[str, Any]] | None, payload: DeliveryPayload, 
             "content_hash": payload.content_hash,
             "reason": reason,
             "notes": list(notes),
-            "escalation": "coord: delivery FAILED — never silent drop",
+            "escalation": "ops: delivery FAILED — never silent drop (Coord orchestrates, does not publish)",
         }
     )
 
@@ -230,7 +230,7 @@ def deliver(
             if not result.ok:
                 fail_notes = result.notes or ("telegram sendMessage failed",)
                 reason = REASON_RETRIES_EXHAUSTED if result.error_class in {"http_5xx", "rate_limited"} else result.error_class
-                _record_failed(failed_sink, payload, reason, fail_notes + ("never silent drop", "coord escalation: delivery FAILED"))
+                _record_failed(failed_sink, payload, reason, fail_notes + ("never silent drop", "ops escalation: delivery FAILED"))
                 return DeliveryResult(
                     payload=payload,
                     sent=False,

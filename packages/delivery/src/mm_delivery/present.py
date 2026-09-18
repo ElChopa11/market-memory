@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
-from mm_common.naming import telegram_header, with_telegram_header
+from mm_common.naming import (
+    RESEARCH,
+    WATCHLIST,
+    sleeve_display,
+    telegram_header,
+    with_telegram_header,
+)
 
 UNKNOWN = "?"
 
@@ -81,13 +87,24 @@ def monospace_table(headers: Sequence[str], rows: Sequence[Sequence[Any]], *, ga
     return "```\n" + "\n".join(lines) + "\n```"
 
 
-def desk_header(slug: str, *, artifact_type: str | None = None) -> str:
+def desk_header(
+    slug: str,
+    *,
+    artifact_type: str | None = None,
+    sleeve: str | None = None,
+) -> str:
     """Telegram / pack banner from the naming layer. Unknown slug fails closed."""
-    return telegram_header(slug, artifact_type=artifact_type)
+    return telegram_header(slug, artifact_type=artifact_type, sleeve=sleeve)
 
 
-def headed_markdown(markdown: str, slug: str, *, artifact_type: str | None = None) -> str:
-    return with_telegram_header(markdown, slug, artifact_type=artifact_type)
+def headed_markdown(
+    markdown: str,
+    slug: str,
+    *,
+    artifact_type: str | None = None,
+    sleeve: str | None = None,
+) -> str:
+    return with_telegram_header(markdown, slug, artifact_type=artifact_type, sleeve=sleeve)
 
 
 def ideas_header(n_shown: int, n_total: int) -> str:
@@ -96,3 +113,72 @@ def ideas_header(n_shown: int, n_total: int) -> str:
     if n_shown < n_total:
         return f"{n_shown} ideas shown; {n_total - n_shown} cut (max 3)"
     return f"{n_shown} ideas"
+
+
+WATCHLIST_DELIVERY_FOOTER = (
+    "Not a call. Not a Quant verdict. Locked membership is not promotion. "
+    "PLAYBOOK setups flagged only — trade math stays on lab playbook run. "
+    "Ops publishes; Coord orchestrates."
+)
+
+
+def present_watchlist(canonical: Mapping[str, Any]) -> str:
+    """Ops Telegram cut of an IMP-020 watchlist scan. Does not invent ideas or prints."""
+    rows = canonical.get("rows") or []
+    if not isinstance(rows, list):
+        rows = []
+    gaps: list[str] = []
+    table_rows: list[tuple[str, str, str, str, str]] = []
+    flagged: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        instrument = str(row.get("instrument") or UNKNOWN)
+        membership = str(row.get("membership") or UNKNOWN)
+        state = str(row.get("monitor_state") or UNKNOWN)
+        freshness = str(row.get("freshness") or UNKNOWN)
+        setup = "yes" if row.get("playbook_setup") else "no"
+        table_rows.append((instrument, membership, state, freshness, setup))
+        if state in {UNKNOWN, "UNAVAILABLE"} or freshness in {UNKNOWN, "unavailable"}:
+            gaps.append(instrument)
+        if row.get("playbook_setup"):
+            flagged.append(instrument)
+    table = monospace_table(
+        ("instrument", "membership", "state", "freshness", "playbook_setup"),
+        table_rows,
+        gaps=gaps,
+    )
+    product = sleeve_display(WATCHLIST)
+    completeness = canonical.get("completeness")
+    completeness_s = UNKNOWN if completeness is None else f"{completeness}%"
+    content_hash = canonical.get("content_hash") or UNKNOWN
+    as_of = canonical.get("as_of_knowledge") or UNKNOWN
+    status = canonical.get("status") or UNKNOWN
+    named_gaps = list(canonical.get("gaps") or []) or gaps or ["none"]
+    setup_line = (
+        "PLAYBOOK setups flagged (not invented; math stays on lab playbook run): "
+        + ", ".join(flagged)
+        if flagged
+        else "no PLAYBOOK setups flagged (inventory is not an idea list)"
+    )
+    body = "\n".join(
+        [
+            f"{product} (`{WATCHLIST}`)",
+            f"as_of_knowledge: {as_of}",
+            f"status: {status}",
+            f"completeness: {completeness_s} of locked names with tape",
+            f"content_hash: `{content_hash}`",
+            "Send: no (default). Publisher: Ops. Coord is not the publisher.",
+            "",
+            table,
+            "",
+            setup_line,
+            "",
+            "## Gaps",
+            "",
+            *[f"- {item}" for item in named_gaps],
+            "",
+            WATCHLIST_DELIVERY_FOOTER,
+        ]
+    )
+    return headed_markdown(body, RESEARCH, sleeve=WATCHLIST)

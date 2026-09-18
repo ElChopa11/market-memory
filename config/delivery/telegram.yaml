@@ -1,8 +1,13 @@
-# Telegram Bot API delivery (Phase 5e / IMP-013 + 6c-1 five-desk roster).
+# Telegram Bot API delivery (Phase 5e / IMP-013 + 6c-1 five-desk roster + 6c-5 Ops expansion).
 # Secrets are env-only. Never put TELEGRAM_BOT_TOKEN or chat ids in this file.
 # Per-desk override: TELEGRAM_CHAT_ID_<DESK> (e.g. TELEGRAM_CHAT_ID_INTEL).
 # Default chat: TELEGRAM_CHAT_ID. Token: TELEGRAM_BOT_TOKEN.
-# Delivery is Ops-owned. Coord/Don is orchestration only.
+# Delivery is Ops-owned. Coord/Don is orchestration only — not the publisher.
+# Channel matrix must match mm_common.naming ROUTE_SLUGS (five desks + alerts).
+
+owner: ops
+publisher: ops
+coordinator: orchestration_only
 
 channel: telegram
 parse_mode: MarkdownV2
@@ -39,12 +44,20 @@ thresholds:
   test:
     enabled: true
     min_completeness_pct: 0
+  watchlist:
+    enabled: true
+    min_completeness_pct: 1
 
 schedule:
   timezone: Australia/Sydney
   desk_pack:
     enabled: true
     local_time: "07:30"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+  # Watchlist Ops cut. Not the Sydney 08:00 digest (SCHED-001 stays OPEN).
+  watchlist:
+    enabled: true
+    local_time: "07:45"
     weekdays: [Mon, Tue, Wed, Thu, Fri]
 
 desks:
@@ -72,6 +85,15 @@ desks:
     enabled: true
     chat_id_env: TELEGRAM_CHAT_ID_ALERTS
     thread_id: null
+
+# Existing desk artifacts Ops may fan-out. Does not invent content.
+products:
+  watchlist:
+    desk: research
+    kind: watchlist
+    sleeve: watchlist
+    enabled: true
+    inherit_content_hash: true
 
 inbound:
   enabled: false

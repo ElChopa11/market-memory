@@ -1,13 +1,13 @@
-# Telegram delivery (Phase 5e) + per-desk fan-out (Phase 6c)
+# Telegram delivery (Phase 5e + 6c fan-out + 6c-5 Ops expansion)
 
-Coordinator delivery of desk packs over the **Telegram Bot API**, plus Phase 6c per-desk fan-out and Ops mirror. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.** Delivery is **Ops-owned**. Coord/Don is orchestration only.
+**Ops-owned** delivery of desk packs over the **Telegram Bot API**, plus Phase 6c per-desk fan-out and Ops mirror. Coord/Don is orchestration only — **Coord is not the publisher**. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.**
 
-Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md). Desk packs: [desks.md](desks.md). PLAYBOOK: [../playbook.md](../playbook.md). Secrets: [security-model.md](../security-model.md).
+Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md), [ADR/0010-phase6c5-delivery.md](../../ADR/0010-phase6c5-delivery.md). Desk packs: [desks.md](desks.md). Watchlist: [watchlist.md](watchlist.md). PLAYBOOK: [../playbook.md](../playbook.md). Secrets: [security-model.md](../security-model.md). Naming: [`config/desks/naming.yaml`](../../config/desks/naming.yaml).
 
 ## What operators can do
 
 ```bash
-# Dry-run from the Coord pack (writes exact payload under briefs/YYYY-MM-DD/)
+# Dry-run from the Ops pack (writes exact payload under briefs/YYYY-MM-DD/)
 uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --out /tmp/desk-run --no-db
 
 uv run lab deliver pack --fixture tests/fixtures/phase5d/frozen_day.json --no-send --out /tmp/desk-run
@@ -18,6 +18,9 @@ uv run lab deliver pack --from-markdown tests/fixtures/phase5e/desk-pack.md \
 # Per-desk fan-out + Ops mirror (same content_hash + footer; never re-rendered)
 uv run lab deliver fanout --desk research --from-markdown tests/fixtures/phase5e/desk-pack.md \
   --as-of 2026-09-18T00:00:00Z --no-send
+
+# Watchlist monitor → Ops Telegram cut (IMP-020 artifact; inherit content_hash)
+uv run lab deliver watchlist --fixture tests/fixtures/phase6c4/locked_scan.json --no-send --out /tmp/watchlist
 
 # Manual real send of a one-line ping (bot box only; never in pytest)
 # Requires TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in the environment.
@@ -31,21 +34,25 @@ uv run lab deliver test --desk ops --i-mean-it --ignore-quiet-hours
 | Env | Required | Purpose |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | live send | Bot token. Never git. Never dry-run files. |
-| `TELEGRAM_CHAT_ID` | live send | Default chat. |
+| `TELEGRAM_CHAT_ID` | live send | Default chat (Ops). |
 | `TELEGRAM_CHAT_ID_<DESK>` | optional | Per-desk override (`INTEL`, `RESEARCH`, `QUANT`, `IC_RISK`, `ALERTS`). |
 
-`config/delivery/telegram.yaml` maps desk → **env var name** + optional forum `thread_id`. It must not contain token or chat id values. Copy `.env.example` placeholders only.
+`config/delivery/telegram.yaml` maps desk → **env var name** + optional forum `thread_id`. It must not contain token or chat id values. Copy `.env.example` placeholders only. `owner` / `publisher` are `ops`. Coordinator is `orchestration_only`.
+
+## Channel matrix (naming-bound)
+
+Publishing routes (from `mm_common.naming`): `intel` `research` `quant` `ic_risk` `ops`. Sink: `alerts`. Unknown or retired slug (`coord`, `crypto`, …) **fails closed**. Telegram header is `{display} · {slug}` plus optional sleeve (`watchlist monitor`) or PLAYBOOK artifact label.
 
 ## Gates (never alert without a threshold)
 
 Every live POST is refused unless all of these pass:
 
-1. **Numeric threshold** in `config/delivery/telegram.yaml` (`thresholds.require_threshold_config`, `desk_pack.min_completeness_pct`, `alert.min_events`).
+1. **Numeric threshold** in `config/delivery/telegram.yaml` (`thresholds.require_threshold_config`, `desk_pack.min_completeness_pct`, `watchlist.min_completeness_pct`, `alert.min_events`).
 2. **Quiet hours** (default 22:00–07:00 Australia/Sydney). `lab deliver test --ignore-quiet-hours` is operator-only.
 3. **Idempotency** key `sha256(desk, as_of, content_hash)` — reruns inside `dedupe.ttl_seconds` do not double-post.
 4. **Rate limit** `rate_limit.max_requests_per_minute`.
 5. Token + chat id present in env (`missing_env` fail-closed; values never printed).
-6. **Retry** 429 / 5xx honouring `Retry-After`. Exhausted retries write a `FAILED` delivery row and escalate to Coord — **never silent drop**.
+6. **Retry** 429 / 5xx honouring `Retry-After`. Exhausted retries write a `FAILED` delivery row and escalate to **Ops** — **never silent drop**. Coord does not publish the failure.
 
 Dry-run still writes the **exact** `sendMessage` chunks that would have been posted.
 
@@ -57,7 +64,7 @@ Under `--out` (or repo root) `briefs/YYYY-MM-DD/`:
 |---|---|
 | `telegram-payload.json` | Canonical envelope (MarkdownV2 chunks, env **names**, idempotency key). No token. |
 | `telegram-payload.sha256` | Byte-stable hash of that file. |
-| `desk-pack.md` | Coord output contract (from `lab desk run --out`). |
+| `desk-pack.md` | Ops output contract (from `lab desk run --out`). |
 
 Parse mode is MarkdownV2. Messages longer than 4096 characters are split with ordered `[i/n]` prefixes.
 
@@ -65,9 +72,11 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 `lab deliver inbound "/status"` — allowlist `/status`, `/brief`, `/desk`, `/idea`, `/gaps`, `/halt`. Trading verbs (`/buy`, `/sell`, `/order`, …) are refused. Unknown uid → **silent drop + audit** (no reply). No network, no orders.
 
-## Fan-out (Phase 6c)
+## Fan-out (Phase 6c + 6c-5)
 
-`lab deliver fanout --desk <slug>` delivers the desk channel then an Ops mirror of the **same** `content_hash` plus a footer. The body is not re-rendered. Chart PNG caption uses filename `{content_hash}.png`. Publishing slugs (from `mm_common.naming`): `intel` `research` `quant` `ic_risk` `ops`. Telegram header is `{display} · {slug}`. Unknown slug fails closed.
+`lab deliver fanout --desk <slug>` delivers the desk channel then an Ops mirror of the **same** `content_hash` plus a footer. The body is not re-rendered. Chart PNG caption uses filename `{content_hash}.png`.
+
+`lab deliver watchlist` presents the IMP-020 Research scan (membership, monitor_state, freshness, PLAYBOOK flags only — **no invented ideas**) and fans it to `research` with an Ops mirror, inheriting the scan `content_hash`. Watchlist schedule in yaml is 07:45 Sydney; it does **not** close SCHED-001 (Sydney 08:00 digest).
 
 ## Import walls
 
@@ -75,6 +84,7 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 ## Not this phase
 
-- Phase 6d listings / IPO desk (IMP-017, parked).
+- Phase 6d listings / IPO desk (IMP-017, parked until 6c-1..6c-5 complete).
 - `live_trading_enabled: true`, signing, wallet code, order endpoints.
 - Paid Telegram SDKs (httpx is enough). Redis.
+- Closing OPEN incidents (SCHED-001, BRIEF-TAG, SRC-STOOQ-404, SRC-FRED-MISSING-ENV).

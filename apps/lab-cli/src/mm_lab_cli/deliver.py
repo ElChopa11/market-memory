@@ -19,7 +19,7 @@ def add_deliver_parser(sub) -> None:
     deliver_p = sub.add_parser("deliver", help="deliver a desk pack (default --no-send; Telegram Bot API)")
     deliver_sub = deliver_p.add_subparsers(dest="deliver_cmd")
 
-    pack_p = deliver_sub.add_parser("pack", help="build Telegram payload from a Coord pack or markdown")
+    pack_p = deliver_sub.add_parser("pack", help="build Telegram payload from an Ops pack or markdown")
     _add_pack_args(pack_p)
 
     test_p = deliver_sub.add_parser(
@@ -40,8 +40,20 @@ def add_deliver_parser(sub) -> None:
     inbound_p.add_argument("text", help="inbound message text")
     inbound_p.add_argument("--uid", help="telegram user id (unknown uid is a silent drop)")
 
-    fan_p = deliver_sub.add_parser("fanout", help="per-desk deliver + coord mirror (default --no-send)")
+    fan_p = deliver_sub.add_parser("fanout", help="per-desk deliver + Ops mirror (default --no-send)")
     _add_pack_args(fan_p)
+
+    watch_p = deliver_sub.add_parser(
+        "watchlist",
+        help="Ops-owned fan-out of a Research watchlist scan (default --no-send)",
+    )
+    watch_p.add_argument("--fixture", type=Path, required=True, help="frozen-day JSON used by lab watchlist scan")
+    watch_p.add_argument("--no-send", action="store_true", help="dry-run (default)")
+    watch_p.add_argument("--send", action="store_true", help="gated live send (requires TELEGRAM_BOT_TOKEN)")
+    watch_p.add_argument("--out", type=Path, help="write watchlist artifacts + telegram payload")
+    watch_p.add_argument("--repo-root", type=Path, default=Path("."))
+    watch_p.add_argument("--no-db", action="store_true")
+    watch_p.add_argument("--ignore-quiet-hours", action="store_true")
 
     _add_pack_args(deliver_p)
 
@@ -93,11 +105,13 @@ def dispatch_deliver(args: Namespace) -> int:
         payload.update(extra)
         print(json.dumps(payload, sort_keys=True, indent=2))
         return 0
+    if cmd == "watchlist":
+        return _cmd_watchlist(args)
     if cmd == "test":
         return _cmd_test(args)
     if cmd in {None, "pack"}:
         return _cmd_pack(args)
-    print("usage: lab deliver pack|test|inbound", file=sys.stderr)
+    print("usage: lab deliver pack|fanout|watchlist|test|inbound", file=sys.stderr)
     return 2
 
 
@@ -143,6 +157,43 @@ def _cmd_pack(args: Namespace) -> int:
     if send and not result.sent:
         return 2
     return 0
+
+
+def _cmd_watchlist(args: Namespace) -> int:
+    send = _want_send(args)
+    if send is None:
+        return 2
+    if SEND_ENABLED:
+        print("lab deliver: SEND_ENABLED must stay false; pass --send into deliver()", file=sys.stderr)
+        return 2
+    from mm_desks.watchlist import run_watchlist_from_fixture, write_watchlist_artifacts
+    from mm_delivery.watchlist import deliver_watchlist
+
+    root = Path(args.repo_root).resolve()
+    run = run_watchlist_from_fixture(Path(args.fixture), repo_root=root)
+    written: dict[str, str] = {}
+    out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
+    if getattr(args, "out", None):
+        written = write_watchlist_artifacts(run, out_root=out_root)
+    result = deliver_watchlist(
+        run.canonical(),
+        as_of=run.as_of_knowledge,
+        send=bool(send),
+        repo=root,
+        out_root=out_root,
+    )
+    payload = result.as_public_dict()
+    payload["no_send"] = not send
+    payload["send"] = bool(result.primary.sent)
+    payload["publisher"] = "ops"
+    payload["product"] = "watchlist"
+    payload["n_llm_calls"] = run.llm_calls
+    payload["watchlist_content_hash"] = run.content_hash
+    payload["written"] = written
+    print(json.dumps(payload, sort_keys=True, indent=2))
+    if send and not result.primary.sent:
+        return 2
+    return 0 if run.status != "FAILED" else 2
 
 
 def _cmd_test(args: Namespace) -> int:
