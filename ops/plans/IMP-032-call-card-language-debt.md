@@ -1,6 +1,6 @@
 # PLAN — IMP-032 Call-card language vs Quant SoT
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#57).  
 **Owner:** Ops (queue hygiene) / Quant (SoT vocabulary)  
 **Scope:** Align `research/queue/UNIVERSE-20260917-call-cards.md` field-1 priority language with the locked-membership Quant Review Board 2026-09-18 (IMP-008 / #38). Quarantine stale HL dayNtl/OI stamps as appendix-only / **DO NOT SIZE**. No new names. No universe promotion. Paper only.
 

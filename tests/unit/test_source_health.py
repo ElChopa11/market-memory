@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -192,7 +193,9 @@ def test_report_does_not_copy_prints_or_secrets() -> None:
     )
     text = report.markdown.lower()
     assert secret not in report.markdown
-    assert "4.21" not in report.markdown
+    # Word-boundary: wall-clock generated_at can contain the substring "4.21"
+    # (e.g. ...34.218384+00:00) without copying the FRED print.
+    assert re.search(r"\b4\.21\b", report.markdown) is None
     assert "5750" not in report.markdown
     assert "to the moon" not in text
     assert "last:" not in text

@@ -134,8 +134,9 @@ def test_queue_hygiene_imp007_done_imp008_single_thread() -> None:
     assert "| **ID** | IMP-008 |" in text
     assert "do not merge" not in text.lower()
     in_progress = re.findall(r"\| \*\*Status\*\* \| IN_PROGRESS \|", text)
-    assert in_progress == []
-    # IMP-007/008/009 blocks are DONE; IMP-010 is IN_REVIEW (this PR).
+    assert in_progress == ["| **Status** | IN_PROGRESS |"]
+    assert re.search(r"### IMP-033.*?(?:\| \*\*Status\*\* \| IN_PROGRESS \|)", text, re.S)
+    # IMP-007/008/009 blocks are DONE; IMP-033 is the single implementation thread.
     assert re.search(r"### IMP-007.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
     assert re.search(r"### IMP-008.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
     assert re.search(r"### IMP-009.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
