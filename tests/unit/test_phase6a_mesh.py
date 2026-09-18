@@ -20,11 +20,11 @@ def test_mesh_double_run_identical_hashes() -> None:
     assert first.content_hash == second.content_hash
     assert len(first.content_hash) == 64
     by_desk = {env.desk: env for env in first.assemble.envelopes}
-    assert set(by_desk) >= {"intel", "crypto", "equities", "quant", "skeptic", "risk"}
+    assert set(by_desk) >= {"intel", "crypto", "equities", "flow", "macro", "quant", "skeptic", "risk"}
     for env in first.assemble.envelopes:
         assert env.status != FAILED
         assert env.error_class is None
-        assert env.regime == "unset"
+        assert env.regime == "risk_on_usd_mid"
     assert first.assemble.coord.channel == CHANNEL_ASSEMBLE
     assert first.assemble.pack_markdown
     assert "HEADER" in first.assemble.pack_markdown
@@ -94,6 +94,8 @@ def test_in_memory_bus_notifies_output_and_dq_on_degraded() -> None:
 def test_channels_include_principal_topics() -> None:
     channels = all_channels(ROOT)
     assert "desk.intel.output" in channels
+    assert "desk.flow.output" in channels
+    assert "desk.macro.output" in channels
     assert "desk.crypto.alert" in channels
     assert "coord.assemble" in channels
     assert "dq.event" in channels

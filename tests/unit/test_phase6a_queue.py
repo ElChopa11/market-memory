@@ -11,10 +11,9 @@ def test_queue_marks_013_done_014_in_review_015_parked() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-013" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-014" in line and "IN_REVIEW" in line for line in board_lines)
-    assert any("IMP-015" in line and ("READY" in line or "PARKED" in line) for line in board_lines)
-    assert not any("IMP-015" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert not any("IMP-013" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-014" in line and "DONE" in line for line in board_lines)
+    assert any("IMP-015" in line and "IN_REVIEW" in line for line in board_lines)
+    assert not any("IMP-014" in line and "IN_REVIEW" in line for line in board_lines)
     assert "LISTEN/NOTIFY" in queue or "NOTIFY" in queue
     assert "Redis" in queue
 
@@ -23,6 +22,7 @@ def test_phase6a_plan_adr_and_config_exist() -> None:
     for rel in (
         "ops/plans/IMP-014-phase6a-pg-notify-mesh.md",
         "ops/plans/IMP-015-phase6b-flow-macro-regime.md",
+        "ops/plans/IMP-016-phase6c-telegram-fanout.md",
         "ADR/0004-desk-mesh-pg-notify.md",
         "config/desks/cadence.yaml",
         "packages/desks/src/mm_desks/envelope.py",
@@ -48,6 +48,7 @@ def test_readme_phase6_in_progress_6a() -> None:
     assert "unset" in cadence
     assert "coord.assemble" in cadence
     assert "dq.event" in cadence
+    assert "desk.flow.output" in cadence
     adr = (ROOT / "ADR" / "0004-desk-mesh-pg-notify.md").read_text(encoding="utf-8")
     assert "LISTEN/NOTIFY" in adr
     assert "Redis" in adr

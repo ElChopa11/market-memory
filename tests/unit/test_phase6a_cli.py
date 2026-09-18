@@ -71,4 +71,4 @@ def test_lab_status_mentions_mesh(capsys) -> None:
     out = capsys.readouterr().out
     assert "mesh" in out.lower()
     assert "HARD-GATED" in out
-    assert "6a" in out or "NOTIFY" in out
+    assert "6a" in out or "6b" in out or "NOTIFY" in out

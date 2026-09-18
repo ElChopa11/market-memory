@@ -61,13 +61,13 @@ def _gaps(ctx: DeskContext) -> list[str]:
         for card in quant.payload.get("cards") or []:
             for gap in card.get("gaps") or []:
                 rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | Quant & Market Structure Desk |")
-    for slug in ("intel", "crypto", "equities", "quant", "skeptic", "risk"):
+    for slug in ("intel", "crypto", "equities", "flow", "macro", "quant", "skeptic", "risk"):
         out = _desk(ctx, slug)
         if out is not None and out.status == "FAILED":
             err = out.error_class or "desk_error"
             rows.append(f"| {slug} {err} | Coord assembled with desk FAILED | {out.desk} |")
     if _desk(ctx, "coord") is None:
-        rows.append("| flow/macro/regime note | Phase 6b parked | Macro & Cross-Asset Desk |")
+        rows.append("| coord pack | waiting on Coord assemble | Chief of Staff / Hive Coordinator |")
     if not rows:
         rows.append("| none listed | — | — |")
     # Deduplicate while preserving order.
@@ -86,6 +86,8 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
     thesis = ctx.thesis
     intel = _desk(ctx, "intel")
     quant = _desk(ctx, "quant")
+    flow = _desk(ctx, "flow")
+    macro = _desk(ctx, "macro")
     skeptic = _desk(ctx, "skeptic")
     risk = _desk(ctx, "risk")
     data_quality = "unavailable"
@@ -107,6 +109,15 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
     rule_id = (risk.payload.get("rule_id") if risk else None) or "—"
     config_version = (risk.payload.get("config_version") if risk else None) or "—"
     terminal = "yes" if risk and risk.payload.get("terminal") else "no"
+    haircut = risk.payload.get("haircut_pct") if risk else None
+    regime_tag = "unset"
+    if macro and macro.regime and macro.regime != "unset":
+        regime_tag = str(macro.payload.get("regime_tag") or macro.regime)
+    elif intel:
+        regime_tag = str(intel.regime or "unset")
+    event_risk = ((macro.payload.get("event_risk") if macro else None) or {})
+    flow_verdicts = (flow.payload.get("verdicts") if flow else None) or {}
+    flow_label = ", ".join(f"{k}={v}" for k, v in flow_verdicts.items()) or "unavailable"
     intent_row = "none"
     if thesis and thesis.intent:
         inv = thesis.invalidation or _UNAVAILABLE
@@ -124,18 +135,19 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "Research / desk product copy for the Principal. **Not an order. Not Execution. Not a Skeptic or Risk self-clear.**",
         "",
-        f"- **Engine:** imp-014.1",
+        f"- **Engine:** imp-015.1",
         f"- **Fixture:** {day.fixture_id}",
         "",
         "## HEADER",
         "",
         f"- **As-of (Australia/Sydney):** {in_ops_tz(as_of).isoformat()}",
         f"- **Knowledge watermark (as_of_knowledge):** {as_of.isoformat()}",
-        "- **Authoring desk / tier:** 3a Crypto | 3b Equities | 4 Quant | other: Coord pack",
+        "- **Authoring desk / tier:** 3a Crypto | 3b Equities | 4 Quant | flow | macro | other: Coord pack",
         f"- **Universe membership:** `{membership}`",
         f"- **Lifecycle status:** `{lifecycle}`",
         f"- **Intent / thesis id:** {thesis.slug if thesis else '—'}",
         f"- **Data quality:** `{data_quality}`",
+        f"- **Regime tag:** `{regime_tag}`",
         "",
         "## TAPE",
         "",
@@ -162,6 +174,9 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         f"- **Verdict:** `{quant_verdict}`",
         f"- **Reason code(s):** {quant_reasons}",
         "- **Relative-value / reclaim / structure (not executable-arb unless criteria are complete):** factor layer only",
+        f"- **Liquidity verdict(s):** {flow_label}",
+        f"- **EVENT_RISK:** {'yes' if event_risk.get('tagged') else 'no'} "
+        f"(`{event_risk.get('rule_id') or 'event_risk'}`)",
         "",
         "## SKEPTIC FLAGS",
         "",
@@ -174,6 +189,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         f"- **Decision:** `{risk_decision}`",
         f"- **rule_id / config_version:** `{rule_id}` / `{config_version}`",
         f"- **BLOCK terminal?** {terminal} (no paper/live) unless Principal override recorded",
+        f"- **size haircut_pct:** {haircut if haircut is not None else 'none'}",
         "- **Principal override:** `none`",
         "",
         "## BOOK",
@@ -190,7 +206,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "## DATA GAPS",
         "",
-        "Always list. Telegram delivery is 5e; flow/macro/regime is Phase 6b (parked).",
+        "Always list. Telegram delivery is 5e; per-desk Telegram fan-out is Phase 6c (parked).",
         "",
         "| gap | impact | owner desk |",
         "| --- | --- | --- |",

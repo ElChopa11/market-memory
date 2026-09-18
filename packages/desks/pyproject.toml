@@ -1,11 +1,13 @@
 [project]
 name = "mm-desks"
 version = "0.1.0"
-description = "Phase 5d desk runners + Phase 6a PG LISTEN/NOTIFY mesh (no Redis). Telegram send is mm_delivery."
+description = "Phase 5d desk runners + Phase 6a PG LISTEN/NOTIFY mesh + Phase 6b flow/macro desks (no Redis). Telegram send is mm_delivery."
 requires-python = ">=3.12"
 dependencies = [
   "mm-common",
   "mm-quant",
+  "mm-flow",
+  "mm-macro",
   "mm-research-kit",
   "mm-risk",
   "mm-delivery",

@@ -16,7 +16,7 @@ from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
 from mm_research_kit.state_machine import TransitionLog
 
-ENGINE_VERSION = "imp-014.1"
+ENGINE_VERSION = "imp-015.1"
 LIVE_TRADING_ENABLED = False
 REGIME_PLACEHOLDER = "unset"
 OP_OBSERVATION = "observation"
@@ -93,7 +93,7 @@ class DeskOutput:
             object.__setattr__(self, "n", len(self.artifacts))
 
     def header(self) -> dict[str, Any]:
-        """Principal Phase 6 message header (regime is a 6a placeholder)."""
+        """Principal Phase 6 message header (regime from macro when the 6b run succeeds)."""
         from mm_common.time import in_ops_tz
 
         return {

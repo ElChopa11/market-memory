@@ -1,7 +1,8 @@
 """Phase 6 desk envelope: Principal header + content_hash idempotency.
 
 Header fields: desk, as_of (UTC + Sydney), status, n, completeness, regime
-(placeholder until 6b), op=paper|observation, universe, sources/missing.
+(from the Macro desk when Phase 6b succeeds; otherwise the 6a `unset`
+placeholder), op=paper|observation, universe, sources/missing.
 Body is a passthrough of the Phase 5d DeskOutput canonical payload.
 ``envelope_id`` is not hashed — re-run same as_of → identical content_hash
 unless observations change.
@@ -49,6 +50,10 @@ def infer_n(output: DeskOutput) -> int:
         return len(payload.get("tape") or [])
     if output.slug == "quant":
         return len(payload.get("cards") or [])
+    if output.slug == "flow":
+        return len(payload.get("snapshots") or payload.get("instruments") or [])
+    if output.slug == "macro":
+        return len(payload.get("series") or [])
     if output.slug == "coord":
         prior = payload.get("desks") or payload.get("assembled_desks")
         if isinstance(prior, list):
@@ -93,18 +98,45 @@ def infer_sources_missing(output: DeskOutput) -> tuple[tuple[str, ...], tuple[st
 def infer_universe(output: DeskOutput, ctx: DeskContext | None) -> str:
     if output.universe and output.universe != "mixed":
         return output.universe
-    if output.slug in {"intel", "coord", "quant", "skeptic", "risk"}:
+    if output.slug in {"intel", "coord", "quant", "skeptic", "risk", "flow", "macro"}:
         return "mixed"
     if ctx is not None and ctx.thesis is not None:
         return membership_of(ctx.thesis.instrument, ctx.repo_root)
     return "mixed"
 
 
+def resolved_regime(output: DeskOutput, ctx: DeskContext | None) -> str:
+    """Use a successful macro tag; never overwrite a real tag with `unset`."""
+    if output.regime and output.regime not in {REGIME_PLACEHOLDER, "", "unavailable"}:
+        return output.regime
+    if ctx is None:
+        return output.regime or REGIME_PLACEHOLDER
+    macro = ctx.prior.get("macro")
+    if macro is not None:
+        tag = str((macro.payload or {}).get("regime_tag") or macro.regime or "")
+        if tag and tag not in {REGIME_PLACEHOLDER, "unavailable"}:
+            return tag
+    return load_cadence(ctx.repo_root).regime_placeholder or REGIME_PLACEHOLDER
+
+
+def apply_regime_to_context(ctx: DeskContext) -> None:
+    """Copy a successful macro regime tag onto every desk output in ``ctx.prior``."""
+    macro = ctx.prior.get("macro")
+    if macro is None:
+        return
+    tag = str((macro.payload or {}).get("regime_tag") or macro.regime or "")
+    if not tag or tag in {REGIME_PLACEHOLDER, "unavailable"}:
+        return
+    for slug, output in list(ctx.prior.items()):
+        if output.regime != tag:
+            ctx.prior[slug] = replace(output, regime=tag)
+
+
 def stamp_output(output: DeskOutput, ctx: DeskContext) -> DeskOutput:
     """Fill cadence / header metadata without changing observation-derived status."""
     spec = cadence_for(output.slug, ctx.repo_root)
     sources, missing = infer_sources_missing(output)
-    regime = load_cadence(ctx.repo_root).regime_placeholder or REGIME_PLACEHOLDER
+    regime = resolved_regime(output, ctx)
     return replace(
         output,
         cadence=spec.cadence,

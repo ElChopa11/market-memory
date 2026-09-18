@@ -18,16 +18,66 @@
       "object_store"
     ],
     "feeds": [
-      {"source_id": "hyperliquid.info", "status": "ok", "freshness": "fresh", "observation_id": "fx-hl-info-0001"},
-      {"source_id": "hyperliquid.structure", "status": "ok", "freshness": "fresh", "observation_id": "fx-BTC-funding-0001"},
-      {"source_id": "coingecko", "status": "ok", "freshness": "fresh", "observation_id": "fx-cg-0001"},
-      {"source_id": "binance.public", "status": "ok", "freshness": "fresh", "observation_id": "fx-bn-0001"},
-      {"source_id": "stooq", "status": "ok", "freshness": "fresh", "observation_id": "fx-stooq-0001"},
-      {"source_id": "fred", "status": "ok", "freshness": "fresh", "observation_id": "fx-fred-0001"},
-      {"source_id": "polygon", "status": "ok", "freshness": "fresh", "observation_id": "fx-poly-NVDA-0001"},
-      {"source_id": "calendar.yaml", "status": "ok", "freshness": "fresh", "observation_id": "fx-cal-0001"},
-      {"source_id": "postgres", "status": "ok", "freshness": "fresh", "observation_id": "fx-pg-0001"},
-      {"source_id": "object_store", "status": "ok", "freshness": "fresh", "observation_id": "fx-obj-0001"}
+      {
+        "source_id": "hyperliquid.info",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-hl-info-0001"
+      },
+      {
+        "source_id": "hyperliquid.structure",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-BTC-funding-0001"
+      },
+      {
+        "source_id": "coingecko",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cg-0001"
+      },
+      {
+        "source_id": "binance.public",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-bn-0001"
+      },
+      {
+        "source_id": "stooq",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-stooq-0001"
+      },
+      {
+        "source_id": "fred",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-fred-0001"
+      },
+      {
+        "source_id": "polygon",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-poly-NVDA-0001"
+      },
+      {
+        "source_id": "calendar.yaml",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cal-0001"
+      },
+      {
+        "source_id": "postgres",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-pg-0001"
+      },
+      {
+        "source_id": "object_store",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-obj-0001"
+      }
     ]
   },
   "crypto": {
@@ -69,7 +119,9 @@
     ]
   },
   "quant": {
-    "instruments": ["BTC"]
+    "instruments": [
+      "BTC"
+    ]
   },
   "calendar": [
     {
@@ -92,7 +144,10 @@
     "intent": "Crowded BTC funding as a relative-value research intent if crowding persists.",
     "invalidation": "funding prints negative for three consecutive 8h windows",
     "max_loss": "2% of dedicated research budget",
-    "evidence_ids": ["fx-BTC-funding-0001", "fx-BTC-0000"],
+    "evidence_ids": [
+      "fx-BTC-funding-0001",
+      "fx-BTC-0000"
+    ],
     "look_ahead": false,
     "leakage": false,
     "already_priced": false,
@@ -111,5 +166,14 @@
       "max_loss": "2% of dedicated research budget",
       "leverage": 1.0
     }
+  },
+  "flow": {
+    "instruments": [
+      "BTC"
+    ],
+    "structure_path": "tests/fixtures/phase6b/flow_structure.json"
+  },
+  "macro": {
+    "series_path": "tests/fixtures/phase6b/macro_series.json"
   }
 }

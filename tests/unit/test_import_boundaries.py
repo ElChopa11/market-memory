@@ -8,6 +8,8 @@ from pathlib import Path
 
 import mm_delivery
 import mm_desks
+import mm_flow
+import mm_macro
 import mm_quant
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -40,6 +42,8 @@ def test_ci_execution_import_grep_matches_statements_not_comments() -> None:
             "packages/desks",
             "packages/quant",
             "packages/delivery",
+            "packages/flow",
+            "packages/macro",
         ],
         check=False,
         capture_output=True,
@@ -47,7 +51,7 @@ def test_ci_execution_import_grep_matches_statements_not_comments() -> None:
         cwd=ROOT,
     )
     assert completed.returncode == 1, completed.stdout
-    for name in ("research_kit", "desks", "quant", "delivery"):
+    for name in ("research_kit", "desks", "quant", "delivery", "flow", "macro"):
         src = ROOT / "packages" / name / "src"
         for path in src.rglob("*.py"):
             text = path.read_text(encoding="utf-8")
@@ -59,6 +63,10 @@ def test_skeleton_packages_are_hard_gated() -> None:
     for mod in (mm_quant, mm_delivery):
         assert mod.LIVE_TRADING_ENABLED is False
         assert mod.__phase__ == 5
+    assert mm_flow.LIVE_TRADING_ENABLED is False
+    assert mm_flow.__phase__ == 6
+    assert mm_macro.LIVE_TRADING_ENABLED is False
+    assert mm_macro.__phase__ == 6
     assert mm_desks.LIVE_TRADING_ENABLED is False
     assert mm_desks.__phase__ == 6
     assert mm_desks.CRYPTO_TIER == "3a"

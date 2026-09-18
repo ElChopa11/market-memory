@@ -15,6 +15,8 @@ dependencies = [
   "mm-source-health",
   "mm-desks",
   "mm-quant",
+  "mm-flow",
+  "mm-macro",
   "mm-risk",
   "mm-delivery",
 ]

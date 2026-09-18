@@ -23,6 +23,16 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
     thesis = ctx.thesis
     author = thesis.author if thesis else "Crypto Desk"
     cfg = load_risk_config(ctx.repo_root, environment=spec.environment)
+    flow = ctx.prior.get("flow")
+    macro = ctx.prior.get("macro")
+    instrument = spec.instrument
+    liquidity_verdict = None
+    if flow is not None:
+        verdicts = (flow.payload or {}).get("verdicts") or {}
+        liquidity_verdict = verdicts.get(instrument) or verdicts.get(instrument.upper())
+    event_risk = False
+    if macro is not None:
+        event_risk = bool(((macro.payload or {}).get("event_risk") or {}).get("tagged"))
     intent = RiskIntent(
         instrument=spec.instrument,
         invalidation=spec.invalidation,
@@ -33,6 +43,8 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
         author=author,
         requested_target=spec.requested_target,
         halt=spec.halt,
+        liquidity_verdict=None if liquidity_verdict is None else str(liquidity_verdict),
+        event_risk=event_risk,
     )
     result = evaluate(intent, repo_root=ctx.repo_root, config=cfg, halt=spec.halt)
     notes = result.reasons
@@ -108,6 +120,9 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
         f"- **config_version:** `{result.config_version}`",
         f"- **BLOCK terminal?** {'yes' if result.terminal else 'no'}",
         f"- **live_trading_enabled:** {str(result.live_trading_enabled).lower()}",
+        f"- **liquidity_verdict:** `{liquidity_verdict or 'unset'}`",
+        f"- **EVENT_RISK:** {'yes' if event_risk else 'no'}",
+        f"- **size haircut_pct:** {result.haircut_pct if result.haircut_pct is not None else 'none'}",
         f"- **LLM at decision time:** false",
         "",
         "Reasons:",
@@ -134,6 +149,9 @@ def run(as_of: datetime, ctx: DeskContext) -> DeskOutput:
             "terminal": result.terminal,
             "reasons": list(result.reasons),
             "live_trading_enabled": result.live_trading_enabled,
+            "haircut_pct": result.haircut_pct,
+            "liquidity_verdict": liquidity_verdict,
+            "event_risk": event_risk,
             "lifecycle": lifecycle,
         },
     )

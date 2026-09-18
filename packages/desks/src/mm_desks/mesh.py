@@ -22,6 +22,7 @@ from mm_desks.envelope import (
     ERROR_CLASS_KILLED,
     ERROR_CLASS_MISSING,
     DeskEnvelope,
+    apply_regime_to_context,
     envelope_from_output,
     failed_desk_output,
     output_from_canonical,
@@ -178,6 +179,7 @@ class CoordMeshWorker:
                     error_class=env.error_class or ERROR_CLASS_MISSING,
                     repo_root=self.repo_root,
                 )
+        apply_regime_to_context(ctx)
         coord_out = stamp_output(CoordDesk().run(watermark, ctx), ctx)
         coord_env = envelope_from_output(coord_out, repo_root=self.repo_root)
         self.publish(coord_env)
@@ -245,11 +247,17 @@ def publish_desk_outputs(
     skip: Sequence[str] = (),
 ) -> list[PublishResult]:
     skip_set = set(skip)
+    for output in outputs:
+        if output.slug in skip_set or output.slug == "coord":
+            continue
+        ctx.prior[output.slug] = output
+    apply_regime_to_context(ctx)
     published: list[PublishResult] = []
     for output in outputs:
         if output.slug in skip_set or output.slug == "coord":
             continue
-        stamped = stamp_output(output, ctx)
+        stamped = stamp_output(ctx.prior.get(output.slug, output), ctx)
+        ctx.prior[output.slug] = stamped
         env = envelope_from_output(stamped, repo_root=worker.repo_root)
         published.append(worker.publish(env, alert=stamped.status == FAILED))
     return published

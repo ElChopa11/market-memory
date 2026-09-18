@@ -19,6 +19,8 @@ class RiskIntent:
     author: str | None = None
     requested_target: str | None = None
     halt: bool = False
+    liquidity_verdict: str | None = None
+    event_risk: bool = False
 
     def canonical(self) -> dict[str, Any]:
         return {
@@ -31,6 +33,8 @@ class RiskIntent:
             "author": self.author,
             "requested_target": self.requested_target,
             "halt": self.halt,
+            "liquidity_verdict": self.liquidity_verdict,
+            "event_risk": self.event_risk,
         }
 
 
@@ -42,6 +46,7 @@ class RiskResult:
     reasons: tuple[str, ...]
     terminal: bool = False
     live_trading_enabled: bool = False
+    haircut_pct: float | None = None
 
     def canonical(self) -> dict[str, Any]:
         return {
@@ -51,4 +56,5 @@ class RiskResult:
             "reasons": list(self.reasons),
             "terminal": self.terminal,
             "live_trading_enabled": self.live_trading_enabled,
+            "haircut_pct": self.haircut_pct,
         }

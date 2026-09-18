@@ -1,0 +1,180 @@
+{
+  "fixture_id": "phase6b-event-risk",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T00:05:00Z",
+  "what_changed": "fixture frozen-day assemble; no live tape",
+  "panel_path": "tests/fixtures/phase5c/panel.json",
+  "intel": {
+    "inventory": [
+      "hyperliquid.info",
+      "hyperliquid.structure",
+      "coingecko",
+      "binance.public",
+      "stooq",
+      "fred",
+      "polygon",
+      "calendar.yaml",
+      "postgres",
+      "object_store"
+    ],
+    "feeds": [
+      {
+        "source_id": "hyperliquid.info",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-hl-info-0001"
+      },
+      {
+        "source_id": "hyperliquid.structure",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-BTC-funding-0001"
+      },
+      {
+        "source_id": "coingecko",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cg-0001"
+      },
+      {
+        "source_id": "binance.public",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-bn-0001"
+      },
+      {
+        "source_id": "stooq",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-stooq-0001"
+      },
+      {
+        "source_id": "fred",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-fred-0001"
+      },
+      {
+        "source_id": "polygon",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-poly-NVDA-0001"
+      },
+      {
+        "source_id": "calendar.yaml",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-cal-0001"
+      },
+      {
+        "source_id": "postgres",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-pg-0001"
+      },
+      {
+        "source_id": "object_store",
+        "status": "ok",
+        "freshness": "fresh",
+        "observation_id": "fx-obj-0001"
+      }
+    ]
+  },
+  "crypto": {
+    "tape": [
+      {
+        "instrument": "BTC",
+        "asset_class": "crypto",
+        "membership": "in_universe",
+        "metric": "funding",
+        "value": "0.00012",
+        "source": "hyperliquid.info",
+        "freshness": "fresh",
+        "observation_id": "fx-BTC-funding-0001"
+      },
+      {
+        "instrument": "BTC",
+        "asset_class": "crypto",
+        "membership": "in_universe",
+        "metric": "mid_px",
+        "value": "65000",
+        "source": "hyperliquid.info",
+        "freshness": "fresh",
+        "observation_id": "fx-BTC-0000"
+      }
+    ]
+  },
+  "equities": {
+    "tape": [
+      {
+        "instrument": "NVDA",
+        "asset_class": "equity",
+        "membership": "in_universe",
+        "metric": "close",
+        "value": "120.5",
+        "source": "polygon",
+        "freshness": "fresh",
+        "observation_id": "fx-NVDA-0000"
+      }
+    ]
+  },
+  "quant": {
+    "instruments": [
+      "BTC"
+    ]
+  },
+  "calendar": [
+    {
+      "when": "2026-09-18T00:20:00Z",
+      "name": "FOMC statement",
+      "importance": "high",
+      "region": "US",
+      "notes": "within EVENT_RISK window",
+      "source": "fixture",
+      "ingested_at": "2026-09-18T00:05:00Z"
+    }
+  ],
+  "thesis": {
+    "slug": "THESIS-5D-HAPPY",
+    "status": "in_skeptic",
+    "author": "Crypto Desk",
+    "reviewer": "Independent Skeptic",
+    "instrument": "BTC",
+    "membership": "in_universe",
+    "horizon": "5d",
+    "intent": "Crowded BTC funding as a relative-value research intent if crowding persists.",
+    "invalidation": "funding prints negative for three consecutive 8h windows",
+    "max_loss": "2% of dedicated research budget",
+    "evidence_ids": [
+      "fx-BTC-funding-0001",
+      "fx-BTC-0000"
+    ],
+    "look_ahead": false,
+    "leakage": false,
+    "already_priced": false,
+    "crowding": "noted",
+    "invalidation_quality": "ok"
+  },
+  "skeptic": {
+    "force_verdict": null
+  },
+  "risk": {
+    "environment": "paper",
+    "halt": false,
+    "intent": {
+      "instrument": "BTC",
+      "invalidation": "funding prints negative for three consecutive 8h windows",
+      "max_loss": "2% of dedicated research budget",
+      "leverage": 1.0
+    }
+  },
+  "flow": {
+    "instruments": [
+      "BTC"
+    ],
+    "structure_path": "tests/fixtures/phase6b/flow_structure.json"
+  },
+  "macro": {
+    "series_path": "tests/fixtures/phase6b/macro_series.json"
+  }
+}

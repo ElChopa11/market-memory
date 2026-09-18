@@ -70,9 +70,12 @@ class CalendarRow:
     region: str = "US"
     notes: str = ""
     source: str = "fixture"
+    ingested_at: datetime | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "when", as_utc(self.when))
+        if self.ingested_at is not None:
+            object.__setattr__(self, "ingested_at", as_utc(self.ingested_at))
 
 
 @dataclass

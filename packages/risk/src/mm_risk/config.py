@@ -29,6 +29,11 @@ class RiskConfig:
     require_max_loss: bool
     kill_switch_path: str
     llm_at_order_time: bool
+    untradeable_action: str
+    untradeable_rule_id: str
+    event_risk_action: str
+    event_risk_haircut_pct: float
+    event_risk_rule_id: str
     raw: dict[str, Any]
     source: str
 
@@ -65,6 +70,9 @@ def load_risk_config(repo_root: Path, *, environment: str = "paper") -> RiskConf
     raw = _merge(defaults, overlay)
     allow = tuple(str(item).upper() for item in (raw.get("instruments_allowlist") or ()))
     max_open = raw.get("max_open_theses")
+    liq = raw.get("liquidity") if isinstance(raw.get("liquidity"), dict) else {}
+    untrade = liq.get("untradeable_at_size") if isinstance(liq.get("untradeable_at_size"), dict) else {}
+    event = raw.get("event_risk") if isinstance(raw.get("event_risk"), dict) else {}
     return RiskConfig(
         schema_version=int(raw.get("schema_version") or 1),
         environment=str(raw.get("environment") or env),
@@ -80,6 +88,11 @@ def load_risk_config(repo_root: Path, *, environment: str = "paper") -> RiskConf
         require_max_loss=bool(raw.get("require_max_loss", True)),
         kill_switch_path=str(raw.get("kill_switch_path") or "config/halt.flag"),
         llm_at_order_time=bool(raw.get("llm_at_order_time")),
+        untradeable_action=str(untrade.get("action") or "block").lower(),
+        untradeable_rule_id=str(untrade.get("rule_id") or "untradeable_at_size"),
+        event_risk_action=str(event.get("action") or "haircut").lower(),
+        event_risk_haircut_pct=float(event.get("haircut_pct") or 50),
+        event_risk_rule_id=str(event.get("rule_id") or "event_risk"),
         raw=raw,
         source=f"config/risk/environments/{env}.yaml",
     )

@@ -62,6 +62,8 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | Phase 5c quant factor library (IMP-011) | live path |
 | Phase 5d desk runners (IMP-012) | live path; risk/execution *services* |
 | Phase 5e Telegram delivery (IMP-013) | Phase 6 mesh; live path |
+| Phase 6a PG NOTIFY mesh (IMP-014) | Redis; live path |
+| Phase 6b flow/macro/regime (IMP-015) | 6c Telegram fan-out; live path |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 

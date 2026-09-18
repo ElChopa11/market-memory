@@ -1,0 +1,15 @@
+[project]
+name = "mm-flow"
+version = "0.1.0"
+description = "Phase 6b flow / liquidity metrics (research-only; no execution)."
+requires-python = ">=3.12"
+dependencies = [
+  "mm-common",
+  "mm-provenance",
+  "mm-quant",
+  "pyyaml>=6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

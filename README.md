@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 6 in progress (6a PG LISTEN/NOTIFY mesh).** Phase 5 is complete (5a–5e, #40–#44). **No live trading, no order signing, no wallet code.** IMP-014 is this tree. Phase 6b flow/macro/regime is parked as IMP-015.
+**Status: Phase 6 in progress (6b flow/macro/regime on PG LISTEN/NOTIFY mesh).** Phase 5 is complete (5a–5e, #40–#44). Phase 6a mesh is **IMP-014 DONE** (#45). **No live trading, no order signing, no wallet code.** IMP-015 is this tree. Phase 6c per-desk Telegram fan-out is parked as IMP-016.
 
 ## Start here
 
@@ -23,7 +23,9 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ops/desk-charters.md](ops/desk-charters.md) | Desk operating model (private research lab, not a fund) |
 | [ops/decision-rights.md](ops/decision-rights.md) | Propose / challenge / veto / approve — Principal-only gates |
 | [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
-| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5d + 6a:** desk runners + PG NOTIFY mesh (`lab desk run`, `lab mesh dry`) |
+| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5d + 6a/6b:** desk runners + PG NOTIFY mesh (`lab desk run`, `lab mesh dry`) |
+| [docs/runbooks/flow-desk.md](docs/runbooks/flow-desk.md) | **Phase 6b:** flow / liquidity (`mm_flow`; verdict OK\|THIN\|UNTRADEABLE_AT_SIZE) |
+| [docs/runbooks/macro-desk.md](docs/runbooks/macro-desk.md) | **Phase 6b:** macro regime + EVENT_RISK (`mm_macro`; envelope `regime` tag) |
 | [docs/runbooks/telegram.md](docs/runbooks/telegram.md) | **Phase 5e:** Telegram delivery (`lab deliver pack --no-send`; live send is operator-only) |
 | [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) | **Phase 5b:** Polygon equities + HL structure ingest (fixture dry-run without keys) |
 | [docs/runbooks/quant-desk.md](docs/runbooks/quant-desk.md) | **Phase 5c:** Quant factor library (`mm_quant`; fixture-backed, not a call) |
@@ -31,6 +33,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ADR/0002-desk-delivery-architecture.md](ADR/0002-desk-delivery-architecture.md) | Phase 5 desk/delivery architecture (5a committed; 5b–5e follow-ons) |
 | [ADR/0003-telegram-delivery.md](ADR/0003-telegram-delivery.md) | Phase 5e Telegram channel; multi-channel mesh is Phase 6 |
 | [ADR/0004-desk-mesh-pg-notify.md](ADR/0004-desk-mesh-pg-notify.md) | Phase 6a desk mesh; bus = Postgres LISTEN/NOTIFY (no Redis) |
+| [ADR/0005-flow-macro-regime.md](ADR/0005-flow-macro-regime.md) | Phase 6b flow/liquidity + macro regime tag (no Redis) |
 
 Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17). Ingest membership stays full: Hyperliquid **BTC, ETH, UNI, AAVE** perps; equities **NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM** are a Phase 3 briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority** — **in-universe membership** (thesis priority; not a Quant verdict): BTC, NVDA, AVGO, MSFT, META, JPM, XOM; **watch-only** (still ingested / still in membership; no thesis-priority): ETH, UNI, AAVE, SMH, XLF (Skeptic PR #14 / call cards PR #13 / FAIL-patch PR #23). Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY) stay archived. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 
@@ -100,6 +103,9 @@ uv run lab deliver pack --fixture tests/fixtures/phase5d/frozen_day.json --no-se
 uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
 uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --kill-desk intel --no-db
 uv run lab mesh channels
+# Phase 6b flow/macro (regime tag on envelopes; same mesh bus)
+uv run lab desk run --all --fixture tests/fixtures/phase6b/frozen_day.json --no-send --no-db
+uv run lab mesh dry --fixture tests/fixtures/phase6b/frozen_day.json --no-db
 
 # Optional one-shot
 ./scripts/bootstrap-dev.sh
@@ -121,8 +127,8 @@ ops/              desk charters, decision rights, improvement queue, source-heal
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
-config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors / delivery
-packages/         common, memory, ingest, provenance, briefing, desks, quant, delivery, …
+config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors / flow / macro / delivery
+packages/         common, memory, ingest, provenance, briefing, desks, quant, flow, macro, delivery, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)
 scripts/          bootstrap + lifecycle checker

@@ -41,6 +41,8 @@ REQUIRED_PACKAGES = [
     "unicorn",
     "desks",
     "quant",
+    "flow",
+    "macro",
     "delivery",
 ]
 
@@ -90,8 +92,12 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-013-phase5e-telegram.md",
         "ops/plans/IMP-014-phase6a-pg-notify-mesh.md",
         "ops/plans/IMP-015-phase6b-flow-macro-regime.md",
+        "ops/plans/IMP-016-phase6c-telegram-fanout.md",
         "ADR/0004-desk-mesh-pg-notify.md",
+        "ADR/0005-flow-macro-regime.md",
         "config/desks/cadence.yaml",
+        "config/flow/liquidity.yaml",
+        "config/macro/regimes.yaml",
         "config/quant/factors.yaml",
         "config/quant/regime.yaml",
         "docs/runbooks/quant-desk.md",
@@ -103,6 +109,8 @@ def test_core_docs_present() -> None:
         "docs/runbooks/thesis-cards.md",
         "docs/runbooks/desks.md",
         "docs/runbooks/telegram.md",
+        "docs/runbooks/flow-desk.md",
+        "docs/runbooks/macro-desk.md",
         "docs/runbooks/polygon-hl-structure.md",
     ):
         assert (ROOT / rel).exists(), rel

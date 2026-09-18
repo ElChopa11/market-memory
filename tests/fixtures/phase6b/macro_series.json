@@ -1,0 +1,68 @@
+{
+  "fixture_id": "phase6b-macro-series",
+  "series": [
+    {
+      "instrument": "VIX",
+      "metric": "fred_observation",
+      "value": 16.5,
+      "series_id": "VIXCLS",
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-vix-0001"
+    },
+    {
+      "instrument": "DXY",
+      "metric": "fred_observation",
+      "value": 103.2,
+      "series_id": "DTWEXBGS",
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-dxy-0001"
+    },
+    {
+      "instrument": "US10Y",
+      "metric": "fred_observation",
+      "value": 4.12,
+      "series_id": "DGS10",
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-us10y-0001"
+    },
+    {
+      "instrument": "US2Y",
+      "metric": "fred_observation",
+      "value": 3.7,
+      "series_id": "DGS2",
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-us2y-0001"
+    },
+    {
+      "instrument": "T10Y2Y",
+      "metric": "fred_observation",
+      "value": 0.42,
+      "series_id": "T10Y2Y",
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-t10y2y-0001"
+    },
+    {
+      "instrument": "HY_OAS",
+      "metric": "fred_observation",
+      "value": 310.0,
+      "series_id": "BAMLH0A0HYM2",
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-hyoas-0001"
+    },
+    {
+      "instrument": "WTI",
+      "metric": "fred_observation",
+      "value": 78.4,
+      "series_id": "DCOILWTICO",
+      "as_of_knowledge": "2026-09-18T00:05:00Z",
+      "ingested_at": "2026-09-18T00:05:00Z",
+      "observation_id": "fx-wti-0001"
+    }
+  ]
+}

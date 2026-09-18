@@ -1,7 +1,7 @@
 [project]
 name = "market-memory"
 version = "0.1.0"
-description = "Private AI-native trading intelligence lab (Hyperliquid-first). Phase 6 in progress (6a PG LISTEN/NOTIFY mesh). Phase 5 complete. Phase 4 backtest + paper ledger remain."
+description = "Private AI-native trading intelligence lab (Hyperliquid-first). Phase 6 in progress (6b flow/macro/regime). Phase 5 complete. Phase 4 backtest + paper ledger remain."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -19,6 +19,8 @@ dependencies = [
   "mm-unicorn",
   "mm-desks",
   "mm-quant",
+  "mm-flow",
+  "mm-macro",
   "mm-delivery",
   "mm-lab-cli",
   "mm-ingest-worker",
@@ -52,6 +54,8 @@ mm-source-health = { workspace = true }
 mm-unicorn = { workspace = true }
 mm-desks = { workspace = true }
 mm-quant = { workspace = true }
+mm-flow = { workspace = true }
+mm-macro = { workspace = true }
 mm-delivery = { workspace = true }
 mm-lab-cli = { workspace = true }
 mm-ingest-worker = { workspace = true }

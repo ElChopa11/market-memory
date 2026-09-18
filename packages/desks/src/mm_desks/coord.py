@@ -21,7 +21,7 @@ SLUG = "coord"
 TIER = "1"
 DISPLAY_NAME = "Chief of Staff / Hive Coordinator"
 
-PIPELINE_FOR_PACK = ("intel", "crypto", "equities", "quant", "skeptic", "risk")
+PIPELINE_FOR_PACK = ("intel", "crypto", "equities", "flow", "macro", "quant", "skeptic", "risk")
 
 
 def _overall(outputs: dict[str, DeskOutput]) -> str:
