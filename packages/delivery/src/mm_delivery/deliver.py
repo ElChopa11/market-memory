@@ -114,7 +114,6 @@ def deliver(
         desk_enabled=desk_enabled,
         respect_quiet_hours=respect_quiet_hours if send else False,
     )
-    reason = REASON_NO_SEND if not send else gate.reason
     notes: list[str] = list(gate.notes)
     payload = build_payload(
         markdown,
@@ -122,7 +121,7 @@ def deliver(
         as_of=as_of,
         settings=cfg,
         kind=kind,
-        reason=reason if send else REASON_NO_SEND,
+        reason=REASON_NO_SEND,
         environ=environ,
     )
     written: dict[str, str] | None = None

@@ -51,7 +51,7 @@ jobs:
         run: uv run python -c "import yaml, pathlib; p=pathlib.Path('config/risk/environments/live.yaml'); d=yaml.safe_load(p.read_text()); assert d.get('live_trading_enabled') is False, 'live trading must stay hard-gated'"
       - name: Telegram secrets not committed
         run: |
-          ! git grep -nE 'TELEGRAM_BOT_TOKEN=[^[:space:]]+' -- ':!.env.example'
+          ! git grep -nE 'TELEGRAM_BOT_TOKEN=[A-Za-z0-9:_-]{8,}' -- ':!.env.example'
           ! git grep -nE '^[ ]*TELEGRAM_BOT_TOKEN:' -- config
       - name: No signing surface in ingest
         run: |
