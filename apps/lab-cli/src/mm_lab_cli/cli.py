@@ -16,6 +16,7 @@ from mm_lab_cli.briefing import add_brief_parser, dispatch_brief
 from mm_lab_cli.deliver import add_deliver_parser, dispatch_deliver
 from mm_lab_cli.desk import add_desk_parser, dispatch_desk
 from mm_lab_cli.mesh import add_mesh_parser, dispatch_mesh
+from mm_lab_cli.playbook import add_playbook_parser, dispatch_playbook
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.equities import add_equities_parser, dispatch_equities
 from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_review
@@ -105,6 +106,7 @@ def main(argv: list[str] | None = None) -> int:
     add_desk_parser(sub)
     add_mesh_parser(sub)
     add_deliver_parser(sub)
+    add_playbook_parser(sub)
     add_backtest_parser(sub)
     add_paper_parser(sub)
     add_quant_review_parser(sub)
@@ -132,6 +134,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_mesh(args)
     if args.cmd == "deliver":
         return dispatch_deliver(args)
+    if args.cmd == "playbook":
+        return dispatch_playbook(args)
     if args.cmd == "backtest":
         return dispatch_backtest(args)
     if args.cmd == "paper":
@@ -155,7 +159,7 @@ def _add_research_common(parser: argparse.ArgumentParser) -> None:
 
 
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 6 in progress — 6b flow/macro/regime on PG LISTEN/NOTIFY mesh; Phase 5 complete; Phase 4 backtest/paper remain)")
+    print("market-memory lab CLI (Phase 6 in progress — 6c per-desk Telegram + PLAYBOOK + LLM budget; Phase 5 complete; Phase 4 backtest/paper remain)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
@@ -172,6 +176,7 @@ def cmd_status() -> int:
     print("Desk run: lab desk run --all --fixture PATH --no-send (deterministic pack; default dry-run)")
     print("Mesh: lab mesh dry --fixture PATH --no-db (PG NOTIFY bus; --kill-desk leaves FAILED + error_class)")
     print("Deliver: lab deliver pack --fixture PATH --no-send | lab deliver test --desk SLUG (live send only with --i-mean-it)")
+    print("Playbook: lab playbook run --fixture PATH --no-send (artifact ladder; LLM writer/critic only)")
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")

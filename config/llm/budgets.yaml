@@ -1,0 +1,35 @@
+# LLM token budgets (Phase 6c / IMP-016 addendum 6c-0).
+# Enforced at the client. No live provider in this PR (Ask before any new network/keys).
+# LLM is WRITER and CRITIC only — never calculator, data source, or router.
+
+version: "imp-016.1"
+provider: none
+temperature: 0.1
+per_call_max_input_tokens: 2000
+per_call_max_output_tokens: 400
+per_run_token_budget: 4000
+per_day_token_budget: 50000
+summary_row_cap: 12
+max_retries_on_schema: 1
+disable_flag: config/llm/disabled.flag
+
+per_desk_share:
+  skeptic: 0.40
+  coord: 0.30
+  crypto: 0.15
+  equities: 0.15
+
+# Artifacts that MUST be templates (zero LLM).
+template_only:
+  - DAILY_BIAS
+  - STATE_CARD
+  - CHART_ARTIFACT
+  - SCAN_CARD
+  - INTEL_PACKET
+
+# Prose slots that MAY call the writer (still numeric-lock + schema).
+writer_artifacts:
+  - OFFICIAL_BRIEF
+  - EDGE_SCAN
+  - POST_MORTEM
+  - SKEPTIC_REVIEW

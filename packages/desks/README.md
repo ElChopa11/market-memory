@@ -1,6 +1,6 @@
 # mm-desks
 
-Phase 5d **desk runners** plus Phase 6a **PG LISTEN/NOTIFY mesh** (no Redis) plus Phase 6b **flow/macro desks**. Crypto (Tier 3a) and Equities (Tier 3b) plus Intel assemble, Flow, Macro, Quant, Skeptic, Risk, and Coord pack.
+Phase 5d **desk runners** plus Phase 6a **PG LISTEN/NOTIFY mesh** (no Redis) plus Phase 6b **flow/macro desks** plus Phase 6c **PLAYBOOK ladder**. Crypto (Tier 3a) and Equities (Tier 3b) plus Intel assemble, Flow, Macro, Quant, Skeptic, Risk, Coord pack, and `lab playbook run`.
 
 Protocol: `run(as_of, ctx) -> DeskOutput` with `OK|DEGRADED|FAILED`, cadence, envelope header, `content_hash`.
 
@@ -9,7 +9,7 @@ uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-
 uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
 ```
 
-**Must not:** depend on the `mm_execution` module or signing; fetch Polygon (Intel/`mm_ingest`); submit orders; self-approve Skeptic/Risk; import Redis. Telegram send is Coordinator `lab deliver` (IMP-013), not this package.
+**Must not:** depend on the `mm_execution` module or signing; fetch Polygon (Intel/`mm_ingest`); submit orders; self-approve Skeptic/Risk; import Redis; call a live LLM as calculator/router. Telegram send is Coordinator `lab deliver` / `lab deliver fanout` (IMP-013 / IMP-016), not this package. PLAYBOOK: [../../docs/playbook.md](../../docs/playbook.md).
 
 
 See [../../docs/runbooks/desks.md](../../docs/runbooks/desks.md) and [../../AGENTS.md](../../AGENTS.md).

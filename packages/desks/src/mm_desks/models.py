@@ -98,6 +98,8 @@ class ThesisSnapshot:
     crowding: str = "noted"
     invalidation_quality: str = "ok"
     reviewer: str = "Independent Skeptic"
+    invalidation_kind: str = ""
+    invalidation_lookback_days: float | None = None
 
 
 @dataclass(frozen=True)

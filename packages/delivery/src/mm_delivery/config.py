@@ -233,7 +233,7 @@ def load_telegram_settings(root: Path | None = None, *, path: Path | None = None
             )
         )
     inbound_block = data.get("inbound") if isinstance(data.get("inbound"), dict) else {}
-    allow = inbound_block.get("allowlist") or ["/status", "/brief", "/desk"]
+    allow = inbound_block.get("allowlist") or ["/status", "/brief", "/desk", "/idea", "/gaps", "/halt"]
     inbound = InboundSettings(
         enabled=_bool(inbound_block.get("enabled"), False),
         allowlist=tuple(str(x) for x in allow),

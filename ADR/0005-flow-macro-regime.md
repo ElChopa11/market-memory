@@ -33,7 +33,7 @@ Without an explicit 6b ADR, later slices can sneak Redis, per-desk Telegram chan
 
 - **Positive:** Envelopes carry an auditable regime tag; liquidity and calendar risk are deterministic inputs to Risk; Coord remains available when a desk is down.
 - **Negative:** Regime is cross-asset, not per-instrument. Live FRED/DXY still degrade without keys.
-- **Follow-ups:** IMP-016 / Phase 6c Telegram fan-out — READY/PARKED.
+- **Follow-ups:** IMP-016 / Phase 6c Telegram fan-out + PLAYBOOK — this tree (IN_REVIEW).
 
 ## Notes
 

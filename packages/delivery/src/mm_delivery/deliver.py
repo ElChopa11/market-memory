@@ -78,6 +78,25 @@ def write_payload_files(payload: DeliveryPayload, *, out_root: Path, session_dat
     return {"telegram_payload": str(payload_path), "telegram_sha256": str(hash_path)}
 
 
+REASON_RETRIES_EXHAUSTED = "retries_exhausted"
+
+
+def _record_failed(sink: list[dict[str, Any]] | None, payload: DeliveryPayload, reason: str, notes: tuple[str, ...]) -> None:
+    if sink is None:
+        return
+    sink.append(
+        {
+            "status": "FAILED",
+            "desk": payload.desk,
+            "as_of": payload.as_of,
+            "content_hash": payload.content_hash,
+            "reason": reason,
+            "notes": list(notes),
+            "escalation": "coord: delivery FAILED — never silent drop",
+        }
+    )
+
+
 def deliver(
     markdown: str,
     *,
@@ -96,6 +115,10 @@ def deliver(
     environ: dict[str, str] | None = None,
     respect_quiet_hours: bool = True,
     budget: RateLimitBudget | None = None,
+    content_hash_override: str | None = None,
+    png: bytes | None = None,
+    png_filename: str | None = None,
+    failed_sink: list[dict[str, Any]] | None = None,
 ) -> DeliveryResult:
     """Build the exact payload. POST only when send=True and every gate passes.
 
@@ -123,6 +146,7 @@ def deliver(
         kind=kind,
         reason=REASON_NO_SEND,
         environ=environ,
+        content_hash_override=content_hash_override,
     )
     written: dict[str, str] | None = None
     if out_root is not None:
@@ -181,11 +205,13 @@ def deliver(
     try:
         for chunk in payload.chunks:
             if not limiter.allow():
+                fail_notes = ("telegram rate_limit exhausted; remaining chunks not sent",)
+                _record_failed(failed_sink, payload, REASON_RATE_LIMITED, fail_notes)
                 return DeliveryResult(
                     payload=payload,
                     sent=False,
                     reason=REASON_RATE_LIMITED,
-                    notes=("telegram rate_limit exhausted; remaining chunks not sent",),
+                    notes=fail_notes,
                     results=tuple(results),
                     written=written,
                 )
@@ -198,11 +224,45 @@ def deliver(
             )
             results.append(result)
             if not result.ok:
+                fail_notes = result.notes or ("telegram sendMessage failed",)
+                reason = REASON_RETRIES_EXHAUSTED if result.error_class in {"http_5xx", "rate_limited"} else result.error_class
+                _record_failed(failed_sink, payload, reason, fail_notes + ("never silent drop", "coord escalation: delivery FAILED"))
                 return DeliveryResult(
                     payload=payload,
                     sent=False,
-                    reason=result.error_class,
-                    notes=result.notes or ("telegram sendMessage failed",),
+                    reason=reason,
+                    notes=fail_notes + ("never silent drop",),
+                    results=tuple(results),
+                    written=written,
+                )
+        if png is not None:
+            caption = payload.chunks[0] if payload.chunks else ""
+            if len(caption) > 1024:
+                photo = api.send_document(
+                    chat_id=chat_id,
+                    document=png_filename or f"{payload.content_hash}.png",
+                    caption=None,
+                    message_thread_id=payload.message_thread_id,
+                    files={"document": (png_filename or f"{payload.content_hash}.png", png, "image/png")},
+                )
+                results.append(photo)
+            else:
+                photo = api.send_photo(
+                    chat_id=chat_id,
+                    photo=png_filename or f"{payload.content_hash}.png",
+                    caption=caption,
+                    message_thread_id=payload.message_thread_id,
+                    files={"photo": (png_filename or f"{payload.content_hash}.png", png, "image/png")},
+                )
+                results.append(photo)
+            if not results[-1].ok:
+                fail_notes = results[-1].notes or ("telegram media send failed",)
+                _record_failed(failed_sink, payload, REASON_RETRIES_EXHAUSTED, fail_notes + ("never silent drop",))
+                return DeliveryResult(
+                    payload=payload,
+                    sent=False,
+                    reason=REASON_RETRIES_EXHAUSTED,
+                    notes=fail_notes + ("never silent drop",),
                     results=tuple(results),
                     written=written,
                 )

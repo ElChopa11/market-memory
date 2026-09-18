@@ -21,6 +21,10 @@ class RiskIntent:
     halt: bool = False
     liquidity_verdict: str | None = None
     event_risk: bool = False
+    cluster_id: str | None = None
+    cluster_exposure_pct: float | None = None
+    rolling_drawdown_pct: float | None = None
+    drawdown_n: int = 0
 
     def canonical(self) -> dict[str, Any]:
         return {
@@ -35,6 +39,10 @@ class RiskIntent:
             "halt": self.halt,
             "liquidity_verdict": self.liquidity_verdict,
             "event_risk": self.event_risk,
+            "cluster_id": self.cluster_id,
+            "cluster_exposure_pct": self.cluster_exposure_pct,
+            "rolling_drawdown_pct": self.rolling_drawdown_pct,
+            "drawdown_n": self.drawdown_n,
         }
 
 

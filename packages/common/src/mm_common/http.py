@@ -59,6 +59,7 @@ class HttpGetResult:
     json_payload: Any = None
     exception_name: str | None = None
     response: httpx.Response | None = None
+    retry_after_s: float | None = None
 
     @property
     def ok(self) -> bool:
@@ -205,7 +206,7 @@ def _request(
                 exception_name=type(exc).__name__,
             )
             if is_retryable(error_class) and attempt < attempts_allowed:
-                sleep(backoff_s * attempt)
+                sleep(_sleep_for(attempt, backoff_s, None))
                 continue
             return last
         status = response.status_code
@@ -234,6 +235,7 @@ def _request(
                 response=response,
             )
         error_class = classify_http_status(status)
+        retry_after = parse_retry_after(response)
         last = HttpGetResult(
             error_class=error_class,
             attempts=attempt,
@@ -241,13 +243,33 @@ def _request(
             status_code=status,
             text=response.text,
             response=response,
+            retry_after_s=retry_after,
         )
         if is_retryable(error_class) and attempt < attempts_allowed:
-            sleep(backoff_s * attempt)
+            sleep(_sleep_for(attempt, backoff_s, retry_after))
             continue
         return last
     assert last is not None
     return last
+
+
+def parse_retry_after(response: httpx.Response | None) -> float | None:
+    if response is None:
+        return None
+    raw = response.headers.get("Retry-After") or response.headers.get("retry-after")
+    if not raw:
+        return None
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return None
+
+
+def _sleep_for(attempt: int, backoff_s: float, retry_after: float | None) -> float:
+    base = backoff_s * attempt
+    if retry_after is None:
+        return base
+    return max(base, retry_after)
 
 
 def _ms(started: float) -> float:

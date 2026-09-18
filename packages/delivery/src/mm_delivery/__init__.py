@@ -11,6 +11,8 @@ from mm_delivery.deliver import DeliveryResult, deliver, write_payload_files
 from mm_delivery.inbound import handle_inbound
 from mm_delivery.payload import SEND_ENABLED, DeliveryPayload, assert_no_send, build_payload, prepare_payload
 from mm_delivery.telegram import TELEGRAM_API_BASE, TelegramClient
+from mm_delivery.fanout import fanout_desk
+from mm_delivery.present import format_pct, format_tick
 
 __phase__ = 5
 LIVE_TRADING_ENABLED = False
@@ -25,6 +27,9 @@ __all__ = [
     "assert_no_send",
     "build_payload",
     "deliver",
+    "fanout_desk",
+    "format_pct",
+    "format_tick",
     "handle_inbound",
     "prepare_payload",
     "write_payload_files",

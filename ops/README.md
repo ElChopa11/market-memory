@@ -26,6 +26,9 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Phase 5b Polygon equities + HL structure (IMP-010) is **DONE** (#41).
 - Phase 5c quant factor library (IMP-011) is **DONE** (#42).
 - Phase 5d desk runners (IMP-012) is **DONE** (#43).
-- Phase 5e Telegram delivery (IMP-013) is **IN_REVIEW** (this PR).
-- Phase 6a PG LISTEN/NOTIFY mesh (IMP-014) is **READY** (parked). Do not implement the mesh in 5e.
+- Phase 5e Telegram delivery (IMP-013) is **DONE** (#44).
+- Phase 6a PG LISTEN/NOTIFY mesh (IMP-014) is **DONE** (#45).
+- Phase 6b flow/macro/regime (IMP-015) is **DONE** (#46).
+- Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 (IMP-016) is **IN_REVIEW** (this PR).
+- Phase 6d listings/IPO (IMP-017) is **PARKED**. Do not implement listings in 6c.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

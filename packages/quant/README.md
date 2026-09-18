@@ -16,6 +16,7 @@ The working Quant Review Board remains `mm_research_kit.quant_review` (IMP-001 /
 | `mm_quant.regime` | tag + confidence + driving inputs from `config/quant/regime.yaml` |
 | `mm_quant.stats` | sample size, t-stat/bootstrap CI, deflated Sharpe / haircut, walk-forward, MAE/MFE, expectancy |
 | `mm_quant.sizing` | vol-targeted + fixed-fractional → `% of research budget` only |
+| `mm_quant.trade_math` | Phase 6c inherited R / expectancy / size (PLAYBOOK; not an order) |
 | `mm_quant.card` | `QuantCard` dataclass + markdown (`templates/quant-factor-card.md`) |
 
 Config: [`config/quant/factors.yaml`](../../config/quant/factors.yaml), [`config/quant/regime.yaml`](../../config/quant/regime.yaml).

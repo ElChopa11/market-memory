@@ -27,7 +27,7 @@ def test_migrate_creates_mesh_tables(postgres_dsn: str) -> None:
     tables = set(inspector.get_table_names())
     assert "desk_envelope" in tables
     assert "desk_health" in tables
-    assert current_revision(postgres_dsn) == "0007_phase6a_desk_mesh"
+    assert current_revision(postgres_dsn) == "0008_phase6c_delivery"
     columns = {col["name"] for col in inspector.get_columns("desk_envelope")}
     assert "content_hash" in columns
     assert "as_of_sydney" in columns

@@ -1,8 +1,8 @@
-# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro (Phase 6b) + Telegram (Phase 5e)
+# Desk runners (Phase 5d) + mesh (Phase 6a) + flow/macro (Phase 6b) + PLAYBOOK/Telegram (Phase 6c)
 
-Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are **Phase 6b**. Telegram Bot API send is **Phase 5e** (`lab deliver`; default `--no-send`). No live trading. **No Redis.**
+Private research lab control plane. **Desk orchestration on frozen-day fixtures.** Postgres `LISTEN/NOTIFY` mesh is **Phase 6a** (`lab mesh dry`). Flow/liquidity + macro regime are **Phase 6b**. Hive PLAYBOOK + per-desk Telegram fan-out are **Phase 6c** (`lab playbook run`, `lab deliver fanout`; default `--no-send`). No live trading. **No Redis.**
 
-Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0004-desk-mesh-pg-notify.md](../../ADR/0004-desk-mesh-pg-notify.md), [ADR/0005-flow-macro-regime.md](../../ADR/0005-flow-macro-regime.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md).
+Canonical names and charters: [ops/desk-charters.md](../../ops/desk-charters.md). Permissions: [AGENTS.md](../../AGENTS.md). Architecture: [ADR/0002-desk-delivery-architecture.md](../../ADR/0002-desk-delivery-architecture.md), [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0004-desk-mesh-pg-notify.md](../../ADR/0004-desk-mesh-pg-notify.md), [ADR/0005-flow-macro-regime.md](../../ADR/0005-flow-macro-regime.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md). Decision rights: [ops/decision-rights.md](../../ops/decision-rights.md). Telegram runbook: [telegram.md](telegram.md). LLM budget: [llm-budget.md](llm-budget.md). PLAYBOOK: [../playbook.md](../playbook.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md).
 
 ## What operators can do
 
@@ -20,6 +20,9 @@ uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-
 uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
 uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --kill-desk intel --no-db
 uv run lab mesh channels
+
+# PLAYBOOK ladder (Phase 6c; no-setup = zero LLM)
+uv run lab playbook run --fixture tests/fixtures/phase6c/no_setup.json --no-send --no-db
 ```
 
 `--send` on `lab desk run` is a gated Coord-pack POST (token required; pytest fail-closed). Default remains `--no-send`. `mm_delivery.SEND_ENABLED` stays false so send is never implicit. See [telegram.md](telegram.md).
@@ -111,12 +114,16 @@ The Intel *desk runner* lives in `mm_desks.intel` and only assembles fixture/hea
 
 Principal-facing desk product copy uses [templates/output-contract.md](../../templates/output-contract.md). Trade ideas are **intent-only**. Writer hard rules are on that template.
 
+## PLAYBOOK (Phase 6c)
+
+`lab playbook run --fixture PATH --no-send` emits `DAILY_BIAS`, `EDGE_SCAN`, `INTEL_PACKET`, `CHART_ARTIFACT`, `OFFICIAL_BRIEF`, `STATE_CARD` sharing `run_id` + `content_hash`. Quant computes R once (`mm_quant.trade_math`); mismatch is a failed run. LLM is WRITER/CRITIC only — a no-setup fixture makes zero LLM calls. See [../playbook.md](../playbook.md) and [llm-budget.md](llm-budget.md).
+
 ## Gates kept
 
 `live_trading_enabled: false`. `risk-config-guard`. `promote-gate`. Point-in-time law. Degrade-never-invent. No secrets in git.
 
 ## Not this phase
 
-Per-desk Telegram fan-out (IMP-016 / 6c, parked). Listings/IPO desk (6d). Scorecards (6e). Decay/prompt versioning (6f). Live trading, signing, Redis, paid deps. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
+Listings/IPO desk (IMP-017 / 6d, parked). Scorecards automation (6e). Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the Risk desk.
 
-Telegram: [telegram.md](telegram.md). Factor math: [quant-desk.md](quant-desk.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).
+Telegram: [telegram.md](telegram.md). LLM budget: [llm-budget.md](llm-budget.md). PLAYBOOK: [../playbook.md](../playbook.md). Factor math: [quant-desk.md](quant-desk.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

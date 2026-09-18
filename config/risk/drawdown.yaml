@@ -1,0 +1,9 @@
+# Drawdown ladder (Phase 6c / IMP-016). Versioned YAML. No LLM. n=1 changes nothing.
+
+version: "imp-016.1"
+# Rolling sleeve PnL. Thresholds are negative percents (drawdown).
+sleeve_half_pct: 8
+dry_review_pct: 15
+n_equals_1_noop: true
+rule_id_half: drawdown_sleeve_half
+rule_id_dry: drawdown_dry_review
