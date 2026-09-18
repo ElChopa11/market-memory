@@ -736,6 +736,26 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Live trading; signing; `live.yaml`; Redis; universe promotion; auto-merge; auto-waive Skeptic/Risk; auto-disable prompts; closing OPEN incidents; reopening the five-desk roster; inventing like-for-like scores for tagged incomparable packs. |
 | **Dependencies** | IMP-030 DONE (#55). |
 | **Risk level** | Medium (false decay alerts; prompt drift). |
+| **Status** | DONE |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/56 |
+| **Lesson learned** | Merged to `main` (#56, 2026-09-18). `lab decay watch` hashes versioned prompts + listed configs; mismatch → Quant alert without writing the queue or waiving gates. `--no-send`. OPEN incidents untouched. Call-card vs Quant SoT language alignment is IMP-032. |
+
+### IMP-032 — Call-card language vs Quant SoT (2026-09-18)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-032 |
+| **Priority** | P1 |
+| **Type** | Hygiene / docs |
+| **Desk** | Ops + Quant |
+| **Owner** | Don/Ops+Quant |
+| **Problem** | UNIVERSE/call-cards still framed as post-#11 revise / “conditional” packs. BTC/NVDA/JPM read conditional vs Quant **DEFER**. AVGO/MSFT/META/XOM still “conditional” while Quant = **INSUFFICIENT_DATA**. Stale HL dayNtl/OI stamps sit in card prose as if live. |
+| **Evidence** | Lunch Money Research L2; `research/queue/UNIVERSE-20260917-call-cards.md`; Quant Board `research/quant/2026-09-18/quant-review-board.md` (IMP-008 / #38). |
+| **Proposed outcome** | Field-1 Expectation uses Quant closed-set vocabulary only. HL stamps quarantined appendix-only / **DO NOT SIZE**. Locked universe unchanged. Paper only. No new calls. |
+| **Definition of done** | Queue: IMP-031 DONE (#56). This item the only implementation thread. Plan [plans/IMP-032-call-card-language-debt.md](plans/IMP-032-call-card-language-debt.md). Call-cards: BTC/NVDA/JPM **DEFER**; AVGO/MSFT/META/XOM **INSUFFICIENT_DATA**; ETH/UNI **MONITOR**; AAVE/SMH/XLF **DEFER**; RESEARCH_PRIORITY none. HL dayNtl/OI appendix-only / DO NOT SIZE. Language gate: no active-call / buy / sell. OPEN incidents untouched. No `live.yaml` / signing / wallets / Redis / paid deps / universe promotion. Tests green. |
+| **Non-goals** | New calls; Quant Board rewrite; universe expansion; `live.yaml`; signing; Redis; paid data; closing OPEN incidents; reopening IMP-005 keys; execution. |
+| **Dependencies** | IMP-008 DONE (#38). IMP-031 DONE (#56). |
+| **Risk level** | Low (docs). Process risk if operators still read membership cards as calls. |
 | **Status** | IN_REVIEW |
 | **PR** | *(this PR)* |
 | **Lesson learned** | *(fill at close)* |
@@ -778,9 +798,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-028 | Intel + Quant | Intel / Quant | BACKLOG | Polygon SI / options OI audit; paid SKUs **Principal** |
 | IMP-029 | Quant | Quant | BACKLOG | Trial EODHD or Polygon Starter for 5y/delisted — **Principal paid** |
 | IMP-030 | Quant + Ops | Quant / Ops | DONE | [#55](https://github.com/ElChopa11/market-memory/pull/55) Phase 6e scorecards + queue automation |
-| IMP-031 | Quant | Quant | IN_REVIEW | Phase 6f strategy decay-watch — this PR |
+| IMP-031 | Quant | Quant | DONE | [#56](https://github.com/ElChopa11/market-memory/pull/56) Phase 6f strategy decay-watch |
+| IMP-032 | Ops + Quant | Don/Ops+Quant | IN_REVIEW | Call-card language vs Quant SoT 2026-09-18 — this PR |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-021 and IMP-030 are `DONE`. IMP-031 is `IN_REVIEW` (this PR). IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-021 and IMP-030–IMP-031 are `DONE`. IMP-032 is `IN_REVIEW` (this PR). IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed). Single implementation thread.
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
@@ -822,7 +843,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 DONE** (#34).
 
-Historical “active calls” language debt was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen.
+Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032** (this PR).
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
@@ -830,7 +851,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 IN_REVIEW** (this PR).
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 IN_REVIEW** (this PR).
 
 Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md)). Adopt/trial intake is **IMP-022–IMP-029 BACKLOG**. No adapters in the evaluation PR. Do not take those items `IN_PROGRESS` while 6c-1..6c-5 occupy the implementation thread.
 
@@ -859,5 +880,6 @@ Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-0
 - IMP-021 merged as #53 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-017.
 - IMP-017 merged as #54 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-030.
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
-- IMP-031 intakes Phase 6f prompt-hash decay watch per Principal lock. IMP-030 DONE (#55). OPEN incidents untouched. Bus = Postgres NOTIFY, no Redis. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). Decay watch does not auto-merge, waive gates, or auto-disable prompts.
+- IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
+- IMP-032 intakes call-card vs Quant SoT language alignment (Lunch Money Research L2). IMP-031 DONE (#56). OPEN incidents untouched. Locked universe unchanged. Paper only. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). Do not invent new calls.
 - Source evaluation 2026-09-18 (docs-only) intakes IMP-022–IMP-029 as `BACKLOG` adopt/trial recommendations. Does not modify IMP-018/6c-1 cutover, does not close OPEN incidents, does not add adapters or keys. Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) are Principal decision.

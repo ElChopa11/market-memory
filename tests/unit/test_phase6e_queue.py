@@ -1,4 +1,4 @@
-"""Phase 6e queue hygiene after 6f: IMP-017 DONE #54, IMP-030 DONE #55, IMP-031 this PR."""
+"""Phase 6e queue hygiene after 6f: IMP-017 DONE #54, IMP-030 DONE #55, IMP-031 DONE #56."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_queue_marks_017_done_030_done_031_in_review() -> None:
+def test_queue_marks_017_done_030_done_031_done() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-017" in line and "DONE" in line for line in board_lines)
@@ -15,13 +15,15 @@ def test_queue_marks_017_done_030_done_031_in_review() -> None:
     assert any("IMP-021" in line and "DONE" in line for line in board_lines)
     assert any("IMP-030" in line and "DONE" in line for line in board_lines)
     assert any("#55" in line for line in board_lines if "IMP-030" in line)
-    assert any("IMP-031" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-031" in line and "DONE" in line for line in board_lines)
+    assert any("#56" in line for line in board_lines if "IMP-031" in line)
     assert not any("IMP-017" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-017" in line and "PARKED" in line for line in board_lines)
     assert not any("IMP-017" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-030" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-030" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-031" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-031" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-031" in line and "PARKED" in line for line in board_lines)
     assert "`IN_PROGRESS` count: **0**" in queue
     for item_id in (
