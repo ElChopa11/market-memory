@@ -29,7 +29,7 @@ from mm_desks.envelope import (
 )
 from mm_desks.fixture import load_frozen_day
 from mm_desks.orchestrator import PIPELINE, run_from_fixture
-from mm_desks.protocol import OK, DeskContext, DeskOutput, ENGINE_VERSION
+from mm_desks.protocol import FAILED, OK, DeskContext, DeskOutput, ENGINE_VERSION
 
 MESH_DESKS: tuple[str, ...] = PIPELINE_FOR_PACK
 
