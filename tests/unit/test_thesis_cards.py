@@ -53,16 +53,14 @@ REQUIRED_SECTIONS = (
 )
 
 
-def test_queue_hygiene_single_in_progress_is_imp007() -> None:
+def test_queue_hygiene_imp007_templates_closed() -> None:
     text = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     assert "| **ID** | IMP-007 |" in text
-    assert "| **Status** | IN_PROGRESS |" in text
-    assert len(re.findall(r"\| \*\*Status\*\* \| IN_PROGRESS \|", text)) == 1
+    assert re.search(r"### IMP-007.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
     assert "| Dedicated crypto / equity thesis-card templates |" not in text
-    for item in ("IMP-004", "IMP-005", "IMP-006"):
-        assert re.search(rf"### {item} .*", text)
-    assert "| IMP-004 |" in text and "DONE" in text
-    assert "IMP-000–IMP-006 are `DONE`" in text
+    for item in ("IMP-004", "IMP-005", "IMP-006", "IMP-007"):
+        assert re.search(rf"### {item} ", text)
+    assert "IMP-000–IMP-007 are `DONE`" in text
 
 
 def test_locked_membership_pin_matches_universe_yaml() -> None:

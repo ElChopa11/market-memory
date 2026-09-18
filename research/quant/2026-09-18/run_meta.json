@@ -1,0 +1,193 @@
+{
+  "as_of_knowledge": "2026-09-18T02:00:00+00:00",
+  "desk_pass": {
+    "as_of_sydney": "2026-09-18T12:00:00+10:00",
+    "counts": {
+      "DEFER": 6,
+      "INSUFFICIENT_DATA": 4,
+      "MONITOR": 2
+    },
+    "deferred_must_cut_excluded": [
+      "HYPE",
+      "SOL",
+      "XRP",
+      "ARB",
+      "NEAR",
+      "LINK",
+      "GLD",
+      "LLY"
+    ],
+    "disclaimer": "Research only. Not a trade instruction, allocation decision, or execution approval.",
+    "imp": "IMP-008",
+    "in_universe": [
+      "BTC",
+      "NVDA",
+      "AVGO",
+      "MSFT",
+      "META",
+      "JPM",
+      "XOM"
+    ],
+    "locked_review_universe": "config/quant_review_locked_universe.yaml",
+    "membership_config": "config/universe.yaml",
+    "research_priority_names": [],
+    "sec_pr_2026_90": {
+      "date": "2026-09-17",
+      "url": "https://www.sec.gov/newsroom/press-releases/2026-90-sec-issues-innovation-exemption-facilitate-trading-tokenized-nms-stock-request-comment"
+    },
+    "watch_only": [
+      "ETH",
+      "UNI",
+      "AAVE",
+      "SMH",
+      "XLF"
+    ]
+  },
+  "engine": "imp-008.locked-membership-desk-pass",
+  "footer": "Research only. Not a trade instruction, allocation decision, or execution approval.",
+  "generated_at": "2026-09-18T02:00:00+00:00",
+  "params_hash": "82ce3b3be96c04b9f84b76908be7017b80e62e9c44e49f0d82dda99b61d19078",
+  "review_date": "2026-09-18",
+  "universe_version": "2026-09-17-locked-membership",
+  "verdicts": {
+    "AAVE": {
+      "reason_codes": [
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "STALE_OR_PARTIAL_DATA",
+        "INADEQUATE_LIQUIDITY",
+        "RECLAIM_UNCONFIRMED",
+        "NO_MISPRICING"
+      ],
+      "verdict": "DEFER"
+    },
+    "AVGO": {
+      "reason_codes": [
+        "STALE_OR_PARTIAL_DATA",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_MISPRICING",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "BTC": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "NO_MISPRICING",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "CORRELATED_EXPOSURE",
+        "STALE_OR_PARTIAL_DATA"
+      ],
+      "verdict": "DEFER"
+    },
+    "ETH": {
+      "reason_codes": [
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_MISPRICING",
+        "RECLAIM_UNCONFIRMED",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE"
+      ],
+      "verdict": "MONITOR"
+    },
+    "JPM": {
+      "reason_codes": [
+        "ALREADY_PRICED",
+        "NO_MISPRICING",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "STALE_OR_PARTIAL_DATA",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "DEFER"
+    },
+    "META": {
+      "reason_codes": [
+        "STALE_OR_PARTIAL_DATA",
+        "INSUFFICIENT_HISTORY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "NO_MISPRICING",
+        "CORRELATED_EXPOSURE",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "MSFT": {
+      "reason_codes": [
+        "STALE_OR_PARTIAL_DATA",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "NO_MISPRICING",
+        "CORRELATED_EXPOSURE",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    },
+    "NVDA": {
+      "reason_codes": [
+        "RECLAIM_UNCONFIRMED",
+        "NO_MISPRICING",
+        "CORRELATED_EXPOSURE",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "STALE_OR_PARTIAL_DATA"
+      ],
+      "verdict": "DEFER"
+    },
+    "SMH": {
+      "reason_codes": [
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_MISPRICING",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "STALE_OR_PARTIAL_DATA",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "DEFER"
+    },
+    "UNI": {
+      "reason_codes": [
+        "EVENT_RISK",
+        "NO_MISPRICING",
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "THESIS_NOT_FALSIFIABLE",
+        "STALE_OR_PARTIAL_DATA",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "MONITOR"
+    },
+    "XLF": {
+      "reason_codes": [
+        "DUPLICATE_BETA",
+        "CORRELATED_EXPOSURE",
+        "NO_MISPRICING",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "STALE_OR_PARTIAL_DATA",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "DEFER"
+    },
+    "XOM": {
+      "reason_codes": [
+        "STALE_OR_PARTIAL_DATA",
+        "INSUFFICIENT_HISTORY",
+        "NO_CATALYST",
+        "THESIS_NOT_FALSIFIABLE",
+        "NO_MISPRICING",
+        "RECLAIM_UNCONFIRMED"
+      ],
+      "verdict": "INSUFFICIENT_DATA"
+    }
+  }
+}

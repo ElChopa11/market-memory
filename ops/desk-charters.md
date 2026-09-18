@@ -160,11 +160,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 - Treat Quant `RESEARCH_PRIORITY` or universe `in_universe` membership as an order.
 - Author and Skeptic-approve the same thesis.
 
-**Artifacts.** Crypto thesis card (`templates/crypto-thesis-card.md`; IMP-007); crypto market-pulse contribution.
+**Artifacts.** Crypto thesis card (`templates/crypto-thesis-card.md`; IMP-007 DONE #37); crypto market-pulse contribution.
 
 **Exists today.** HL public `/info` ingest (BTC, ETH, UNI, AAVE perps); generic `templates/thesis.md` + dedicated `templates/crypto-thesis-card.md`; `research/` workspaces; queue cards under `research/queue/` (e.g. QUANT-20260917, UNIVERSE-20260917). UNI/AAVE/ETH are watch-only for thesis-priority membership; BTC remains the crypto in-universe name in `config/universe.yaml` (Principal membership language — not a Quant Board verdict).
 
-**Gap.** No on-chain ingest; no funding/OI/basis desk product with a standing cadence; live HL refresh can be rate-limited (DQ, not a trading signal). Dedicated crypto thesis-card template is IMP-007.
+**Gap.** No on-chain ingest; no funding/OI/basis desk product with a standing cadence; live HL refresh can be rate-limited (DQ, not a trading signal). Dedicated crypto thesis-card template is IMP-007 (**DONE** #37).
 
 ---
 
@@ -185,11 +185,11 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 - Invent catalysts, skip liquidity, or skip invalidation.
 - Access execution. Author and approve the same thesis.
 
-**Artifacts.** Equity thesis card (`templates/equities-thesis-card.md`; IMP-007); post-IPO reclaim screen (`lab equities reclaim-screen`; IMP-006).
+**Artifacts.** Equity thesis card (`templates/equities-thesis-card.md`; IMP-007 DONE #37); post-IPO reclaim screen (`lab equities reclaim-screen`; IMP-006).
 
 **Exists today.** Equity names on `config/universe.yaml` as Phase 3 briefing / future equity-feed watchlist (not Hyperliquid); queue cards (UNIVERSE call cards, WATCHLIST-DD, EXPECTATIONS scorecard); generic thesis template plus dedicated `templates/equities-thesis-card.md`; screen-only Post-IPO / reclaim universe `config/equities/post_ipo_reclaim.yaml` (not membership).
 
-**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline. Dedicated equity thesis-card template is IMP-007. Post-IPO reclaim screen product is IMP-006 (**DONE** #36). Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
+**Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline. Dedicated equity thesis-card template is IMP-007 (**DONE** #37). Post-IPO reclaim screen product is IMP-006 (**DONE** #36). Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
 
 ---
 
@@ -245,7 +245,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 **Exists today.** Ad-hoc queue packs (`research/queue/QUANT-20260917-active-calls.md` — historical filename; membership vocabulary after IMP-005) and builder, universe shortlists, fail-pair / expectations scorecards. Fixture backtest harness (`packages/backtest`) is evaluation infrastructure, not the Board.
 
-**Gap.** Board generator exists (IMP-001 DONE). Remaining: dedicated crypto/equity thesis-card templates; Quant pack rewrite (templates / pack workflow — still a Gap, not this PR). Post-IPO reclaim **screen product** is Equities desk IMP-006 (uses Quant closed verdicts; does not rewrite the Board). Do not treat membership (`in_universe`) as a Quant verdict.
+**Gap.** Board generator exists (IMP-001 DONE). Locked-membership RESEARCH_PRIORITY pass is IMP-008. Remaining: Quant pack rewrite (templates / pack workflow — still a Gap). Post-IPO reclaim **screen product** is Equities desk IMP-006 (uses Quant closed verdicts; does not rewrite the Board). Dedicated crypto/equity thesis-card templates are IMP-007 (**DONE** #37). Do not treat membership (`in_universe`) as a Quant verdict.
 
 ---
 

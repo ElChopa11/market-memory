@@ -34,6 +34,14 @@ uv run lab quant-review \
   --no-db
 ```
 
+Locked-membership RESEARCH_PRIORITY pass (IMP-008; not screenshot/TV universe):
+
+```bash
+uv run lab quant-review --locked-membership --no-db
+```
+
+Writes `research/quant/2026-09-18/` covering `config/universe.yaml` membership only. Membership is not a Quant verdict.
+
 `./scripts/check-lifecycle.sh` refuses a thesis without intent and refuses `in_skeptic` without evidence links. Rejected workspaces stay here as learning records.
 
 Post-IPO / reclaim screen (IMP-006; Equities desk; not a trading decision) lives under `research/screens/post-ipo-reclaim/`:

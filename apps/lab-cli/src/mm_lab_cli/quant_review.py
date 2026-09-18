@@ -23,6 +23,7 @@ from mm_research_kit.quant_review.engine import (
     write_board,
 )
 from mm_research_kit.quant_review.models import ENGINE_VERSION, MemoryOverlay, SeriesOverlay
+from mm_research_kit.quant_review.locked_membership import write_locked_membership_pass
 from mm_research_kit.quant_review.universe import universe_from_mapping
 from mm_research_kit.workspace import git_path
 
@@ -39,6 +40,11 @@ def add_quant_review_parser(sub) -> None:
     parser.add_argument("--stale-after-hours", type=int, default=36)
     parser.add_argument("--dsn")
     parser.add_argument("--no-db", action="store_true", help="git artifacts only (no Market Memory index)")
+    parser.add_argument(
+        "--locked-membership",
+        action="store_true",
+        help="desk re-score of config/universe.yaml membership only (IMP-008); ignores screenshot fixture",
+    )
 
 
 def dispatch_quant_review(args: Namespace) -> int:
@@ -51,6 +57,19 @@ def dispatch_quant_review(args: Namespace) -> int:
 
 def cmd_quant_review(args: Namespace) -> int:
     repo_root = Path(args.repo_root).resolve()
+    if args.locked_membership:
+        written = write_locked_membership_pass(repo_root, research_root=Path(args.research_root))
+        payload = {
+            "engine": "imp-008.locked-membership-desk-pass",
+            "review_date": "2026-09-18",
+            "board": written["board"],
+            "card_count": len(written["cards"]),
+            "params_hash": written["params_hash"],
+            "research_priority_names": [],
+            "disclaimer": "Research only. Not a trade instruction, allocation decision, or execution approval.",
+        }
+        print(json.dumps(payload, indent=2, default=str))
+        return 0
     universe_path = Path(args.universe) if args.universe else repo_root / "config" / "quant_review_universe.yaml"
     universe = universe_from_mapping(_load_mapping(universe_path))
     as_of = parse_utc(args.as_of) if args.as_of else utcnow()

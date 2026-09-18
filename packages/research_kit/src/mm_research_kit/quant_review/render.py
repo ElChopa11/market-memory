@@ -107,6 +107,7 @@ def render_board(
     concentration_warnings: tuple[str, ...],
     what_changed: str,
     prior_board: str | None,
+    universe_config: str = "config/quant_review_universe.yaml",
 ) -> str:
     for card in cards:
         if not card.reason_codes:
@@ -155,7 +156,7 @@ def render_board(
         f"- **Review date:** {review_date}",
         f"- **Knowledge watermark (as_of_knowledge):** {as_of_knowledge}",
         f"- **Generated at:** {generated_at}",
-        f"- **Universe version:** {universe_version} (`config/quant_review_universe.yaml`)",
+        f"- **Universe version:** {universe_version} (`{universe_config}`)",
         f"- **params_hash:** `{params_hash}`",
         f"- **Names reviewed:** {len(cards)}",
         f"- **Verdict counts:** "

@@ -1,6 +1,6 @@
 # PLAN — IMP-007 Dedicated crypto + equities thesis-card templates
 
-**Report status:** PR READY  
+**Report status:** DONE (#37)  
 **Owner:** Don/Research (Crypto Desk + Equities & Post-IPO Desk)  
 **Scope:** dedicated research thesis-card templates (plus copy-into-workspace). No orders, wallets, live keys, Pulse/Stooq/FRED work, universe expansion, Quant Board rewrite, or execution.
 
