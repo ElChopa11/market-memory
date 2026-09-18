@@ -1,0 +1,14 @@
+# Phase 6e decay *inputs* stub. Full prompt-hash decay watch is IMP-031 / Phase 6f.
+# This file records prompt files that 6f will watch. 6e does not alert, decay-detect,
+# or auto-disable prompts.
+
+version: "imp-030.1"
+watch_enabled: false
+phase: "6f-parked"
+item: IMP-031
+
+prompt_files:
+  - config/prompts/official_brief.v1.txt
+  - config/prompts/edge_scan.v1.txt
+  - config/prompts/skeptic_review.v1.txt
+  - config/prompts/post_mortem.v1.txt

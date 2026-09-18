@@ -54,6 +54,8 @@ def infer_n(output: DeskOutput) -> int:
     if output.slug == "research":
         return len(payload.get("tape") or [])
     if output.slug == "quant":
+        if payload.get("product") == "scorecard":
+            return len(payload.get("packs") or payload.get("pairs") or [])
         return len(payload.get("cards") or [])
     if output.slug == "ic_risk":
         return 2

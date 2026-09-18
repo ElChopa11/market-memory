@@ -65,7 +65,8 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | Phase 6c-2 naming layer (IMP-019 DONE #51) | live path |
 | Phase 6c-4 watchlist monitor (IMP-020 DONE #52) | live path |
 | Phase 6c-5 Ops-owned delivery expansion (IMP-021 DONE #53) | live path |
-| Phase 6d listings / IPO screen (IMP-017) | live path; 6e scorecards; 6f decay-watch |
+| Phase 6d listings / IPO screen (IMP-017 DONE #54) | live path; 6f decay-watch |
+| Phase 6e pack scorecards + queue hygiene (IMP-030) | live path; auto-merge; 6f decay-watch |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 

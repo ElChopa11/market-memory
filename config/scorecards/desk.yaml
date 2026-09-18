@@ -1,0 +1,22 @@
+# Phase 6e / IMP-030 Quant pack scorecard.
+# Sleeve, not a sixth desk. Quant owns like-for-like math. Ops publishes.
+# Paper only. No live path. No LLM. No send.
+
+desk: quant
+product: scorecard
+promote: false
+llm: false
+send: false
+inherit_trade_math: false
+invent_r: false
+paper_open: false
+self_approve: false
+
+# Like-for-like keys. A mismatch on any of these is NOT_COMPARABLE.
+comparability_keys:
+  - product
+  - schedule_anchor
+  - universe
+
+# Knowledge clock is as_of_knowledge. Future packs stay invisible.
+knowledge_clock: as_of_knowledge

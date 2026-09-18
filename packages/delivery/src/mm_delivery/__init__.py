@@ -12,9 +12,10 @@ from mm_delivery.inbound import handle_inbound
 from mm_delivery.payload import SEND_ENABLED, DeliveryPayload, assert_no_send, build_payload, prepare_payload
 from mm_delivery.telegram import TELEGRAM_API_BASE, TelegramClient
 from mm_delivery.fanout import fanout_desk
-from mm_delivery.present import format_pct, format_tick, present_listings, present_watchlist
+from mm_delivery.present import format_pct, format_tick, present_listings, present_scorecard, present_watchlist
 from mm_delivery.watchlist import deliver_watchlist
 from mm_delivery.listings import deliver_listings
+from mm_delivery.scorecard import deliver_scorecard
 from mm_delivery.matrix import assert_channel_matrix
 
 __phase__ = 5
@@ -32,6 +33,7 @@ __all__ = [
     "build_payload",
     "deliver",
     "deliver_listings",
+    "deliver_scorecard",
     "deliver_watchlist",
     "fanout_desk",
     "format_pct",
@@ -39,6 +41,7 @@ __all__ = [
     "handle_inbound",
     "prepare_payload",
     "present_listings",
+    "present_scorecard",
     "present_watchlist",
     "write_payload_files",
 ]

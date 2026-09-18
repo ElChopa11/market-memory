@@ -10,9 +10,11 @@ from mm_common.naming import (
     LISTINGS,
     OPS,
     PUBLISHING_DESKS,
+    QUANT,
     RESEARCH,
     RETIRED_DESK_SLUGS,
     ROUTE_SLUGS,
+    SCORECARD,
     SLEEVE_MAP,
     UnknownNameError,
     WATCHLIST,
@@ -23,6 +25,7 @@ from mm_delivery.config import TelegramSettings
 
 WATCHLIST_PRODUCT = WATCHLIST
 LISTINGS_PRODUCT = LISTINGS
+SCORECARD_PRODUCT = SCORECARD
 PUBLISHER = OPS
 
 
@@ -50,22 +53,23 @@ def assert_channel_matrix(settings: TelegramSettings) -> None:
         require_publishing_desk(slug)
         if slug not in settings.desks:
             raise UnknownNameError(f"publishing desk {slug!r} missing from telegram.yaml")
-    _assert_research_sleeve_product(settings, WATCHLIST_PRODUCT)
-    _assert_research_sleeve_product(settings, LISTINGS_PRODUCT)
+    _assert_sleeve_product(settings, WATCHLIST_PRODUCT, desk=RESEARCH)
+    _assert_sleeve_product(settings, LISTINGS_PRODUCT, desk=RESEARCH)
+    _assert_sleeve_product(settings, SCORECARD_PRODUCT, desk=QUANT)
 
 
-def _assert_research_sleeve_product(settings: TelegramSettings, slug: str) -> None:
+def _assert_sleeve_product(settings: TelegramSettings, slug: str, *, desk: str) -> None:
     product = settings.product(slug)
     if product is None:
         raise UnknownNameError(f"{slug} delivery product missing from telegram.yaml")
-    if product.desk != RESEARCH:
+    if product.desk != desk:
         raise UnknownNameError(
-            f"{slug} product desk must be {RESEARCH!r} (naming sleeve_map); got {product.desk!r}"
+            f"{slug} product desk must be {desk!r} (naming sleeve_map); got {product.desk!r}"
         )
     if product.sleeve != slug:
         raise UnknownNameError(f"{slug} product sleeve must be {slug!r}")
-    if SLEEVE_MAP.get(product.sleeve) != RESEARCH:
-        raise UnknownNameError(f"{slug} sleeve must map to research")
+    if SLEEVE_MAP.get(product.sleeve) != desk:
+        raise UnknownNameError(f"{slug} sleeve must map to {desk}")
     if product.kind != slug:
         raise UnknownNameError(f"{slug} product kind must be {slug!r}")
     if settings.thresholds.spec(slug) is None:

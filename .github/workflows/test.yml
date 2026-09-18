@@ -41,6 +41,8 @@ jobs:
         run: bash scripts/check-lifecycle.sh
       - name: Import boundaries (research/desks/quant/delivery/flow/macro/listings vs execution; Intel vs opine; no Redis)
         run: uv run python scripts/check_import_boundaries.py
+      - name: Improvement-queue hygiene (single IN_PROGRESS; no auto-merge)
+        run: uv run python scripts/check_queue.py
       - name: No Redis bus
         run: |
           ! git grep -n -E '^[ \t]*(import redis|from redis|import aioredis|from aioredis)\b' -- packages apps

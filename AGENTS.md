@@ -2,7 +2,9 @@
 
 This file is the permission constitution for humans and LLM agents working in `market-memory`. It is stricter than convenience.
 
-**Phase 6d (IMP-017):** Research listings / IPO screen (not a sixth desk). Naming via `mm_common.naming`. Ops-owned `lab deliver listings --no-send`. Quant math inherited. IC/Risk gates still required. **No** live trading, no wallet code, no `hl_trade` / signing.
+**Phase 6e (IMP-030):** Quant like-for-like pack scorecards + Ops queue hygiene. Naming via `mm_common.naming` (`scorecard` sleeve → quant). Ops-owned `lab deliver scorecard --no-send`. Queue helper does not auto-merge or waive gates. Decay inputs stubbed; full watch is IMP-031 / 6f. **No** live trading, no wallet code, no `hl_trade` / signing.
+
+**Phase 6d (IMP-017 DONE #54):** Research listings / IPO screen (not a sixth desk). Naming via `mm_common.naming`. Ops-owned `lab deliver listings --no-send`. Quant math inherited. IC/Risk gates still required.
 
 **Phase 6c-5 (IMP-021 DONE #53):** Ops-owned Telegram delivery expansion. Channel matrix + presentation bound to `mm_common.naming`. Watchlist monitor artifacts from IMP-020 fan out `--no-send`. Coord is not the publisher.
 
@@ -14,7 +16,7 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 **Phase 6c (IMP-016 DONE #47):** Per-desk Telegram fan-out + presentation + chart *product* + inbound in `packages/delivery`. Hive PLAYBOOK ladder in `packages/desks` (`mm_desks.playbook`). Quant-owned trade math in `mm_quant.trade_math`. Addendum 6c-0: LLM is WRITER/CRITIC only.
 
-Desk operating model (private research lab, not a fund): [ops/desk-charters.md](ops/desk-charters.md), [ops/decision-rights.md](ops/decision-rights.md), [ops/improvement-queue.md](ops/improvement-queue.md), [docs/runbooks/desks.md](docs/runbooks/desks.md), [docs/runbooks/flow-desk.md](docs/runbooks/flow-desk.md), [docs/runbooks/macro-desk.md](docs/runbooks/macro-desk.md), [docs/runbooks/telegram.md](docs/runbooks/telegram.md), [docs/runbooks/llm-budget.md](docs/runbooks/llm-budget.md), [docs/runbooks/listings.md](docs/runbooks/listings.md), [docs/playbook.md](docs/playbook.md). Hive roles in this file remain the permission constitution; desks are how work is assigned. **No desk overrides the Principal.** Execution & Fund Ops is future-only. Delivery (Telegram) is Ops-owned (Phase 5e + 6c fan-out). Listings/IPO is **Phase 6d** (IMP-017, Research sleeve).
+Desk operating model (private research lab, not a fund): [ops/desk-charters.md](ops/desk-charters.md), [ops/decision-rights.md](ops/decision-rights.md), [ops/improvement-queue.md](ops/improvement-queue.md), [docs/runbooks/desks.md](docs/runbooks/desks.md), [docs/runbooks/flow-desk.md](docs/runbooks/flow-desk.md), [docs/runbooks/macro-desk.md](docs/runbooks/macro-desk.md), [docs/runbooks/telegram.md](docs/runbooks/telegram.md), [docs/runbooks/llm-budget.md](docs/runbooks/llm-budget.md), [docs/runbooks/listings.md](docs/runbooks/listings.md), [docs/runbooks/scorecards.md](docs/runbooks/scorecards.md), [docs/playbook.md](docs/playbook.md). Hive roles in this file remain the permission constitution; desks are how work is assigned. **No desk overrides the Principal.** Execution & Fund Ops is future-only. Delivery (Telegram) is Ops-owned (Phase 5e + 6c fan-out). Scorecards are **Phase 6e** (IMP-030, Quant sleeve). Listings/IPO is **Phase 6d** (IMP-017 DONE #54, Research sleeve).
 
 ## Non-negotiables
 
@@ -34,9 +36,9 @@ Exactly **five** publishing desks. Don/Coord is orchestration only.
 |---|---|---|---|
 | Intel (Market Intelligence) | `intel` | Read-only public feeds + flow/macro sleeves into observations | Sign orders; scrape in violation of ToS; **import opine packages**; author theses |
 | Research (Investment Research) | `research` | Crypto + equities + chart sleeves; thesis cards; fixture backtests | Import `mm_execution`; edit `live.yaml`; approve own Skeptic or Risk; submit orders |
-| Quant | `quant` | Closed-verdict triage; factor math | Call a trade; size; skip Skeptic |
+| Quant | `quant` | Closed-verdict triage; factor math; like-for-like pack scorecards | Call a trade; size; skip Skeptic |
 | IC/Risk | `ic_risk` | **Two gates, not two desks:** Skeptic FAIL return/archive; Risk allow/block | Self-approve; LLM at decision time; lift a BLOCK |
-| Ops | `ops` | Queue; pack assemble; delivery (Telegram, `--no-send` default) | Hold trading credentials; waive Skeptic; publish as Coord-the-desk |
+| Ops | `ops` | Queue; pack assemble; delivery (Telegram, `--no-send` default); queue hygiene helpers | Hold trading credentials; waive Skeptic; publish as Coord-the-desk; auto-merge |
 
 Gate numbers 0–7 in the table below remain the permission constitution (Skeptic and Risk are **gates** inside IC/Risk). They are not extra publishing desks.
 
@@ -90,4 +92,4 @@ Hive aliases that are **not** numbered delivery tiers: Briefing (Macro Pulse; In
 
 Before claiming a research stage is done, run `./scripts/check-lifecycle.sh` and meet [docs/research-lifecycle.md](docs/research-lifecycle.md).
 
-Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6d scope respected (listings/IPO Research sleeve on the five-desk roster; naming from IMP-019; Ops delivery from IMP-021; 6c PLAYBOOK/fan-out already on main via #47; no execution/signing, no risk service, no live path, no Redis, no 6e/6f, no live LLM HTTP), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.
+Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6e scope respected (pack scorecards + queue hygiene on the five-desk roster; naming from IMP-019; Ops delivery from IMP-021; listings on main via #54; 6c PLAYBOOK/fan-out already on main via #47; no execution/signing, no risk service, no live path, no Redis, no 6f decay-watch, no live LLM HTTP, no auto-merge, no gate waiver), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.

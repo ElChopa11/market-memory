@@ -60,7 +60,7 @@ def test_publishing_desks_are_exactly_five() -> None:
 
 
 def test_unknown_slug_fails_closed() -> None:
-    for slug in ("crypto", "equities", "skeptic", "risk", "coord", "flow", "macro", "chart", "watchlist", "listings", "nope"):
+    for slug in ("crypto", "equities", "skeptic", "risk", "coord", "flow", "macro", "chart", "watchlist", "listings", "scorecard", "nope"):
         with pytest.raises(UnknownNameError, match=slug):
             require_publishing_desk(slug)
         with pytest.raises(UnknownNameError):
@@ -76,6 +76,7 @@ def test_unknown_slug_fails_closed() -> None:
 def test_sleeves_and_gates_are_labels_not_desks() -> None:
     assert SLEEVE_MAP["watchlist"] == "research"
     assert SLEEVE_MAP["listings"] == "research"
+    assert SLEEVE_MAP["scorecard"] == "quant"
     assert "crypto" not in PUBLISHING_DESKS
     assert sleeve_display("watchlist").startswith("Research")
     assert sleeve_display("watchlist") == "Research (Investment Research) / watchlist monitor"
@@ -83,7 +84,10 @@ def test_sleeves_and_gates_are_labels_not_desks() -> None:
         require_publishing_desk("watchlist")
     with pytest.raises(UnknownNameError):
         require_publishing_desk("listings")
+    with pytest.raises(UnknownNameError):
+        require_publishing_desk("scorecard")
     assert sleeve_display("listings") == "Research (Investment Research) / listings IPO screen"
+    assert sleeve_display("scorecard") == "Quant / like-for-like pack scorecard"
     assert sleeve_display("crypto").startswith("Research")
     assert sleeve_display("equities").startswith("Research")
     assert sleeve_display("flow").startswith("Intel")

@@ -1,0 +1,72 @@
+{
+  "fixture_id": "phase6e-scorecard-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T13:05:00Z",
+  "what_changed": "fixture scorecard compare; no live tape; BRIEF-TAG 90m vs 30m stays tagged",
+  "packs": [
+    {
+      "pack_id": "BRIEF-TAG-20260918",
+      "product": "us-pre-market",
+      "schedule_anchor": "pre_open_90m",
+      "local_time": "08:00",
+      "timezone": "America/New_York",
+      "universe": "in_universe",
+      "as_of_knowledge": "2026-09-18T12:00:00Z",
+      "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": "OK",
+      "completeness": 80.0,
+      "n": 6,
+      "sources": ["coingecko", "hyperliquid.info"],
+      "missing": ["stooq", "fred"],
+      "tags": ["BRIEF-TAG-20260918"]
+    },
+    {
+      "pack_id": "preopen-30m-20260918",
+      "product": "us-pre-market",
+      "schedule_anchor": "pre_open_30m",
+      "local_time": "09:00",
+      "timezone": "America/New_York",
+      "universe": "in_universe",
+      "as_of_knowledge": "2026-09-18T13:00:00Z",
+      "content_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "status": "OK",
+      "completeness": 85.0,
+      "n": 6,
+      "sources": ["coingecko", "hyperliquid.info", "calendar.yaml"],
+      "missing": ["stooq", "fred"],
+      "tags": []
+    },
+    {
+      "pack_id": "preopen-30m-20260917",
+      "product": "us-pre-market",
+      "schedule_anchor": "pre_open_30m",
+      "local_time": "09:00",
+      "timezone": "America/New_York",
+      "universe": "in_universe",
+      "as_of_knowledge": "2026-09-17T13:00:00Z",
+      "content_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "status": "DEGRADED",
+      "completeness": 70.0,
+      "n": 6,
+      "sources": ["coingecko", "hyperliquid.info"],
+      "missing": ["stooq", "fred", "calendar.yaml"],
+      "tags": []
+    },
+    {
+      "pack_id": "FUTURE-PREOPEN-20260919",
+      "product": "us-pre-market",
+      "schedule_anchor": "pre_open_30m",
+      "local_time": "09:00",
+      "timezone": "America/New_York",
+      "universe": "in_universe",
+      "as_of_knowledge": "2026-09-19T13:00:00Z",
+      "content_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "status": "OK",
+      "completeness": 90.0,
+      "n": 6,
+      "sources": ["coingecko"],
+      "missing": [],
+      "tags": []
+    }
+  ]
+}

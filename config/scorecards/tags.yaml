@@ -1,0 +1,22 @@
+# Artifact tags for pack scorecards (IMP-030 / Phase 6e).
+# Tagged artifacts stay honest: they are not like-for-like vs a mismatched anchor.
+# OPEN incident BRIEF-TAG-20260918 is recorded here; the incident stays OPEN.
+
+version: "imp-030.1"
+
+tags:
+  - id: BRIEF-TAG-20260918
+    status: OPEN
+    product: us-pre-market
+    observed_anchor: pre_open_90m
+    observed_local_time: "08:00"
+    observed_timezone: America/New_York
+    canonical_anchor: pre_open_30m
+    canonical_local_time: "09:00"
+    canonical_timezone: America/New_York
+    comparable: false
+    reason_code: schedule_anchor_mismatch
+    note: >
+      Fri 18 Sep pre-market artifact fired ~90m pre-open (08:00 NY / 22:00 Syd)
+      vs the 30m-pre-open anchor (09:00 NY / 23:00 Syd). Do not score like-for-like
+      against 30m-pre-open packs. Incident stays OPEN.
