@@ -27,7 +27,7 @@ def test_brief_table_migrated(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     tables = set(inspect(engine).get_table_names())
     assert "brief" in tables
-    assert current_revision(postgres_dsn) == "0005_knowledge_lockstep"
+    assert current_revision(postgres_dsn) == "0006_phase5a_status_events"
 
 
 def test_frozen_brief_indexes_in_memory(db_session, tmp_path: Path) -> None:

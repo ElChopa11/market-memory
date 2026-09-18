@@ -39,8 +39,16 @@ jobs:
         run: uv run pytest
       - name: Lifecycle DoD gates
         run: bash scripts/check-lifecycle.sh
+      - name: Import boundaries (research/desks/quant/delivery vs execution; Intel vs opine)
+        run: uv run python scripts/check_import_boundaries.py
+      - name: Opine packages cannot import mm_execution
+        run: |
+          ! git grep -n -E 'import mm_execution|from mm_execution' -- packages/research_kit packages/desks packages/quant packages/delivery
+      - name: Intel cannot import opine packages
+        run: |
+          ! git grep -n -E 'import mm_research_kit|from mm_research_kit|import mm_desks|from mm_desks|import mm_quant|from mm_quant|import mm_delivery|from mm_delivery' -- packages/ingest
       - name: Live remains hard-gated
         run: uv run python -c "import yaml, pathlib; p=pathlib.Path('config/risk/environments/live.yaml'); d=yaml.safe_load(p.read_text()); assert d.get('live_trading_enabled') is False, 'live trading must stay hard-gated'"
       - name: No signing surface in ingest
         run: |
-          ! git grep -n -E 'sign_l1_action|hl_trade|private_key|submit_order' -- packages/ingest packages/memory packages/provenance packages/common packages/research_kit packages/briefing packages/backtest packages/paper packages/source_health apps/ingest-worker apps/lab-cli apps/briefing-worker
+          ! git grep -n -E 'sign_l1_action|hl_trade|private_key|submit_order' -- packages/ingest packages/memory packages/provenance packages/common packages/research_kit packages/briefing packages/backtest packages/paper packages/source_health packages/desks packages/quant packages/delivery apps/ingest-worker apps/lab-cli apps/briefing-worker

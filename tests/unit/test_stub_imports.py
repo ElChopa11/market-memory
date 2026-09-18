@@ -7,18 +7,22 @@ from pathlib import Path
 import mm_backtest
 import mm_briefing
 import mm_common
+import mm_delivery
+import mm_desks
 import mm_execution
 import mm_ingest
 import mm_lab_cli
 import mm_memory
 import mm_paper
 import mm_provenance
+import mm_quant
 import mm_research_kit
 import mm_risk
 import mm_source_health
 import mm_unicorn
 
 ROOT = Path(__file__).resolve().parents[2]
+PHASE5 = {mm_desks, mm_quant, mm_delivery}
 PHASE4 = {mm_memory, mm_backtest, mm_paper, mm_lab_cli, mm_source_health}
 PHASE3 = {mm_briefing}
 PHASE1 = {mm_ingest, mm_provenance}
@@ -48,9 +52,14 @@ def test_stubs_import_and_are_hard_gated() -> None:
         mm_unicorn,
         mm_lab_cli,
         mm_source_health,
+        mm_desks,
+        mm_quant,
+        mm_delivery,
     ):
         assert mod.LIVE_TRADING_ENABLED is False
-        if mod in PHASE4:
+        if mod in PHASE5:
+            expected_phase = 5
+        elif mod in PHASE4:
             expected_phase = 4
         elif mod in PHASE3:
             expected_phase = 3

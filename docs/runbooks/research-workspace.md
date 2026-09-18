@@ -69,7 +69,7 @@ Gates:
 | `paper` | skeptic `pass`, evidence, paper artifact with invalidation + max loss |
 | `live` | **blocked** until Phase 6 |
 
-`./scripts/check-lifecycle.sh` refuses `thesis.md` without `intent.md` and refuses `in_skeptic` without evidence links.
+`./scripts/check-lifecycle.sh` refuses `thesis.md` without `intent.md` and refuses `in_skeptic` without evidence links. Phase 5a: Skeptic FAIL return/archive and Risk BLOCK rules live in `mm_research_kit.state_machine` (see [desks.md](desks.md)).
 
 ## Skeptic checklist
 

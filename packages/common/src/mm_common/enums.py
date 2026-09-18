@@ -58,6 +58,21 @@ class SkepticVerdict(StrEnum):
     REJECT = "reject"
 
 
+class RiskDecision(StrEnum):
+    """Tier 6 outcome. BLOCK is terminal without Principal override."""
+
+    PENDING = "pending"
+    ALLOW = "allow"
+    BLOCK = "block"
+
+
+class SkepticFailMode(StrEnum):
+    """Principal FAIL language over closed Skeptic verdicts."""
+
+    RETURN = "return"  # revise → in_research
+    ARCHIVE = "archive"  # reject → rejected
+
+
 SOURCE_KIND_VALUES = tuple(kind.value for kind in SourceKind)
 EVIDENCE_TYPE_VALUES = tuple(kind.value for kind in EvidenceType)
 DATA_QUALITY_VALUES = tuple(kind.value for kind in DataQuality)
@@ -65,6 +80,8 @@ OBSERVATION_RELATION_VALUES = tuple(kind.value for kind in ObservationRelation)
 THESIS_STATUS_VALUES = tuple(kind.value for kind in ThesisStatus)
 EVIDENCE_ROLE_VALUES = tuple(kind.value for kind in EvidenceRole)
 SKEPTIC_VERDICT_VALUES = tuple(kind.value for kind in SkepticVerdict)
+RISK_DECISION_VALUES = tuple(kind.value for kind in RiskDecision)
+SKEPTIC_FAIL_MODE_VALUES = tuple(kind.value for kind in SkepticFailMode)
 
 
 class ResearchRunKind(StrEnum):

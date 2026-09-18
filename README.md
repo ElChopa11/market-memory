@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 4 — backtest + paper ledger.** Reproducible fixture replay (`params_hash`), adversarial look-ahead tests, and a shadow paper ledger bound to theses. Phase 1 ingest, Phase 2 thesis workspaces, and Phase 3 Market Pulse remain (Principal Phase 2 US pre-market DoD lives on that pulse substrate). **No live trading, no order signing, no wallet code.**
+**Status: Phase 5 in progress (5a desk boundaries).** Phase 4 backtest + paper ledger remain. 5a is docs + CI import walls + lifecycle skeleton + output-contract template. **No live trading, no order signing, no wallet code, no Polygon client, no Telegram send.** 5b (Polygon equities + HL structure) is queued as IMP-010, not this tree.
 
 ## Start here
 
@@ -23,7 +23,9 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ops/desk-charters.md](ops/desk-charters.md) | Desk operating model (private research lab, not a fund) |
 | [ops/decision-rights.md](ops/decision-rights.md) | Propose / challenge / veto / approve — Principal-only gates |
 | [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
+| [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5a:** Tier 0–7 desk boundaries (no adapters, no Telegram) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
+| [ADR/0002-desk-delivery-architecture.md](ADR/0002-desk-delivery-architecture.md) | Phase 5 desk/delivery architecture (5a committed; 5b–5e follow-ons) |
 
 Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17). Ingest membership stays full: Hyperliquid **BTC, ETH, UNI, AAVE** perps; equities **NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM** are a Phase 3 briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority** — **in-universe membership** (thesis priority; not a Quant verdict): BTC, NVDA, AVGO, MSFT, META, JPM, XOM; **watch-only** (still ingested / still in membership; no thesis-priority): ETH, UNI, AAVE, SMH, XLF (Skeptic PR #14 / call cards PR #13 / FAIL-patch PR #23). Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY) stay archived. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 
@@ -100,7 +102,7 @@ templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
 config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen
-packages/         common, memory, ingest, provenance, briefing, …
+packages/         common, memory, ingest, provenance, briefing, desks, quant, delivery, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)
 scripts/          bootstrap + lifecycle checker
@@ -112,9 +114,9 @@ scripts/          bootstrap + lifecycle checker
 1. Read-only ingest + Market Memory (merged)
 2. Research workspace (merged)
 3. Market Pulse (merged)
-4. Backtest + paper ledger **(this tree)**
-5. Deterministic risk + simulated execution
+4. Backtest + paper ledger (merged)
+5. **in progress** — 5a desk boundaries (this tree). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check (IMP-010, parked). 5c–5d follow-on PRs. 5e delivery (Telegram/schedules) deferred. Risk *service* / simulated execution are **not** 5a.
 6. Tiny manually approved live (optional)
 7. Learning loop
 
-Out of scope for Phase 4: risk/execution services, dashboards, Unicorn Hunter logic, live keys, alert spam without thresholds.
+Out of scope for Phase 5a: Polygon/HL new adapters, quant factor implementations, desk full runners, Telegram client, schedules, secrets, `live.yaml` changes, order/signing code, paid deps, risk/execution services, dashboards, Unicorn Hunter logic, alert spam without thresholds.

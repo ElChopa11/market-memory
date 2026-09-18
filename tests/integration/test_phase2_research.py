@@ -58,8 +58,8 @@ def _seed_observation(session) -> str:
 def test_phase2_tables_exist(postgres_dsn: str) -> None:
     engine = make_engine(postgres_dsn)
     tables = set(inspect(engine).get_table_names())
-    assert {"thesis", "thesis_evidence", "skeptic_review"} <= tables
-    assert current_revision(postgres_dsn) == "0005_knowledge_lockstep"
+    assert {"thesis", "thesis_evidence", "skeptic_review", "thesis_status_event"} <= tables
+    assert current_revision(postgres_dsn) == "0006_phase5a_status_events"
 
 
 def test_thesis_evidence_and_rejected_retention(db_session, tmp_path: Path) -> None:
@@ -141,6 +141,46 @@ def test_thesis_evidence_and_rejected_retention(db_session, tmp_path: Path) -> N
     assert read_status(created.path) == "rejected"
     reviews = list(db_session.scalars(select(SkepticReview).where(SkepticReview.thesis_id == record.thesis.id)).all())
     assert reviews and reviews[0].verdict == "reject"
+
+
+def test_thesis_status_event_log_hook(db_session, tmp_path: Path) -> None:
+    created = create_thesis_from_intent(
+        research_root=tmp_path / "research",
+        templates_root=TEMPLATES,
+        spec=ThesisSpec(
+            goal="BTC funding fade",
+            owner="Research",
+            instrument="BTC",
+            hypothesis="Crowding unwinds.",
+        ),
+        repo_root=tmp_path,
+    )
+    repo = ThesisRepository(db_session)
+    record = repo.upsert(
+        slug=created.slug,
+        status=created.status,
+        author_role="Research",
+        artifact_git_path=created.artifact_git_path,
+        artifact_content_hash=created.artifact_content_hash,
+        instrument="BTC",
+    )
+    ts = datetime(2026, 9, 18, tzinfo=timezone.utc)
+    event = repo.log_status_event(
+        thesis_id=record.thesis.id,
+        from_status="in_research",
+        to_status="in_skeptic",
+        actor="Coordinator",
+        ts=ts,
+        reason="lab thesis advance",
+        risk_decision="pending",
+        principal_override=False,
+    )
+    db_session.flush()
+    assert event.actor == "Coordinator"
+    assert event.ts == ts
+    assert event.reason == "lab thesis advance"
+    assert event.from_status == "in_research"
+    assert event.to_status == "in_skeptic"
 
 
 def test_ulid_helper_still_26() -> None:

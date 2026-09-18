@@ -142,11 +142,30 @@ def cmd_thesis_link_evidence(args: Namespace) -> int:
 
 def cmd_thesis_advance(args: Namespace) -> int:
     workspace = find_workspace(args.research_root, args.slug)
-    status = advance_status(workspace, args.to)
+    actor = "Coordinator"
+    reason = "lab thesis advance"
     ctx = _maybe_session(args)
     if ctx is not None:
         with ctx as session:
+            thesis_id = _upsert_workspace(session, workspace, args.repo_root)
+            repo = ThesisRepository(session)
+
+            def hook(log) -> None:
+                repo.log_status_event(
+                    thesis_id=thesis_id,
+                    from_status=log.from_status,
+                    to_status=log.to_status,
+                    actor=log.actor,
+                    ts=log.ts,
+                    reason=log.reason,
+                    risk_decision=log.risk_decision,
+                    principal_override=log.principal_override,
+                )
+
+            status = advance_status(workspace, args.to, actor=actor, reason=reason, hook=hook)
             _upsert_workspace(session, workspace, args.repo_root, status=status)
+    else:
+        status = advance_status(workspace, args.to, actor=actor, reason=reason)
     _print({"slug": workspace.name, "status": status, "path": str(workspace)})
     return 0
 

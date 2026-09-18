@@ -114,13 +114,27 @@ Research desk = Crypto / Equities & Post-IPO / Macro & Cross-Asset as applicable
 
 | AGENTS.md role | Desk in this model |
 |---|---|
-| Principal | Principal |
-| Coordinator | Chief of Staff / Hive Coordinator (Don) |
-| Intel / ingest | Data & Market Memory Desk |
-| Research | Crypto Desk; Equities & Post-IPO Desk; Macro & Cross-Asset Desk |
-| Skeptic | Independent Skeptic |
+| Principal | Principal (Tier 0) |
+| Coordinator | Chief of Staff / Hive Coordinator (Don) (Tier 1) |
+| Intel / ingest | Data & Market Memory Desk (Tier 2) |
+| Research | Crypto Desk (3a); Equities & Post-IPO Desk (3b); Macro & Cross-Asset Desk (not numbered) |
+| Quant | Quant & Market Structure Desk (Tier 4) |
+| Skeptic | Independent Skeptic (Tier 5) |
 | Briefing | Macro & Cross-Asset Desk (Pulse) |
-| Risk | Risk (independent veto) |
-| Paper | Lab control under Principal (not a trading desk) |
+| Risk | Risk (independent veto) (Tier 6) |
+| Paper | Lab control under Principal — Paper Ledger (Tier 7) |
 | Execution | Execution & Fund Ops (**future only**) |
 | Unicorn | Adjacent later cell; not a desk here |
+
+## Tiers, FAIL, BLOCK, no self-approve
+
+Canonical delivery tiers (Phase 5a): **0 Principal · 1 Ops/CoS · 2 Intel · 3a Crypto · 3b Equities · 4 Quant · 5 Skeptic · 6 Risk · 7 Paper Ledger**. See [desk-charters.md](desk-charters.md) and [AGENTS.md](../AGENTS.md).
+
+| Event | Binding rule |
+|---|---|
+| Skeptic FAIL **return** (`revise`) | Thesis → `in_research`. Independent re-review. No self-approve. |
+| Skeptic FAIL **archive** (`reject`) | Thesis → `rejected` (terminal learning record). New intent to revive. |
+| Risk **BLOCK** | **Terminal.** No paper/live. Only Principal override. Proposing desk cannot lift it. |
+| Self-approve | Fail the gate. Author ≠ Skeptic ≠ Risk allow ≠ Principal override |
+
+Delivery (Telegram / schedules) is **Phase 5e**, not a 5a approve path.

@@ -10,6 +10,8 @@ members = [
     "mm-briefing-worker",
     "mm-common",
     "mm-dashboard",
+    "mm-delivery",
+    "mm-desks",
     "mm-execution",
     "mm-execution-service",
     "mm-ingest",
@@ -18,6 +20,7 @@ members = [
     "mm-memory",
     "mm-paper",
     "mm-provenance",
+    "mm-quant",
     "mm-research-kit",
     "mm-risk",
     "mm-risk-service",
@@ -247,6 +250,8 @@ dependencies = [
     { name = "mm-briefing" },
     { name = "mm-briefing-worker" },
     { name = "mm-common" },
+    { name = "mm-delivery" },
+    { name = "mm-desks" },
     { name = "mm-execution" },
     { name = "mm-ingest" },
     { name = "mm-ingest-worker" },
@@ -254,6 +259,7 @@ dependencies = [
     { name = "mm-memory" },
     { name = "mm-paper" },
     { name = "mm-provenance" },
+    { name = "mm-quant" },
     { name = "mm-research-kit" },
     { name = "mm-risk" },
     { name = "mm-source-health" },
@@ -272,6 +278,8 @@ requires-dist = [
     { name = "mm-briefing", editable = "packages/briefing" },
     { name = "mm-briefing-worker", editable = "apps/briefing-worker" },
     { name = "mm-common", editable = "packages/common" },
+    { name = "mm-delivery", editable = "packages/delivery" },
+    { name = "mm-desks", editable = "packages/desks" },
     { name = "mm-execution", editable = "packages/execution" },
     { name = "mm-ingest", editable = "packages/ingest" },
     { name = "mm-ingest-worker", editable = "apps/ingest-worker" },
@@ -279,6 +287,7 @@ requires-dist = [
     { name = "mm-memory", editable = "packages/memory" },
     { name = "mm-paper", editable = "packages/paper" },
     { name = "mm-provenance", editable = "packages/provenance" },
+    { name = "mm-quant", editable = "packages/quant" },
     { name = "mm-research-kit", editable = "packages/research_kit" },
     { name = "mm-risk", editable = "packages/risk" },
     { name = "mm-source-health", editable = "packages/source_health" },
@@ -430,6 +439,16 @@ version = "0.1.0"
 source = { editable = "apps/dashboard" }
 
 [[package]]
+name = "mm-delivery"
+version = "0.1.0"
+source = { editable = "packages/delivery" }
+
+[[package]]
+name = "mm-desks"
+version = "0.1.0"
+source = { editable = "packages/desks" }
+
+[[package]]
 name = "mm-execution"
 version = "0.1.0"
 source = { editable = "packages/execution" }
@@ -550,6 +569,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "mm-common", editable = "packages/common" }]
+
+[[package]]
+name = "mm-quant"
+version = "0.1.0"
+source = { editable = "packages/quant" }
 
 [[package]]
 name = "mm-research-kit"

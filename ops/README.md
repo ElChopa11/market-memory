@@ -21,5 +21,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Membership vocabulary (IMP-005) is **DONE** (#35). Keys are `in_universe` / `watch_only`.
 - Post-IPO reclaim screen (IMP-006) is **DONE** (#36). Equities desk product; not a trading decision.
 - Dedicated crypto / equities thesis-card templates (IMP-007) are **DONE** (#37). Generic `thesis.md` stays the lifecycle spine.
-- Quant locked-membership RESEARCH_PRIORITY pass (IMP-008) is **IN_REVIEW**. Screenshot/TV board remains IMP-001.
+- Quant locked-membership RESEARCH_PRIORITY pass (IMP-008) is **DONE** (#38).
+- Phase 5a desk boundaries (IMP-009) is **IN_REVIEW**. Tiers 0–7; import walls; no Polygon/Telegram.
+- Phase 5b Polygon equities + HL structure (IMP-010) is **READY** (parked). Do not implement in 5a.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

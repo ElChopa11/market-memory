@@ -4,11 +4,15 @@ Artifacts live under `research/YYYY/THESIS-XXXX/` and are copied from `templates
 
 ## Status machine
 
-`draft` → `in_research` → `in_skeptic` → `paper` → `live` (Principal only) → `retired`
+`draft` → `in_research` → `in_skeptic` → `paper` → `live` (Principal only; later phase) → `retired`
 
 Any stage may go to `rejected`. **Rejected theses stay queryable learning records** (git workspace retained; `lab thesis list --status rejected`). Revival requires a new intent, not a silent reopen.
 
-Phase 4 implements through paper. `live` remains later and the CLI refuses it.
+**Skeptic FAIL:** `revise` **returns** the thesis to `in_research`; `reject` **archives** it as `rejected`. **Risk BLOCK** is terminal without Principal override (no paper/live). **No self-approve.**
+
+Phase 4/5a implements through paper. `live` remains later and the CLI refuses it.
+
+Transition log hook (Market Memory `thesis_status_event`): `actor`, `ts`, `reason` plus from/to status. `lab thesis advance` writes the row when DB is connected. Shape: `mm_research_kit.state_machine.TransitionLog`.
 
 ## Artifact chain and definition of done
 

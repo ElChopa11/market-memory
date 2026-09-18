@@ -1,7 +1,7 @@
 [project]
 name = "market-memory"
 version = "0.1.0"
-description = "Private AI-native trading intelligence lab (Hyperliquid-first). Phase 4 backtest + paper ledger."
+description = "Private AI-native trading intelligence lab (Hyperliquid-first). Phase 5a desk boundaries over Phase 4 backtest + paper ledger."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -17,6 +17,9 @@ dependencies = [
   "mm-briefing",
   "mm-source-health",
   "mm-unicorn",
+  "mm-desks",
+  "mm-quant",
+  "mm-delivery",
   "mm-lab-cli",
   "mm-ingest-worker",
   "mm-briefing-worker",
@@ -47,6 +50,9 @@ mm-execution = { workspace = true }
 mm-briefing = { workspace = true }
 mm-source-health = { workspace = true }
 mm-unicorn = { workspace = true }
+mm-desks = { workspace = true }
+mm-quant = { workspace = true }
+mm-delivery = { workspace = true }
 mm-lab-cli = { workspace = true }
 mm-ingest-worker = { workspace = true }
 mm-briefing-worker = { workspace = true }
