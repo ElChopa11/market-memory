@@ -90,8 +90,12 @@ def test_imp033_required_fields_and_lock() -> None:
     assert "Cerebras Systems Inc" in block
     assert "semis_ai" in block
     assert "MOVED from idio" in block
-    assert "SAMSUN" in block and "KOSDA" in block and "PURR" in block
-    assert "VVVUSD" in block and "CHIPIUSD" in block
+    assert "HL:CHIP" in block
+    assert "display CHIPIUSD" in block
+    assert "HL:VVV" in block
+    assert "HL:PURR" in block
+    assert "Still unresolved (out of ideas until Principal paste):** SAMSUN, KOSDA." in block
+    assert "PURR, VVVUSD, CHIPIUSD" not in block
     assert "until Principal paste" in block
     assert "NEW_LISTING" in block
     assert "n/a (insufficient history:" in block
@@ -132,7 +136,10 @@ def test_imp033_plan_points_at_imp020_and_sister() -> None:
     assert "NASDAQ:SPCX" in plan
     assert "NASDAQ:CBRS" in plan
     assert "semis_ai" in plan
-    assert "SAMSUN" in plan and "CHIPIUSD" in plan
+    assert "HL:CHIP" in plan and "HL:VVV" in plan and "HL:PURR" in plan
+    assert "SAMSUN" in plan and "KOSDA" in plan
+    assert "Still unresolved" in plan and "SAMSUN, KOSDA." in plan
+    assert "PURR, VVVUSD, CHIPIUSD" not in plan
     assert "Do not invent" in plan or "do not invent" in plan.lower()
     assert "NEW_LISTING" in plan
     assert "n/a (insufficient history:" in plan

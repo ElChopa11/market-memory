@@ -28,8 +28,11 @@ Membership is not a call. No universe expand. Do not invent tickers.
 |---|---|---|---|
 | SPCX | NASDAQ:SPCX | Space Exploration Technologies Corp (SpaceX). USD. **NOT** SPAC ETF / CAD DRC / memecoin | `idio` (pending corr) |
 | CBRS | NASDAQ:CBRS | Cerebras Systems Inc. USD. IPO 2026-05-14 @ $185 | `semis_ai` (**MOVED** from `idio`) |
+| CHIPIUSD | HL:CHIP | Hyperliquid coin CHIP; display CHIPIUSD | — |
+| VVVUSD | HL:VVV | exchange-qualified | — |
+| PURR | HL:PURR | exchange-qualified | — |
 
-**Still unresolved** (out of ideas until Principal paste — do not guess): SAMSUN, KOSDA, PURR, VVVUSD, CHIPIUSD.
+**Still unresolved** (out of ideas until Principal paste — do not guess): SAMSUN, KOSDA.
 
 ### NEW_LISTING (<200 daily bars)
 
@@ -46,7 +49,7 @@ EDGAR confirm for CBRS + SPCX — **do not assume 180d**. Lockup inside horizon 
 ## Outcome
 
 - Queue: IMP-032 DONE (#57). IMP-033 this thread (only `IN_PROGRESS`). OPEN incidents untouched (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV).
-- Versioned `config/watchlist/monitor.yaml` encodes the lock + tiers/clusters (crypto then base) plus resolved SPCX/CBRS aliases and NEW_LISTING / LOCKUP WATCH rules.
+- Versioned `config/watchlist/monitor.yaml` encodes the lock + tiers/clusters (crypto then base) plus resolved SPCX/CBRS/CHIPIUSD/VVVUSD/PURR aliases and NEW_LISTING / LOCKUP WATCH rules.
 - `lab watchlist scan` (or equivalent) becomes config-backed. Existing IMP-020 product, ADR 0009, and runbook stay the product SoT.
 - Ops does not publish / send until the scan is config-backed.
 - Implementation PR: sister agent `bc-3c465873` *Canonical watchlist monitor.yaml Principal lock* (link when opened).
@@ -69,7 +72,7 @@ EDGAR confirm for CBRS + SPCX — **do not assume 180d**. Lockup inside horizon 
 
 ## Non-goals
 
-Reopening IMP-020. Re-implementing the monitor. Universe ticker expansion. Inventing unresolved aliases (SAMSUN, KOSDA, PURR, VVVUSD, CHIPIUSD). Treating membership as a call. Closing OPEN incidents. `live.yaml`. Signing. Redis. Delivery send. Auto-publish Telegram before config-backed. Assuming 180d lockup without EDGAR. Paid data.
+Reopening IMP-020. Re-implementing the monitor. Universe ticker expansion. Inventing unresolved aliases (SAMSUN, KOSDA). Treating membership as a call. Closing OPEN incidents. `live.yaml`. Signing. Redis. Delivery send. Auto-publish Telegram before config-backed. Assuming 180d lockup without EDGAR. Paid data.
 
 ## Rollback
 
