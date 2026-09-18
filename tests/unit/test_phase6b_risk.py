@@ -81,18 +81,18 @@ def test_plain_allow_unchanged() -> None:
 def test_desk_wires_untradeable_into_risk() -> None:
     result = run_from_fixture(UNTRADE, repo_root=ROOT)
     by = {row.slug: row for row in result.desks}
-    assert by["flow"].payload["verdicts"]["BTC"] == "UNTRADEABLE_AT_SIZE"
-    assert by["risk"].payload["decision"] == "block"
-    assert by["risk"].payload["rule_id"] == RULE_UNTRADEABLE
-    assert by["risk"].payload["terminal"] is True
+    assert by["intel"].payload["flow"]["verdicts"]["BTC"] == "UNTRADEABLE_AT_SIZE"
+    assert by["ic_risk"].payload["risk"]["decision"] == "block"
+    assert by["ic_risk"].payload["risk"]["rule_id"] == RULE_UNTRADEABLE
+    assert by["ic_risk"].payload["risk"]["terminal"] is True
 
 
 def test_desk_wires_event_risk_haircut() -> None:
     result = run_from_fixture(EVENT, repo_root=ROOT)
     by = {row.slug: row for row in result.desks}
-    assert by["macro"].payload["event_risk"]["tagged"] is True
-    assert by["risk"].payload["event_risk"] is True
-    assert by["risk"].payload["decision"] == "allow"
-    assert by["risk"].payload["rule_id"] == RULE_EVENT_RISK
-    assert by["risk"].payload["haircut_pct"] == 50.0
+    assert by["intel"].payload["macro"]["event_risk"]["tagged"] is True
+    assert by["ic_risk"].payload["risk"]["event_risk"] is True
+    assert by["ic_risk"].payload["risk"]["decision"] == "allow"
+    assert by["ic_risk"].payload["risk"]["rule_id"] == RULE_EVENT_RISK
+    assert by["ic_risk"].payload["risk"]["haircut_pct"] == 50.0
     assert "EVENT_RISK" in result.pack_markdown or "event_risk" in result.pack_markdown

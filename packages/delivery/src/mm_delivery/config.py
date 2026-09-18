@@ -209,9 +209,9 @@ def load_telegram_settings(root: Path | None = None, *, path: Path | None = None
             chat_id_env=env_name,
             thread_id=thread_id,
         )
-    if "coord" not in desks:
-        desks["coord"] = DeskRoute(
-            slug="coord",
+    if "ops" not in desks:
+        desks["ops"] = DeskRoute(
+            slug="ops",
             enabled=True,
             chat_id_env=CHAT_ID_ENV,
             thread_id=None,

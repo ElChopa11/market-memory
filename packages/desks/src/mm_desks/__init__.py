@@ -1,18 +1,25 @@
-"""Phase 5d desk runners + Phase 6a PG LISTEN/NOTIFY mesh + Phase 6b flow/macro + Phase 6c PLAYBOOK (no Redis).
+"""Phase 5d desk runners + Phase 6a PG LISTEN/NOTIFY mesh + Phase 6b flow/macro sleeves + Phase 6c-1 five-desk roster (no Redis).
 
 Must not depend on the mm_execution module or signing surfaces. Intel ingest
-must not import this package. Telegram send is `mm_delivery.deliver` (Phase 5e / 6c fan-out).
+must not import this package. Telegram send is `mm_delivery.deliver` (Ops-owned).
+# Boundary comment: packages here must not import mm_execution (statement form is gated).
 """
 
-from mm_desks.crypto import CRYPTO_DESK, CRYPTO_TIER
-from mm_desks.equities import EQUITIES_DESK, EQUITIES_TIER
 from mm_desks.mesh import mesh_from_fixture
 from mm_desks.orchestrator import PIPELINE, run_desks, run_from_fixture
 from mm_desks.playbook import run_playbook_from_fixture
 from mm_desks.protocol import DEGRADED, FAILED, OK, DeskOutput, DeskStatus
+from mm_desks.research import RESEARCH, DISPLAY_NAME as RESEARCH_DESK
+from mm_desks.roster import IC_RISK, INTEL, OPS, PUBLISHING_DESKS, QUANT
 
 __phase__ = 6
 LIVE_TRADING_ENABLED = False
+
+# Retired sleeve aliases (crypto/equities are Research, not publishing desks).
+CRYPTO_DESK = "Research (Investment Research) / crypto sleeve"
+CRYPTO_TIER = "3a"
+EQUITIES_DESK = "Research (Investment Research) / equities sleeve"
+EQUITIES_TIER = "3b"
 
 __all__ = [
     "CRYPTO_DESK",
@@ -21,9 +28,16 @@ __all__ = [
     "EQUITIES_DESK",
     "EQUITIES_TIER",
     "FAILED",
+    "IC_RISK",
+    "INTEL",
     "LIVE_TRADING_ENABLED",
     "OK",
+    "OPS",
     "PIPELINE",
+    "PUBLISHING_DESKS",
+    "QUANT",
+    "RESEARCH",
+    "RESEARCH_DESK",
     "DeskOutput",
     "DeskStatus",
     "mesh_from_fixture",

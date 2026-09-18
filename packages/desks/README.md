@@ -1,6 +1,8 @@
 # mm-desks
 
-Phase 5d **desk runners** plus Phase 6a **PG LISTEN/NOTIFY mesh** (no Redis) plus Phase 6b **flow/macro desks** plus Phase 6c **PLAYBOOK ladder**. Crypto (Tier 3a) and Equities (Tier 3b) plus Intel assemble, Flow, Macro, Quant, Skeptic, Risk, Coord pack, and `lab playbook run`.
+Phase 5d **desk runners** plus Phase 6a **PG LISTEN/NOTIFY mesh** (no Redis) plus Phase 6b **flow/macro Intel sleeves** plus Phase 6c **PLAYBOOK ladder** plus Phase 6c-1 **five-desk roster** (Intel, Research, Quant, IC/Risk, Ops). Don/Coord is orchestration only.
+
+# Boundary: a comment containing mm_execution must not fail CI (statement-anchored grep).
 
 Protocol: `run(as_of, ctx) -> DeskOutput` with `OK|DEGRADED|FAILED`, cadence, envelope header, `content_hash`.
 

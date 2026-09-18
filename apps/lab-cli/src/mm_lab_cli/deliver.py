@@ -25,7 +25,7 @@ def add_deliver_parser(sub) -> None:
         "test",
         help="manual real send of a one-line ping (operator-only; pytest never hits live API)",
     )
-    test_p.add_argument("--desk", default="coord", help="desk slug (route + TELEGRAM_CHAT_ID[_DESK])")
+    test_p.add_argument("--desk", default="ops", help="desk slug (route + TELEGRAM_CHAT_ID[_DESK])")
     test_p.add_argument("--repo-root", type=Path, default=Path("."))
     test_p.add_argument("--out", type=Path, help="write payload under briefs/ (default: repo root)")
     test_p.add_argument("--ignore-quiet-hours", action="store_true")
@@ -46,7 +46,7 @@ def add_deliver_parser(sub) -> None:
 
 
 def _add_pack_args(parser) -> None:
-    parser.add_argument("--desk", default="coord", help="desk slug to route (default coord)")
+    parser.add_argument("--desk", default="ops", help="desk slug to route (default ops)")
     parser.add_argument("--fixture", type=Path, help="frozen-day fixture; runs desk pipeline then delivers pack")
     parser.add_argument("--from-markdown", type=Path, help="deliver this markdown file instead of a fixture pack")
     parser.add_argument("--as-of", help="UTC as_of_knowledge (required with --from-markdown)")
@@ -75,13 +75,13 @@ def dispatch_deliver(args: Namespace) -> int:
         send = _want_send(args)
         if send is None:
             return 2
-        loaded = _load_source(args, Path(args.repo_root).resolve(), str(getattr(args, "desk", None) or "coord"))
+        loaded = _load_source(args, Path(args.repo_root).resolve(), str(getattr(args, "desk", None) or "ops"))
         if loaded is None:
             return 2
         markdown, as_of, completeness, session_date, extra = loaded
         result = fanout_desk(
             markdown,
-            desk=str(getattr(args, "desk", None) or "coord"),
+            desk=str(getattr(args, "desk", None) or "ops"),
             as_of=as_of,
             send=bool(send),
             completeness_pct=completeness,
@@ -117,7 +117,7 @@ def _cmd_pack(args: Namespace) -> int:
         print("lab deliver: SEND_ENABLED must stay false; pass --send into deliver()", file=sys.stderr)
         return 2
     root = Path(args.repo_root).resolve()
-    desk = str(getattr(args, "desk", None) or "coord")
+    desk = str(getattr(args, "desk", None) or "ops")
     loaded = _load_source(args, root, desk)
     if loaded is None:
         return 2
@@ -193,7 +193,7 @@ def _load_source(args: Namespace, root: Path, desk: str):
         as_of = parse_utc(str(as_of_raw))
         markdown = path.read_text(encoding="utf-8")
         return markdown, as_of, 100.0, as_of.date().isoformat(), {}
-    if desk not in PIPELINE and desk not in {"macro", "briefing"}:
+    if desk not in PIPELINE:
         print(f"unknown desk {desk!r}; choose from {', '.join(PIPELINE)}", file=sys.stderr)
         return None
     result = run_from_fixture(
@@ -203,7 +203,7 @@ def _load_source(args: Namespace, root: Path, desk: str):
         send=False,
     )
     markdown = result.pack_markdown or ""
-    if desk != "coord":
+    if desk != "ops":
         for row in result.desks:
             if row.slug != desk:
                 continue
@@ -213,7 +213,7 @@ def _load_source(args: Namespace, root: Path, desk: str):
                     break
     completeness = 100.0
     for row in result.desks:
-        if row.slug == desk or (desk == "coord" and row.slug == "coord"):
+        if row.slug == desk or (desk == "ops" and row.slug == "ops"):
             completeness = float(row.completeness_pct)
             break
     extra = {"fixture_id": result.fixture_id, "desk_content_hash": result.content_hash}

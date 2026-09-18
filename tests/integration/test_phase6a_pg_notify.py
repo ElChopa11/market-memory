@@ -75,19 +75,19 @@ def test_persist_is_idempotent_and_notify_is_lightweight(db_session, postgres_ds
 def test_killed_desk_still_assembles_from_postgres(db_session, postgres_dsn: str) -> None:
     store = PostgresEnvelopeStore(db_session)
     bus = PostgresBus(postgres_dsn)
-    result = mesh_from_fixture(FIXTURE, repo_root=ROOT, killed=("equities",), store=store, bus=bus)
+    result = mesh_from_fixture(FIXTURE, repo_root=ROOT, killed=("research",), store=store, bus=bus)
     db_session.commit()
     by_desk = {env.desk: env for env in result.assemble.envelopes}
-    assert by_desk["equities"].status == FAILED
-    assert by_desk["equities"].error_class == "desk_killed"
+    assert by_desk["research"].status == FAILED
+    assert by_desk["research"].error_class == "desk_killed"
     assert result.assemble.status == FAILED
-    row = store.latest("equities", result.as_of_knowledge)
+    row = store.latest("research", result.as_of_knowledge)
     assert row is not None
     assert row.error_class == "desk_killed"
-    health = store.repo.get_health("equities")
+    health = store.repo.get_health("research")
     assert health is not None
     assert health.status == FAILED
-    again = mesh_from_fixture(FIXTURE, repo_root=ROOT, killed=("equities",), store=store, bus=bus)
+    again = mesh_from_fixture(FIXTURE, repo_root=ROOT, killed=("research",), store=store, bus=bus)
     assert again.content_hash == result.content_hash
-    count = db_session.execute(text("SELECT count(*) FROM desk_envelope WHERE desk = 'equities'")).scalar_one()
+    count = db_session.execute(text("SELECT count(*) FROM desk_envelope WHERE desk = 'research'")).scalar_one()
     assert int(count) == 1

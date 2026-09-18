@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +16,15 @@ import mm_quant
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECKER = ROOT / "scripts" / "check_import_boundaries.py"
+EXECUTION_IMPORT_RE = re.compile(r"^[ \t]*(import mm_execution|from mm_execution)\b", re.MULTILINE)
+
+
+def _load_checker():
+    spec = importlib.util.spec_from_file_location("check_import_boundaries", CHECKER)
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def test_import_boundary_script_passes() -> None:
@@ -29,7 +40,7 @@ def test_import_boundary_script_passes() -> None:
 
 
 def test_ci_execution_import_grep_matches_statements_not_comments() -> None:
-    """Same pattern as the pytest-and-lifecycle 'Opine packages cannot import mm_execution' step."""
+    """CI git grep is statement-anchored. Comments mentioning mm_execution must not match."""
     completed = subprocess.run(
         [
             "git",
@@ -51,12 +62,30 @@ def test_ci_execution_import_grep_matches_statements_not_comments() -> None:
         cwd=ROOT,
     )
     assert completed.returncode == 1, completed.stdout
-    for name in ("research_kit", "desks", "quant", "delivery", "flow", "macro"):
-        src = ROOT / "packages" / name / "src"
-        for path in src.rglob("*.py"):
-            text = path.read_text(encoding="utf-8")
-            assert "import mm_execution" not in text, path
-            assert "from mm_execution" not in text, path
+    comment_src = ROOT / "packages" / "desks" / "src" / "mm_desks" / "roster.py"
+    text = comment_src.read_text(encoding="utf-8")
+    assert "mm_execution" in text
+    assert EXECUTION_IMPORT_RE.search(text) is None
+
+
+def test_comment_containing_mm_execution_does_not_fail_ast_or_grep() -> None:
+    checker = _load_checker()
+    source = '''# operators must not import mm_execution or from mm_execution
+"""docs: never import mm_execution"""
+x = "from mm_execution import sign"
+'''
+    assert checker.execution_imports_from_source(source) == set()
+    assert EXECUTION_IMPORT_RE.search(source) is None
+
+
+def test_real_mm_execution_import_is_detected() -> None:
+    checker = _load_checker()
+    assert checker.execution_imports_from_source("import mm_execution\n") == {"mm_execution"}
+    assert checker.execution_imports_from_source("from mm_execution import foo\n") == {"mm_execution"}
+    assert EXECUTION_IMPORT_RE.search("import mm_execution\n")
+    assert EXECUTION_IMPORT_RE.search("from mm_execution.foo import bar\n")
+    assert EXECUTION_IMPORT_RE.search("  import mm_execution as x\n")
+    assert EXECUTION_IMPORT_RE.search("# import mm_execution\n") is None
 
 
 def test_skeleton_packages_are_hard_gated() -> None:
@@ -71,6 +100,8 @@ def test_skeleton_packages_are_hard_gated() -> None:
     assert mm_desks.__phase__ == 6
     assert mm_desks.CRYPTO_TIER == "3a"
     assert mm_desks.EQUITIES_TIER == "3b"
+    assert tuple(mm_desks.PIPELINE) == ("intel", "research", "quant", "ic_risk", "ops")
+    assert tuple(mm_desks.PUBLISHING_DESKS) == mm_desks.PIPELINE
     assert set(mm_quant.FactorRegistry().names()) == {
         "momentum_short",
         "momentum_long",

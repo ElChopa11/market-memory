@@ -2,12 +2,12 @@
 
 Research-only liquidity metrics for existing Hyperliquid structure and equities tape. **Not an order. Not Execution. Clip sizes are configured research notionals.**
 
-Package: `packages/flow` (`mm_flow`). Desk runner: `mm_desks.flow` (`lab desk run --desk flow`).
+Package: `packages/flow` (`mm_flow`). Intel sleeve (not a publishing desk): `mm_desks.flow` via `lab desk run --desk intel`.
 
 ## What operators can do
 
 ```bash
-uv run lab desk run --desk flow --fixture tests/fixtures/phase6b/frozen_day.json --no-send --no-db
+uv run lab desk run --desk intel --fixture tests/fixtures/phase6b/frozen_day.json --no-send --no-db
 uv run pytest tests/unit/test_phase6b_flow.py tests/adversarial/test_phase6b_point_in_time.py
 ```
 

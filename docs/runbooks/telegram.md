@@ -1,6 +1,6 @@
 # Telegram delivery (Phase 5e) + per-desk fan-out (Phase 6c)
 
-Coordinator delivery of desk packs over the **Telegram Bot API**, plus Phase 6c per-desk fan-out and Coord mirror. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.**
+Coordinator delivery of desk packs over the **Telegram Bot API**, plus Phase 6c per-desk fan-out and Ops mirror. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.** Delivery is **Ops-owned**. Coord/Don is orchestration only.
 
 Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md). Desk packs: [desks.md](desks.md). PLAYBOOK: [../playbook.md](../playbook.md). Secrets: [security-model.md](../security-model.md).
 
@@ -13,15 +13,15 @@ uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-
 uv run lab deliver pack --fixture tests/fixtures/phase5d/frozen_day.json --no-send --out /tmp/desk-run
 
 uv run lab deliver pack --from-markdown tests/fixtures/phase5e/desk-pack.md \
-  --as-of 2026-09-18T00:00:00Z --desk coord --no-send --out /tmp/desk-run
+  --as-of 2026-09-18T00:00:00Z --desk ops --no-send --out /tmp/desk-run
 
-# Per-desk fan-out + Coord mirror (same content_hash + footer; never re-rendered)
-uv run lab deliver fanout --desk crypto --from-markdown tests/fixtures/phase5e/desk-pack.md \
+# Per-desk fan-out + Ops mirror (same content_hash + footer; never re-rendered)
+uv run lab deliver fanout --desk research --from-markdown tests/fixtures/phase5e/desk-pack.md \
   --as-of 2026-09-18T00:00:00Z --no-send
 
 # Manual real send of a one-line ping (bot box only; never in pytest)
 # Requires TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in the environment.
-uv run lab deliver test --desk coord --i-mean-it --ignore-quiet-hours
+uv run lab deliver test --desk ops --i-mean-it --ignore-quiet-hours
 ```
 
 `--no-send` is the default. Pytest unsets `TELEGRAM_BOT_TOKEN` and refuses connections to `api.telegram.org`.
@@ -32,7 +32,7 @@ uv run lab deliver test --desk coord --i-mean-it --ignore-quiet-hours
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | live send | Bot token. Never git. Never dry-run files. |
 | `TELEGRAM_CHAT_ID` | live send | Default chat. |
-| `TELEGRAM_CHAT_ID_<DESK>` | optional | Per-desk override (`CRYPTO`, `EQUITIES`, `ALERTS`, `CHART`, `FLOW`, …). |
+| `TELEGRAM_CHAT_ID_<DESK>` | optional | Per-desk override (`INTEL`, `RESEARCH`, `QUANT`, `IC_RISK`, `ALERTS`). |
 
 `config/delivery/telegram.yaml` maps desk → **env var name** + optional forum `thread_id`. It must not contain token or chat id values. Copy `.env.example` placeholders only.
 
@@ -67,7 +67,7 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 ## Fan-out (Phase 6c)
 
-`lab deliver fanout --desk <slug>` delivers the desk channel then a Coord mirror of the **same** `content_hash` plus a footer. The body is not re-rendered. Chart PNG caption uses filename `{content_hash}.png`.
+`lab deliver fanout --desk <slug>` delivers the desk channel then an Ops mirror of the **same** `content_hash` plus a footer. The body is not re-rendered. Chart PNG caption uses filename `{content_hash}.png`. Publishing slugs: `intel` `research` `quant` `ic_risk` `ops`.
 
 ## Import walls
 

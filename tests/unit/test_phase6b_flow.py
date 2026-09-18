@@ -20,12 +20,13 @@ MISSING = ROOT / "tests" / "fixtures" / "phase6b" / "missing_feeds.json"
 
 
 def test_happy_path_liquidity_ok_and_max_clip() -> None:
-    result = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("flow",))
-    flow = result.desks[0]
-    assert flow.status == OK
-    assert flow.payload["verdicts"]["BTC"] == VERDICT_OK
-    assert flow.payload["max_clip_usd"]["BTC"] == 250000.0
-    snap = flow.payload["snapshots"][0]
+    result = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("intel",))
+    intel = result.desks[0]
+    flow = intel.payload["flow"]
+    assert intel.status == OK
+    assert flow["verdicts"]["BTC"] == VERDICT_OK
+    assert flow["max_clip_usd"]["BTC"] == 250000.0
+    snap = flow["snapshots"][0]
     by_name = {row["name"]: row for row in snap["metrics"]}
     assert by_name["funding_z"]["status"] == "ok"
     assert by_name["oi_delta"]["status"] == "ok"
@@ -36,17 +37,18 @@ def test_happy_path_liquidity_ok_and_max_clip() -> None:
 
 
 def test_untradeable_at_size_from_thin_book() -> None:
-    result = run_from_fixture(UNTRADE, repo_root=ROOT, slugs=("flow",))
-    flow = result.desks[0]
-    assert flow.payload["verdicts"]["BTC"] == VERDICT_UNTRADEABLE
-    assert flow.payload["max_clip_usd"]["BTC"] is None
+    result = run_from_fixture(UNTRADE, repo_root=ROOT, slugs=("intel",))
+    flow = result.desks[0].payload["flow"]
+    assert flow["verdicts"]["BTC"] == VERDICT_UNTRADEABLE
+    assert flow["max_clip_usd"]["BTC"] is None
 
 
 def test_missing_structure_degrades_never_invents() -> None:
-    result = run_from_fixture(MISSING, repo_root=ROOT, slugs=("flow",))
-    flow = result.desks[0]
-    assert flow.status != "FAILED"
-    snap = flow.payload["snapshots"][0]
+    result = run_from_fixture(MISSING, repo_root=ROOT, slugs=("intel",))
+    intel = result.desks[0]
+    flow = intel.payload["flow"]
+    assert intel.status != "FAILED"
+    snap = flow["snapshots"][0]
     assert snap["verdict"]["verdict"] in {VERDICT_OK, "THIN", VERDICT_UNTRADEABLE, "unavailable"}
     # Without extra L2, funding_z/oi/depth stay unavailable rather than invented.
     by_name = {row["name"]: row for row in snap["metrics"]}
@@ -70,7 +72,7 @@ def test_flow_observation_as_of_knowledge_lockstep() -> None:
 
 
 def test_double_run_flow_hash_stable() -> None:
-    first = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("flow",))
-    second = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("flow",))
+    first = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("intel",))
+    second = run_from_fixture(HAPPY, repo_root=ROOT, slugs=("intel",))
     assert first.content_hash == second.content_hash
     assert first.desks[0].content_hash() == second.desks[0].content_hash()

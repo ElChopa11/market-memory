@@ -1,33 +1,27 @@
-# Desk mesh cadence (Phase 6a / IMP-014 + Phase 6b / IMP-015).
+# Desk mesh cadence (Phase 6c-1 / IMP-018). Five publishing desks.
 # Principal lock: bus = Postgres LISTEN/NOTIFY (no Redis).
-# Regime header is filled from the Macro desk when IMP-015 succeeds.
+# Coord/Don is orchestration only — not a publishing desk.
+# Regime header is filled from Intel's macro sleeve when that run succeeds.
 
-version: "imp-015.1"
+version: "imp-018.1"
 regime_placeholder: unset
 default:
   cadence: daily
   op: observation
 
 # NOTIFY channels. Payloads are lightweight ids/keys; envelopes live in Market Memory.
+# coord.assemble remains the orchestration channel (not a desk slug).
 channels:
   - desk.intel.output
   - desk.intel.alert
-  - desk.crypto.output
-  - desk.crypto.alert
-  - desk.equities.output
-  - desk.equities.alert
-  - desk.flow.output
-  - desk.flow.alert
-  - desk.macro.output
-  - desk.macro.alert
+  - desk.research.output
+  - desk.research.alert
   - desk.quant.output
   - desk.quant.alert
-  - desk.skeptic.output
-  - desk.skeptic.alert
-  - desk.risk.output
-  - desk.risk.alert
-  - desk.coord.output
-  - desk.coord.alert
+  - desk.ic_risk.output
+  - desk.ic_risk.alert
+  - desk.ops.output
+  - desk.ops.alert
   - coord.assemble
   - dq.event
 
@@ -38,45 +32,23 @@ desks:
     output_channel: desk.intel.output
     alert_channel: desk.intel.alert
     dq_channel: dq.event
-  crypto:
+  research:
     cadence: daily
     op: observation
-    output_channel: desk.crypto.output
-    alert_channel: desk.crypto.alert
-  equities:
-    cadence: daily
-    op: observation
-    output_channel: desk.equities.output
-    alert_channel: desk.equities.alert
-  flow:
-    cadence: daily
-    op: observation
-    output_channel: desk.flow.output
-    alert_channel: desk.flow.alert
-    dq_channel: dq.event
-  macro:
-    cadence: daily
-    op: observation
-    output_channel: desk.macro.output
-    alert_channel: desk.macro.alert
-    dq_channel: dq.event
+    output_channel: desk.research.output
+    alert_channel: desk.research.alert
   quant:
     cadence: daily
     op: observation
     output_channel: desk.quant.output
     alert_channel: desk.quant.alert
-  skeptic:
-    cadence: daily
-    op: observation
-    output_channel: desk.skeptic.output
-    alert_channel: desk.skeptic.alert
-  risk:
+  ic_risk:
     cadence: daily
     op: paper
-    output_channel: desk.risk.output
-    alert_channel: desk.risk.alert
-  coord:
+    output_channel: desk.ic_risk.output
+    alert_channel: desk.ic_risk.alert
+  ops:
     cadence: daily
     op: observation
-    output_channel: coord.assemble
-    alert_channel: desk.coord.alert
+    output_channel: desk.ops.output
+    alert_channel: desk.ops.alert

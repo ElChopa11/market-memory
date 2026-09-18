@@ -1,17 +1,17 @@
-# Macro desk (Phase 6b / IMP-015)
+# Macro sleeve (Phase 6b / IMP-015; Intel-owned as of 6c-1)
 
-Cross-asset regime tag and calendar `EVENT_RISK` for the Macro & Cross-Asset Desk. **Not a call. Not an allocation.**
+Cross-asset regime tag and calendar `EVENT_RISK`. **Not a call. Not an allocation. Not a publishing desk.**
 
-Package: `packages/macro` (`mm_macro`). Desk runner: `mm_desks.macro` (`lab desk run --desk macro`).
+Package: `packages/macro` (`mm_macro`). Intel sleeve: `mm_desks.macro` via `lab desk run --desk intel`.
 
 ## What operators can do
 
 ```bash
-uv run lab desk run --desk macro --fixture tests/fixtures/phase6b/frozen_day.json --no-send --no-db
+uv run lab desk run --desk intel --fixture tests/fixtures/phase6b/frozen_day.json --no-send --no-db
 uv run pytest tests/unit/test_phase6b_macro.py tests/adversarial/test_phase6b_point_in_time.py
 ```
 
-A successful macro run **replaces the 6a envelope `regime: unset` placeholder** with the YAML tag. Missing VIX or DXY → tag `unavailable` / desk `DEGRADED`; other envelopes keep `unset`. Coord still assembles if macro is killed.
+A successful Intel macro sleeve **replaces the 6a envelope `regime: unset` placeholder** with the YAML tag. Missing VIX or DXY → tag `unavailable` / Intel `DEGRADED`; other envelopes keep `unset`. Ops still assembles if Intel is killed.
 
 ## Regime classifier
 

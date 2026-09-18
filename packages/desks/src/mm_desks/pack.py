@@ -15,13 +15,16 @@ def _desk(ctx: DeskContext, slug: str) -> DeskOutput | None:
     return ctx.prior.get(slug)
 
 
+def _intel_payload(ctx: DeskContext) -> dict:
+    intel = _desk(ctx, "intel")
+    return dict(intel.payload or {}) if intel else {}
+
+
 def _tape_rows(ctx: DeskContext) -> list[str]:
     rows: list[str] = []
-    for slug in ("crypto", "equities"):
-        out = _desk(ctx, slug)
-        if not out:
-            continue
-        for item in out.payload.get("tape") or []:
+    research = _desk(ctx, "research")
+    if research:
+        for item in research.payload.get("tape") or []:
             value = item.get("value")
             if value in (None, "", _UNAVAILABLE):
                 value = _UNAVAILABLE
@@ -50,27 +53,26 @@ def _gaps(ctx: DeskContext) -> list[str]:
     intel = _desk(ctx, "intel")
     if intel:
         for source_id in intel.payload.get("required_missing") or []:
-            rows.append(f"| {source_id} missing | Intel assemble DEGRADED | Data & Market Memory Desk |")
+            rows.append(f"| {source_id} missing | Intel assemble DEGRADED | Intel (Market Intelligence) |")
         for feed in intel.payload.get("feeds") or []:
             if feed.get("status") != "ok":
                 rows.append(
-                    f"| {feed.get('source_id')} {feed.get('status')} | not invented | Data & Market Memory Desk |"
+                    f"| {feed.get('source_id')} {feed.get('status')} | not invented | Intel (Market Intelligence) |"
                 )
     quant = _desk(ctx, "quant")
     if quant:
         for card in quant.payload.get("cards") or []:
             for gap in card.get("gaps") or []:
-                rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | Quant & Market Structure Desk |")
-    for slug in ("intel", "crypto", "equities", "flow", "macro", "quant", "skeptic", "risk"):
+                rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | Quant |")
+    for slug in ("intel", "research", "quant", "ic_risk"):
         out = _desk(ctx, slug)
         if out is not None and out.status == "FAILED":
             err = out.error_class or "desk_error"
-            rows.append(f"| {slug} {err} | Coord assembled with desk FAILED | {out.desk} |")
-    if _desk(ctx, "coord") is None:
-        rows.append("| coord pack | waiting on Coord assemble | Chief of Staff / Hive Coordinator |")
+            rows.append(f"| {slug} {err} | Ops assembled with desk FAILED | {out.desk} |")
+    if _desk(ctx, "ops") is None:
+        rows.append("| ops pack | waiting on Ops assemble | Ops |")
     if not rows:
         rows.append("| none listed | — | — |")
-    # Deduplicate while preserving order.
     seen: set[str] = set()
     out: list[str] = []
     for row in rows:
@@ -85,11 +87,13 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
     day = ctx.fixture
     thesis = ctx.thesis
     intel = _desk(ctx, "intel")
+    intel_payload = _intel_payload(ctx)
     quant = _desk(ctx, "quant")
-    flow = _desk(ctx, "flow")
-    macro = _desk(ctx, "macro")
-    skeptic = _desk(ctx, "skeptic")
-    risk = _desk(ctx, "risk")
+    ic_risk = _desk(ctx, "ic_risk")
+    skeptic_payload = (ic_risk.payload.get("skeptic") if ic_risk else None) or {}
+    risk_payload = (ic_risk.payload.get("risk") if ic_risk else None) or {}
+    flow_payload = intel_payload.get("flow") if isinstance(intel_payload.get("flow"), dict) else {}
+    macro_payload = intel_payload.get("macro") if isinstance(intel_payload.get("macro"), dict) else {}
     data_quality = "unavailable"
     if intel:
         data_quality = str(intel.payload.get("data_quality") or "partial")
@@ -97,26 +101,26 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
     lifecycle = thesis.status if thesis else "draft"
     quant_verdict = (quant.payload.get("verdict") if quant else None) or "unset"
     quant_reasons = ", ".join((quant.payload.get("reason_codes") if quant else None) or []) or "—"
-    skeptic_verdict = (skeptic.payload.get("verdict") if skeptic else None) or "pending"
-    fail_mode = skeptic.payload.get("fail_mode") if skeptic else None
+    skeptic_verdict = skeptic_payload.get("verdict") or "pending"
+    fail_mode = skeptic_payload.get("fail_mode")
     if fail_mode == "return":
         skeptic_verdict_label = "revise (FAIL return)"
     elif fail_mode == "archive":
         skeptic_verdict_label = "reject (FAIL archive)"
     else:
         skeptic_verdict_label = skeptic_verdict
-    risk_decision = (risk.payload.get("decision") if risk else None) or "pending"
-    rule_id = (risk.payload.get("rule_id") if risk else None) or "—"
-    config_version = (risk.payload.get("config_version") if risk else None) or "—"
-    terminal = "yes" if risk and risk.payload.get("terminal") else "no"
-    haircut = risk.payload.get("haircut_pct") if risk else None
+    risk_decision = risk_payload.get("decision") or "pending"
+    rule_id = risk_payload.get("rule_id") or "—"
+    config_version = risk_payload.get("config_version") or "—"
+    terminal = "yes" if risk_payload.get("terminal") else "no"
+    haircut = risk_payload.get("haircut_pct")
     regime_tag = "unset"
-    if macro and macro.regime and macro.regime != "unset":
-        regime_tag = str(macro.payload.get("regime_tag") or macro.regime)
-    elif intel:
-        regime_tag = str(intel.regime or "unset")
-    event_risk = ((macro.payload.get("event_risk") if macro else None) or {})
-    flow_verdicts = (flow.payload.get("verdicts") if flow else None) or {}
+    if intel and intel.regime and intel.regime != "unset":
+        regime_tag = str(intel_payload.get("regime_tag") or intel.regime)
+    elif macro_payload.get("regime_tag"):
+        regime_tag = str(macro_payload.get("regime_tag"))
+    event_risk = intel_payload.get("event_risk") or macro_payload.get("event_risk") or {}
+    flow_verdicts = flow_payload.get("verdicts") or {}
     flow_label = ", ".join(f"{k}={v}" for k, v in flow_verdicts.items()) or "unavailable"
     intent_row = "none"
     if thesis and thesis.intent:
@@ -126,8 +130,8 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
             f"{', '.join(thesis.evidence_ids) or '—'} |"
         )
     skeptic_findings = "—"
-    if skeptic and skeptic.notes:
-        skeptic_findings = "; ".join(skeptic.notes)
+    if ic_risk and ic_risk.notes:
+        skeptic_findings = "; ".join(ic_risk.notes)
     calendar = "\n".join(calendar_lines) if calendar_lines else "none"
 
     lines = [
@@ -135,14 +139,14 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "Research / desk product copy for the Principal. **Not an order. Not Execution. Not a Skeptic or Risk self-clear.**",
         "",
-        f"- **Engine:** imp-015.1",
+        f"- **Engine:** imp-018.1",
         f"- **Fixture:** {day.fixture_id}",
         "",
         "## HEADER",
         "",
         f"- **As-of (Australia/Sydney):** {in_ops_tz(as_of).isoformat()}",
         f"- **Knowledge watermark (as_of_knowledge):** {as_of.isoformat()}",
-        "- **Authoring desk / tier:** 3a Crypto | 3b Equities | 4 Quant | flow | macro | other: Coord pack",
+        "- **Authoring desk / tier:** Intel | Research | Quant | IC/Risk (two gates) | Ops pack",
         f"- **Universe membership:** `{membership}`",
         f"- **Lifecycle status:** `{lifecycle}`",
         f"- **Intent / thesis id:** {thesis.slug if thesis else '—'}",
@@ -206,7 +210,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "## DATA GAPS",
         "",
-        "Always list. Telegram delivery is 5e; per-desk fan-out + PLAYBOOK is Phase 6c (`lab playbook run --no-send`).",
+        "Always list. Telegram delivery is Ops-owned (`lab deliver --no-send`). Per-desk fan-out + PLAYBOOK is Phase 6c.",
         "",
         "| gap | impact | owner desk |",
         "| --- | --- | --- |",

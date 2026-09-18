@@ -1,7 +1,7 @@
 """Desk runner protocol (Phase 5d / IMP-012, mesh header in Phase 6a / IMP-014).
 
 Each desk implements ``run(as_of, ctx) -> DeskOutput``. Research-only.
-Must not depend on the execution package or signing surfaces. Telegram send is Coordinator delivery (`mm_delivery.deliver`), not the runner. The mesh bus is Postgres LISTEN/NOTIFY (no Redis).
+Must not depend on the execution package or signing surfaces. Telegram send is Ops-owned delivery (`mm_delivery.deliver`), not the runner. Coord/Don is orchestration only. The mesh bus is Postgres LISTEN/NOTIFY (no Redis).
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.time import as_utc
 from mm_research_kit.state_machine import TransitionLog
 
-ENGINE_VERSION = "imp-015.1"
+ENGINE_VERSION = "imp-018.1"
 LIVE_TRADING_ENABLED = False
 REGIME_PLACEHOLDER = "unset"
 OP_OBSERVATION = "observation"
@@ -93,7 +93,7 @@ class DeskOutput:
             object.__setattr__(self, "n", len(self.artifacts))
 
     def header(self) -> dict[str, Any]:
-        """Principal Phase 6 message header (regime from macro when the 6b run succeeds)."""
+        """Principal Phase 6 message header (regime from Intel's macro sleeve when it succeeds)."""
         from mm_common.time import in_ops_tz
 
         return {
