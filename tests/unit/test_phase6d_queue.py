@@ -17,11 +17,13 @@ def test_queue_marks_021_done_017_in_review() -> None:
     assert any("#52" in line for line in board_lines if "IMP-020" in line)
     assert any("IMP-021" in line and "DONE" in line for line in board_lines)
     assert any("#53" in line for line in board_lines if "IMP-021" in line)
-    assert any("IMP-017" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-017" in line and "DONE" in line for line in board_lines)
+    assert any("#54" in line for line in board_lines if "IMP-017" in line)
     assert not any("IMP-021" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-021" in line and "PARKED" in line for line in board_lines)
     assert not any("IMP-017" in line and "PARKED" in line for line in board_lines)
     assert not any("IMP-017" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-017" in line and "IN_REVIEW" in line for line in board_lines)
     assert "`IN_PROGRESS` count: **0**" in queue
     for item_id in (
         "IMP-022",

@@ -67,6 +67,18 @@ def add_deliver_parser(sub) -> None:
     list_p.add_argument("--no-db", action="store_true")
     list_p.add_argument("--ignore-quiet-hours", action="store_true")
 
+    score_p = deliver_sub.add_parser(
+        "scorecard",
+        help="Ops-owned fan-out of a Quant pack scorecard (default --no-send)",
+    )
+    score_p.add_argument("--fixture", type=Path, required=True, help="frozen pack JSON used by lab scorecard compare")
+    score_p.add_argument("--no-send", action="store_true", help="dry-run (default)")
+    score_p.add_argument("--send", action="store_true", help="gated live send (requires TELEGRAM_BOT_TOKEN)")
+    score_p.add_argument("--out", type=Path, help="write scorecard artifacts + telegram payload")
+    score_p.add_argument("--repo-root", type=Path, default=Path("."))
+    score_p.add_argument("--no-db", action="store_true")
+    score_p.add_argument("--ignore-quiet-hours", action="store_true")
+
     _add_pack_args(deliver_p)
 
 
@@ -121,11 +133,13 @@ def dispatch_deliver(args: Namespace) -> int:
         return _cmd_watchlist(args)
     if cmd == "listings":
         return _cmd_listings(args)
+    if cmd == "scorecard":
+        return _cmd_scorecard(args)
     if cmd == "test":
         return _cmd_test(args)
     if cmd in {None, "pack"}:
         return _cmd_pack(args)
-    print("usage: lab deliver pack|fanout|watchlist|listings|test|inbound", file=sys.stderr)
+    print("usage: lab deliver pack|fanout|watchlist|listings|scorecard|test|inbound", file=sys.stderr)
     return 2
 
 
@@ -240,6 +254,43 @@ def _cmd_listings(args: Namespace) -> int:
     payload["product"] = "listings"
     payload["n_llm_calls"] = run.llm_calls
     payload["listings_content_hash"] = run.content_hash
+    payload["written"] = written
+    print(json.dumps(payload, sort_keys=True, indent=2))
+    if send and not result.primary.sent:
+        return 2
+    return 0 if run.status != "FAILED" else 2
+
+
+def _cmd_scorecard(args: Namespace) -> int:
+    send = _want_send(args)
+    if send is None:
+        return 2
+    if SEND_ENABLED:
+        print("lab deliver: SEND_ENABLED must stay false; pass --send into deliver()", file=sys.stderr)
+        return 2
+    from mm_desks.scorecard import run_scorecard_from_fixture, write_scorecard_artifacts
+    from mm_delivery.scorecard import deliver_scorecard
+
+    root = Path(args.repo_root).resolve()
+    run = run_scorecard_from_fixture(Path(args.fixture), repo_root=root)
+    written: dict[str, str] = {}
+    out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
+    if getattr(args, "out", None):
+        written = write_scorecard_artifacts(run, out_root=out_root)
+    result = deliver_scorecard(
+        run.canonical(),
+        as_of=run.as_of_knowledge,
+        send=bool(send),
+        repo=root,
+        out_root=out_root,
+    )
+    payload = result.as_public_dict()
+    payload["no_send"] = not send
+    payload["send"] = bool(result.primary.sent)
+    payload["publisher"] = "ops"
+    payload["product"] = "scorecard"
+    payload["n_llm_calls"] = run.llm_calls
+    payload["scorecard_content_hash"] = run.content_hash
     payload["written"] = written
     print(json.dumps(payload, sort_keys=True, indent=2))
     if send and not result.primary.sent:

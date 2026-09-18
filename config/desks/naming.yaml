@@ -4,9 +4,9 @@
 # Coord is orchestration only (not a publishing desk). Delivery is Ops-owned.
 # 6c-4 adds the watchlist monitor product (Research sleeve). 6c-5 delivers that
 # artifact over Ops-owned Telegram. 6d adds the listings / IPO screen (Research
-# sleeve, not a sixth desk).
+# sleeve, not a sixth desk). 6e adds the Quant pack scorecard sleeve.
 
-version: "imp-017.1"
+version: "imp-030.1"
 
 publishing_desks:
   - slug: intel
@@ -26,7 +26,7 @@ publishing_desks:
     short: Quant
     tier: "4"
     kind: publishing
-    notes: Closed-verdict triage; factor math; not a call
+    notes: Closed-verdict triage; factor math; like-for-like pack scorecards; not a call
   - slug: ic_risk
     display: IC/Risk (Investment Committee & Risk)
     short: IC/Risk
@@ -38,7 +38,7 @@ publishing_desks:
     short: Ops
     tier: "1"
     kind: publishing
-    notes: Queue, pack assemble, delivery. Coord/Don orchestrates — not a sixth desk
+    notes: Queue hygiene, pack assemble, delivery. Coord/Don orchestrates — not a sixth desk
 
 orchestration:
   - slug: coord
@@ -105,6 +105,12 @@ sleeves:
     tier: "3"
     kind: sleeve
     notes: IPO / direct listing / index-event screen. Not a call. Not a sixth desk. Not universe promotion.
+  - slug: scorecard
+    display: Quant / like-for-like pack scorecard
+    short: pack scorecard
+    tier: "4"
+    kind: sleeve
+    notes: Like-for-like pack scoring with provenance. Incomparable artifacts stay tagged, never scored as equals. Not a call. Not a sixth desk.
 
 gates:
   - slug: skeptic
@@ -152,6 +158,7 @@ sleeve_map:
   chart: research
   watchlist: research
   listings: research
+  scorecard: quant
   flow: intel
   macro: intel
   briefing: intel

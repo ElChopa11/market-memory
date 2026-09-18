@@ -40,4 +40,4 @@ Index events are a separate stream from IPO deals. Post-IPO reclaim screen remai
 
 ## Not this phase
 
-Scorecards (6e). Decay-watch (6f). Universe promotion. Live/signing. Redis. Paid data. Live LLM HTTP. Closing OPEN incidents.
+Scorecards (6e) live on `lab scorecard compare`. Decay-watch (6f). Universe promotion. Live/signing. Redis. Paid data. Live LLM HTTP. Closing OPEN incidents.

@@ -6,7 +6,9 @@ from typing import Any, Mapping, Sequence
 
 from mm_common.naming import (
     LISTINGS,
+    QUANT,
     RESEARCH,
+    SCORECARD,
     WATCHLIST,
     sleeve_display,
     telegram_header,
@@ -267,3 +269,64 @@ def present_listings(canonical: Mapping[str, Any]) -> str:
         ]
     )
     return headed_markdown(body, RESEARCH, sleeve=LISTINGS)
+
+
+SCORECARD_DELIVERY_FOOTER = (
+    "Not a call. Like-for-like only when product, schedule_anchor, and universe match "
+    "and no incomparable tag applies. Tagged artifacts (including BRIEF-TAG-20260918 "
+    "90m vs 30m pre-open) are not scored as equals. Quant owns the math; Ops publishes; "
+    "Coord orchestrates. Decay-watch stays 6f."
+)
+
+
+def present_scorecard(canonical: Mapping[str, Any]) -> str:
+    """Ops Telegram cut of an IMP-030 pack scorecard. Does not invent like-for-like scores."""
+    pairs = canonical.get("pairs") or []
+    if not isinstance(pairs, list):
+        pairs = []
+    gaps: list[str] = []
+    table_rows: list[tuple[str, str, str, str]] = []
+    for row in pairs:
+        if not isinstance(row, dict):
+            continue
+        left = str(row.get("left_id") or UNKNOWN)
+        right = str(row.get("right_id") or UNKNOWN)
+        verdict = str(row.get("verdict") or UNKNOWN)
+        reasons = ",".join(row.get("reason_codes") or []) or "—"
+        if verdict == "NOT_COMPARABLE" or not row.get("comparable"):
+            gaps.append(f"{left} vs {right}")
+        table_rows.append((left, right, verdict, reasons))
+    table = monospace_table(("left", "right", "verdict", "reasons"), table_rows, gaps=None)
+    product = sleeve_display(SCORECARD)
+    completeness = canonical.get("completeness")
+    completeness_s = UNKNOWN if completeness is None else f"{completeness}%"
+    content_hash = canonical.get("content_hash") or UNKNOWN
+    as_of = canonical.get("as_of_knowledge") or UNKNOWN
+    status = canonical.get("status") or UNKNOWN
+    named_gaps = list(canonical.get("gaps") or []) or gaps or ["none"]
+    decay = canonical.get("decay_stub") if isinstance(canonical.get("decay_stub"), dict) else {}
+    decay_line = (
+        f"decay stub watch_enabled={decay.get('watch_enabled', False)} "
+        f"item={decay.get('item') or 'IMP-031'}"
+    )
+    body = "\n".join(
+        [
+            f"{product} (`{SCORECARD}`)",
+            f"as_of_knowledge: {as_of}",
+            f"status: {status}",
+            f"completeness: {completeness_s}",
+            f"content_hash: `{content_hash}`",
+            decay_line,
+            "Send: no (default). Publisher: Ops. Coord is not the publisher.",
+            "Incomparable packs stay tagged. No invented like-for-like score.",
+            "",
+            table,
+            "",
+            "## Gaps",
+            "",
+            *[f"- {item}" for item in named_gaps],
+            "",
+            SCORECARD_DELIVERY_FOOTER,
+        ]
+    )
+    return headed_markdown(body, QUANT, sleeve=SCORECARD)

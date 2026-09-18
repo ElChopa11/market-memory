@@ -18,7 +18,7 @@ def test_queue_marks_020_done_021_in_review_017_parked() -> None:
     assert any("#52" in line for line in board_lines if "IMP-020" in line)
     assert any("IMP-021" in line and "DONE" in line for line in board_lines)
     assert any("#53" in line for line in board_lines if "IMP-021" in line)
-    assert any("IMP-017" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-017" in line and "DONE" in line for line in board_lines)
     assert not any("IMP-020" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-020" in line and "PARKED" in line for line in board_lines)
     assert not any("IMP-021" in line and "PARKED" in line for line in board_lines)

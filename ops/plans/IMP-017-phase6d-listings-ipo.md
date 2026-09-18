@@ -1,6 +1,6 @@
 # PLAN — IMP-017 Phase 6d listings / IPO
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#54).  
 **Owner:** Research (Investment Research) — listings sleeve; Ops publishes  
 **Scope:** Phase 6d — listings / IPO product on the five-desk roster + 6c PLAYBOOK + Ops-owned Telegram. No live trading. No execution. No `live.yaml`. No Redis. No 6e/6f.
 
@@ -10,7 +10,7 @@
 
 ## Outcome
 
-- Queue: IMP-021 DONE (#53). IMP-017 this thread. OPEN incidents untouched. 6e/6f stay later.
+- Queue: IMP-021 DONE (#53). IMP-017 DONE (#54). OPEN incidents untouched. 6e is IMP-030.
 - `lab listings scan --fixture PATH --no-send` emits a deterministic Research artifact.
 - Naming via `mm_common.naming` (`listings` is a Research sleeve, not a sixth desk).
 - Mesh envelope on `desk.research.output`. Ops `lab deliver listings` inherits `content_hash`.

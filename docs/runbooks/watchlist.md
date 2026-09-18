@@ -40,4 +40,4 @@ Phase 6c-5: Ops fans the scan out on the `research` Telegram route plus an Ops m
 
 ## Not this phase
 
-Universe promotion. Live/signing. Redis. Paid data. Live LLM HTTP. Closing OPEN incidents. Scorecards (6e). Decay-watch (6f).
+Universe promotion. Live/signing. Redis. Paid data. Live LLM HTTP. Closing OPEN incidents. Decay-watch (6f).
