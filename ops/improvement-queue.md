@@ -349,16 +349,16 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Delivery |
 | **Desk** | Chief of Staff / Hive Coordinator |
 | **Owner** | Don |
-| **Problem** | 5e Telegram is a single Coordinator sink. 6a/6b publish per-desk envelopes on PG NOTIFY, but there is no desk→chat_id fan-out matrix. |
-| **Evidence** | ADR 0003; ADR 0005; IMP-015 this PR. |
-| **Proposed outcome** | Config-driven per-desk Telegram fan-out of already-built payloads. Bus stays Postgres NOTIFY. |
+| **Problem** | 5e Telegram is a single Coordinator sink. 6a/6b publish per-desk envelopes on PG NOTIFY, but there is no desk→chat_id fan-out matrix, presentation layer, chart desk, or read-only inbound. |
+| **Evidence** | ADR 0003; ADR 0005; IMP-015 this PR; Principal-locked 6c DoD + Hive PLAYBOOK (from 6c onward). |
+| **Proposed outcome** | Per-desk Telegram channels + presentation layer + chart desk + read-only inbound. Hive PLAYBOOK (artifact ladder + Quant-owned trade math + sizing/DD/invalidation/concentration/post-mortem/DQ%) is absorbed in 6c, not 6b. Bus stays Postgres NOTIFY. |
 | **Definition of done** | *(filled in the 6c PR)*. Plan stub: [plans/IMP-016-phase6c-telegram-fanout.md](plans/IMP-016-phase6c-telegram-fanout.md). Not started while IMP-015 is open. |
-| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6d–6f products; reopening IMP-015 except queue hygiene. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Redis; 6d–6f products; reopening IMP-015 except queue hygiene; implementing the Hive PLAYBOOK in 6b. |
 | **Dependencies** | IMP-015 (this PR) must be DONE. |
 | **Risk level** | Medium (secrets, ToS, alert spam). |
 | **Status** | READY |
 | **PR** | — |
-| **Lesson learned** | Parked. Do not implement per-desk Telegram fan-out in IMP-015. |
+| **Lesson learned** | Parked. Do not implement per-desk Telegram fan-out or the Hive PLAYBOOK in IMP-015. |
 
 ---
 
@@ -385,7 +385,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-013 | Chief of Staff / Hive Coordinator | Don | DONE | [#44](https://github.com/ElChopa11/market-memory/pull/44) Phase 5e Telegram |
 | IMP-014 | Chief of Staff / Hive Coordinator | Don | DONE | [#45](https://github.com/ElChopa11/market-memory/pull/45) Phase 6a PG NOTIFY mesh |
 | IMP-015 | Macro & Cross-Asset Desk + Data & Market Memory Desk | Don/Macro+Data | IN_REVIEW | Phase 6b flow+macro+regime — this PR |
-| IMP-016 | Chief of Staff / Hive Coordinator | Don | READY | Phase 6c per-desk Telegram fan-out — parked; do not implement here |
+| IMP-016 | Chief of Staff / Hive Coordinator | Don | READY | Phase 6c per-desk Telegram + presentation + chart desk + inbound; PLAYBOOK absorbed in 6c — parked |
 
 `IN_PROGRESS` count: **0**. IMP-000–IMP-014 are `DONE`. IMP-015 is `IN_REVIEW` (DoD met in this PR). IMP-016 is `READY` (parked until 015 merges).
 
@@ -451,4 +451,4 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-012 merged as #43 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-013.
 - IMP-013 merged as #44 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-014.
 - IMP-014 merged as #45 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-015.
-- IMP-015 intakes Phase 6b flow+macro+regime (Principal-locked 6a–6f; bus = Postgres NOTIFY, no Redis; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-016 is READY/parked for 6c.
+- IMP-015 intakes Phase 6b flow+macro+regime (Principal-locked 6a–6f; bus = Postgres NOTIFY, no Redis; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-016 is READY/parked for 6c (Telegram channels + presentation + chart desk + read-only inbound; Hive PLAYBOOK absorbed in 6c, not this PR).

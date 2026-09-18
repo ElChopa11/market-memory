@@ -2,7 +2,7 @@
 
 **Report status:** READY (parked until IMP-015 merges). **Do not implement in the 6b PR.**  
 **Owner:** Don / Chief of Staff (Coordinator)  
-**Scope (when started):** Per-desk Telegram channel matrix on top of the PG NOTIFY mesh. No live trading. No execution. No `live.yaml`. No Redis.
+**Scope (when started):** Phase 6c — per-desk Telegram channels + presentation layer + chart desk + read-only inbound, on top of the PG NOTIFY mesh. No live trading. No execution. No `live.yaml`. No Redis.
 
 ## Why
 
@@ -11,12 +11,14 @@ Phase 5e delivers Telegram as a single Coordinator sink. Phase 6a/6b publish per
 ## Proposed outcome (later PR)
 
 - Config-driven desk → `TELEGRAM_CHAT_ID_<DESK>` (env-only secrets) fan-out of already-built `--no-send` payloads.
+- Presentation layer + chart desk + read-only inbound (Principal-locked 6c DoD; details filled when 6c starts).
+- Hive PLAYBOOK (artifact ladder + Quant-owned trade math + sizing/DD/invalidation/concentration/post-mortem/DQ%) applies from Phase 6c onward and is absorbed here — **not** IMP-015.
 - Quiet hours / completeness / dedupe from IMP-013 stay in force.
 - Bus remains Postgres NOTIFY. Redis stays forbidden.
 
 ## Non-goals
 
-Live trading. Signing. `live.yaml`. Redis. Listings/IPO desk (6d). Scorecards (6e). Decay/prompt versioning (6f). Reopening IMP-015 except queue hygiene. Paid Telegram SDKs.
+Live trading. Signing. `live.yaml`. Redis. Listings/IPO desk (6d). Scorecards (6e). Decay/prompt versioning (6f). Reopening IMP-015 except queue hygiene. Paid Telegram SDKs. Implementing the Hive PLAYBOOK in 6b.
 
 ## Dependencies
 
