@@ -1,0 +1,69 @@
+"""Ops-owned Telegram delivery of IMP-031 Quant decay-watch artifacts.
+
+Does not invent like-for-like scores. Does not waive gates.
+Publisher is Ops. `mm_delivery` must not import `mm_desks`.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Mapping
+
+from mm_common.naming import DECAY, QUANT
+from mm_common.time import parse_utc
+from mm_delivery.config import TelegramSettings, load_telegram_settings
+from mm_delivery.fanout import FanoutResult, fanout_desk
+from mm_delivery.present import present_decay
+from mm_delivery.telegram import TelegramClient
+from mm_delivery.idempotency import DedupeStore
+
+
+def deliver_decay(
+    canonical: Mapping[str, Any],
+    *,
+    as_of: datetime | None = None,
+    send: bool = False,
+    repo: Path | None = None,
+    settings: TelegramSettings | None = None,
+    client: TelegramClient | None = None,
+    dedupe: DedupeStore | None = None,
+    environ: dict[str, str] | None = None,
+    out_root: Path | None = None,
+    now: datetime | None = None,
+    failed_sink: list[dict[str, Any]] | None = None,
+) -> FanoutResult:
+    """Fan-out a Quant decay watch on the quant route + Ops mirror."""
+    cfg = settings or load_telegram_settings(repo)
+    product = cfg.product(DECAY)
+    if product is None or not product.enabled:
+        raise ValueError("decay delivery product is missing or disabled")
+    if product.desk != QUANT:
+        raise ValueError(f"decay delivery desk must be {QUANT!r}")
+    markdown = present_decay(canonical)
+    raw_as_of = as_of or canonical.get("as_of_knowledge")
+    if raw_as_of is None:
+        raise ValueError("decay delivery requires as_of_knowledge")
+    watermark = raw_as_of if isinstance(raw_as_of, datetime) else parse_utc(str(raw_as_of))
+    completeness = canonical.get("completeness")
+    completeness_pct = None if completeness is None else float(completeness)
+    digest = str(canonical.get("content_hash") or "") or None
+    override = digest if product.inherit_content_hash else None
+    return fanout_desk(
+        markdown,
+        desk=product.desk,
+        as_of=watermark,
+        send=send,
+        completeness_pct=completeness_pct,
+        repo=repo,
+        settings=cfg,
+        client=client,
+        dedupe=dedupe,
+        environ=environ,
+        out_root=out_root,
+        now=now,
+        failed_sink=failed_sink,
+        kind=product.kind,
+        content_hash_override=override,
+        sleeve=product.sleeve,
+    )

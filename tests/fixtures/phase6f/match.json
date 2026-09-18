@@ -1,0 +1,6 @@
+{
+  "fixture_id": "phase6f-decay-match-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T13:05:00Z",
+  "what_changed": "fixture decay watch; pinned prompt/config hashes match; no live LLM"
+}

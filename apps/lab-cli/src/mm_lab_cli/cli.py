@@ -20,6 +20,7 @@ from mm_lab_cli.playbook import add_playbook_parser, dispatch_playbook
 from mm_lab_cli.listings import add_listings_parser, dispatch_listings
 from mm_lab_cli.watchlist import add_watchlist_parser, dispatch_watchlist
 from mm_lab_cli.scorecard import add_scorecard_parser, dispatch_scorecard
+from mm_lab_cli.decay import add_decay_parser, dispatch_decay
 from mm_lab_cli.queue import add_queue_parser, dispatch_queue
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.equities import add_equities_parser, dispatch_equities
@@ -114,6 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     add_watchlist_parser(sub)
     add_listings_parser(sub)
     add_scorecard_parser(sub)
+    add_decay_parser(sub)
     add_queue_parser(sub)
     add_backtest_parser(sub)
     add_paper_parser(sub)
@@ -150,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_listings(args)
     if args.cmd == "scorecard":
         return dispatch_scorecard(args)
+    if args.cmd == "decay":
+        return dispatch_decay(args)
     if args.cmd == "queue":
         return dispatch_queue(args)
     if args.cmd == "backtest":
@@ -175,7 +179,7 @@ def _add_research_common(parser: argparse.ArgumentParser) -> None:
 
 
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 6 in progress — 6e pack scorecards + queue hygiene on five-desk roster; 6d listings + 6c-5 Ops delivery + 6c-4 watchlist + 6c-2 naming + 6c PLAYBOOK on main; Phase 5 complete; Phase 4 backtest/paper remain)")
+    print("market-memory lab CLI (Phase 6 in progress — 6f decay watch + prompt hashes on five-desk roster; 6e scorecards + 6d listings + 6c-5 Ops delivery + 6c-4 watchlist + 6c-2 naming + 6c PLAYBOOK on main; Phase 5 complete; Phase 4 backtest/paper remain)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
@@ -194,11 +198,12 @@ def cmd_status() -> int:
 
     print("Publishing desks: " + "; ".join(roster_lines()) + ". Coord is orchestration only.")
     print("Mesh: lab mesh dry --fixture PATH --no-db (PG NOTIFY bus; --kill-desk leaves FAILED + error_class)")
-    print("Deliver: lab deliver pack|fanout|watchlist|listings|scorecard --fixture PATH --no-send (Ops publishes; Coord orchestrates)")
+    print("Deliver: lab deliver pack|fanout|watchlist|listings|scorecard|decay --fixture PATH --no-send (Ops publishes; Coord orchestrates)")
     print("Playbook: lab playbook run --fixture PATH --no-send (artifact ladder; LLM writer/critic only)")
     print("Watchlist: lab watchlist scan --fixture PATH --no-send (locked in_universe ∪ watch_only; not a call)")
     print("Listings: lab listings scan --fixture PATH --no-send (IPO / index-event screen; not a sixth desk; not a call)")
     print("Scorecard: lab scorecard compare --fixture PATH --no-send (like-for-like packs; incomparable stay tagged; not a call)")
+    print("Decay: lab decay watch --fixture PATH --no-send (prompt/config hashes; mismatch is a NOTIFY/queue signal; not a call)")
     print("Queue: lab queue check | lab queue can-start IMP-XXX (hygiene only; no auto-merge, no gate waiver)")
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
     print("Rejected theses remain queryable learning records.")

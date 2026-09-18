@@ -1,0 +1,9 @@
+{
+  "fixture_id": "phase6f-decay-mismatch-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T13:05:00Z",
+  "what_changed": "fixture decay watch with pinned official_brief hash forced off; no live LLM",
+  "expected_overrides": {
+    "config/prompts/official_brief.v1.txt": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}

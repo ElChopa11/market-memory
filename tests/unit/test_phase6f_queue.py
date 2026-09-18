@@ -1,4 +1,4 @@
-"""Phase 6e queue hygiene after 6f: IMP-017 DONE #54, IMP-030 DONE #55, IMP-031 this PR."""
+"""Phase 6f queue hygiene: IMP-030 DONE #55, IMP-031 this PR, OPEN incidents stay OPEN."""
 
 from __future__ import annotations
 
@@ -7,20 +7,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_queue_marks_017_done_030_done_031_in_review() -> None:
+def test_queue_marks_030_done_031_in_review_open_incidents() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
-    assert any("IMP-017" in line and "DONE" in line for line in board_lines)
-    assert any("#54" in line for line in board_lines if "IMP-017" in line)
-    assert any("IMP-021" in line and "DONE" in line for line in board_lines)
     assert any("IMP-030" in line and "DONE" in line for line in board_lines)
     assert any("#55" in line for line in board_lines if "IMP-030" in line)
     assert any("IMP-031" in line and "IN_REVIEW" in line for line in board_lines)
-    assert not any("IMP-017" in line and "IN_REVIEW" in line for line in board_lines)
-    assert not any("IMP-017" in line and "PARKED" in line for line in board_lines)
-    assert not any("IMP-017" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert not any("IMP-030" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-030" in line and "IN_REVIEW" in line for line in board_lines)
+    assert not any("IMP-030" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-031" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-031" in line and "PARKED" in line for line in board_lines)
     assert "`IN_PROGRESS` count: **0**" in queue
@@ -42,45 +36,32 @@ def test_queue_marks_017_done_030_done_031_in_review() -> None:
     assert "sydney-morning-digest-8am" in queue
 
 
-def test_phase6e_plan_adr_and_config_exist() -> None:
+def test_phase6f_plan_adr_and_config_exist() -> None:
     for rel in (
         "ops/plans/IMP-030-phase6e-scorecards.md",
         "ops/plans/IMP-031-phase6f-decay-watch.md",
         "ADR/0012-phase6e-scorecards.md",
-        "config/scorecards/desk.yaml",
-        "config/scorecards/tags.yaml",
+        "ADR/0013-phase6f-decay-watch.md",
         "config/scorecards/decay.yaml",
-        "packages/quant/src/mm_quant/scorecard.py",
         "packages/quant/src/mm_quant/decay.py",
         "packages/quant/src/mm_quant/decay_stub.py",
-        "packages/desks/src/mm_desks/scorecard.py",
-        "packages/desks/src/mm_desks/queue.py",
-        "packages/delivery/src/mm_delivery/scorecard.py",
-        "docs/runbooks/scorecards.md",
+        "packages/desks/src/mm_desks/decay.py",
+        "packages/delivery/src/mm_delivery/decay.py",
+        "docs/runbooks/decay.md",
         "docs/runbooks/desks.md",
-        "scripts/check_queue.py",
     ):
         assert (ROOT / rel).is_file(), rel
     desks = (ROOT / "docs" / "runbooks" / "desks.md").read_text(encoding="utf-8")
-    assert "lab scorecard compare" in desks
-    assert "lab deliver scorecard" in desks
-    assert "lab queue check" in desks
-    spec = (ROOT / "config" / "scorecards" / "desk.yaml").read_text(encoding="utf-8")
-    assert "desk: quant" in spec
-    assert "promote: false" in spec
-    assert "llm: false" in spec
-    assert "send: false" in spec
-    tags = (ROOT / "config" / "scorecards" / "tags.yaml").read_text(encoding="utf-8")
-    assert "BRIEF-TAG-20260918" in tags
-    assert "pre_open_90m" in tags
-    assert "pre_open_30m" in tags
+    assert "lab decay watch" in desks
+    assert "lab deliver decay" in desks
     decay = (ROOT / "config" / "scorecards" / "decay.yaml").read_text(encoding="utf-8")
     assert "watch_enabled: true" in decay
     assert "IMP-031" in decay
+    assert "auto_disable: false" in decay
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
     tg = (ROOT / "config" / "delivery" / "telegram.yaml").read_text(encoding="utf-8")
-    assert "kind: scorecard" in tg
+    assert "kind: decay" in tg
     assert "publisher: ops" in tg
     cadence = (ROOT / "config" / "desks" / "cadence.yaml").read_text(encoding="utf-8")
-    assert "desk.scorecard.output" not in cadence
+    assert "desk.decay.output" not in cadence

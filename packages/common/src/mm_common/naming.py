@@ -4,7 +4,7 @@ Machine ids (desk slugs, PLAYBOOK artifact types) are stable. Human labels are
 looked up here and nowhere else. Unknown ids fail closed.
 
 Coord is orchestration only — not a publishing desk. Delivery is Ops-owned.
-Sleeves (crypto, equities, chart, watchlist, listings, scorecard, flow, macro, briefing) and gates (skeptic,
+Sleeves (crypto, equities, chart, watchlist, listings, scorecard, decay, flow, macro, briefing) and gates (skeptic,
 risk) are labels, not extra desks.
 
 Must not hold secrets, place orders, or talk to Hyperliquid.
@@ -23,6 +23,7 @@ OPS = "ops"
 WATCHLIST = "watchlist"
 LISTINGS = "listings"
 SCORECARD = "scorecard"
+DECAY = "decay"
 
 COORD = "coord"
 ALERTS = "alerts"
@@ -90,7 +91,7 @@ _PUBLISHING: tuple[NamedSlug, ...] = (
         short="Quant",
         tier="4",
         kind=KIND_PUBLISHING,
-        notes="Closed-verdict triage; factor math; like-for-like pack scorecards; not a call",
+        notes="Closed-verdict triage; factor math; like-for-like pack scorecards; prompt-hash decay watch; not a call",
     ),
     NamedSlug(
         slug=IC_RISK,
@@ -106,7 +107,7 @@ _PUBLISHING: tuple[NamedSlug, ...] = (
         short="Ops",
         tier="1",
         kind=KIND_PUBLISHING,
-        notes="Queue hygiene, pack assemble, delivery. Coord/Don orchestrates — not a sixth desk",
+        notes="Queue hygiene, pack assemble, delivery, decay-watch alert path. Coord/Don orchestrates — not a sixth desk",
     ),
 )
 
@@ -205,6 +206,14 @@ _SLEEVES: tuple[NamedSlug, ...] = (
         kind=KIND_SLEEVE,
         notes="Like-for-like pack scoring with provenance. Incomparable artifacts stay tagged, never scored as equals. Not a call. Not a sixth desk.",
     ),
+    NamedSlug(
+        slug="decay",
+        display="Quant / prompt-hash decay watch",
+        short="decay watch",
+        tier="4",
+        kind=KIND_SLEEVE,
+        notes="Prompt and config SHA-256 drift watch. Mismatch → Ops-owned NOTIFY/queue signal. Does not waive gates or invent scorecard numbers. Not a sixth desk.",
+    ),
 )
 
 _GATES: tuple[NamedSlug, ...] = (
@@ -258,6 +267,7 @@ SLEEVE_MAP: dict[str, str] = {
     "watchlist": RESEARCH,
     "listings": RESEARCH,
     "scorecard": QUANT,
+    "decay": QUANT,
     "flow": INTEL,
     "macro": INTEL,
     "briefing": INTEL,
@@ -434,7 +444,7 @@ def as_config_dict() -> dict[str, Any]:
         return payload
 
     return {
-        "version": "imp-030.1",
+        "version": "imp-031.1",
         "publishing_desks": [named(row) for row in _PUBLISHING],
         "orchestration": [named(row) for row in _ORCHESTRATION],
         "routes": [named(row) for row in _ROUTES],

@@ -91,4 +91,4 @@ A no-setup fixture day **must not** invoke the completer. Ideas with no injected
 
 ## Not this phase
 
-Listings/IPO (6d). Scorecards automation (6e). Strategy decay-watch remainder (6f). Redis. Live/signing. A live LLM HTTP client.
+Listings/IPO (6d). Scorecards automation (6e). Redis. Live/signing. A live LLM HTTP client.

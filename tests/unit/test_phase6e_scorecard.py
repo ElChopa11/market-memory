@@ -112,14 +112,14 @@ def test_empty_fixture_degrades_and_does_not_invent() -> None:
     assert result.completeness == 0.0
     assert result.llm_calls == 0
     assert result.decay_stub is not None
-    assert result.decay_stub["watch_enabled"] is False
-    assert result.as_public_dict()["decay_watch_enabled"] is False
+    assert result.decay_stub["watch_enabled"] is True
+    assert result.as_public_dict()["decay_watch_enabled"] is True
 
 
-def test_decay_stub_records_prompt_hashes_without_watching() -> None:
+def test_decay_stub_records_prompt_hashes_and_watch_is_on() -> None:
     payload = decay_stub_payload(ROOT)
-    assert payload["watch_enabled"] is False
-    assert payload["phase"] == "6f-parked"
+    assert payload["watch_enabled"] is True
+    assert payload["phase"] == "6f"
     assert payload["item"] == "IMP-031"
     assert payload["prompt_hashes"]
     assert all(row["sha256"] for row in payload["prompt_hashes"])

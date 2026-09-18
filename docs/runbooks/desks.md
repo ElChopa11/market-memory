@@ -175,12 +175,18 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 `lab queue check` / `scripts/check_queue.py` enforce at most one IMP-* `IN_PROGRESS`. `lab queue can-start` is a dry READY→IN_PROGRESS aid. Helpers do not write the queue, auto-merge, or waive gates. See [scorecards.md](scorecards.md).
 
+## Prompt-hash decay watch (Phase 6f)
+
+`lab decay watch --fixture PATH --no-send` hashes versioned prompts and listed configs against pinned SHA-256. Mismatch / missing / unpinned is `DEGRADED` and NOTIFYs `desk.quant.alert` plus a queue *signal* that does not write the queue. Quant sleeve, not a sixth desk.
+
+`lab deliver decay --fixture PATH --no-send` is the Ops Telegram fan-out (quant route + Ops mirror, inherited `content_hash`). Attached scorecard pairs keep `NOT_COMPARABLE` tagged. See [decay.md](decay.md).
+
 ## Gates kept
 
 `live_trading_enabled: false`. `risk-config-guard`. `promote-gate`. Point-in-time law. Degrade-never-invent. No secrets in git.
 
 ## Not this phase
 
-Strategy decay-watch remainder (6f). Live trading, signing, Redis, paid deps, live LLM HTTP. Universe promotion. Auto-merge. Gate waivers. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
+Live trading, signing, Redis, paid deps, live LLM HTTP. Universe promotion. Auto-merge. Gate waivers. Auto-disable of prompts. Risk *service* (`apps/risk-service`) stays a stub — `mm_risk.evaluate` is the library used by the IC/Risk Risk gate.
 
 Telegram: [telegram.md](telegram.md). LLM budget: [llm-budget.md](llm-budget.md). PLAYBOOK: [../playbook.md](../playbook.md). Factor math: [quant-desk.md](quant-desk.md). Flow: [flow-desk.md](flow-desk.md). Macro: [macro-desk.md](macro-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).

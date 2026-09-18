@@ -77,4 +77,4 @@ See [runbooks/llm-budget.md](runbooks/llm-budget.md). Writer prose uses placehol
 
 ## Not this phase
 
-Strategy decay-watch remainder (6f). Redis. Live/signing. A live LLM HTTP client. Watchlist inventory is Phase 6c-4 (`lab watchlist scan`) — it does not emit PLAYBOOK types or trade math. Pack scorecards are Phase 6e (`lab scorecard compare`).
+Redis. Live/signing. A live LLM HTTP client. Watchlist inventory is Phase 6c-4 (`lab watchlist scan`) — it does not emit PLAYBOOK types or trade math. Pack scorecards are Phase 6e (`lab scorecard compare`). Prompt-hash decay watch is Phase 6f (`lab decay watch`).

@@ -1,0 +1,13 @@
+{
+  "fixture_id": "phase6f-decay-missing-20260918",
+  "session_date": "2026-09-18",
+  "as_of_knowledge": "2026-09-18T13:05:00Z",
+  "what_changed": "fixture decay watch with a missing extra file; honest unavailable",
+  "extra_files": [
+    {
+      "path": "config/prompts/does_not_exist.v1.txt",
+      "expected_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "kind": "prompt"
+    }
+  ]
+}

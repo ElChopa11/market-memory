@@ -172,7 +172,7 @@ scripts/          bootstrap + lifecycle checker
 3. Market Pulse (merged)
 4. Backtest + paper ledger (merged)
 5. **complete** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check **merged (IMP-010, #41)**. 5c quant factors **merged (IMP-011, #42)**. 5d desk runners **merged (IMP-012, #43)**. 5e Telegram delivery **merged (IMP-013, #44)**.
-6. **in progress (6e)** — pack scorecards + queue hygiene (IMP-030, this tree). 6a mesh **DONE** (#45). 6b flow/macro **DONE** (#46). 6c PLAYBOOK + fan-out **DONE** (#47). 6c-1 roster **DONE** (#49). 6c-2 naming **DONE** (#51). 6c-4 watchlist **DONE** (#52). 6c-5 Ops delivery **DONE** (#53). 6d listings **DONE** (#54). Tiny manually approved live remains later and hard-gated.
+6. **in progress (6f)** — prompt-hash decay watch (IMP-031, this tree). 6a mesh **DONE** (#45). 6b flow/macro **DONE** (#46). 6c PLAYBOOK + fan-out **DONE** (#47). 6c-1 roster **DONE** (#49). 6c-2 naming **DONE** (#51). 6c-4 watchlist **DONE** (#52). 6c-5 Ops delivery **DONE** (#53). 6d listings **DONE** (#54). 6e scorecards **DONE** (#55). Tiny manually approved live remains later and hard-gated.
 7. Learning loop
 
-Out of scope for Phase 6e: Redis, strategy decay-watch remainder (6f), `live.yaml` changes, order/signing code, paid deps, live LLM HTTP provider, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM as calculator/router, universe promotion, closing OPEN incidents, auto-merge, gate waivers, reopening the five-desk roster.
+Out of scope for Phase 6f: Redis, `live.yaml` changes, order/signing code, paid deps, live LLM HTTP provider, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM as calculator/router, universe promotion, closing OPEN incidents, auto-merge, gate waivers, auto-disable of prompts, reopening the five-desk roster.

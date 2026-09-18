@@ -53,6 +53,9 @@ thresholds:
   scorecard:
     enabled: true
     min_completeness_pct: 1
+  decay:
+    enabled: true
+    min_completeness_pct: 1
 
 schedule:
   timezone: Australia/Sydney
@@ -74,6 +77,11 @@ schedule:
   scorecard:
     enabled: true
     local_time: "07:55"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+  # Decay-watch Ops cut. Not the Sydney 08:00 digest (SCHED-001 stays OPEN).
+  decay:
+    enabled: true
+    local_time: "08:05"
     weekdays: [Mon, Tue, Wed, Thu, Fri]
 
 desks:
@@ -120,6 +128,12 @@ products:
     desk: quant
     kind: scorecard
     sleeve: scorecard
+    enabled: true
+    inherit_content_hash: true
+  decay:
+    desk: quant
+    kind: decay
+    sleeve: decay
     enabled: true
     inherit_content_hash: true
 

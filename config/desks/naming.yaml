@@ -4,9 +4,10 @@
 # Coord is orchestration only (not a publishing desk). Delivery is Ops-owned.
 # 6c-4 adds the watchlist monitor product (Research sleeve). 6c-5 delivers that
 # artifact over Ops-owned Telegram. 6d adds the listings / IPO screen (Research
-# sleeve, not a sixth desk). 6e adds the Quant pack scorecard sleeve.
+# sleeve, not a sixth desk). 6e adds the Quant pack scorecard sleeve. 6f adds
+# the Quant prompt-hash decay watch (Ops-owned alert path).
 
-version: "imp-030.1"
+version: "imp-031.1"
 
 publishing_desks:
   - slug: intel
@@ -26,7 +27,7 @@ publishing_desks:
     short: Quant
     tier: "4"
     kind: publishing
-    notes: Closed-verdict triage; factor math; like-for-like pack scorecards; not a call
+    notes: Closed-verdict triage; factor math; like-for-like pack scorecards; prompt-hash decay watch; not a call
   - slug: ic_risk
     display: IC/Risk (Investment Committee & Risk)
     short: IC/Risk
@@ -38,7 +39,7 @@ publishing_desks:
     short: Ops
     tier: "1"
     kind: publishing
-    notes: Queue hygiene, pack assemble, delivery. Coord/Don orchestrates — not a sixth desk
+    notes: Queue hygiene, pack assemble, delivery, decay-watch alert path. Coord/Don orchestrates — not a sixth desk
 
 orchestration:
   - slug: coord
@@ -111,6 +112,12 @@ sleeves:
     tier: "4"
     kind: sleeve
     notes: Like-for-like pack scoring with provenance. Incomparable artifacts stay tagged, never scored as equals. Not a call. Not a sixth desk.
+  - slug: decay
+    display: Quant / prompt-hash decay watch
+    short: decay watch
+    tier: "4"
+    kind: sleeve
+    notes: Prompt and config SHA-256 drift watch. Mismatch → Ops-owned NOTIFY/queue signal. Does not waive gates or invent scorecard numbers. Not a sixth desk.
 
 gates:
   - slug: skeptic
@@ -159,6 +166,7 @@ sleeve_map:
   watchlist: research
   listings: research
   scorecard: quant
+  decay: quant
   flow: intel
   macro: intel
   briefing: intel

@@ -85,13 +85,14 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 `lab deliver scorecard` presents the IMP-030 Quant pack scorecard (like-for-like only; BRIEF-TAG 90m vs 30m stays `NOT_COMPARABLE`) and fans it to `quant` with an Ops mirror, inheriting the scorecard `content_hash`. Scorecard schedule is 07:55 Sydney; it also does **not** close SCHED-001.
 
+`lab deliver decay` presents the IMP-031 Quant prompt-hash decay watch (pinned SHA-256; mismatch is a NOTIFY/queue signal, not a gate waiver) and fans it to `quant` with an Ops mirror, inheriting the watch `content_hash`. Decay schedule is 08:05 Sydney; it also does **not** close SCHED-001.
+
 ## Import walls
 
 `packages/delivery` must not import `mm_execution`. Research / desks / quant must not grow a signing surface. CI: `scripts/check_import_boundaries.py`.
 
 ## Not this phase
 
-- Strategy decay-watch remainder (6f).
 - `live_trading_enabled: true`, signing, wallet code, order endpoints.
 - Paid Telegram SDKs (httpx is enough). Redis.
 - Closing OPEN incidents (SCHED-001, BRIEF-TAG, SRC-STOOQ-404, SRC-FRED-MISSING-ENV).

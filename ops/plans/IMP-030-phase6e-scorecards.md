@@ -1,6 +1,6 @@
 # PLAN — IMP-030 Phase 6e scorecards + queue automation
 
-**Report status:** IN_REVIEW (this PR).  
+**Report status:** DONE (#55).  
 **Owner:** Quant (score math) / Ops (queue hygiene + delivery)  
 **Scope:** Phase 6e — like-for-like pack scorecards with provenance + improvement-queue hygiene helpers. No live trading. No execution. No `live.yaml`. No Redis. No 6f decay-watch.
 
@@ -10,7 +10,7 @@
 
 ## Outcome
 
-- Queue: IMP-017 DONE (#54). IMP-030 this thread. IMP-031 / 6f PARKED. OPEN incidents untouched.
+- Queue: IMP-017 DONE (#54). IMP-030 DONE (#55). IMP-031 / 6f is the follow-on. OPEN incidents untouched.
 - `lab scorecard compare --fixture PATH --no-send` emits a deterministic Quant artifact.
 - Naming via `mm_common.naming` (`scorecard` is a Quant sleeve, not a sixth desk).
 - Mesh envelope on `desk.quant.output`. Ops `lab deliver scorecard` inherits `content_hash`.

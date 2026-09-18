@@ -1,14 +1,37 @@
-# Phase 6e decay *inputs* stub. Full prompt-hash decay watch is IMP-031 / Phase 6f.
-# This file records prompt files that 6f will watch. 6e does not alert, decay-detect,
-# or auto-disable prompts.
+# Phase 6f / IMP-031 prompt-hash strategy decay-watch.
+# Quant owns the hash math. Ops owns the alert / Telegram path.
+# Sleeve `decay` is not a sixth desk. Unknown slug `decay` fails closed as a desk.
+# Mismatch emits a NOTIFY / queue *signal*. Does not write the queue, waive gates,
+# auto-disable prompts, or invent like-for-like scorecard numbers.
 
-version: "imp-030.1"
-watch_enabled: false
-phase: "6f-parked"
+version: "imp-031.1"
+watch_enabled: true
+phase: "6f"
 item: IMP-031
+auto_disable: false
+auto_waive: false
+auto_merge: false
+alert_path: ops
+math_desk: quant
+
+# Knowledge clock for attached scorecard pairs. Prompt files themselves are
+# versioned in git; future scorecard packs stay invisible via as_of_knowledge.
+knowledge_clock: as_of_knowledge
 
 prompt_files:
-  - config/prompts/official_brief.v1.txt
-  - config/prompts/edge_scan.v1.txt
-  - config/prompts/skeptic_review.v1.txt
-  - config/prompts/post_mortem.v1.txt
+  - path: config/prompts/official_brief.v1.txt
+    expected_sha256: "298c919a3492d9f2b569580ade48e211776ba10719ce6f06eb581532c82cdda4"
+  - path: config/prompts/edge_scan.v1.txt
+    expected_sha256: "67d10c605dfae90321c48ef560a4680240900e08ea7d3b85853941c348d62009"
+  - path: config/prompts/skeptic_review.v1.txt
+    expected_sha256: "fc0a22b6737d434d9ac352242e6dc2604a8dfa1a975ebe1e0115a1f653596b41"
+  - path: config/prompts/post_mortem.v1.txt
+    expected_sha256: "534bcc80b5450843d9caf9e83e075e7e4be228c65e11e91c7a788f68917b6b35"
+
+config_files:
+  - path: config/llm/budgets.yaml
+    expected_sha256: "31cdfce2650900812b651d54be230d1e18b9307cff78fba20ad08b8a1379df83"
+  - path: config/scorecards/desk.yaml
+    expected_sha256: "b6bc4a8ef22e98652334321d7b47cbed91daad9b81debaa1e4047754058a3f58"
+  - path: config/scorecards/tags.yaml
+    expected_sha256: "db9816faf708a32a973e47ad25ef221013e6f45b7c045239256b8aafa2f48fe0"

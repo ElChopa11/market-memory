@@ -18,7 +18,7 @@ from mm_quant.scorecard import (
     score_pair,
     score_packs,
 )
-from mm_quant.decay_stub import decay_stub_payload
+from mm_quant.decay import decay_stub_payload, decay_watch_payload
 
 __phase__ = 5
 LIVE_TRADING_ENABLED = False
@@ -34,6 +34,7 @@ __all__ = [
     "classify_regime",
     "compute_trade_math",
     "decay_stub_payload",
+    "decay_watch_payload",
     "fixed_fractional_budget_pct",
     "load_quant_config",
     "render_quant_card",
