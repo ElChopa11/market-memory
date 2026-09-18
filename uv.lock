@@ -574,6 +574,16 @@ requires-dist = [{ name = "mm-common", editable = "packages/common" }]
 name = "mm-quant"
 version = "0.1.0"
 source = { editable = "packages/quant" }
+dependencies = [
+    { name = "mm-common" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mm-common", editable = "packages/common" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
 
 [[package]]
 name = "mm-research-kit"

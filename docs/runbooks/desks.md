@@ -47,11 +47,11 @@ No desk overrides the Principal. No skipped gates.
 | Path | Meaning in 5a |
 |---|---|
 | `packages/desks` | Crypto / Equities import wall only |
-| `packages/quant` | Quant import wall; empty factor registry |
+| `packages/quant` | Quant import wall; **IMP-011 factor library** (no runners) |
 | `packages/delivery` | No-send stub; Telegram is 5e |
 | `templates/output-contract.md` | Principal briefing contract |
 
-Do **not** add factor math or a Telegram client in Phase 5b. Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).
+Do **not** add a Telegram client or desk full runners in Phase 5c. Factor math: [quant-desk.md](quant-desk.md). Polygon + HL structure ingest: [polygon-hl-structure.md](polygon-hl-structure.md).
 
 ## Output contract
 

@@ -1,6 +1,6 @@
 # PLAN — IMP-010 Phase 5b Polygon equities + HL structure
 
-**Report status:** IN_REVIEW  
+**Report status:** DONE (#41)  
 **Owner:** Don/Data (Data & Market Memory Desk) + Crypto / Equities desks as consumers  
 **Scope:** Polygon as default equities vendor; Hyperliquid funding / OI / basis / depth; optional public spot cross-check; FRED + fixture calendar. Read-only. No Telegram. No execution. No `live.yaml`.
 
@@ -36,4 +36,4 @@ Desk full runners (5d). Quant factor library (5c). Telegram / 5e. Signing / `hl_
 
 ## Status
 
-IN_REVIEW (this PR). IMP-011 Phase 5c is READY/PARKED — do not implement here.
+DONE (#41). IMP-011 Phase 5c is IN_REVIEW on the following PR — do not implement factors here.

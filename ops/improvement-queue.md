@@ -236,9 +236,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Desk runners; quant factors (IMP-011); Telegram/5e; signing; `live.yaml`; paid deps without Principal ask; Redis; reopening IMP-009. |
 | **Dependencies** | IMP-009 DONE (#40). |
 | **Risk level** | Medium (vendor ToS, secrets in env, over-reading structure as a call). |
-| **Status** | IN_REVIEW |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/41 |
-| **Lesson learned** | *(fill at close)* |
+| **Lesson learned** | Merged to `main` (#41). Polygon equities adapter + HL public `/info` structure (funding/OI/basis/L2/predicted funding) + spot DQ + FRED/calendar into Memory. Fixtures + adversarial PIT. Quant factors stayed out of 5b and are IMP-011. |
 
 ### IMP-011 — Phase 5c quant factor library
 
@@ -249,16 +249,36 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Quant / research library |
 | **Desk** | Quant & Market Structure Desk |
 | **Owner** | Don/Quant |
-| **Problem** | `packages/quant` is an empty FactorRegistry skeleton from 5a. Structure and equity tape land in 5b; factor math must not sneak into the ingest PR. |
-| **Evidence** | IMP-009 skeleton; ADR 0002 follow-on 5c; IMP-010 this PR. |
-| **Proposed outcome** | Research-only factor implementations with PIT watermarks. Not a trading decision. |
-| **Definition of done** | *(filled in the 5c PR)*. Plan stub: [plans/IMP-011-phase5c-quant-factors.md](plans/IMP-011-phase5c-quant-factors.md). Not started while IMP-010 is open. |
-| **Non-goals** | Desk runners; Telegram/5e; signing; `live.yaml`; reopening IMP-010 adapters. |
-| **Dependencies** | IMP-010 (this PR) must be DONE. |
+| **Problem** | `packages/quant` is an empty FactorRegistry skeleton from 5a. Structure and equity tape landed in 5b; factor math must not sneak into the ingest PR. |
+| **Evidence** | IMP-009 skeleton; ADR 0002 follow-on 5c; IMP-010 DONE #41. |
+| **Proposed outcome** | Research-only factor implementations with PIT watermarks, YAML regime thresholds, stat/sizing helpers, QuantCard. Not a trading decision. |
+| **Definition of done** | Queue hygiene: IMP-010 DONE (#41). This item the only implementation thread. `mm_quant` factor library (momentum, realised vol, ADX-style, z-score, funding/basis carry from 5b fields, RS vs BTC and sector/ETF, breadth, corr, beta); regime tag+confidence+inputs from `config/quant/*.yaml`; stats + intent-level budget-fraction helpers; `QuantCard` → `templates/quant-factor-card.md` with provenance; fixtures + adversarial PIT; degrade-never-invent; runbook; README 5c; import-boundary CI; no runners/Telegram/`live.yaml`/signing. `uv run pytest` + lifecycle. |
+| **Non-goals** | Desk runners (IMP-012); Telegram/5e; signing; `live.yaml`; reopening IMP-010 adapters; paid deps; LLM at decision time; order endpoints. |
+| **Dependencies** | IMP-010 DONE (#41). |
 | **Risk level** | Medium (look-ahead in factors). |
+| **Status** | IN_REVIEW |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-012 — Phase 5d desk runners
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-012 |
+| **Priority** | P1 |
+| **Type** | Orchestration / desk product |
+| **Desk** | Chief of Staff / Hive Coordinator |
+| **Owner** | Don |
+| **Problem** | Factor math lands in 5c; desk packages are still 5a skeletons. Runners must not sneak into the factor PR. |
+| **Evidence** | IMP-009 skeletons; ADR 0002 follow-on 5d; IMP-011 this PR. |
+| **Proposed outcome** | Coordinator-run desk jobs that read Memory at an `as_of_knowledge` watermark and call `mm_quant`. Research artifacts only. |
+| **Definition of done** | *(filled in the 5d PR)*. Plan stub: [plans/IMP-012-phase5d-desk-runners.md](plans/IMP-012-phase5d-desk-runners.md). Not started while IMP-011 is open. |
+| **Non-goals** | Telegram/5e; signing; `live.yaml`; reopening IMP-011 factor math; Phase 6 bus; order endpoints. |
+| **Dependencies** | IMP-011 (this PR) must be DONE. |
+| **Risk level** | Medium (runners can skip gates or look like calls). |
 | **Status** | READY |
 | **PR** | — |
-| **Lesson learned** | Parked. Do not implement in IMP-010. |
+| **Lesson learned** | Parked. Do not implement in IMP-011. |
 
 ---
 
@@ -279,10 +299,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | DONE | [#37](https://github.com/ElChopa11/market-memory/pull/37) merged |
 | IMP-008 | Quant & Market Structure Desk | Don/Quant | DONE | [#38](https://github.com/ElChopa11/market-memory/pull/38) merged |
 | IMP-009 | Chief of Staff / Hive Coordinator | Don | DONE | [#40](https://github.com/ElChopa11/market-memory/pull/40) Phase 5a desk boundaries |
-| IMP-010 | Data & Market Memory Desk | Don/Data | IN_REVIEW | [#41](https://github.com/ElChopa11/market-memory/pull/41) Phase 5b Polygon + HL structure |
-| IMP-011 | Quant & Market Structure Desk | Don/Quant | READY | Phase 5c quant factors — parked; do not implement here |
+| IMP-010 | Data & Market Memory Desk | Don/Data | DONE | [#41](https://github.com/ElChopa11/market-memory/pull/41) Phase 5b Polygon + HL structure |
+| IMP-011 | Quant & Market Structure Desk | Don/Quant | IN_REVIEW | Phase 5c quant factors — this PR |
+| IMP-012 | Chief of Staff / Hive Coordinator | Don | READY | Phase 5d desk runners — parked; do not implement here |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-009 are `DONE`. IMP-010 is `IN_REVIEW` (DoD met in this PR). IMP-011 is `READY` (parked until 010 merges).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-010 are `DONE`. IMP-011 is `IN_REVIEW` (DoD met in this PR). IMP-012 is `READY` (parked until 011 merges).
 
 
 ---
@@ -310,7 +331,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 | Gap | Desk that would own | Why not queued now |
 |---|---|---|
-| Equity-feed ingest (Polygon); HL structure | Data & Market Memory Desk | IMP-010 IN_REVIEW (this PR) |
+| Equity-feed ingest (Polygon); HL structure | Data & Market Memory Desk | IMP-010 DONE (#41) |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
 | Quant pack rewrite (templates / pack workflow) | Quant & Market Structure Desk | IMP-001 plan placeholder; **not** assigned IMP-003 (source-health took that ID) |
 | Cross-asset regime note cadence | Macro & Cross-Asset Desk | Deferred from IMP-002 |
@@ -327,7 +348,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 IN_REVIEW** (5b). Quant factor library is **IMP-011 READY** (parked; 5c). Do not start 5c in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 IN_REVIEW** (5c, this PR). Desk runners are **IMP-012 READY** (parked; 5d). Do not start 5d in this PR.
 
 ## Reconciliation notes
 
@@ -341,4 +362,5 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-007 merged as #37 while the queue still said `IN_PROGRESS` — hygiene fixed on IMP-008.
 - IMP-008 merged as #38 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-009.
 - IMP-009 merged as #40 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-010.
-- IMP-010 intakes Phase 5b Polygon + HL structure (Principal-approved 5a–5e; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-011 is READY/parked for 5c.
+- IMP-010 merged as #41 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-011.
+- IMP-011 intakes Phase 5c quant factors (Principal-approved 5a–5e; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-012 is READY/parked for 5d.

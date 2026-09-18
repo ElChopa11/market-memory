@@ -1,0 +1,71 @@
+# Quant factor library (IMP-011 / Phase 5c). Research-only.
+# Versioned, auditable windows. Not a trading decision. Not live.yaml.
+version: "2026-09-18"
+kind: quant_factor_library
+desk: Quant & Market Structure Desk
+engine: imp-011.1
+notes:
+  - "Factors consume Memory/fixture observations already filtered by as_of_knowledge."
+  - "Missing feeds degrade to unavailable. Never invent prints or carry."
+  - "Intent-level budget fraction helpers are not orders."
+
+crypto_assets: [BTC, ETH, UNI, AAVE]
+
+momentum:
+  equity_short_bars: 21
+  equity_long_bars: 63
+  crypto_short_bars: 30
+  crypto_long_bars: 90
+
+realised_vol:
+  short_bars: 20
+  long_bars: 60
+  crypto_ann_factor: 365.0
+  equity_ann_factor: 252.0
+  min_bars: 20
+
+zscore:
+  window: 20
+
+adx:
+  period: 14
+  min_bars: 28
+
+relative_strength:
+  crypto_benchmark: BTC
+  equity_benchmark: SPY
+  sector_etfs:
+    semiconductors: SMH
+    financials: XLF
+  instrument_sector:
+    NVDA: semiconductors
+    AVGO: semiconductors
+    SMH: semiconductors
+    JPM: financials
+    XLF: financials
+
+breadth:
+  sma_window: 20
+  min_names: 3
+
+correlation:
+  window: 60
+  min_overlap: 20
+
+beta:
+  window: 60
+  min_overlap: 20
+
+sizing:
+  vol_target: 0.10
+  vol_target_base_fraction: 1.0
+  fixed_fraction: 0.01
+  cap_pct: 5.0
+
+stats:
+  bootstrap_seed: 42
+  bootstrap_draws: 500
+  walk_forward_train_min: 40
+  walk_forward_test_size: 10
+  walk_forward_step: 10
+  walk_forward_embargo: 1

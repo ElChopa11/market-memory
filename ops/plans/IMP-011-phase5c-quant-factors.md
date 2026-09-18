@@ -1,27 +1,38 @@
 # PLAN — IMP-011 Phase 5c quant factor library
 
-**Report status:** READY (parked until IMP-010 merges). **Do not implement in the 5b PR.**  
+**Report status:** IN_REVIEW (this PR).  
 **Owner:** Don/Quant (Quant & Market Structure Desk)  
-**Scope (when started):** Factor registry implementations in `packages/quant` for research-only features. No execution. No `live.yaml`. No Telegram.
+**Scope:** Factor registry implementations in `packages/quant` (`mm_quant`). Research-only. No execution. No `live.yaml`. No Telegram. No desk runners.
 
 ## Why
 
-Phase 5b lands Polygon + HL structure into Memory. Quant still has an empty `FactorRegistry` (IMP-009 skeleton). Principal lock: one phase per PR.
+Phase 5b (#41) landed Polygon + HL structure into Memory. Quant still had an empty `FactorRegistry` (IMP-009 skeleton). Principal lock: one phase per PR.
 
-## Proposed outcome (later PR)
+## Outcome
 
-- Typed factor outputs with PIT watermarks (`available_at` / `as_of_knowledge`).
-- Fixture-backed tests; degrade-never-invent on missing Memory rows.
+- Typed factor outputs with PIT watermarks (`as_of_knowledge`; map to backtest `available_at` later).
+- Regime classifier from **explicit** `config/quant/regime.yaml` thresholds (tag + confidence + driving inputs).
+- Stat rigor helpers (sample size, t-stat/bootstrap CI, deflated Sharpe / haircut, walk-forward, MAE/MFE, expectancy).
+- Sizing helpers returning **% of research budget** only (intent-level).
+- `mm_quant.QuantCard` → `templates/quant-factor-card.md` with provenance on every number.
+- Fixture-backed unit + adversarial PIT tests; degrade-never-invent on missing feeds.
 - Still not a trading decision.
+
+## Tests
+
+- `tests/unit/test_phase5c_quant.py`
+- `tests/unit/test_phase5c_queue.py`
+- `tests/adversarial/test_phase5c_point_in_time.py`
+- Import-boundary CI unchanged (quant must not import `mm_execution`).
+
+## Gates kept
+
+`live_trading_enabled: false`. risk-config-guard. promote-gate. PIT law (`as_of_knowledge` = knowledge clock). Degrade-never-invent. No secrets in git. No new network/keys/order dependency.
 
 ## Non-goals
 
-Desk runners (5d). Telegram / 5e. Signing. `live.yaml`. Paid data. Reopening IMP-010 adapters.
-
-## Dependencies
-
-IMP-010 Phase 5b Polygon + HL structure — this item stays READY/PARKED until that PR is `DONE`.
+Desk runners (5d / IMP-012). Telegram / 5e. Signing. `live.yaml`. Paid data. Reopening IMP-010 adapters. LLM at decision time.
 
 ## Status
 
-READY (parked; single-threaded — do not move to `IN_PROGRESS` while IMP-010 is open).
+IN_REVIEW (this PR). IMP-010 is DONE (#41). IMP-012 Phase 5d is READY/PARKED — do not implement here.

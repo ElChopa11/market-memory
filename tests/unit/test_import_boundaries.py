@@ -61,7 +61,21 @@ def test_skeleton_packages_are_hard_gated() -> None:
         assert mod.__phase__ == 5
     assert mm_desks.CRYPTO_TIER == "3a"
     assert mm_desks.EQUITIES_TIER == "3b"
-    assert mm_quant.FactorRegistry().names() == ()
+    assert set(mm_quant.FactorRegistry().names()) == {
+        "momentum_short",
+        "momentum_long",
+        "realised_vol_short",
+        "realised_vol_long",
+        "adx",
+        "zscore",
+        "funding_carry",
+        "basis_carry",
+        "relative_strength_btc",
+        "relative_strength_sector",
+        "breadth",
+        "correlation_matrix",
+        "beta",
+    }
     assert mm_delivery.SEND_ENABLED is False
     assert not hasattr(mm_delivery, "send")
     assert not hasattr(mm_desks, "polygon")

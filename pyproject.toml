@@ -1,7 +1,7 @@
 [project]
 name = "market-memory"
 version = "0.1.0"
-description = "Private AI-native trading intelligence lab (Hyperliquid-first). Phase 5b Polygon equities + HL structure over Phase 4 backtest + paper ledger."
+description = "Private AI-native trading intelligence lab (Hyperliquid-first). Phase 5c quant factor library over Phase 5b ingest and Phase 4 backtest + paper ledger."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

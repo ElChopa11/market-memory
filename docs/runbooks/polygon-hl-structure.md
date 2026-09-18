@@ -82,4 +82,4 @@ uv run lab data source-health --no-db
 
 ## Not in this phase
 
-Quant factor library (5c), desk runners (5d), Telegram (5e), Redis, paid data beyond the Polygon env key, `mm_execution` imports, order endpoints, `live.yaml`.
+Quant factor library is **5c** ([quant-desk.md](quant-desk.md)). Desk runners (5d), Telegram (5e), Redis, paid data beyond the Polygon env key, `mm_execution` imports, order endpoints, `live.yaml` stay out of ingest.

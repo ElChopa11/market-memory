@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 5 in progress (5b Polygon equities + HL structure).** Phase 4 backtest + paper ledger remain. 5a desk boundaries merged (#40). **No live trading, no order signing, no wallet code, no Telegram send.** 5c (quant factors) is queued as IMP-011, not this tree.
+**Status: Phase 5 in progress (5c quant factor library).** Phase 4 backtest + paper ledger remain. 5a desk boundaries merged (#40). 5b Polygon equities + HL structure merged (#41). **No live trading, no order signing, no wallet code, no Telegram send.** 5d (desk runners) is queued as IMP-012, not this tree.
 
 ## Start here
 
@@ -25,6 +25,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
 | [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5a:** Tier 0–7 desk boundaries |
 | [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) | **Phase 5b:** Polygon equities + HL structure ingest (fixture dry-run without keys) |
+| [docs/runbooks/quant-desk.md](docs/runbooks/quant-desk.md) | **Phase 5c:** Quant factor library (`mm_quant`; fixture-backed, not a call) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
 | [ADR/0002-desk-delivery-architecture.md](ADR/0002-desk-delivery-architecture.md) | Phase 5 desk/delivery architecture (5a committed; 5b–5e follow-ons) |
 
@@ -104,7 +105,7 @@ ops/              desk charters, decision rights, improvement queue, source-heal
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
-config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen
+config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors
 packages/         common, memory, ingest, provenance, briefing, desks, quant, delivery, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)
@@ -118,8 +119,8 @@ scripts/          bootstrap + lifecycle checker
 2. Research workspace (merged)
 3. Market Pulse (merged)
 4. Backtest + paper ledger (merged)
-5. **in progress** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check (**IMP-010, this tree**). 5c quant factors (IMP-011, parked). 5d desk runners later. 5e delivery (Telegram/schedules) deferred. Risk *service* / simulated execution are **not** 5b.
+5. **in progress** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check **merged (IMP-010, #41)**. **5c quant factors (IMP-011, this tree).** 5d desk runners later (IMP-012, parked). 5e delivery (Telegram/schedules) deferred. Risk *service* / simulated execution are **not** 5c.
 6. Tiny manually approved live (optional)
 7. Learning loop
 
-Out of scope for Phase 5b: quant factor implementations, desk full runners, Telegram client, schedules, `live.yaml` changes, order/signing code, paid deps beyond Polygon env key, Redis, risk/execution services, dashboards, Unicorn Hunter logic, alert spam without thresholds.
+Out of scope for Phase 5c: desk full runners, Telegram client, schedules, `live.yaml` changes, order/signing code, paid deps, Polygon/HL adapter expansion, Redis, risk/execution services, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM at decision time.
