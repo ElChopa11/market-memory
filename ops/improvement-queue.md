@@ -197,7 +197,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-001 DONE (#31). IMP-005 DONE (#35). IMP-007 DONE (#37). |
 | **Risk level** | Medium (language and membership can be misread as calls). Residual: equity tape still missing. |
 | **Status** | IN_REVIEW |
-| **PR** | *(this PR)* |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/38 |
 | **Lesson learned** | Locked-membership pass is a desk re-score, not a rubber-stamp of screenshot-engine overlay rel. RESEARCH_PRIORITY names: **none**. MONITOR: ETH (BTC-beta), UNI (SEC PR 2026-90 mapping test). DEFER: BTC, NVDA, JPM, AAVE, SMH, XLF. INSUFFICIENT_DATA: AVGO, MSFT, META, XOM. Stooq/FRED remain degraded. |
 
 ---
@@ -215,7 +215,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-005 | Principal + Quant & Market Structure Desk | Don/Quant | DONE | [#35](https://github.com/ElChopa11/market-memory/pull/35) merged |
 | IMP-006 | Equities & Post-IPO Desk | Don/Equities | DONE | [#36](https://github.com/ElChopa11/market-memory/pull/36) merged |
 | IMP-007 | Crypto Desk + Equities & Post-IPO Desk | Don/Research | DONE | [#37](https://github.com/ElChopa11/market-memory/pull/37) merged |
-| IMP-008 | Quant & Market Structure Desk | Don/Quant | IN_REVIEW | this PR — locked-membership RESEARCH_PRIORITY pass |
+| IMP-008 | Quant & Market Structure Desk | Don/Quant | IN_REVIEW | [#38](https://github.com/ElChopa11/market-memory/pull/38) — locked-membership RESEARCH_PRIORITY pass |
 
 `IN_PROGRESS` count: **0**. IMP-000–IMP-007 are `DONE`. IMP-008 is `IN_REVIEW` (DoD met in this PR).
 
