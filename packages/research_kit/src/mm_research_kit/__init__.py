@@ -11,6 +11,7 @@ from mm_research_kit.lifecycle import (
     read_status,
 )
 from mm_research_kit.skeptic import open_skeptic_review, record_skeptic_verdict
+from mm_research_kit.state_machine import TransitionLog, validate_transition
 from mm_research_kit.workspace import ThesisSpec, create_thesis_from_intent, find_workspace
 
 __phase__ = 2
@@ -22,6 +23,7 @@ __all__ = [
     "LIVE_TRADING_ENABLED",
     "ResearchKitError",
     "ThesisSpec",
+    "TransitionLog",
     "advance_status",
     "artifact_content_hash",
     "check_templates",
@@ -35,4 +37,5 @@ __all__ = [
     "open_skeptic_review",
     "read_status",
     "record_skeptic_verdict",
+    "validate_transition",
 ]

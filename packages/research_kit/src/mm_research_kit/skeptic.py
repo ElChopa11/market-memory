@@ -16,6 +16,7 @@ from mm_research_kit.lifecycle import (
     read_status,
 )
 from mm_research_kit.markdown import append_bullet_under_heading, get_field
+from mm_research_kit.state_machine import skeptic_fail_target
 
 VALID_VERDICTS = {item.value for item in SkepticVerdict}
 
@@ -85,11 +86,11 @@ def record_skeptic_verdict(
         advance_status(workspace, ThesisStatus.IN_SKEPTIC.value)
     elif verdict_value == SkepticVerdict.REVISE.value:
         if current == ThesisStatus.IN_SKEPTIC.value:
-            advance_status(workspace, ThesisStatus.IN_RESEARCH.value)
+            advance_status(workspace, skeptic_fail_target("return"))
     else:
         if current != ThesisStatus.REJECTED.value:
-            assert_can_mark(workspace, ThesisStatus.REJECTED.value)
-            advance_status(workspace, ThesisStatus.REJECTED.value)
+            assert_can_mark(workspace, skeptic_fail_target("archive"))
+            advance_status(workspace, skeptic_fail_target("archive"))
 
     _write_review(workspace, reviewer=reviewer, verdict=verdict_value, created_at=None)
     path = workspace / "skeptic-review.md"

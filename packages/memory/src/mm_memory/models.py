@@ -17,6 +17,7 @@ from mm_common.enums import (
     OBSERVATION_RELATION_VALUES,
     PAPER_TRADE_STATUS_VALUES,
     RESEARCH_RUN_KIND_VALUES,
+    RISK_DECISION_VALUES,
     SKEPTIC_VERDICT_VALUES,
     SOURCE_KIND_VALUES,
     THESIS_STATUS_VALUES,
@@ -162,6 +163,7 @@ class Thesis(Base):
     skeptic_reviews: Mapped[list["SkepticReview"]] = relationship(back_populates="thesis")
     research_runs: Mapped[list["ResearchRun"]] = relationship(back_populates="thesis")
     paper_trades: Mapped[list["PaperTrade"]] = relationship(back_populates="thesis")
+    status_events: Mapped[list["ThesisStatusEvent"]] = relationship(back_populates="thesis")
 
 
 class ThesisEvidence(Base):
@@ -273,6 +275,41 @@ class PaperTrade(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     thesis: Mapped[Thesis] = relationship(back_populates="paper_trades")
+
+
+class ThesisStatusEvent(Base):
+    """Lifecycle transition log hook (actor, ts, reason). Thin Phase 5a table."""
+
+    __tablename__ = "thesis_status_event"
+    __table_args__ = (
+        CheckConstraint(
+            "from_status IN ('" + "','".join(THESIS_STATUS_VALUES) + "')",
+            name="thesis_status_event_from_status_check",
+        ),
+        CheckConstraint(
+            "to_status IN ('" + "','".join(THESIS_STATUS_VALUES) + "')",
+            name="thesis_status_event_to_status_check",
+        ),
+        CheckConstraint(
+            "risk_decision IN ('" + "','".join(RISK_DECISION_VALUES) + "')",
+            name="thesis_status_event_risk_decision_check",
+        ),
+        Index("thesis_status_event_thesis_id_idx", "thesis_id"),
+        Index("thesis_status_event_ts_idx", "ts"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    thesis_id: Mapped[str] = mapped_column(ForeignKey("thesis.id"), nullable=False, index=True)
+    from_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    to_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    actor: Mapped[str] = mapped_column(Text, nullable=False)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    risk_decision: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    principal_override: Mapped[bool] = mapped_column(nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    thesis: Mapped[Thesis] = relationship(back_populates="status_events")
 
 
 class Brief(Base):

@@ -2,7 +2,7 @@
 
 Private, Australia-based trading intelligence lab. Hyperliquid perpetuals first. Optimise for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 4 (backtest harness + paper/shadow ledger).**
+This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 5a (desk boundaries) over Phase 4 (backtest harness + paper/shadow ledger).**
 
 ## Operating philosophy
 
@@ -44,7 +44,7 @@ Statuses: `draft | in_research | in_skeptic | paper | live | rejected | retired`
 
 Rejected theses remain learning records. A thesis cannot skip Skeptic. Paper cannot open without invalidation and max loss. Live cannot open without dual control (Risk allow **and** Principal promotion). Halt is checked before every live order (when live exists).
 
-Definition-of-done gates: [research-lifecycle.md](research-lifecycle.md). Role permissions: [AGENTS.md](../AGENTS.md). Security: [security-model.md](security-model.md). Desk operating model: [ops/desk-charters.md](../ops/desk-charters.md).
+Definition-of-done gates: [research-lifecycle.md](research-lifecycle.md). Role permissions: [AGENTS.md](../AGENTS.md). Security: [security-model.md](security-model.md). Desk operating model: [ops/desk-charters.md](../ops/desk-charters.md). Tiers 0–7: [docs/runbooks/desks.md](runbooks/desks.md).
 
 ## v1 scope
 

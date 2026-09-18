@@ -21,3 +21,9 @@ LIVE_LATER = PAPER_LIVE_LATER
 PAPER_INCOMPLETE = "paper trade cannot open without invalidation + max loss"
 PAPER_REQUIRES_SKEPTIC_PASS = "cannot mark paper without a skeptic pass"
 AUTHOR_CANNOT_BE_SOLE_SKEPTIC = "author of the thesis is not the sole skeptic of record"
+NO_SELF_APPROVE = (
+    "no self-approve: authoring desk cannot clear Skeptic, Risk, or Principal override for its own thesis"
+)
+RISK_BLOCK_TERMINAL = "Risk BLOCK is terminal without Principal override"
+RETIRED_IS_TERMINAL = "retired theses are terminal; open a new intent to revive"
+ILLEGAL_TRANSITION = "illegal lifecycle transition"

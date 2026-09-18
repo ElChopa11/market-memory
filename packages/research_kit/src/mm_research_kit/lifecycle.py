@@ -10,10 +10,8 @@ import sys
 from pathlib import Path
 
 from mm_common.enums import (
-    PHASE4_STATUS_VALUES,
     STATUSES_REQUIRING_EVIDENCE,
     SKEPTIC_VERDICT_VALUES,
-    THESIS_STATUS_VALUES,
     ThesisStatus,
 )
 from mm_research_kit.artifacts import read_text, write_text
@@ -22,13 +20,17 @@ from mm_research_kit.errors import (
     IN_SKEPTIC_WITHOUT_EVIDENCE,
     NO_INTENT,
     PAPER_INCOMPLETE,
-    PAPER_LIVE_LATER,
     PAPER_REQUIRES_SKEPTIC_PASS,
-    REJECTED_IS_TERMINAL,
     GateError,
 )
 from mm_research_kit.evidence import has_evidence_links
 from mm_research_kit.markdown import first_token, get_field, set_field
+from mm_research_kit.state_machine import (
+    TransitionHook,
+    build_transition_log,
+    emit_transition,
+    validate_transition,
+)
 
 REQUIRED_TEMPLATES = [
     "intent.md",
@@ -42,36 +44,10 @@ REQUIRED_TEMPLATES = [
     "promotion-decision.md",
     "post-mortem.md",
     "evidence-links.md",
+    "output-contract.md",
 ]
 
 SKIP_DIR_NAMES = {".git", "__pycache__", "evidence", "backtests", "paper", "quant", "cards", "queue", "screens"}
-
-LATER_PHASE_STATUSES = {ThesisStatus.LIVE.value}
-
-ALLOWED_TRANSITIONS: dict[str, set[str]] = {
-    ThesisStatus.DRAFT.value: {
-        ThesisStatus.IN_RESEARCH.value,
-        ThesisStatus.REJECTED.value,
-    },
-    ThesisStatus.IN_RESEARCH.value: {
-        ThesisStatus.IN_SKEPTIC.value,
-        ThesisStatus.REJECTED.value,
-        ThesisStatus.DRAFT.value,
-    },
-    ThesisStatus.IN_SKEPTIC.value: {
-        ThesisStatus.IN_RESEARCH.value,
-        ThesisStatus.REJECTED.value,
-        ThesisStatus.RETIRED.value,
-        ThesisStatus.PAPER.value,
-    },
-    ThesisStatus.REJECTED.value: set(),
-    ThesisStatus.RETIRED.value: set(),
-    ThesisStatus.PAPER.value: {
-        ThesisStatus.REJECTED.value,
-        ThesisStatus.RETIRED.value,
-    },
-    ThesisStatus.LIVE.value: set(),
-}
 
 _PAPER_PLACEHOLDERS = frozenset({"", "-", "n/a", "na", "none", "null", "tbd", "todo", "?", "unknown"})
 
@@ -267,28 +243,33 @@ def check_workspace(workspace: Path) -> list[str]:
     return errors
 
 
-def assert_can_mark(workspace: Path, target: str) -> None:
+def assert_can_mark(
+    workspace: Path,
+    target: str,
+    *,
+    risk_decision: str = "pending",
+    principal_override: bool = False,
+    actor: str | None = None,
+    author: str | None = None,
+) -> None:
     target = target.strip().lower()
-    if target not in THESIS_STATUS_VALUES:
-        raise GateError(f"unknown status {target!r}")
-    if target in LATER_PHASE_STATUSES:
-        raise GateError(PAPER_LIVE_LATER)
-    if target not in PHASE4_STATUS_VALUES:
-        raise GateError(f"status {target!r} is not available in Phase 4")
     if not _exists(workspace, "intent.md"):
         raise GateError(NO_INTENT)
     current = read_status(workspace) or ThesisStatus.DRAFT.value
-    if current == ThesisStatus.REJECTED.value and target != ThesisStatus.REJECTED.value:
-        raise GateError(REJECTED_IS_TERMINAL)
+    validate_transition(
+        current,
+        target,
+        risk_decision=risk_decision,
+        principal_override=principal_override,
+        actor=actor,
+        author=author or read_author_role(workspace),
+    )
     if target == current:
         if target == ThesisStatus.IN_SKEPTIC.value and not has_evidence_links(workspace):
             raise GateError(IN_SKEPTIC_WITHOUT_EVIDENCE)
         if target == ThesisStatus.PAPER.value:
             _assert_paper_ready(workspace)
         return
-    allowed = ALLOWED_TRANSITIONS.get(current, set())
-    if target not in allowed:
-        raise GateError(f"cannot advance {current} → {target}")
     if target in {ThesisStatus.IN_RESEARCH.value, ThesisStatus.IN_SKEPTIC.value} and not _exists(
         workspace, "thesis.md"
     ):
@@ -326,10 +307,39 @@ def write_status(workspace: Path, status: str) -> None:
             pass
 
 
-def advance_status(workspace: Path, target: str) -> str:
+def advance_status(
+    workspace: Path,
+    target: str,
+    *,
+    actor: str = "Coordinator",
+    reason: str = "status advance",
+    hook: TransitionHook | None = None,
+    risk_decision: str = "pending",
+    principal_override: bool = False,
+) -> str:
     target = target.strip().lower()
-    assert_can_mark(workspace, target)
+    current = read_status(workspace) or ThesisStatus.DRAFT.value
+    assert_can_mark(
+        workspace,
+        target,
+        risk_decision=risk_decision,
+        principal_override=principal_override,
+        actor=actor,
+        author=read_author_role(workspace),
+    )
     write_status(workspace, target)
+    emit_transition(
+        build_transition_log(
+            from_status=current,
+            to_status=target,
+            actor=actor,
+            reason=reason,
+            thesis_slug=workspace.name,
+            risk_decision=risk_decision,
+            principal_override=principal_override,
+        ),
+        hook,
+    )
     return target
 
 

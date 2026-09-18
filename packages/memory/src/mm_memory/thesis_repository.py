@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from mm_common.ids import new_ulid
-from mm_memory.models import Observation, SkepticReview, Thesis, ThesisEvidence
+from mm_memory.models import Observation, SkepticReview, Thesis, ThesisEvidence, ThesisStatusEvent
 
 
 class UnknownObservationError(ValueError):
@@ -154,3 +154,30 @@ class ThesisRepository:
             select(func.count()).select_from(ThesisEvidence).where(ThesisEvidence.thesis_id == thesis_id)
         )
         return int(value or 0)
+
+    def log_status_event(
+        self,
+        *,
+        thesis_id: str,
+        from_status: str,
+        to_status: str,
+        actor: str,
+        ts: datetime,
+        reason: str,
+        risk_decision: str = "pending",
+        principal_override: bool = False,
+    ) -> ThesisStatusEvent:
+        row = ThesisStatusEvent(
+            id=new_ulid(),
+            thesis_id=thesis_id,
+            from_status=from_status,
+            to_status=to_status,
+            actor=actor,
+            ts=ts,
+            reason=reason,
+            risk_decision=risk_decision,
+            principal_override=principal_override,
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row

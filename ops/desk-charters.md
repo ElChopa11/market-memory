@@ -1,6 +1,6 @@
 # Desk charters
 
-Market Memory is a **private research lab**, not a managed fund and not an autonomous trading system. These charters encode a hedge-fund-style desk model for how work is owned **today** (Phase 4: backtest + paper/shadow ledger). They do not raise external capital, enable live trading, or authorise any desk to place orders.
+Market Memory is a **private research lab**, not a managed fund and not an autonomous trading system. These charters encode a hedge-fund-style desk model for how work is owned **today** (Phase 5a: desk boundaries over Phase 4 backtest + paper/shadow ledger). They do not raise external capital, enable live trading, or authorise any desk to place orders.
 
 **Canonical desk names (Principal lock)** — use these strings in reports, the improvement queue, and PR titles:
 
@@ -8,14 +8,41 @@ Market Memory is a **private research lab**, not a managed fund and not an auton
 |---|---|
 | Principal | Sole mandate, risk budget, promotion, execution enablement |
 | Chief of Staff / Hive Coordinator | Operating system (Don); not an investment desk |
-| Data & Market Memory Desk | Trusted information infrastructure |
+| Data & Market Memory Desk | Trusted information infrastructure (Intel + Memory) |
 | Crypto Desk | Digital-asset research |
 | Equities & Post-IPO Desk | Equity / thematic / post-IPO research |
-| Macro & Cross-Asset Desk | Rates, USD, energy, vol, US session context |
+| Macro & Cross-Asset Desk | Rates, USD, energy, vol, US session context (not a numbered delivery tier) |
 | Quant & Market Structure Desk | Triage only; closed verdict set |
 | Independent Skeptic | Cannot author and approve the same thesis |
 | Risk (independent veto) | Blocks unsafe progression; never creates theses |
+| Paper Ledger | Shadow ledger; not Execution |
 | Execution & Fund Ops | **Future-only** until Principal separately activates |
+
+### Delivery tiers (0–7)
+
+Principal lock for Phase 5. Hive roles stay in [AGENTS.md](../AGENTS.md). Runbook: [docs/runbooks/desks.md](../docs/runbooks/desks.md). ADR: [ADR/0002-desk-delivery-architecture.md](../ADR/0002-desk-delivery-architecture.md).
+
+| Tier | Cell | Desk name | Package skeleton (5a) |
+|---|---|---|---|
+| 0 | Principal | Principal | (human; no package) |
+| 1 | Ops / CoS | Chief of Staff / Hive Coordinator | `apps/lab-cli` (existing) |
+| 2 | Intel | Data & Market Memory Desk | `packages/ingest` (existing; no opine imports) |
+| 3a | Crypto | Crypto Desk | `packages/desks` (`mm_desks.crypto` stub) |
+| 3b | Equities | Equities & Post-IPO Desk | `packages/desks` (`mm_desks.equities` stub) |
+| 4 | Quant | Quant & Market Structure Desk | `packages/quant` (stub; no factors) |
+| 5 | Skeptic | Independent Skeptic | `packages/research_kit` skeptic (existing) |
+| 6 | Risk | Risk (independent veto) | `packages/risk` (stub service; config exists) |
+| 7 | Paper Ledger | Paper Ledger (lab control) | `packages/paper` (existing) |
+
+**Not a numbered tier in 5a:** Macro & Cross-Asset (Pulse still operates), Unicorn, Execution & Fund Ops (future-only), Delivery/Telegram (`packages/delivery` skeleton; **send is 5e**).
+
+**Hard rules**
+
+- **No self-approve.** Authoring desk ≠ Skeptic of record ≠ Risk allow ≠ Principal override for the same thesis.
+- **Skeptic FAIL return:** verdict `revise` → status `in_research`. Authoring desk fixes; independent Skeptic re-reviews.
+- **Skeptic FAIL archive:** verdict `reject` → status `rejected` (terminal learning record). Revival requires a **new intent**.
+- **Risk BLOCK is terminal** without Principal override. The proposing desk cannot lift a BLOCK.
+- Pipeline is not skippable: `Intel → 3a/3b → Quant → Skeptic → Risk → Principal → Paper`.
 
 Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This file maps those roles onto desks, names artifacts, and forbids skipped gates. Decision tables live in [decision-rights.md](decision-rights.md). Work is queued in [improvement-queue.md](improvement-queue.md).
 
@@ -30,6 +57,7 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | US Market Pulse briefs (read-only) | Live execution, wallets, signing |
 | Versioned risk **config** (live hard-gated off) | Deterministic risk *service* as an operational gate |
 | Coordinator-run improvement queue | Multi-desk concurrent implementation |
+| Phase 5a desk-tier boundaries (docs + CI + skeletons) | Polygon client, Telegram send, desk runners, quant factors |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 
@@ -257,12 +285,15 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 - Open and record skeptic reviews (`pass` | `revise` | `reject`).
 - Fail look-ahead / leakage; demand fixes; keep rejected theses as learning records.
+- **FAIL return:** `revise` sends the thesis back to `in_research`.
+- **FAIL archive:** `reject` is terminal (`rejected`); workspace stays queryable.
 
 **Must not**
 
-- Author and approve the same thesis.
+- Author and approve the same thesis (**no self-approve**).
 - Approve risk, waive own review, or access live keys.
 - Skip invalidation quality.
+- Convert a FAIL archive into a silent reopen (new intent required).
 
 **Artifact.** `skeptic-review.md` (template: `templates/skeptic-review.md`).
 
@@ -274,7 +305,7 @@ Chief of Staff compiles a daily ops digest from these fields. Escalation to Prin
 
 ## Risk (independent veto)
 
-**Mandate.** Concentration by economic idea, correlation, liquidity, drawdown, leverage, data freshness, scenario risk. Deterministic risk-policy **config**. Blocks unsafe progression. Paper-trade proposals only after research + Skeptic clearance (and only when the Principal has authorised paper). Independent veto: a block stands until Principal-handled exception (Principal cannot be bypassed by the proposing desk).
+**Mandate.** Concentration by economic idea, correlation, liquidity, drawdown, leverage, data freshness, scenario risk. Deterministic risk-policy **config**. Blocks unsafe progression. Paper-trade proposals only after research + Skeptic clearance (and only when the Principal has authorised paper). Independent veto: **a BLOCK is terminal** until Principal override (Principal cannot be bypassed by the proposing desk; **no self-approve**).
 
 **May**
 
@@ -326,13 +357,34 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 
 ---
 
-## Adjacent cells (not desks in this model)
+## Paper Ledger (Tier 7)
+
+**Mandate.** Shadow expression of a thesis that already passed Skeptic and is not Risk-BLOCKED. Invalidation + max loss are mandatory. This is a **lab control**, not Execution.
+
+**May**
+
+- Open/close paper rows via `lab paper` when Principal has authorised paper for that thesis.
+- Record fills/marks on the shadow ledger.
+
+**Must not**
+
+- Hold live keys or import `mm_execution`.
+- Open without Skeptic `pass`, invalidation, and max loss.
+- Treat a Risk BLOCK as allow (terminal without Principal override).
+- Skip to live.
+
+**Exists today.** `packages/paper`, `lab paper`. See [docs/runbooks/paper-trade.md](../docs/runbooks/paper-trade.md).
+
+---
+
+## Adjacent cells (not numbered delivery tiers)
 
 | Cell | Status | Notes |
 |---|---|---|
+| Macro & Cross-Asset / Briefing | Operating Pulse desk | Not in Tier 0–7; still cannot allocate or execute |
+| Delivery | Phase 5e; `packages/delivery` skeleton only | No Telegram send, no schedules, no secrets in 5a |
 | Unicorn | Later; research-class stub (`packages/unicorn`) | Must not auto-promote to paper/live |
 | Dashboard | Later; read-only stub (`apps/dashboard`) | Must not mutate trading state |
-| Paper ledger | Phase 4 capability, Principal-gated per thesis | Owned as a lab control, not Execution |
 
 ---
 
@@ -359,11 +411,14 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 | `packages/execution`, `apps/execution-service` | Execution & Fund Ops (Execution) | **Dormant stub — future only** |
 | `packages/risk`, `apps/risk-service` | Risk (future service) | **Stub — do not treat as live gate** |
 | Fund ledger / tax / investor reporting | Execution & Fund Ops (Fund Ops) | **Absent — future only** |
+| `packages/desks` (`mm_desks.crypto` / `mm_desks.equities`) | Crypto Desk / Equities & Post-IPO Desk | **5a skeleton** — no runners, no adapters |
+| `packages/quant` | Quant & Market Structure Desk | **5a skeleton** — no factor implementations |
+| `packages/delivery` | Delivery (5e) | **5a skeleton** — no Telegram send |
 | `packages/unicorn`, `apps/dashboard` | Adjacent / later | Stubs |
 
 ### Missing desk boundaries (exists vs gap)
 
-1. **Hive roles ≠ desks.** AGENTS.md names Principal, Coordinator, Intel, Research, Skeptic, Briefing, Risk, Paper, Execution, Unicorn. Crypto / Equities / Macro / Quant are not separate packages today; they share `research/` + briefing + one ingest path.
+1. **Hive roles ≠ desks.** AGENTS.md names Principal, Coordinator, Intel, Research, Skeptic, Briefing, Risk, Paper, Execution, Unicorn. Phase 5a adds numbered tiers 0–7 and import-boundary skeletons (`packages/desks`, `packages/quant`, `packages/delivery`). Full desk runners, Polygon, and Telegram send are **not** this phase.
 2. **Quant Board is a named desk product (IMP-001 DONE).** Queue packs remain historical evidence, not the Board. Forbidden language stays in force for Quant artifacts. Principal membership keys are `in_universe` / `watch_only` (IMP-005); do not treat membership as a recommendation.
 3. **Skeptic and Risk independence is procedural.** Same repo, no separate credential domain for Skeptic. Risk veto is config + future service, not an implemented gate on paper open beyond lifecycle DoD.
 4. **Paper ≠ Execution.** Shadow ledger is live in Phase 4; Execution remains future-only.
@@ -373,7 +428,9 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 
 ## Related documents
 
-- Permissions: [AGENTS.md](../AGENTS.md)
+- Permissions / tiers: [AGENTS.md](../AGENTS.md)
+- Desk boundaries runbook: [docs/runbooks/desks.md](../docs/runbooks/desks.md)
+- Desk/delivery ADR: [ADR/0002-desk-delivery-architecture.md](../ADR/0002-desk-delivery-architecture.md)
 - Philosophy and hive roles: [docs/founding-brief.md](../docs/founding-brief.md)
 - Artifact DoD: [docs/research-lifecycle.md](../docs/research-lifecycle.md)
 - Security / halt / live.yaml: [docs/security-model.md](../docs/security-model.md)

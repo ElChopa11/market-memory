@@ -23,6 +23,7 @@ REQUIRED_TEMPLATES = [
     "promotion-decision.md",
     "post-mortem.md",
     "evidence-links.md",
+    "output-contract.md",
 ]
 
 REQUIRED_PACKAGES = [
@@ -37,6 +38,9 @@ REQUIRED_PACKAGES = [
     "execution",
     "briefing",
     "unicorn",
+    "desks",
+    "quant",
+    "delivery",
 ]
 
 
@@ -78,10 +82,14 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-006-post-ipo-reclaim-screen.md",
         "ops/plans/IMP-007-thesis-card-templates.md",
         "ops/plans/IMP-008-quant-locked-research-priority-pass.md",
+        "ops/plans/IMP-009-phase5a-desk-boundaries.md",
+        "ops/plans/IMP-010-phase5b-polygon-hl-structure.md",
+        "ADR/0002-desk-delivery-architecture.md",
         "config/quant_review_locked_universe.yaml",
         "config/equities/post_ipo_reclaim.yaml",
         "docs/runbooks/post-ipo-reclaim.md",
         "docs/runbooks/thesis-cards.md",
+        "docs/runbooks/desks.md",
     ):
         assert (ROOT / rel).exists(), rel
 
