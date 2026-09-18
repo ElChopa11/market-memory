@@ -1,7 +1,8 @@
 # Phase 6c-4 / IMP-020 watchlist monitor (Research product).
 # Locked universe only: in_universe ∪ watch_only from config/universe.yaml.
 # Not a call. Not a Quant verdict. No promotion. No LLM. No send.
-# deferred_must_cut stays archived. 6c-5 delivery expansion and 6d listings stay out.
+# deferred_must_cut stays archived. Telegram fan-out is Ops-owned IMP-021.
+# 6d listings stay out.
 
 version: "imp-020.1"
 desk: research

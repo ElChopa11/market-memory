@@ -348,18 +348,34 @@ def route_slugs_help() -> str:
     return "|".join(ROUTE_SLUGS)
 
 
-def telegram_header(slug: str, *, artifact_type: str | None = None) -> str:
+def telegram_header(
+    slug: str,
+    *,
+    artifact_type: str | None = None,
+    sleeve: str | None = None,
+) -> str:
     """Human Telegram banner. Machine ids stay on the envelope (`desk` = slug)."""
     row = require_route_slug(slug)
     line = f"{row.display} · {row.slug}"
+    if sleeve:
+        sleeve_row = require_named_slug(sleeve)
+        if sleeve_row.kind != KIND_SLEEVE:
+            raise _unknown("sleeve", sleeve, tuple(s.slug for s in _SLEEVES))
+        line = f"{line} · {sleeve_row.short}"
     if artifact_type:
         art = require_artifact_type(artifact_type)
         line = f"{line} · {art.display} ({art.artifact_type})"
     return line
 
 
-def with_telegram_header(markdown: str, slug: str, *, artifact_type: str | None = None) -> str:
-    header = telegram_header(slug, artifact_type=artifact_type)
+def with_telegram_header(
+    markdown: str,
+    slug: str,
+    *,
+    artifact_type: str | None = None,
+    sleeve: str | None = None,
+) -> str:
+    header = telegram_header(slug, artifact_type=artifact_type, sleeve=sleeve)
     body = markdown or ""
     if body.startswith(header):
         return body

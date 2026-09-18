@@ -2,8 +2,8 @@
 # Machine ids (slugs / artifact type ids) are stable. Human labels live here
 # and in mm_common.naming — tests fail closed if they drift.
 # Coord is orchestration only (not a publishing desk). Delivery is Ops-owned.
-# 6c-4 adds the watchlist monitor product (Research sleeve). Do not add
-# delivery expansion (6c-5) or listings (6d) here.
+# 6c-4 adds the watchlist monitor product (Research sleeve). 6c-5 delivers that
+# artifact over Ops-owned Telegram. Do not add listings (6d) here.
 
 version: "imp-020.1"
 

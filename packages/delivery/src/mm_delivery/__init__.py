@@ -2,7 +2,7 @@
 
 Dry-run (``--no-send``) is the default. ``SEND_ENABLED`` stays false so send is
 never implicit. Live POSTs go through ``deliver(..., send=True)`` with threshold,
-quiet-hours, dedupe, and rate-limit gates.
+quiet-hours, dedupe, and rate-limit gates. Publisher is Ops; Coord orchestrates.
 
 Must not import ``mm_execution`` or grow a signing surface.
 """
@@ -12,7 +12,9 @@ from mm_delivery.inbound import handle_inbound
 from mm_delivery.payload import SEND_ENABLED, DeliveryPayload, assert_no_send, build_payload, prepare_payload
 from mm_delivery.telegram import TELEGRAM_API_BASE, TelegramClient
 from mm_delivery.fanout import fanout_desk
-from mm_delivery.present import format_pct, format_tick
+from mm_delivery.present import format_pct, format_tick, present_watchlist
+from mm_delivery.watchlist import deliver_watchlist
+from mm_delivery.matrix import assert_channel_matrix
 
 __phase__ = 5
 LIVE_TRADING_ENABLED = False
@@ -24,13 +26,16 @@ __all__ = [
     "DeliveryPayload",
     "DeliveryResult",
     "TelegramClient",
+    "assert_channel_matrix",
     "assert_no_send",
     "build_payload",
     "deliver",
+    "deliver_watchlist",
     "fanout_desk",
     "format_pct",
     "format_tick",
     "handle_inbound",
     "prepare_payload",
+    "present_watchlist",
     "write_payload_files",
 ]
