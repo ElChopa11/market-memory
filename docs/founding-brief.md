@@ -2,7 +2,7 @@
 
 Private, Australia-based trading intelligence lab. Hyperliquid perpetuals first. Optimise for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 5a (desk boundaries) over Phase 4 (backtest harness + paper/shadow ledger).**
+This brief freezes the operating philosophy for v1. Implementation proceeds in numbered phases; **this repository is at Phase 5b (Polygon equities + HL structure) over Phase 5a desk boundaries and Phase 4 (backtest harness + paper/shadow ledger).**
 
 ## Operating philosophy
 

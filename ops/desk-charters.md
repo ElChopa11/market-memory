@@ -57,7 +57,8 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | US Market Pulse briefs (read-only) | Live execution, wallets, signing |
 | Versioned risk **config** (live hard-gated off) | Deterministic risk *service* as an operational gate |
 | Coordinator-run improvement queue | Multi-desk concurrent implementation |
-| Phase 5a desk-tier boundaries (docs + CI + skeletons) | Polygon client, Telegram send, desk runners, quant factors |
+| Phase 5a desk-tier boundaries (docs + CI + skeletons) | Telegram send, desk runners, quant factors |
+| Phase 5b Polygon + HL structure ingest (IMP-010) | Paid data beyond Polygon env key; order endpoints |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 
@@ -418,7 +419,7 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 
 ### Missing desk boundaries (exists vs gap)
 
-1. **Hive roles ≠ desks.** AGENTS.md names Principal, Coordinator, Intel, Research, Skeptic, Briefing, Risk, Paper, Execution, Unicorn. Phase 5a adds numbered tiers 0–7 and import-boundary skeletons (`packages/desks`, `packages/quant`, `packages/delivery`). Full desk runners, Polygon, and Telegram send are **not** this phase.
+1. **Hive roles ≠ desks.** AGENTS.md names Principal, Coordinator, Intel, Research, Skeptic, Briefing, Risk, Paper, Execution, Unicorn. Phase 5a added numbered tiers 0–7 and import-boundary skeletons (`packages/desks`, `packages/quant`, `packages/delivery`). Phase 5b Polygon + HL structure ingest lives in `mm_ingest`. Full desk runners and Telegram send are **not** this phase.
 2. **Quant Board is a named desk product (IMP-001 DONE).** Queue packs remain historical evidence, not the Board. Forbidden language stays in force for Quant artifacts. Principal membership keys are `in_universe` / `watch_only` (IMP-005); do not treat membership as a recommendation.
 3. **Skeptic and Risk independence is procedural.** Same repo, no separate credential domain for Skeptic. Risk veto is config + future service, not an implemented gate on paper open beyond lifecycle DoD.
 4. **Paper ≠ Execution.** Shadow ledger is live in Phase 4; Execution remains future-only.

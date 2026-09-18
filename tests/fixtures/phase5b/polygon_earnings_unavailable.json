@@ -1,0 +1,12 @@
+{
+  "kind": "polygon",
+  "instruments": ["NVDA"],
+  "ingested_at": "2026-09-18T00:05:00+00:00",
+  "earnings": {
+    "NVDA": {
+      "status": "NOT_AUTHORIZED",
+      "error_class": "tos_or_blocked",
+      "results": []
+    }
+  }
+}

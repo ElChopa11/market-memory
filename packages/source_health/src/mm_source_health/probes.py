@@ -32,6 +32,7 @@ from mm_ingest.hl_info import (
     HyperliquidInfoClient,
     HyperliquidInfoError,
 )
+from mm_ingest.sources import POLYGON_BASE_URL
 from mm_memory.db import dsn_from_env, normalize_dsn
 from mm_memory.models import Observation, Source
 from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
@@ -464,6 +465,167 @@ def probe_fred(ctx: ProbeContext) -> SourceHealth:
     )
 
 
+def probe_polygon(ctx: ProbeContext) -> SourceHealth:
+    spec = ctx.config.get("polygon") if isinstance(ctx.config.get("polygon"), dict) else {}
+    env_name = str(spec.get("api_key_env") or "POLYGON_API_KEY")
+    base = str(spec.get("base_url") or POLYGON_BASE_URL)
+    key = ctx.getenv(env_name)
+    if not key:
+        return _row(
+            "polygon",
+            status=STATUS_UNAVAILABLE,
+            error_class="missing_env",
+            credentials_present="no",
+            notes=missing_env_notes(env_name, source="Polygon"),
+            endpoint=base,
+            probe="GET /v3/reference/tickers?limit=1",
+        )
+    params = {"limit": 1, "apiKey": key}
+    result = ctx.http_get(f"{base.rstrip('/')}/v3/reference/tickers", params=params, parse_json=True)
+    if not result.ok:
+        return _row(
+            "polygon",
+            status=STATUS_UNAVAILABLE,
+            error_class=result.error_class,
+            latency_ms=result.latency_ms,
+            credentials_present="yes",
+            notes=(
+                f"HTTP {result.status_code} (error_class={result.error_class}; key present, not printed)"
+                if result.status_code is not None
+                else redact_secrets(result.exception_name or result.error_class),
+                f"attempts={result.attempts}",
+            ),
+            endpoint=base,
+            probe="GET /v3/reference/tickers?limit=1",
+        )
+    payload = result.json_payload if isinstance(result.json_payload, dict) else {}
+    results = payload.get("results") if isinstance(payload, dict) else None
+    if not results:
+        return _row(
+            "polygon",
+            status=STATUS_DEGRADED,
+            error_class="parse_error",
+            latency_ms=result.latency_ms,
+            credentials_present="yes",
+            notes=("HTTP 200 but no ticker rows; no OHLCV copied",),
+            endpoint=base,
+            probe="GET /v3/reference/tickers?limit=1",
+        )
+    return _row(
+        "polygon",
+        status=STATUS_OK,
+        latency_ms=result.latency_ms,
+        last_success_at=ctx.captured_at,
+        credentials_present="yes",
+        notes=("reference tickers HTTP 200; OHLCV/prints not copied into this report",),
+        endpoint=base,
+        probe="GET /v3/reference/tickers?limit=1",
+    )
+
+
+def probe_binance(ctx: ProbeContext) -> SourceHealth:
+    spec = ctx.config.get("binance") if isinstance(ctx.config.get("binance"), dict) else {}
+    ping_url = str(spec.get("ping_url") or "https://api.binance.com/api/v3/ping")
+    result = ctx.http_get(ping_url, parse_json=True)
+    if result.ok:
+        return _row(
+            "binance.public",
+            status=STATUS_OK,
+            latency_ms=result.latency_ms,
+            last_success_at=ctx.captured_at,
+            credentials_present="n/a",
+            notes=("public ping HTTP 200; no ticker prices copied",),
+            endpoint=ping_url,
+            probe="GET /api/v3/ping",
+        )
+    return _row(
+        "binance.public",
+        status=STATUS_UNAVAILABLE,
+        error_class=result.error_class,
+        latency_ms=result.latency_ms,
+        credentials_present="n/a",
+        notes=(
+            f"ping HTTP {result.status_code} (error_class={result.error_class})"
+            if result.status_code is not None
+            else redact_secrets(result.exception_name or result.error_class),
+            f"attempts={result.attempts}",
+        ),
+        endpoint=ping_url,
+        probe="GET /api/v3/ping",
+    )
+
+
+def probe_hl_structure(ctx: ProbeContext) -> SourceHealth:
+    """Allowlist contains l2Book; optional POST. Shape only — no book copied."""
+    url = str(ctx.config["hl_info_url"])
+    notes = [
+        f"structure allowlist: l2Book in ALLOWED_INFO_TYPES={('l2Book' in ALLOWED_INFO_TYPES)}",
+        "predictedFundings already on public allowlist",
+    ]
+    if "l2Book" not in ALLOWED_INFO_TYPES:
+        return _row(
+            "hyperliquid.structure",
+            status=STATUS_UNAVAILABLE,
+            error_class="allowlist_bypass",
+            notes=tuple(notes + ["l2Book missing from allowlist"]),
+            endpoint=url,
+            probe="POST type=l2Book (allowlist)",
+        )
+    client = ctx.hl_client
+    owns = False
+    if client is None:
+        client = HyperliquidInfoClient(url=url, timeout=ctx.timeout)
+        owns = True
+    started = time.perf_counter()
+    try:
+        payload = client.post({"type": "l2Book", "coin": "BTC"})
+        latency = _ms(started)
+        if not isinstance(payload, dict):
+            return _row(
+                "hyperliquid.structure",
+                status=STATUS_DEGRADED,
+                error_class="parse_error",
+                latency_ms=latency,
+                last_success_at=ctx.last_success.get("hyperliquid.structure"),
+                notes=tuple(notes + ["l2Book payload not an object; no depth copied"]),
+                endpoint=url,
+                probe="POST type=l2Book coin=BTC",
+            )
+        return _row(
+            "hyperliquid.structure",
+            status=STATUS_OK,
+            latency_ms=latency,
+            last_success_at=ctx.last_success.get("hyperliquid.structure") or ctx.captured_at,
+            notes=tuple(notes + ["l2Book HTTP ok; levels/sizes not copied into this report"]),
+            endpoint=url,
+            probe="POST type=l2Book coin=BTC",
+        )
+    except HyperliquidInfoError as exc:
+        return _row(
+            "hyperliquid.structure",
+            status=STATUS_UNAVAILABLE,
+            error_class=_classify_exception(exc),
+            latency_ms=_ms(started),
+            last_success_at=ctx.last_success.get("hyperliquid.structure"),
+            notes=tuple(notes + [redact_secrets(str(exc))]),
+            endpoint=url,
+            probe="POST type=l2Book coin=BTC",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return _row(
+            "hyperliquid.structure",
+            status=STATUS_UNAVAILABLE,
+            error_class=_classify_exception(exc),
+            latency_ms=_ms(started),
+            notes=tuple(notes + [redact_secrets(exception_class(exc))]),
+            endpoint=url,
+            probe="POST type=l2Book coin=BTC",
+        )
+    finally:
+        if owns:
+            client.close()
+
+
 def probe_calendar(ctx: ProbeContext) -> SourceHealth:
     path: Path = ctx.config["calendar_path"]
     rel = "config/briefing/calendar.yaml"
@@ -835,9 +997,12 @@ def _classify_exception(exc: BaseException) -> str:
 
 _PROBES = {
     "hyperliquid.info": probe_hyperliquid,
+    "hyperliquid.structure": probe_hl_structure,
     "coingecko": probe_coingecko,
+    "binance.public": probe_binance,
     "stooq": probe_stooq,
     "fred": probe_fred,
+    "polygon": probe_polygon,
     "calendar.yaml": probe_calendar,
     "postgres": probe_postgres,
     "object_store": probe_object_store,

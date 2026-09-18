@@ -79,7 +79,7 @@ Equities default Polygon is an **ADR note for 5b**, not a dependency or client i
 
 - **Positive:** Later slices have a named wall; Skeptic/Risk outcomes are explicit; Principal briefing copy has one contract; Intel cannot grow opinions by import.
 - **Negative:** Three stub packages until 5c–5e fill them; Macro is not a numbered tier (operators must not treat that as “Macro is retired”).
-- **Follow-ups:** IMP-010 / Phase 5b (Polygon + HL structure). 5c–5d as separately queued PRs. 5e owns delivery. Do not fold adapters or Telegram into a 5a follow-up on this branch.
+- **Follow-ups:** IMP-010 / Phase 5b (Polygon + HL structure) — this tree. 5c–5d as separately queued PRs. 5e owns delivery. Do not fold Telegram into 5b.
 
 ## Notes
 

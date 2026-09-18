@@ -38,16 +38,14 @@ def test_agents_and_charters_encode_tiers_and_escalation() -> None:
     assert "Risk BLOCK" in agents
 
 
-def test_queue_marks_008_done_009_open_010_ready() -> None:
+def test_queue_marks_008_done_009_landed() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     assert "IMP-008" in queue
     assert "IMP-009" in queue
     assert "IMP-010" in queue
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-008" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-009" in line and "IN_REVIEW" in line for line in board_lines)
-    assert any("IMP-010" in line and "READY" in line for line in board_lines)
-    assert not any("IMP-010" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-009" in line and "DONE" in line for line in board_lines)
     assert "Polygon" in queue
 
 

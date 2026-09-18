@@ -20,7 +20,6 @@ from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_
 from mm_lab_cli.source_health import add_source_health_parser, dispatch_source_health
 from mm_memory.db import dsn_from_env, session_scope
 from mm_memory.migrate import current_revision, upgrade_head
-from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
 from mm_memory.queries import what_did_we_know
 
 
@@ -31,13 +30,18 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("status", help="show phase and hard-gates")
     sub.add_parser("migrate", help="apply Alembic migrations to Postgres")
 
-    ingest = sub.add_parser("ingest", help="read-only Hyperliquid info ingest")
+    ingest = sub.add_parser("ingest", help="read-only public ingest (HL /info, Polygon, FRED/calendar)")
     ingest.add_argument("--window", default="7d", help="lookback window, e.g. 7d, 24h")
     ingest.add_argument("--start", help="UTC start instant (ISO-8601)")
     ingest.add_argument("--end", help="UTC end instant (ISO-8601)")
     ingest.add_argument("--fixture", type=Path, help="JSON/YAML fixture instead of live HTTP")
     ingest.add_argument("--no-objects", action="store_true", help="do not write raw payloads to MinIO/S3")
     ingest.add_argument("--dsn", help="Postgres DSN (default POSTGRES_DSN)")
+    ingest.add_argument(
+        "--no-db",
+        action="store_true",
+        help="dry-run: normalize fixture envelopes without Postgres or object store",
+    )
 
     know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
     know.add_argument("--at", required=True, help="UTC instant (ISO-8601)")
@@ -139,11 +143,12 @@ def _add_research_common(parser: argparse.ArgumentParser) -> None:
 
 
 def cmd_status() -> int:
-    print("market-memory lab CLI (Phase 4 — backtest + paper ledger)")
+    print("market-memory lab CLI (Phase 5b — Polygon equities + HL structure; Phase 4 backtest + paper remain)")
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
-    print("Ingest: Hyperliquid public /info only (no signing, no private keys).")
+    print("Ingest: Hyperliquid public /info + Polygon (POLYGON_API_KEY env) + FRED/calendar. No signing, no private keys.")
+    print("Equities vendor: polygon (Principal lock; Ask is N/A). Missing POLYGON_API_KEY → unavailable, never invent.")
     print("Point-in-time: what_did_we_know(T) uses as_of_knowledge <= T (lockstep with ingested_at). published_at and market_time never gate knowledge.")
     print("Theses: lab thesis new | link-evidence | advance ; lab skeptic open | record")
     print("Briefs: lab brief preopen | close | alert-check (alerts require threshold config)")
@@ -152,6 +157,7 @@ def cmd_status() -> int:
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
     print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
     print("Equities screen: lab equities reclaim-screen --fixture PATH --no-db (Post-IPO / reclaim triage; not a trading decision)")
+    print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")
@@ -170,10 +176,35 @@ def cmd_migrate() -> int:
 def cmd_ingest(args: argparse.Namespace) -> int:
     from mm_ingest.config import load_ingest_settings, load_instruments
     from mm_ingest.hl_info import HyperliquidInfoClient
-    from mm_ingest.pipeline import ingest_from_client, ingest_from_fixture, load_fixture_file
+    from mm_ingest.pipeline import (
+        envelopes_from_fixture,
+        ingest_from_client,
+        ingest_from_fixture,
+        load_fixture_file,
+        stats_from_envelopes,
+    )
+
+    settings = load_ingest_settings()
+    if args.no_db:
+        if not args.fixture:
+            print("lab ingest --no-db requires --fixture (offline dry-run; no live keys)", file=sys.stderr)
+            return 2
+        fixture = load_fixture_file(args.fixture)
+        envelopes = envelopes_from_fixture(
+            fixture,
+            stale_after_seconds=int(settings.get("stale_after_seconds", 120)),
+            instruments=fixture.get("instruments") or load_instruments(),
+        )
+        stats = stats_from_envelopes(envelopes, dry_run=True)
+        payload = stats.as_public_dict()
+        payload["qualities"] = sorted({e.data_quality.value for e in envelopes})
+        print(json.dumps(payload))
+        return 0
+
+    from mm_memory.db import dsn_from_env, session_scope
+    from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
 
     dsn = args.dsn or dsn_from_env()
-    settings = load_ingest_settings()
     try:
         store = object_store_from_env(enabled=not args.no_objects and bool(settings.get("store_raw_objects", True)))
     except ObjectStoreConfigError as exc:
@@ -193,7 +224,17 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         else:
             start = parse_utc(args.start) if args.start else None
             end = parse_utc(args.end) if args.end else None
-            with HyperliquidInfoClient(url=str(settings.get("info_url"))) as client:
+            attempts, backoff = 2, 0.25
+            limits = settings.get("rate_limits") if isinstance(settings.get("rate_limits"), dict) else {}
+            hl_lim = limits.get("hyperliquid") if isinstance(limits, dict) else {}
+            if isinstance(hl_lim, dict):
+                attempts = int(hl_lim.get("max_attempts") or attempts)
+                backoff = float(hl_lim.get("backoff_s") or backoff)
+            with HyperliquidInfoClient(
+                url=str(settings.get("info_url")),
+                max_attempts=attempts,
+                backoff_s=backoff,
+            ) as client:
                 stats = ingest_from_client(
                     session,
                     client,
@@ -205,18 +246,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
                     candle_interval=str(settings.get("candle_interval", "1h")),
                     stale_after_seconds=int(settings.get("stale_after_seconds", 120)),
                 )
-    print(
-        json.dumps(
-            {
-                "created": stats.created,
-                "duplicates": stats.duplicates,
-                "contradicted": stats.contradicted,
-                "envelopes": stats.envelopes,
-                "instruments": stats.instruments,
-                "object_store": stats.object_store,
-            }
-        )
-    )
+    print(json.dumps(stats.as_public_dict()))
     return 0
 
 

@@ -1,13 +1,24 @@
 """Read-only Hyperliquid /info HTTP client.
 
 No exchange module, no signing, no private keys, no user-private endpoints.
+Bounded retry on timeout / 429 / 5xx only (read-only POSTs are idempotent).
 """
 
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
 from typing import Any
 
 import httpx
+
+from mm_common.http import (
+    DEFAULT_BACKOFF_S,
+    DEFAULT_MAX_ATTEMPTS,
+    classify_exception,
+    classify_http_status,
+    is_retryable,
+)
 
 DEFAULT_INFO_URL = "https://api.hyperliquid.xyz/info"
 
@@ -20,6 +31,7 @@ ALLOWED_INFO_TYPES = frozenset(
         "candleSnapshot",
         "predictedFundings",
         "recentTrades",
+        "l2Book",
     }
 )
 
@@ -59,10 +71,16 @@ class HyperliquidInfoClient:
         timeout: float = 30.0,
         transport: httpx.BaseTransport | None = None,
         client: httpx.Client | None = None,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        backoff_s: float = DEFAULT_BACKOFF_S,
+        sleep: Callable[[float], None] | None = None,
     ) -> None:
         self.url = url
         self._owns_client = client is None
         self._client = client or httpx.Client(timeout=timeout, transport=transport)
+        self._max_attempts = max(1, int(max_attempts))
+        self._backoff_s = backoff_s
+        self._sleep = sleep or time.sleep
 
     def close(self) -> None:
         if self._owns_client:
@@ -80,12 +98,29 @@ class HyperliquidInfoClient:
             raise HyperliquidInfoError(f"refusing non-public info type {info_type!r}")
         if info_type not in ALLOWED_INFO_TYPES:
             raise HyperliquidInfoError(f"info type {info_type!r} is not on the read-only allowlist")
-        response = self._client.post(self.url, json=body, headers={"Content-Type": "application/json"})
-        try:
-            response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed: {exc.response.status_code}") from exc
-        return response.json()
+        last_error: BaseException | None = None
+        last_status: int | None = None
+        for attempt in range(1, self._max_attempts + 1):
+            try:
+                response = self._client.post(self.url, json=body, headers={"Content-Type": "application/json"})
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                error_class = classify_exception(exc)
+                if is_retryable(error_class) and attempt < self._max_attempts:
+                    self._sleep(self._backoff_s * attempt)
+                    continue
+                raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed: {error_class}") from exc
+            last_status = response.status_code
+            if response.status_code == 200:
+                return response.json()
+            error_class = classify_http_status(response.status_code)
+            if is_retryable(error_class) and attempt < self._max_attempts:
+                self._sleep(self._backoff_s * attempt)
+                continue
+            raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed: {response.status_code}")
+        if last_error is not None:
+            raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed") from last_error
+        raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed: {last_status}")
 
     def all_mids(self) -> dict[str, Any]:
         payload = self.post({"type": "allMids"})
@@ -117,6 +152,13 @@ class HyperliquidInfoClient:
         except HyperliquidInfoError:
             return []
         return payload if isinstance(payload, list) else []
+
+    def l2_book(self, coin: str) -> dict[str, Any]:
+        payload = self.post({"type": "l2Book", "coin": coin})
+        return payload if isinstance(payload, dict) else {}
+
+    def predicted_fundings(self) -> Any:
+        return self.post({"type": "predictedFundings"})
 
     def iter_funding_history(self, coin: str, start_ms: int, end_ms: int) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []

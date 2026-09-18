@@ -1,0 +1,43 @@
+{
+  "kind": "hl_structure",
+  "instruments": ["BTC"],
+  "snapshot_published_at": "2026-09-18T00:05:00+00:00",
+  "snapshot_ingested_at": "2026-09-18T00:05:00+00:00",
+  "include_basis": true,
+  "metaAndAssetCtxs": [
+    {
+      "universe": [
+        {"name": "BTC", "szDecimals": 5, "maxLeverage": 50}
+      ]
+    },
+    [
+      {
+        "funding": "0.0001",
+        "markPx": "65010.0",
+        "midPx": "65000.0",
+        "openInterest": "1000.5",
+        "oraclePx": "64990.0",
+        "premium": "0.0003077"
+      }
+    ]
+  ],
+  "l2Book": {
+    "BTC": {
+      "coin": "BTC",
+      "time": 1789689900000,
+      "levels": [
+        [
+          {"px": "64999.0", "sz": "1.5", "n": 3},
+          {"px": "64998.0", "sz": "2.0", "n": 1}
+        ],
+        [
+          {"px": "65001.0", "sz": "1.2", "n": 2},
+          {"px": "65002.0", "sz": "3.0", "n": 1}
+        ]
+      ]
+    }
+  },
+  "predictedFundings": {
+    "BTC": {"fundingRate": "0.00012"}
+  }
+}

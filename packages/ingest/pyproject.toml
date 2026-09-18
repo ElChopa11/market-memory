@@ -1,7 +1,7 @@
 [project]
 name = "mm-ingest"
 version = "0.1.0"
-description = "Read-only Hyperliquid public info ingest."
+description = "Read-only Hyperliquid public info + Polygon equities ingest."
 requires-python = ">=3.12"
 dependencies = [
   "mm-common",

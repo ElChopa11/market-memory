@@ -26,6 +26,7 @@ ERROR_PARSE = "parse_error"
 ERROR_MISSING_ENV = "missing_env"
 ERROR_CONFIG = "config_error"
 ERROR_SKIPPED = "skipped"
+ERROR_NOT_ON_PLAN = "not_on_plan"
 ERROR_GENERIC = "error"
 
 RETRYABLE_ERROR_CLASSES = frozenset(

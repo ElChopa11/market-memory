@@ -135,7 +135,8 @@ def test_queue_hygiene_imp007_done_imp008_single_thread() -> None:
     assert "do not merge" not in text.lower()
     in_progress = re.findall(r"\| \*\*Status\*\* \| IN_PROGRESS \|", text)
     assert in_progress == []
-    # IMP-007 block is DONE; IMP-008 is DONE (#38); IMP-009 is IN_REVIEW (this PR).
+    # IMP-007/008/009 blocks are DONE; IMP-010 is IN_REVIEW (this PR).
     assert re.search(r"### IMP-007.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
     assert re.search(r"### IMP-008.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
-    assert "IMP-000–IMP-008 are `DONE`" in text
+    assert re.search(r"### IMP-009.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
+    assert "| IMP-007 |" in text and "DONE" in text

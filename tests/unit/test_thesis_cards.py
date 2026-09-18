@@ -60,7 +60,7 @@ def test_queue_hygiene_imp007_templates_closed() -> None:
     assert "| Dedicated crypto / equity thesis-card templates |" not in text
     for item in ("IMP-004", "IMP-005", "IMP-006", "IMP-007"):
         assert re.search(rf"### {item} ", text)
-    assert "IMP-000–IMP-008 are `DONE`" in text
+    assert re.search(r"### IMP-007.*?(?:\| \*\*Status\*\* \| DONE \|)", text, re.S)
 
 
 def test_locked_membership_pin_matches_universe_yaml() -> None:

@@ -34,6 +34,13 @@ def load_instruments(path: Path | None = None) -> list[str]:
     return symbols
 
 
+def load_equity_instruments(path: Path | None = None) -> list[str]:
+    """Locked universe equities — ticker set unchanged unless Principal expands membership."""
+    universe_path = path or (repo_root() / "config" / "universe.yaml")
+    data = load_yaml(universe_path)
+    return [str(symbol).upper() for symbol in (data.get("equities") or [])]
+
+
 def load_ingest_settings(path: Path | None = None) -> dict[str, Any]:
     settings_path = path or (repo_root() / "config" / "ingest.yaml")
     defaults: dict[str, Any] = {
@@ -42,7 +49,9 @@ def load_ingest_settings(path: Path | None = None) -> dict[str, Any]:
         "stale_after_seconds": 120,
         "store_raw_objects": True,
         "source_trust_tier": 4,
+        "equities": {"vendor": "polygon", "api_key_env": "POLYGON_API_KEY"},
     }
     if settings_path.is_file():
-        defaults.update({k: v for k, v in load_yaml(settings_path).items() if v is not None})
+        loaded = load_yaml(settings_path)
+        defaults.update({k: v for k, v in loaded.items() if v is not None})
     return defaults
