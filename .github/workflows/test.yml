@@ -43,10 +43,10 @@ jobs:
         run: uv run python scripts/check_import_boundaries.py
       - name: Opine packages cannot import mm_execution
         run: |
-          ! git grep -n -E 'import mm_execution|from mm_execution' -- packages/research_kit packages/desks packages/quant packages/delivery
+          ! git grep -n -E '^[ \t]*(import mm_execution|from mm_execution)\b' -- packages/research_kit packages/desks packages/quant packages/delivery
       - name: Intel cannot import opine packages
         run: |
-          ! git grep -n -E 'import mm_research_kit|from mm_research_kit|import mm_desks|from mm_desks|import mm_quant|from mm_quant|import mm_delivery|from mm_delivery' -- packages/ingest
+          ! git grep -n -E '^[ \t]*(import mm_research_kit|from mm_research_kit|import mm_desks|from mm_desks|import mm_quant|from mm_quant|import mm_delivery|from mm_delivery)\b' -- packages/ingest
       - name: Live remains hard-gated
         run: uv run python -c "import yaml, pathlib; p=pathlib.Path('config/risk/environments/live.yaml'); d=yaml.safe_load(p.read_text()); assert d.get('live_trading_enabled') is False, 'live trading must stay hard-gated'"
       - name: No signing surface in ingest

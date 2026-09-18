@@ -1,7 +1,7 @@
 """Phase 5a desk skeletons (Tier 3a Crypto / Tier 3b Equities).
 
-No runners, no market-data adapters, no orders. Must not import mm_execution
-or signing surfaces. Intel must not import this package.
+No runners, no market-data adapters, no orders. Must not depend on the
+mm_execution module or signing surfaces. Intel must not load this package.
 """
 
 from mm_desks.crypto import CRYPTO_DESK, CRYPTO_TIER
