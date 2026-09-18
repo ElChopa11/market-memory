@@ -62,7 +62,7 @@ def _gaps(ctx: DeskContext) -> list[str]:
             for gap in card.get("gaps") or []:
                 rows.append(f"| {card.get('instrument')} {gap} | factor unavailable | Quant & Market Structure Desk |")
     if _desk(ctx, "coord") is None:
-        rows.append("| Telegram send | Phase 5e | Delivery |")
+        rows.append("| Multi-channel mesh (PG LISTEN/NOTIFY) | Phase 6a parked | Delivery |")
     if not rows:
         rows.append("| none listed | — | — |")
     # Deduplicate while preserving order.
@@ -185,7 +185,7 @@ def render_output_contract(as_of: datetime, ctx: DeskContext, *, calendar_lines:
         "",
         "## DATA GAPS",
         "",
-        "Always list. Telegram delivery (5e) is not filled by this pack.",
+        "Always list. Telegram delivery is 5e; multi-channel mesh is Phase 6 (parked).",
         "",
         "| gap | impact | owner desk |",
         "| --- | --- | --- |",

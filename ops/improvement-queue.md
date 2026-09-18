@@ -276,9 +276,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | Telegram/5e; signing; `live.yaml`; reopening IMP-011 factor math; Phase 6 bus; order endpoints; Redis; paid deps. |
 | **Dependencies** | IMP-011 DONE (#42). |
 | **Risk level** | Medium (runners can skip gates or look like calls). |
-| **Status** | IN_REVIEW |
+| **Status** | DONE |
 | **PR** | https://github.com/ElChopa11/market-memory/pull/43 |
-| **Lesson learned** | *(fill at close)* |
+| **Lesson learned** | Merged to `main` (#43). Desk runners Intel→3a\|3b→Quant→Skeptic→Risk→Coord pack with `--no-send` payloads. Telegram send stayed out of 5d and is IMP-013. |
 
 ### IMP-013 — Phase 5e Telegram delivery
 
@@ -290,15 +290,35 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Chief of Staff / Hive Coordinator |
 | **Owner** | Don |
 | **Problem** | 5d prepares `--no-send` payload strings only. Principal briefing still has no Telegram Bot API send, schedules, or secrets handling. |
-| **Evidence** | ADR 0002 follow-on 5e; `packages/delivery` `SEND_ENABLED = False`; IMP-012 this PR. |
-| **Proposed outcome** | Telegram client + schedules + secret handling in a Principal-scoped 5e PR. Send remains off until that PR. |
-| **Definition of done** | *(filled in the 5e PR)*. Plan stub: [plans/IMP-013-phase5e-telegram.md](plans/IMP-013-phase5e-telegram.md). Not started while IMP-012 is open. |
-| **Non-goals** | Live trading; signing; `live.yaml`; Phase 6 PG NOTIFY bus; reopening IMP-012 runners except queue hygiene. |
-| **Dependencies** | IMP-012 (this PR) must be DONE. |
+| **Evidence** | ADR 0002 follow-on 5e; `packages/delivery` `SEND_ENABLED = False` after #43; IMP-012 DONE #43. Principal already has `TELEGRAM_*` on the bot box. |
+| **Proposed outcome** | Telegram client + config + dry-run payloads + gates. Send remains opt-in (`SEND_ENABLED` stays false). Multi-channel mesh stays Phase 6. |
+| **Definition of done** | Queue hygiene: IMP-012 DONE (#43). This item the only implementation thread. `mm_delivery` httpx Bot API (`sendMessage`; optional document/photo); `config/delivery/telegram.yaml` desk→chat_id_env + thread_id; secrets env-only (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_CHAT_ID_<DESK>`); MarkdownV2 + 4096 sequenced chunks; idempotency `(desk, as_of, content_hash)`; threshold / quiet hours / dedupe TTL / rate-limit; `--no-send` golden payload; `lab deliver` + desk `--no-send`; inbound `/status` `/brief` `/desk` stubs; runbook + ADR 0003; README Phase 5 complete; IMP-014 parked; import walls; pytest never hits live API; `uv run pytest` + lifecycle. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Phase 6 PG NOTIFY bus; Redis; paid Telegram SDKs; reopening IMP-012 runners except queue hygiene. |
+| **Dependencies** | IMP-012 DONE (#43). |
 | **Risk level** | Medium (secrets, ToS, alert spam). |
+| **Status** | IN_REVIEW |
+| **PR** | *(this PR)* |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-014 — Phase 6a PG LISTEN/NOTIFY mesh
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-014 |
+| **Priority** | P3 |
+| **Type** | Control plane / bus |
+| **Desk** | Chief of Staff / Hive Coordinator |
+| **Owner** | Don |
+| **Problem** | 5e delivers Telegram as a single Coordinator channel. Per-desk workers and extra channels have no durable notify bus. |
+| **Evidence** | ADR 0003; IMP-013 this PR. |
+| **Proposed outcome** | Postgres `LISTEN/NOTIFY` (or equivalent) mesh so desk products fan out. Telegram remains one sink. |
+| **Definition of done** | *(filled in the 6a PR)*. Plan stub: [plans/IMP-014-phase6a-pg-notify-mesh.md](plans/IMP-014-phase6a-pg-notify-mesh.md). Not started while IMP-013 is open. |
+| **Non-goals** | Live trading; signing; `live.yaml`; Redis-as-SoT; reopening IMP-013 except queue hygiene. |
+| **Dependencies** | IMP-013 (this PR) must be DONE. |
+| **Risk level** | Medium (fan-out, duplicate sends). |
 | **Status** | READY |
 | **PR** | — |
-| **Lesson learned** | Parked. Do not implement Telegram send in IMP-012. |
+| **Lesson learned** | Parked. Do not implement the mesh in IMP-013. |
 
 ---
 
@@ -321,10 +341,11 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-009 | Chief of Staff / Hive Coordinator | Don | DONE | [#40](https://github.com/ElChopa11/market-memory/pull/40) Phase 5a desk boundaries |
 | IMP-010 | Data & Market Memory Desk | Don/Data | DONE | [#41](https://github.com/ElChopa11/market-memory/pull/41) Phase 5b Polygon + HL structure |
 | IMP-011 | Quant & Market Structure Desk | Don/Quant | DONE | [#42](https://github.com/ElChopa11/market-memory/pull/42) Phase 5c quant factors |
-| IMP-012 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | [#43](https://github.com/ElChopa11/market-memory/pull/43) Phase 5d desk runners |
-| IMP-013 | Chief of Staff / Hive Coordinator | Don | READY | Phase 5e Telegram — parked; do not implement here |
+| IMP-012 | Chief of Staff / Hive Coordinator | Don | DONE | [#43](https://github.com/ElChopa11/market-memory/pull/43) Phase 5d desk runners |
+| IMP-013 | Chief of Staff / Hive Coordinator | Don | IN_REVIEW | Phase 5e Telegram — this PR |
+| IMP-014 | Chief of Staff / Hive Coordinator | Don | READY | Phase 6a PG NOTIFY mesh — parked; do not implement here |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-011 are `DONE`. IMP-012 is `IN_REVIEW` (DoD met in this PR). IMP-013 is `READY` (parked until 012 merges).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-012 are `DONE`. IMP-013 is `IN_REVIEW` (DoD met in this PR). IMP-014 is `READY` (parked until 013 merges).
 
 
 ---
@@ -369,7 +390,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 IN_REVIEW** (5d, this PR). Telegram delivery is **IMP-013 READY** (parked; 5e). Do not start 5e in this PR.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 IN_REVIEW** (5e, this PR). Phase 6a PG NOTIFY mesh is **IMP-014 READY** (parked). Do not start 6a in this PR.
 
 ## Reconciliation notes
 
@@ -385,4 +406,5 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-009 merged as #40 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-010.
 - IMP-010 merged as #41 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-011.
 - IMP-011 merged as #42 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-012.
-- IMP-012 intakes Phase 5d desk runners (Principal-approved 5a–5e; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-013 is READY/parked for 5e.
+- IMP-012 merged as #43 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-013.
+- IMP-013 intakes Phase 5e Telegram delivery (Principal-approved 5a–5e; one phase per PR). Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). IMP-014 is READY/parked for 6a.

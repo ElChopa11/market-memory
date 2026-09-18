@@ -137,4 +137,4 @@ Canonical delivery tiers (Phase 5a): **0 Principal · 1 Ops/CoS · 2 Intel · 3a
 | Risk **BLOCK** | **Terminal.** No paper/live. Only Principal override. Proposing desk cannot lift it. |
 | Self-approve | Fail the gate. Author ≠ Skeptic ≠ Risk allow ≠ Principal override |
 
-Delivery (Telegram / schedules) is **Phase 5e**, not a 5a approve path.
+Delivery (Telegram) is **Phase 5e**. Multi-channel mesh is **Phase 6a** (parked), not a 5e approve path.

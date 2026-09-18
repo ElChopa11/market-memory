@@ -1,7 +1,7 @@
 """Desk runner protocol (Phase 5d / IMP-012).
 
 Each desk implements ``run(as_of, ctx) -> DeskOutput``. Research-only.
-Must not depend on the execution package or signing surfaces. Telegram send is Phase 5e.
+Must not depend on the execution package or signing surfaces. Telegram send is Coordinator delivery (`mm_delivery.deliver`), not the runner.
 """
 
 from __future__ import annotations

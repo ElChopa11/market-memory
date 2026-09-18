@@ -2,7 +2,7 @@
 
 Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **auditability, small blast radius, and compounding institutional memory** — not maximum automation.
 
-**Status: Phase 5 in progress (5d desk runners).** Phase 4 backtest + paper ledger remain. 5a desk boundaries merged (#40). 5b Polygon equities + HL structure merged (#41). 5c quant factor library merged (#42). **No live trading, no order signing, no wallet code, no Telegram send.** 5e (Telegram) is queued as IMP-013, not this tree.
+**Status: Phase 5 complete (5e Telegram delivery).** 5a–5d merged (#40–#43). 5e is this tree (IMP-013). **No live trading, no order signing, no wallet code.** Phase 6a PG LISTEN/NOTIFY mesh is parked as IMP-014.
 
 ## Start here
 
@@ -24,10 +24,12 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [ops/decision-rights.md](ops/decision-rights.md) | Propose / challenge / veto / approve — Principal-only gates |
 | [ops/improvement-queue.md](ops/improvement-queue.md) | Single desk-owned improvement queue (Don / Chief of Staff) |
 | [docs/runbooks/desks.md](docs/runbooks/desks.md) | **Phase 5d:** desk runners (`lab desk run --all --fixture --no-send`) |
+| [docs/runbooks/telegram.md](docs/runbooks/telegram.md) | **Phase 5e:** Telegram delivery (`lab deliver pack --no-send`; live send is operator-only) |
 | [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) | **Phase 5b:** Polygon equities + HL structure ingest (fixture dry-run without keys) |
 | [docs/runbooks/quant-desk.md](docs/runbooks/quant-desk.md) | **Phase 5c:** Quant factor library (`mm_quant`; fixture-backed, not a call) |
 | [ADR/0001-v1-monorepo.md](ADR/0001-v1-monorepo.md) | v1 architecture decision |
 | [ADR/0002-desk-delivery-architecture.md](ADR/0002-desk-delivery-architecture.md) | Phase 5 desk/delivery architecture (5a committed; 5b–5e follow-ons) |
+| [ADR/0003-telegram-delivery.md](ADR/0003-telegram-delivery.md) | Phase 5e Telegram channel; multi-channel mesh is Phase 6 |
 
 Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_trading_enabled: false`). **Controlled universe is locked** (`config/universe.yaml`, Principal 2026-09-17). Ingest membership stays full: Hyperliquid **BTC, ETH, UNI, AAVE** perps; equities **NVDA, AVGO, SMH, MSFT, META, JPM, XLF, XOM** are a Phase 3 briefing / future equity-feed watchlist, not HL. Survivors are **not equal priority** — **in-universe membership** (thesis priority; not a Quant verdict): BTC, NVDA, AVGO, MSFT, META, JPM, XOM; **watch-only** (still ingested / still in membership; no thesis-priority): ETH, UNI, AAVE, SMH, XLF (Skeptic PR #14 / call cards PR #13 / FAIL-patch PR #23). Must-cuts (HYPE, SOL, XRP, ARB, NEAR, LINK, GLD, LLY) stay archived. Intent-level only — not orders. Ops timezone: **Australia/Sydney**; US session: **America/New_York** (DST via `zoneinfo`); all database timestamps are **UTC `timestamptz`**.
 
@@ -85,14 +87,19 @@ uv run lab equities reclaim-screen --fixture tests/fixtures/equities/post_ipo_re
 ./scripts/check-lifecycle.sh
 uv run pytest
 
-# 13. Desk runners (frozen day; no Telegram send)
+# 13. Desk runners (frozen day; default --no-send)
 uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --no-db
+
+# 14. Telegram delivery dry-run (exact payload under briefs/; no live API)
+uv run lab deliver pack --fixture tests/fixtures/phase5d/frozen_day.json --no-send --no-db
+# Manual real send on the bot box only:
+# uv run lab deliver test --desk coord --i-mean-it
 
 # Optional one-shot
 ./scripts/bootstrap-dev.sh
 ```
 
-Copy `.env.example` to `.env` only if you need local overrides. **Never put Hyperliquid keys, Polygon keys, or FRED keys in git.** Phase 5b Polygon and Phase 3 live macro fetchers read `POLYGON_API_KEY` / `FRED_API_KEY` from the environment (or CI repository secrets) and mark the feed `unavailable` / `error_class=missing_env` when missing. See [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) and [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md).
+Copy `.env.example` to `.env` only if you need local overrides. **Never put Hyperliquid keys, Polygon keys, FRED keys, or Telegram bot tokens in git.** Phase 5e reads `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` (optional `TELEGRAM_CHAT_ID_<DESK>`) from the environment. Dry-run (`--no-send`) does not need them. See [docs/runbooks/telegram.md](docs/runbooks/telegram.md). Phase 5b Polygon and Phase 3 live macro fetchers read `POLYGON_API_KEY` / `FRED_API_KEY` from the environment (or CI repository secrets) and mark the feed `unavailable` / `error_class=missing_env` when missing. See [docs/runbooks/polygon-hl-structure.md](docs/runbooks/polygon-hl-structure.md) and [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md).
 
 ```bash
 uv run lab status
@@ -108,7 +115,7 @@ ops/              desk charters, decision rights, improvement queue, source-heal
 templates/        immutable artifact templates
 research/         versioned thesis chain (git)
 briefs/           generated Market Pulse markdown (gitignored dated files)
-config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors
+config/           risk / universe / instruments / ingest / schedules / briefing / quant-review universe / equities screen / quant factors / delivery
 packages/         common, memory, ingest, provenance, briefing, desks, quant, delivery, …
 apps/             lab CLI, ingest-worker, briefing-worker, later services
 tests/            unit + integration (fixture window + frozen brief day)
@@ -122,8 +129,8 @@ scripts/          bootstrap + lifecycle checker
 2. Research workspace (merged)
 3. Market Pulse (merged)
 4. Backtest + paper ledger (merged)
-5. **in progress** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check **merged (IMP-010, #41)**. 5c quant factors **merged (IMP-011, #42)**. **5d desk runners (IMP-012, this tree).** 5e delivery (Telegram/schedules) deferred as IMP-013. Risk *service* / simulated execution are **not** 5d.
-6. Tiny manually approved live (optional)
+5. **complete** — 5a desk boundaries merged (#40). 5b Polygon equities + HL funding/OI/basis/depth + spot cross-check **merged (IMP-010, #41)**. 5c quant factors **merged (IMP-011, #42)**. 5d desk runners **merged (IMP-012, #43)**. **5e Telegram delivery (IMP-013, this tree).** Risk *service* / simulated execution are **not** Phase 5.
+6. Tiny manually approved live (optional) — **parked.** Phase 6a PG `LISTEN/NOTIFY` mesh is IMP-014 (READY/PARKED). Do not implement here.
 7. Learning loop
 
-Out of scope for Phase 5d: Telegram client/send, schedules, `live.yaml` changes, order/signing code, paid deps, new market-data adapters, Redis, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM at decision time, Phase 6 bus.
+Out of scope for Phase 5e: Phase 6 PG NOTIFY bus, per-desk worker mesh, Redis, `live.yaml` changes, order/signing code, paid Telegram SDKs, new market-data adapters, risk/execution *services*, dashboards, Unicorn Hunter logic, alert spam without thresholds, LLM at decision time.

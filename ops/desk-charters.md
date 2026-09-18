@@ -57,10 +57,11 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | US Market Pulse briefs (read-only) | Live execution, wallets, signing |
 | Versioned risk **config** (live hard-gated off) | Deterministic risk *service* as an operational gate |
 | Coordinator-run improvement queue | Multi-desk concurrent implementation |
-| Phase 5a desk-tier boundaries (docs + CI + skeletons) | Telegram send, desk runners |
+| Phase 5a desk-tier boundaries (docs + CI + skeletons) | (historical row; 5d/5e landed later) |
 | Phase 5b Polygon + HL structure ingest (IMP-010) | Paid data beyond Polygon env key; order endpoints |
-| Phase 5c quant factor library (IMP-011) | Telegram (5e); live path |
-| Phase 5d desk runners (IMP-012) | Telegram send (5e); live path; risk/execution *services* |
+| Phase 5c quant factor library (IMP-011) | live path |
+| Phase 5d desk runners (IMP-012) | live path; risk/execution *services* |
+| Phase 5e Telegram delivery (IMP-013) | Phase 6 mesh; live path |
 
 Paper trading exists as a **shadow ledger bound to theses**. It is not Execution. Opening paper still requires Skeptic pass, invalidation, and max loss. Enabling paper for a thesis, or enabling live later, is a Principal act.
 
@@ -385,7 +386,7 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 | Cell | Status | Notes |
 |---|---|---|
 | Macro & Cross-Asset / Briefing | Operating Pulse desk | Not in Tier 0–7; still cannot allocate or execute |
-| Delivery | Phase 5e; `packages/delivery` skeleton only | No Telegram send, no schedules, no secrets in 5a |
+| Delivery | Phase 5e Telegram (`lab deliver`) | Secrets env-only; no Phase 6 mesh |
 | Unicorn | Later; research-class stub (`packages/unicorn`) | Must not auto-promote to paper/live |
 | Dashboard | Later; read-only stub (`apps/dashboard`) | Must not mutate trading state |
 
@@ -414,15 +415,15 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 | `packages/execution`, `apps/execution-service` | Execution & Fund Ops (Execution) | **Dormant stub — future only** |
 | `packages/risk`, `apps/risk-service` | Risk (future service) | **Stub — do not treat as live gate** |
 | Fund ledger / tax / investor reporting | Execution & Fund Ops (Fund Ops) | **Absent — future only** |
-| `packages/desks` (`mm_desks` runners) | Crypto / Equities / Intel assemble / Skeptic / Risk / Coord | **5d runners** — fixture `--no-send`; no Telegram |
+| `packages/desks` (`mm_desks` runners) | Crypto / Equities / Intel assemble / Skeptic / Risk / Coord | **5d runners** — fixture `--no-send`; Coord pack |
 | `packages/quant` | Quant & Market Structure Desk | **IMP-011 factor library**; 5d Quant desk calls it |
-| `packages/delivery` | Delivery (5e) | **no-send payload strings in 5d** — Telegram send is 5e |
+| `packages/delivery` | Delivery (5e) | **Telegram Bot API** — dry-run default; live send operator-gated |
 | `packages/risk` (`mm_risk.evaluate`) | Risk (independent veto) | **5d library allow/block** — `apps/risk-service` stays stub |
 | `packages/unicorn`, `apps/dashboard` | Adjacent / later | Stubs |
 
 ### Missing desk boundaries (exists vs gap)
 
-1. **Hive roles ≠ desks.** AGENTS.md names Principal, Coordinator, Intel, Research, Skeptic, Briefing, Risk, Paper, Execution, Unicorn. Phase 5a added numbered tiers 0–7 and import-boundary skeletons. Phase 5b Polygon + HL structure ingest lives in `mm_ingest`. Phase 5c factor math lives in `mm_quant`. Phase 5d desk runners live in `mm_desks`. Telegram send is **Phase 5e**.
+1. **Hive roles ≠ desks.** AGENTS.md names Principal, Coordinator, Intel, Research, Skeptic, Briefing, Risk, Paper, Execution, Unicorn. Phase 5a added numbered tiers 0–7 and import-boundary skeletons. Phase 5b Polygon + HL structure ingest lives in `mm_ingest`. Phase 5c factor math lives in `mm_quant`. Phase 5d desk runners live in `mm_desks`. Telegram send is **Phase 5e** (`mm_delivery`). Multi-channel mesh is **Phase 6a** (parked).
 2. **Quant Board is a named desk product (IMP-001 DONE).** Queue packs remain historical evidence, not the Board. Forbidden language stays in force for Quant artifacts. Principal membership keys are `in_universe` / `watch_only` (IMP-005); do not treat membership as a recommendation.
 3. **Skeptic and Risk independence is procedural.** Same repo, no separate credential domain for Skeptic. Risk veto is config + future service, not an implemented gate on paper open beyond lifecycle DoD.
 4. **Paper ≠ Execution.** Shadow ledger is live in Phase 4; Execution remains future-only.

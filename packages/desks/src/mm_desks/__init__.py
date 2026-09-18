@@ -1,7 +1,7 @@
 """Phase 5d desk runners (Tier 3a/3b orchestration plus Intel/Quant/Skeptic/Risk/Coord).
 
 Must not depend on the mm_execution module or signing surfaces. Intel ingest
-must not import this package. Telegram send is Phase 5e.
+must not import this package. Telegram send is `mm_delivery.deliver` (Phase 5e).
 """
 
 from mm_desks.crypto import CRYPTO_DESK, CRYPTO_TIER

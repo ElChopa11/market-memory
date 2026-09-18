@@ -88,15 +88,18 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-011-phase5c-quant-factors.md",
         "ops/plans/IMP-012-phase5d-desk-runners.md",
         "ops/plans/IMP-013-phase5e-telegram.md",
+        "ops/plans/IMP-014-phase6a-pg-notify-mesh.md",
         "config/quant/factors.yaml",
         "config/quant/regime.yaml",
         "docs/runbooks/quant-desk.md",
         "ADR/0002-desk-delivery-architecture.md",
+        "ADR/0003-telegram-delivery.md",
         "config/quant_review_locked_universe.yaml",
         "config/equities/post_ipo_reclaim.yaml",
         "docs/runbooks/post-ipo-reclaim.md",
         "docs/runbooks/thesis-cards.md",
         "docs/runbooks/desks.md",
+        "docs/runbooks/telegram.md",
         "docs/runbooks/polygon-hl-structure.md",
     ):
         assert (ROOT / rel).exists(), rel

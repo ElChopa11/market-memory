@@ -1,4 +1,4 @@
-"""Phase 5d queue hygiene: IMP-011 DONE, IMP-012 this PR, IMP-013 parked."""
+"""Phase 5d queue hygiene: IMP-012 DONE after #43; 5e follows."""
 
 from __future__ import annotations
 
@@ -11,9 +11,8 @@ def test_queue_marks_011_done_012_in_review_013_parked() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-011" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-012" in line and "IN_REVIEW" in line for line in board_lines)
-    assert any("IMP-013" in line and ("READY" in line or "PARKED" in line) for line in board_lines)
-    assert not any("IMP-013" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-012" in line and "DONE" in line for line in board_lines)
+    assert any("IMP-013" in line and "IN_REVIEW" in line for line in board_lines)
     assert "IMP-012" in queue
     assert "desk" in queue.lower()
 

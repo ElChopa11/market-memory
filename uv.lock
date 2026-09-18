@@ -443,11 +443,17 @@ name = "mm-delivery"
 version = "0.1.0"
 source = { editable = "packages/delivery" }
 dependencies = [
+    { name = "httpx" },
     { name = "mm-common" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "mm-common", editable = "packages/common" }]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "mm-common", editable = "packages/common" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
 
 [[package]]
 name = "mm-desks"
