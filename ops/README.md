@@ -9,6 +9,7 @@ Desk operating model for Market Memory as a **private research lab**. This tree 
 | [improvement-queue.md](improvement-queue.md) | Single continuous-improvement queue; every item has a desk and one accountable owner |
 | [plans/](plans/) | IMP implementation plans |
 | [reports/source-health/](reports/source-health/) | Standing DQ / source-health reports (`lab data source-health`) |
+| [reports/source-evaluation/](reports/source-evaluation/) | Principal source-evaluation research (recommend only; no adapters) |
 
 Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 
@@ -32,4 +33,5 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Phase 6c per-desk Telegram + PLAYBOOK + 6c-0 (IMP-016) is **DONE** (#47).
 - Phase 6c-1 five-desk roster (IMP-018) is **IN_REVIEW** (this PR).
 - Phase 6d listings/IPO (IMP-017) is **PARKED** until 6c-1..6c-5 complete.
+- Source evaluation 2026-09-18 (IMP-022–IMP-029) is **BACKLOG** docs recommendation. Do not implement adapters in that PR.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

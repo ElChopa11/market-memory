@@ -540,6 +540,166 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | — |
 | **Lesson learned** | Parked. Do not implement 6c-5 in IMP-018 beyond cutover compile/tests. |
 
+### IMP-022 — Enable FRED (env) + ALFRED vintages (Treasury/Fed series)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-022 |
+| **Priority** | P1 |
+| **Type** | Data / operator + later ingest (docs recommendation) |
+| **Desk** | Ops (secrets) + Intel (series/vintages) |
+| **Owner** | Ops (Principal for secrets) / Intel |
+| **Problem** | Pulse, source-health, and macro still show FRED `missing_env`. Rates / curve / credit slots are NO DATA. ALFRED vintages are not used, so revisions would be look-ahead if a later adapter overwrote prints. |
+| **Evidence** | OPEN incident `SRC-FRED-MISSING-ENV`; [ops/reports/source-health/2026-09-17.md](reports/source-health/2026-09-17.md); [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) (adopt #1). FRED adapter already exists (`mm_ingest` / Pulse). |
+| **Proposed outcome** | Principal sets `FRED_API_KEY` in gitignored env / CI secrets (Don does not decide secrets). Later (not this docs PR): ALFRED `realtime_start` / `realtime_end` so each vintage is a new observation; expand **public-domain / citation-required** series only (e.g. DGS10, DGS2, T10Y2Y). Telegram cites “via FRED®” + API disclaimer. Skip CBOE/S&P **Pre-approval required** series. |
+| **Definition of done** | Key present locally/CI without ever appearing in git; source-health FRED row `credentials_present=yes` and not `missing_env` on an operator run; no prints/secrets in reports. Vintage ingest + series expansion only in a later implementation PR with tests. `SRC-FRED-MISSING-ENV` may close only after a real health run shows the env present. |
+| **Non-goals** | Committing the key; scraping Stooq; VIXCLS/SP500 until copyright chip allows; adapters in the evaluation PR; 6c-1..6c-5 cutover; paid vendors; LLM training on FRED. |
+| **Dependencies** | Principal secret. Do **not** take `IN_PROGRESS` while IMP-018 / 6c-1..6c-5 occupy the implementation thread. Evaluation: IMP-022–029 this PR. |
+| **Risk level** | Low (env). Process: third-party FRED copyright; Telegram attribution. |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-023 — Binance market-data-only hosts (vision)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-023 |
+| **Priority** | P1 |
+| **Type** | Data / ingest (docs recommendation) |
+| **Desk** | Intel |
+| **Owner** | Intel |
+| **Problem** | Spot DQ uses `api.binance.com`, which returns HTTP 451 from Australia/cloud. `fapi.binance.com` is also 451. CVD and Binance history stay NO DATA. IMP-004 forbids scrape fallbacks. |
+| **Evidence** | [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) geo table: `api.binance.com` 451 vs `data-api.binance.vision` 200 (ping, ticker, aggTrades) and `data.binance.vision` bulk 200. Official FAQ: market-data-only URLs. |
+| **Proposed outcome** | Point public Binance GETs at `https://data-api.binance.vision` (same `/api/v3/…` paths). Use `data.binance.vision` zip klines for Quant crypto history. Compute CVD from aggTrades (taker buy). HL remains perp structure. |
+| **Definition of done** | Later implementation PR: config host change; 451 still classified `tos_or_blocked` if it returns; vision 200 path covered by tests/fixtures; no signed endpoints; no Bybit 403 workaround; source-health inventory lists the vision host. |
+| **Non-goals** | Adapters in the evaluation PR; Bybit; CoinGlass scrape; live futures REST on `fapi`; 6c cutover. |
+| **Dependencies** | Do not start while 6c-1..6c-5 is the implementation thread. |
+| **Risk level** | Low (official host swap). Residual: UM live REST still geo-blocked. |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-024 — Official EDGAR + Treasury Fiscal Data + CB statistics / calendars
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-024 |
+| **Priority** | P1 |
+| **Type** | Data / filings + macro (docs recommendation) |
+| **Desk** | Intel + Research |
+| **Owner** | Intel (ingest) / Research (filings use) |
+| **Problem** | Economic calendar is fixture-only. Filings, confirmed earnings, lockup text, and CB prints are unavailable. Paid calendar/news vendors fail Telegram ToS (Finnhub personal-use; Benzinga copyright). |
+| **Evidence** | [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) adopt #3. EDGAR submissions 200 with declared UA; ECB SDMX 200; Treasury Fiscal Data licence “free, without restriction… commercial or non-commercial”. |
+| **Proposed outcome** | Lawful public ingest: `data.sec.gov` submissions + EDGAR indexes (10 rps, declared User-Agent); 8-K item 2.02 as **confirmed** earnings (estimates stay unavailable); S-1/424B4 lockup as text evidence; Treasury Fiscal Data; ECB SDMX + BoE/RBA official tables; BLS/BEA release calendars + ALFRED revisions as new observations. Gov/CB RSS only. |
+| **Definition of done** | Later implementation PR: typed observations; PIT tests (file_date ≠ knowledge clock); missing feed → unavailable; no `api.nasdaq.com` scrape; no Yahoo RSS; import-boundary green. |
+| **Non-goals** | Adapters in this PR; listings desk (IMP-017 PARKED); Street consensus; index-reconstitution licensed files; 6c cutover. |
+| **Dependencies** | Do not start while 6c-1..6c-5 is the implementation thread. Complements IMP-022 (FRED). |
+| **Risk level** | Medium (SEC fair-access blocks; PAC deletes). |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-025 — Alternative.me Fear & Greed (attribution)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-025 |
+| **Priority** | P3 |
+| **Type** | Ops / sentiment slot (docs recommendation) |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | Ops asked for a Fear & Greed slot. No lawful feed is configured. Social vendors (Santiment, LunarCrush) fail ToS or cost. |
+| **Evidence** | [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md). Probe `https://api.alternative.me/fng/` HTTP 200. Vendor permits commercial use with adjacent attribution. |
+| **Proposed outcome** | Optional sentiment observation with adjacent attribution. Never a regime input, never a Quant verdict. GDELT stays optional with 429 backoff (Project, not Cloud). |
+| **Definition of done** | Later implementation PR: fixture + live degrade; attribution string in render; missing → unavailable; pytest never hits live unnecessarily. |
+| **Non-goals** | Santiment/LunarCrush; GDELT Cloud; adapters in this PR; 6c cutover. |
+| **Dependencies** | Do not start while 6c-1..6c-5 is the implementation thread. |
+| **Risk level** | Low. |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-026 — Trial Coinalyze API (aggregated liq / L-S)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-026 |
+| **Priority** | P2 |
+| **Type** | Data / trial (docs recommendation) |
+| **Desk** | Intel |
+| **Owner** | Intel |
+| **Problem** | Cross-venue liquidations and exchange long/short are NO DATA. HL covers HL-only liq flags. Binance futures REST is 451. CoinGlass commercial is $299/mo. |
+| **Evidence** | [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md). Coinalyze API is free; 40 rpm; cite + link requested for public use; intraday history rolling ~1500–2000 points (weak PIT). |
+| **Proposed outcome** | Time-boxed trial after IMP-023: store Coinalyze L/S and liq as **vendor-aggregated** observations with attribution. Not a backtest tape. If coverage fails, escalate to IMP-027 (Principal paid). |
+| **Definition of done** | Later PR: key env-only; rate-limit budget; attribution; degrade-never-invent; PIT tests that rolling intraday is not treated as full history. |
+| **Non-goals** | CoinGlass scrape; Bybit 403 workaround; adapters in this PR; 6c cutover. |
+| **Dependencies** | IMP-023 preferred first. Do not start while 6c-1..6c-5 is the implementation thread. |
+| **Risk level** | Medium (aggregator quality; Telegram citation). |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-027 — Trial CoinGlass Standard (paid, Principal)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-027 |
+| **Priority** | P3 |
+| **Type** | Paid data / trial — **Principal decision** |
+| **Desk** | Intel |
+| **Owner** | Principal (contract) / Intel (trial design) |
+| **Problem** | If Coinalyze cannot fill aggregated liq/L-S, CoinGlass is the named remaining vendor. Hobbyist $29 is personal-use only and is not lawful for Telegram fan-out. |
+| **Evidence** | [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md). Commercial rights start at Standard **$299/mo**. Free dashboard scrape = reject. |
+| **Proposed outcome** | Principal yes/no on Standard. If yes: env key, attribution, commercial-tier confirmation in writing, no Hobbyist/Startup. If no: leave liq heatmap unavailable. |
+| **Definition of done** | Principal recorded decision. If adopted later: tests, degrade-never-invent, no scrape. |
+| **Non-goals** | Buying in this PR; scraping; Velo/CCData (ToS reject); 6c cutover. |
+| **Dependencies** | IMP-026 trial outcome. **Paid-data gate: Principal only.** Do not start while 6c-1..6c-5 is the implementation thread. |
+| **Risk level** | Medium (cost, ToS tier, vendor PIT). |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-028 — Polygon entitlement audit (SI / options OI / not ES-NQ)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-028 |
+| **Priority** | P2 |
+| **Type** | Data / existing-vendor audit — paid upgrade is **Principal decision** |
+| **Desk** | Intel + Quant |
+| **Owner** | Intel / Quant |
+| **Problem** | Options OI and short interest were named gaps. Equities default is already Polygon. A new vendor is the wrong first move. True ES/NQ still need CME. |
+| **Evidence** | [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md). Massive docs: short interest on **all stocks plans**; options chain/OI on **Options Starter $29/mo+** (not stocks); futures/indices are separate products + CME pass-through. |
+| **Proposed outcome** | Document current `POLYGON_API_KEY` plan vs SI / ticker-events / options OI. Enable SI if already entitled. Options OI only if Principal pays Options Starter. Do **not** buy Polygon Futures to dodge CME. |
+| **Definition of done** | Written entitlement matrix in a later PR or runbook; 403 stays `tos_or_blocked`; no invented OI; no ES/NQ label on SPY/QQQ unless Principal expands membership and the proxy is named as an ETF. |
+| **Non-goals** | CME licence; Stooq scrape; adapters in this PR; 6c cutover. |
+| **Dependencies** | Existing Polygon lock (IMP-010). Paid options/futures SKUs: Principal. Do not start while 6c-1..6c-5 is the implementation thread. |
+| **Risk level** | Low–medium (plan 403s already handled). |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
+### IMP-029 — Trial EODHD (or Polygon Starter) for 5y daily + delisted
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-029 |
+| **Priority** | P3 |
+| **Type** | Quant history path — **Principal decision** if paid |
+| **Desk** | Quant |
+| **Owner** | Quant |
+| **Problem** | Quant 5y daily and delisted retention are weak on Polygon Basic (~2y, 5 rpm). Survivorship bias if delisted names vanish. |
+| **Evidence** | [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md). EODHD documents delisted lists + EOD; from ~$19.99/mo. Polygon Starter ~$29/mo keeps the locked vendor. Tiingo delisted incomplete. Alpha Vantage free RPM too low. |
+| **Proposed outcome** | Prefer **Polygon Starter** if the only need is longer US history on locked names. Trial **EODHD** only if delisted retention is the Quant requirement. Telegram tables need a display-rights check before reprint. |
+| **Definition of done** | Principal recorded yes/no. If trialled later: bulk CSV, delisted fixture, PIT `available_at`, no Yahoo. |
+| **Non-goals** | Adapters in this PR; Databento/CME; 6c cutover. |
+| **Dependencies** | IMP-028 (do not dual-pay Polygon Starter + EODHD without a reason). **Paid-data gate: Principal only.** Do not start while 6c-1..6c-5 is the implementation thread. |
+| **Risk level** | Medium (second equity vendor vs Principal Polygon lock). |
+| **Status** | BACKLOG |
+| **PR** | — (evaluation docs only) |
+| **Lesson learned** | *(fill at close)* |
+
 ---
 
 ---
@@ -571,15 +731,23 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-019 | Ops | Don/Ops | PARKED | Phase 6c-2 naming layer |
 | IMP-020 | Research | Research | PARKED | Phase 6c-4 watchlist monitor |
 | IMP-021 | Ops | Ops | PARKED | Phase 6c-5 delivery expansion |
+| IMP-022 | Ops + Intel | Ops (Principal for secrets) / Intel | BACKLOG | Adopt FRED env + ALFRED — evaluation 2026-09-18; do not start during 6c-1..6c-5 |
+| IMP-023 | Intel | Intel | BACKLOG | Adopt Binance vision hosts — evaluation 2026-09-18 |
+| IMP-024 | Intel + Research | Intel / Research | BACKLOG | Adopt EDGAR + Treasury + CB calendars — evaluation 2026-09-18 |
+| IMP-025 | Ops | Ops | BACKLOG | Adopt Alternative.me Fear & Greed — evaluation 2026-09-18 |
+| IMP-026 | Intel | Intel | BACKLOG | Trial Coinalyze (free, cite) — evaluation 2026-09-18 |
+| IMP-027 | Intel | Principal / Intel | BACKLOG | Trial CoinGlass Standard **$299/mo — Principal paid** |
+| IMP-028 | Intel + Quant | Intel / Quant | BACKLOG | Polygon SI / options OI audit; paid SKUs **Principal** |
+| IMP-029 | Quant | Quant | BACKLOG | Trial EODHD or Polygon Starter for 5y/delisted — **Principal paid** |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-016 are `DONE`. IMP-018 is `IN_REVIEW` (this PR). IMP-017/019/020/021 are `PARKED`. OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed).
+`IN_PROGRESS` count: **0**. IMP-000–IMP-016 are `DONE`. IMP-018 is `IN_REVIEW` (this PR). IMP-017/019/020/021 are `PARKED`. IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters in that PR). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed).
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
 | SCHED-001 | Ops | Ops | OPEN | Sydney 08:00 digest never fired |
 | BRIEF-TAG-20260918 | Ops / Quant scorecard | Ops/Quant | OPEN | 18 Sep pack ~90m pre-open vs 30m anchor |
-| SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive |
-| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | OPEN | fred missing_env; Don does not decide secrets |
+| SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive; evaluation 2026-09-18 rejects scrape — lawful proxy is not ES/NQ futures |
+| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | OPEN | fred missing_env; Don does not decide secrets; adopt path is IMP-022 |
 
 
 ---
@@ -624,6 +792,8 @@ Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008
 
 Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 IN_REVIEW** (this PR). Phase 6d listings/IPO is **IMP-017 PARKED** until 6c-1..6c-5 complete. Do not start 6d in this PR.
 
+Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md)). Adopt/trial intake is **IMP-022–IMP-029 BACKLOG**. No adapters in the evaluation PR. Do not take those items `IN_PROGRESS` while 6c-1..6c-5 occupy the implementation thread.
+
 ## Reconciliation notes
 
 - No `ops/improvement-queue.md` existed on `main` or on parked agent branches.
@@ -644,3 +814,4 @@ Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities +
 - IMP-015 merged as #46 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-016.
 - IMP-016 merged as #47 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-018.
 - IMP-018 intakes Phase 6c-1 desk consolidation (11→5) per Principal resume-build order 2026-09-19. OPEN incidents logged (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV). IMP-017 remains PARKED until 6c-1..6c-5 complete. Bus = Postgres NOTIFY, no Redis. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge).
+- Source evaluation 2026-09-18 (docs-only) intakes IMP-022–IMP-029 as `BACKLOG` adopt/trial recommendations. Does not modify IMP-018/6c-1 cutover, does not close OPEN incidents, does not add adapters or keys. Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) are Principal decision.
