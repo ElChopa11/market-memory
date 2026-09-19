@@ -1110,17 +1110,21 @@ def _bracket_cells(b: Bracket) -> list[str]:
 
 
 def _fwd_row(ticker: str, d: Dist) -> list[str]:
+    # Attack A8: median is the headline; mean sits alongside (right-tail drift).
     return [
         ticker,
         str(d.n),
-        _n(d.mean, pct=True),
         _n(d.median, pct=True),
+        _n(d.mean, pct=True),
         _n(d.stdev, pct=True),
         _n(d.p5, pct=True),
         _n(d.p25, pct=True),
         _n(d.p75, pct=True),
         _n(d.p95, pct=True),
     ]
+
+
+FWD_TABLE_HEADER = ["ticker", "n", "median", "mean", "stdev", "p5", "p25", "p75", "p95"]
 
 
 def _has_compute(r: InstrumentResult) -> bool:
@@ -1182,14 +1186,16 @@ def _three_line_summary(results: Sequence[InstrumentResult]) -> str:
         d1 = u.fwd[1]
         d10 = u.fwd[10]
         bits.append(
-            f"{r.spec.ticker} 1-bar mean {_n(d1.mean, pct=True)} (median {_n(d1.median, pct=True)}); "
-            f"10-bar mean {_n(d10.mean, pct=True)}"
+            f"{r.spec.ticker} 1-bar median {_n(d1.median, pct=True)} (mean {_n(d1.mean, pct=True)}); "
+            f"10-bar median {_n(d10.median, pct=True)} (mean {_n(d10.mean, pct=True)})"
         )
     if included:
         line1 = (
-            "Unconditional forward-return edge of simply being long each instrument (no signal): "
+            "Unconditional forward-return of simply being long each instrument (no signal) — "
+            "**median headline**, mean alongside: "
             + "; ".join(bits)
-            + ". These are raw close-to-close means, not after costs, not a call."
+            + ". These are raw close-to-close returns, not after costs, not a call. "
+            "Positive means with ≤0 medians (right-tail drift) are not permission to long."
         )
     else:
         line1 = (
@@ -1206,11 +1212,15 @@ def _three_line_summary(results: Sequence[InstrumentResult]) -> str:
     clean_rates = _pool_long_rates(included)
     voided = [r for r in results if r.void_code]
     line3 = (
-        f"Coin-flip 1R:2R long bracket (R=1×ATR20, first touch within {BRACKET_BARS} bars, ties separate). "
+        f"**Descriptive mixture** (not a strategy hurdle) — pooled 1R:2R long bracket "
+        f"(R=1×ATR20, first touch within {BRACKET_BARS} bars, ties separate). "
         f"**Full pool** (n≥{MIN_BARS}, including continuity voids): {_fmt_pool_rate(full_rates)}. "
         f"**Continuity-void-excluded** (drop listing-date and 20/20 level-shift voids): "
         f"{_fmt_pool_rate(clean_rates)}. "
-        f"A fair 1:2 coin-flip is ~33.3%. Every future strategy claim must beat this after costs."
+        f"A fair 1:2 coin-flip is ~33.3%. The pooled ~33% is **NOT** a strategy hurdle. "
+        f"Every later candidate is measured against **that instrument's own** unconditional "
+        f"1R:2R bracket (and, if it uses a trend-up permission filter, that instrument's "
+        f"own trend-up bracket), after costs."
     )
     if voided:
         line3 += (
@@ -1264,20 +1274,28 @@ def _provisional_banner(results: Sequence[InstrumentResult]) -> list[str]:
         "Equity base rates cover roughly **one year of usable signals in a single regime**. "
         "Every equity base rate in this file is **PROVISIONAL** until we have more history. "
         "That is the headline, not a footnote.",
+        ">",
+        "> **IC Gate 1 (2026-09-19) remains FAIL** as the methodology-build gate for "
+        "strategies. Do not soften FAIL. IC verdict distinction: tables are usable as a "
+        "**descriptive coin-flip mixture** under **PROVISIONAL** equity history. The pooled "
+        "~33% is **NOT** a strategy hurdle. Every candidate is measured against **its own** "
+        "instrument's unconditional bracket (and, later, that instrument's own trend-up "
+        "bracket if the study uses a trend-up permission filter).",
     ]
 
 
 def _robustness_section() -> list[str]:
     return [
-        "## Robustness — the coin-flip holds regardless of continuity",
+        "## Robustness — the descriptive mixture holds regardless of continuity",
         "",
-        "This is a headline finding, not a footnote.",
+        "This is a headline finding, not a footnote. It is **not** a strategy null.",
         "",
         "Prior pooled 1R:2R long (Principal-cited, N-sigma VOID era): voids barely moved "
         "the headline (~32.9% → 32.8% gross; ~32.4% → 32.3% net). "
-        "**The coin-flip benchmark holds regardless of how the continuity question resolves.** "
-        "That is a strength. Listing-date and 20/20 level-shift voids are still the correct "
-        "entity-splice test; they are not a lever on the ~33.3% coin-flip.",
+        "**The descriptive mixture holds regardless of how the continuity question resolves.** "
+        "That is a strength of the continuity test; it is **not** a strategy hurdle. "
+        "Listing-date and 20/20 level-shift voids are still the correct "
+        "entity-splice test; they are not a lever on the ~33.3% descriptive mixture.",
         "",
         "N=8 robust-sigma (1.4826×MAD) was the wrong *test*, not a mistuned threshold. "
         "It is tail-insensitive: a fat-tail equity day always prints a large multiple. "
@@ -1291,7 +1309,12 @@ def _dual_pool_section(results: Sequence[InstrumentResult]) -> list[str]:
     clean = _pool_long_rates(_void_excluded_pool(results))
     voided = [r for r in results if r.void_code]
     return [
-        "## Pooled 1R:2R long — full pool vs continuity-void-excluded",
+        "## Pooled 1R:2R long — descriptive mixture (full pool vs continuity-void-excluded)",
+        "",
+        "This table is a **descriptive coin-flip mixture** of heterogeneous instruments "
+        "(long-history names dominate the stop/target counts). It is **NOT** a strategy "
+        "hurdle. Per-instrument unconditional brackets in the tables below are the "
+        "candidate nulls.",
         "",
         "Every continuity exclusion's effect is visible. Full pool = every name with "
         f"n≥{MIN_BARS} computed stats, **including** listing-date / level-shift voids. "
@@ -1429,7 +1452,7 @@ def _flag_section(results: Sequence[InstrumentResult]) -> list[str]:
             ],
         )
     )
-    parts += ["", "Kept in both pooled 1R:2R brackets. Not a size. Not a call.", ""]
+    parts += ["", "Kept in both pooled 1R:2R descriptive-mixture tables. Not a size. Not a call. Not a hurdle.", ""]
     return parts
 
 
@@ -1502,7 +1525,9 @@ def _trend_filter_section(included: Sequence[InstrumentResult]) -> list[str]:
         "Do **not** conclude those strategies fail — they are still `INTAKE_ONLY` / HYPOTHESIS, "
         "and this file is not a candidate study. Conclude the **permission filter does not "
         "carry edge on its own**. Any later study that relies on it must beat **that "
-        "instrument's own trend-up** bracket rate, not the pooled ~33.3% coin-flip.",
+        "instrument's own unconditional** 1R:2R bracket, and (if it uses a trend-up "
+        "permission filter) **that instrument's own trend-up** bracket — not the pooled "
+        "~33.3% descriptive mixture.",
         "",
         "Bucket n<100 is do-not-interpret (same rule as the regime tables).",
         "",
@@ -1629,13 +1654,18 @@ def render_markdown(
         f"- Monitor file: `{monitor_path}`",
         "- Principal actions (SPCX void, 2-year cap, permission filter): "
         "`research/base-rates/phase1-2026-09-19-principal-actions.md`",
+        "- IC Gate 1 attack review (FAIL; A9 CLOSED stale vs #81): "
+        "`research/base-rates/phase1-2026-09-19-ic-attack.md`; "
+        "FIX ORDER follow-up: `research/base-rates/phase1-2026-09-19-ic-follow-up.md`",
         f"- Include rule: ≥ {MIN_BARS} cleaned daily OHLC bars; no substitute symbol; no synthetic bars",
         "- Continuity: **A** listing-date VOID (first bar precedes `listed_on`); **B** 20/20 "
         "sustained level-shift VOID (`median(after)/median(before) >= 3` or `<= 1/3`, every "
         "eligible bar scanned); **C** single-bar extreme FLAG only (never VOID). "
         "N-sigma/MAD is diagnostic and is **not** a VOID. Polygon daily aggs pin `adjusted=true`",
         "- Pools: report **full pool** (with voids) and **continuity-void-excluded** so every "
-        "exclusion's effect is visible",
+        "exclusion's effect is visible. Pooled 1R:2R is a **descriptive mixture**, not a "
+        "strategy hurdle; candidates use **instrument-own** unconditional (and later trend-up) "
+        "brackets."
         f"- Indicators: SMA{SMA_FAST} / SMA{SMA_SLOW} / ATR{ATR_PERIOD} (Wilder) from bars at or before the signal bar",
         f"- Forward returns: `close[t+h]/close[t] - 1` for h={list(HORIZONS)} (the bars **after** the signal close)",
         f"- Regime: trend-up = close>SMA200 and SMA50[t]>SMA50[t-{SMA_SLOPE_LOOKBACK}]; "
@@ -1727,7 +1757,7 @@ def render_markdown(
                 f"## Unconditional forward returns — {h} bar",
                 "",
                 _md_table(
-                    ["ticker", "n", "mean", "median", "stdev", "p5", "p25", "p75", "p95"],
+                    FWD_TABLE_HEADER,
                     [_fwd_row(r.spec.ticker, r.regimes["unconditional"].fwd[h]) for r in included],
                 ),
                 "",
@@ -1817,14 +1847,14 @@ def render_markdown(
                 f"### {regime} forward returns — 1 bar",
                 "",
                 _md_table(
-                    ["ticker", "n", "mean", "median", "stdev", "p5", "p25", "p75", "p95"],
+                    FWD_TABLE_HEADER,
                     [_fwd_row(r.spec.ticker, r.regimes[regime].fwd[1]) for r in included],
                 ),
                 "",
                 f"### {regime} forward returns — 10 bar",
                 "",
                 _md_table(
-                    ["ticker", "n", "mean", "median", "stdev", "p5", "p25", "p75", "p95"],
+                    FWD_TABLE_HEADER,
                     [_fwd_row(r.spec.ticker, r.regimes[regime].fwd[10]) for r in included],
                 ),
                 "",

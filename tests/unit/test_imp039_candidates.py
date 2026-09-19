@@ -110,6 +110,14 @@ def test_each_card_is_quant_hypothesis_no_size_no_scan() -> None:
         assert "permission filter" in text.lower()
         assert data["status"] == "INTAKE_ONLY"
         assert data.get("permission_filter_note", {}).get("status_unchanged") == "INTAKE_ONLY"
+        finding = data["permission_filter_note"]["finding"]
+        assert "own unconditional" in finding
+        assert "descriptive mixture" in finding
+        assert "not a strategy hurdle" in finding.lower() or "not a strategy hurdle" in finding
+        assert "FAIL" in finding
+        assert "own unconditional" in text
+        assert "descriptive mixture" in text.lower()
+        assert "FAIL" in text
 
 
 def test_claim_restated_or_source_slogan_rejected() -> None:

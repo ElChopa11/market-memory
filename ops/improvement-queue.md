@@ -1154,6 +1154,86 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | — |
 | **Lesson learned** | *(do not build tooling; membership is the inventory; Principal member-list read required)* |
 
+### IMP-052 — IC Attack 3: tie/timeout denominator
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-052 |
+| **Priority** | P1 |
+| **Type** | Quant methodology / Phase-1 brackets |
+| **Desk** | Quant |
+| **Owner** | Quant |
+| **Problem** | Hit rate is targets/(targets+stops). Ties and timeouts are excluded from the denominator, so comparison to a fair 1:2 coin-flip ~33.3% is ill-posed. Same-bar stop+target is economically ambiguous. |
+| **Evidence** | IC Gate 1 Attack 3 in `research/base-rates/phase1-2026-09-19-ic-attack.md` (#79). Principal FIX ORDER: after Sunday dry run unless the dry run changes priority. |
+| **Proposed outcome** | Pre-registered tie rule matching execution assumptions; hit rate with timeouts as a third outcome (or mark-to-market at horizon); sensitivity appendix under alternate tie treatments. |
+| **Definition of done** | Tie/timeout policy documented with sensitivity. Hit-rate definition aligned to a fair-coin claim **or** the fair-coin claim dropped. No C-00x compute in the dry-run window unless Principal reorders. |
+| **Non-goals** | Implementing in the FIX 1+2 PR. Softening IC FAIL. Live trading. Telegram. Universe promotion. Occupying IN_PROGRESS while IMP-047 holds the slot. |
+| **Dependencies** | Sunday dry run. FIX 1+2 (instrument-own hurdle + median headlines) land first. |
+| **Risk level** | Medium (denominator choice changes every quoted hit rate). |
+| **Status** | BACKLOG |
+| **PR** | — |
+| **Lesson learned** | *(queued after Sunday dry run unless dry run changes priority)* |
+
+### IMP-053 — IC Attack 2: survivorship label (report-level first)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-053 |
+| **Priority** | P1 |
+| **Type** | Quant methodology / Intel PIT |
+| **Desk** | Quant + Intel |
+| **Owner** | Quant (report label); Intel (PIT universe) |
+| **Problem** | Phase-1 pool is whoever is on `monitor.yaml` today with ≥200 bars. Deceased/delisted/never-200 names are absent. Pooling survivors as “instruments we might trade” overstates how representative any mixture is. |
+| **Evidence** | IC Gate 1 Attack 2 (#79). Principal FIX ORDER: after dry run; report-level first. PIT universe = Intel; queue not block. |
+| **Proposed outcome** | Report-level statement that the pooled mixture is conditional on current monitor membership. Later: deceased/delisted panel or point-in-time monitor snapshots (Intel). |
+| **Definition of done** | Coverage table / banner states survivorship condition. PIT universe work stays Intel-owned and does not block Quant report hygiene. |
+| **Non-goals** | Building PIT snapshots in the FIX 1+2 PR. Blocking Sunday dry run. Universe promotion. Occupying IN_PROGRESS. |
+| **Dependencies** | Sunday dry run. IMP-029 delisted tape remains BACKLOG. |
+| **Risk level** | Medium (mixture read as representative). Low this PR (queued). |
+| **Status** | BACKLOG |
+| **PR** | — |
+| **Lesson learned** | *(queued after dry run; PIT universe = Intel, queue not block)* |
+
+### IMP-054 — IC Attack 6: clip/funding cost model (DEFER — Intel depth)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-054 |
+| **Priority** | P2 |
+| **Type** | Intel + Quant cost realism |
+| **Desk** | Intel / Quant |
+| **Owner** | Intel (depth/ADV/funding distribution); Quant (R-space costs) |
+| **Problem** | Flat perps 29 bps / equities 19 bps used to path-shift stop/target. Same bps for BTC and PURR/VVV/ARB ignores ADV/depth at intended clip. Funding 1 bp/day is not HL funding stress. Barrier-shifting ≠ subtracting costs from R-multiple expectancy. |
+| **Evidence** | IC Gate 1 Attack 6 (#79). Principal FIX ORDER: DEFER. Cost: needs Intel depth (spread/ADV/funding distribution at as_of_knowledge) — not a report relabel. |
+| **Proposed outcome** | Clip-specific spread/depth/ADV from Intel; funding distribution (not a point); expectancy after costs in R-space without barrier shift unless equivalence is shown. |
+| **Definition of done** | Cost tables tied to clip liquidity + funding distribution. Separate crypto vs equity cost tables only when both panels exist. No C-00x compute here. |
+| **Non-goals** | Implementing in FIX 1+2. Inventing depth. Live trading. Telegram. Occupying IN_PROGRESS. |
+| **Dependencies** | Intel depth work. FIX 1 already drops pooled as hurdle so net-of-flat-cost pooled % is also not a hurdle. |
+| **Risk level** | High if used as a live cost schedule. This item is deferred because the Intel work is expensive relative to a banner fix. |
+| **Status** | BACKLOG |
+| **PR** | — |
+| **Lesson learned** | *(DEFER — cost noted: Intel depth, not a report relabel)* |
+
+### IMP-055 — IC Attack 1: walk-forward / demeaned null (DEFER — research sprint)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-055 |
+| **Priority** | P2 |
+| **Type** | Quant methodology / research sprint |
+| **Desk** | Quant |
+| **Owner** | Quant |
+| **Problem** | Pooled / per-name brackets are fit on the full path as if one stationary process. Unconditional forward means bake in secular drift. Equities are one year of usable signals after SMA200 warmup inside a vendor 2-year cap (PROVISIONAL). Late listings are single-cycle. |
+| **Evidence** | IC Gate 1 Attack 1 (#79). Principal FIX ORDER: DEFER. Cost: multi-regime walk-forward + demeaned or sign-randomized null — a research sprint, not a banner fix. A9 (equities absent) is CLOSED stale vs #81; this item is the remaining regime/null attack. |
+| **Proposed outcome** | Pre-registered multi-regime walk-forward of the same bracket; null defined as demeaned or sign-randomized paths, not raw long bias. Equity tables stay PROVISIONAL until history ≫ 2y. |
+| **Definition of done** | Walk-forward folds + demeaned/sign-randomized null documented and computed on paper/fixture. Does not promote C-00x. Does not soften IC FAIL until a second Gate 1 pass. |
+| **Non-goals** | Implementing in FIX 1+2. Reopening A9. Live trading. Telegram. Occupying IN_PROGRESS. |
+| **Dependencies** | FIX 1 instrument-own hurdle. Sunday dry run may reorder vs IMP-052/053. |
+| **Risk level** | High if skipped and desks treat one-regime means as a no-edge null. Deferred because the sprint cost is high relative to FIX 1+2. |
+| **Status** | BACKLOG |
+| **PR** | — |
+| **Lesson learned** | *(DEFER — cost noted: research sprint for walk-forward / demeaned null)* |
+
 ### IMP-044 — Delivery process isolation (separate user or container)
 
 | Field | Value |
@@ -1273,8 +1353,12 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-049 | Ops | Ops | BACKLOG | Canonical copies of the three Hybrid clock prompts + content hash; periodic server read-back. Fail → OPEN incident on drift. Do not build now. |
 | IMP-050 | Ops | Ops | BACKLOG | Per-channel `send_enabled` config gate (DM / Hive group / desk), read by CLI, PR-only. Replaces `--i-mean-it` as the permanent send control. Do not build now. |
 | IMP-051 | Ops | Ops | BACKLOG | Membership IS the inventory. Principal member-list read required; admin-only Bot API insufficient. Re-verify when any bot/integration is added. Chart/TV webhook ban + panel reconcile later. No tooling. |
+| IMP-052 | Quant | Quant | BACKLOG | IC Attack 3 tie/timeout denominator. After Sunday dry run unless dry run changes priority. Do not build now. |
+| IMP-053 | Quant + Intel | Quant / Intel | BACKLOG | IC Attack 2 survivorship label (report-level first). After dry run. PIT universe = Intel; queue not block. |
+| IMP-054 | Intel / Quant | Intel / Quant | BACKLOG | IC Attack 6 clip/funding. DEFER — needs Intel depth (ADV/spread/funding distribution). Cost noted. |
+| IMP-055 | Quant | Quant | BACKLOG | IC Attack 1 walk-forward / demeaned null. DEFER — research sprint. Cost noted. A9 CLOSED stale vs #81. |
 
-`IN_PROGRESS` count: **1** (IMP-047). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043 are `DONE`. IMP-044/045/048/049/050/051 stay BACKLOG. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Hybrid Step 5a this PR; Hive group stays frozen. Prompt-body drift watch, per-channel `send_enabled`, and publisher inventory are queued, not built.
+`IN_PROGRESS` count: **1** (IMP-047). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043 are `DONE`. IMP-044/045/048/049/050/051/052/053/054/055 stay BACKLOG. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Hybrid Step 5a this PR; Hive group stays frozen. Prompt-body drift watch, per-channel `send_enabled`, and publisher inventory are queued, not built. IC Attack 5+A8 FIX ORDER is docs/report-only and does not occupy the slot.
 
 **OPEN incidents — sources / clock / scorecard** (not a missing-env credentials close list)
 
@@ -1379,5 +1463,6 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - Candidate strategy intake (C-001/C-002/C-003) is **IMP-039 READY** (#61). IMP-034 on main is ticker/licence (#60), not that shelf. Studies stay parked (Quant-owned; no sizing; no scan-gate). IMP-040 pack exists (#66); expansion is L2 P1. Retail provenance = `n=unknown` hypothesis weight.
 - Desk knowledge base is **IMP-041 DONE** (#67). Does not take the IMP-047 slot. OPEN incidents untouched.
 - Publisher inventory is **IMP-051 BACKLOG**. Telegram membership IS the inventory; Principal member-list read required; admin-only Bot API insufficient; re-verify when any bot/integration is added. Chart/TradingView webhook ban and panel reconcile remain on that item. **No tooling.** IMP-050 `send_enabled` per channel stays BACKLOG. No Telegram send.
+- Principal FIX ORDER after IC #79: Attack 5 + A8 landed as report/process (instrument-own hurdle; median headlines). Attack A9 **CLOSED stale** vs #81. Queued, not built: IMP-052 (Attack 3, after Sunday dry run), IMP-053 (Attack 2, after dry run; PIT = Intel), IMP-054 (Attack 6 DEFER — Intel depth), IMP-055 (Attack 1 DEFER — research sprint). Does not occupy the IMP-047 slot. IC FAIL intact.
 - BTCUSDC.P GrokBot sighting is **TG-BTCUSDC-FALSE-POSITIVE RETIRED** (FALSE POSITIVE). Working-thread, not Telegram. Hive No Results. Membership: Principal + one human + delivery bot only. Freeze was never incomplete. Prior control-boundary lesson kept (repo-invocation inventory is structurally incomplete).
 - Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 DONE / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.

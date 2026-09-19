@@ -238,7 +238,7 @@ def test_end_to_end_bars_dir_writes_sydney_dated_report(tmp_path: Path) -> None:
     assert "BTCUSD" in text and "computed" in text
     assert "NVDA" in text
     assert "insufficient history" in text or "offline:" in text
-    assert "Coin-flip 1R:2R" in text
+    assert "Coin-flip 1R:2R" in text or "Descriptive mixture" in text
     assert "Australia/Sydney" in text
     # Deterministic given same bars + frozen clock.
     rc2 = mod.run(
@@ -343,7 +343,7 @@ def test_spcx_listing_date_voids_and_drops_from_pool(tmp_path: Path) -> None:
     assert "SPCX" not in line2
     assert "full pool" in text.lower() or "Full pool" in text
     assert "continuity-void-excluded" in text
-    assert "coin-flip benchmark holds regardless" in text.lower()
+    assert "descriptive mixture holds regardless" in text.lower()
     assert "listing-date" in text.lower() or "listing date" in text.lower()
     assert "level-shift" in text.lower() or "level shift" in text.lower()
     assert "FLAG only" in text or "flag only" in text.lower()
@@ -354,6 +354,11 @@ def test_spcx_listing_date_voids_and_drops_from_pool(tmp_path: Path) -> None:
     assert "--overlay" not in text
     assert "universe-overlay" not in text
     assert "--overlay" not in SCRIPT.read_text(encoding="utf-8")
+    assert "descriptive mixture" in text.lower()
+    assert "NOT** a strategy hurdle" in text or "not a strategy hurdle" in text.lower()
+    assert "IC Gate 1" in text and "FAIL" in text
+    assert "median headline" in text.lower() or "1-bar median" in text
+    assert "must beat this after costs" not in text.lower()
 
 
 def _eq_spec(mod, ticker: str = "NVDA"):
@@ -428,5 +433,35 @@ def test_level_shift_voids_but_remains_in_full_pool() -> None:
     rates_clean = mod._pool_long_rates(clean)
     assert rates_full["gross_hits"] + rates_full["gross_stops"] > 0
     assert rates_clean["gross_hits"] == 0 and rates_clean["gross_stops"] == 0
+
+
+def test_three_line_summary_median_headline_and_pooled_not_hurdle() -> None:
+    """FIX 2 / Attack A8: median first. FIX 1 / Attack 5: pooled is descriptive only."""
+    mod = _load()
+    bars = _walk_series(250, date(2024, 1, 1), start_px=50.0, step=0.8)
+    result = mod.compute_for_bars(_spec(mod), bars, source="fixture", cost_frac=0.0, ann=365.0)
+    summary = mod._three_line_summary([result])
+    assert "1-bar median" in summary
+    assert "10-bar median" in summary
+    assert "1-bar mean" not in summary.split("1-bar median")[0]
+    # Mean is parenthetical, after median.
+    assert "(mean " in summary
+    assert "median headline" in summary.lower()
+    assert "descriptive mixture" in summary.lower()
+    assert "NOT a strategy hurdle" in summary or "not a strategy hurdle" in summary.lower()
+    assert "must beat this after costs" not in summary.lower()
+    assert "instrument's own" in summary.lower()
+    banner = "\n".join(mod._provisional_banner([result]))
+    assert "IC Gate 1" in banner
+    assert "FAIL" in banner
+    assert "descriptive coin-flip mixture" in banner
+    assert "NOT** a strategy hurdle" in banner or "NOT a strategy hurdle" in banner
+    assert FWD_TABLE_HEADER_MEDIAN_FIRST(mod)
+
+
+def FWD_TABLE_HEADER_MEDIAN_FIRST(mod) -> bool:
+    assert mod.FWD_TABLE_HEADER[2] == "median"
+    assert mod.FWD_TABLE_HEADER[3] == "mean"
+    return True
 
 

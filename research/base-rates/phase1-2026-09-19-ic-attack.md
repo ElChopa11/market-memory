@@ -108,3 +108,22 @@ PASS requires the above **plus** a second independent Gate 1 pass with no open a
 - No promotion or reject of C-001/C-002/C-003 beyond Gate 1 methodology FAIL for building on this null.
 
 **Signed:** Gate 1 IC · 2026-09-19 · **FAIL** — do not build on Phase-1 methodology until attacks addressed
+
+---
+
+## Disposition after Principal FIX ORDER (do not rewrite the signed review)
+
+IC Gate 1 verdict remains **FAIL**. Quote the distinction; do not soften it:
+
+- Tables are usable as a **descriptive coin-flip mixture** under **PROVISIONAL** equity history.
+- The pooled ~33% is **NOT** a strategy hurdle.
+
+| Attack | Status after FIX ORDER |
+|---|---|
+| **A9 — Incomplete Phase-1 (equities absent)** | **CLOSED stale** vs [#81](https://github.com/ElChopa11/market-memory/pull/81) on-box equity panel (SPCX/BMNR voided; PROVISIONAL banner retained). The signed failure mode above described the pre-#81 artifact. |
+| 5 | FIX 1 this thread (instrument-own hurdle; pooled labelled descriptive) |
+| A8 | FIX 2 this thread (median headline, mean alongside) |
+| 3, 2 | BACKLOG after Sunday dry run (`IMP-052`, `IMP-053`) |
+| 6, 1 | DEFER with cost (`IMP-054` Intel depth; `IMP-055` research sprint) |
+
+Follow-up note: [`phase1-2026-09-19-ic-follow-up.md`](phase1-2026-09-19-ic-follow-up.md).

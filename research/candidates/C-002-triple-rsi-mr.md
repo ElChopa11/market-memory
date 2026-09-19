@@ -126,5 +126,5 @@ Status remains **INTAKE_ONLY** / HYPOTHESIS. Not a promotion. Not a reject. **DO
 
 Phase-1 instrument dump [`research/base-rates/phase1-2026-09-19.md`](../base-rates/phase1-2026-09-19.md): trend-up conditioning (close above SMA200 and SMA50 rising) does **not** raise the 1R:2R bracket hit rate on that sample; for several names it falls. The **permission filter** (confirmed uptrend as a gate) does not carry edge on its own.
 
-Any later study of C-002 must beat **that instrument's own trend-up** bracket rate, not the pooled ~33.3% coin-flip. VVVUSD is recorded on the same artifact as an interpretable outlier (dedicated look later; not a scan-gate).
+Any later study of C-002 must beat **that instrument's own unconditional** 1R:2R bracket rate (and, if it uses a trend-up permission filter, **that instrument's own trend-up** bracket). The pooled ~33% is a **descriptive mixture only**, not a strategy hurdle. IC Gate 1 remains **FAIL** as the methodology-build gate for strategies. VVVUSD is recorded on the same artifact as an interpretable outlier (dedicated look later; not a scan-gate).
 
