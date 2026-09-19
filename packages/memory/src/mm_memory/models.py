@@ -456,3 +456,50 @@ class LlmCallRow(Base):
     retry_count: Mapped[int] = mapped_column(nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
+
+class EventBaseRate(Base):
+    """Unconditional event-class base-rate snapshot (IMP-039). One row per class."""
+
+    __tablename__ = "event_base_rate"
+    __table_args__ = (
+        CheckConstraint(
+            "as_of_knowledge = ingested_at",
+            name="event_base_rate_as_of_knowledge_eq_ingested_at",
+        ),
+        CheckConstraint(
+            "event_class IN ('dip_touch','zone_boundary_touch','pullback_ema_touch')",
+            name="event_base_rate_event_class_check",
+        ),
+        UniqueConstraint(
+            "event_class",
+            "params_hash",
+            "as_of_knowledge",
+            name="event_base_rate_class_params_as_of_uidx",
+        ),
+        Index("event_base_rate_as_of_idx", "as_of_knowledge"),
+        Index("event_base_rate_params_idx", "params_hash"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    event_class: Mapped[str] = mapped_column(String(32), nullable=False)
+    as_of_knowledge: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    params_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    instrument_set: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    window_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    cost_model_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    n: Mapped[int] = mapped_column(nullable=False)
+    n_min: Mapped[int] = mapped_column(nullable=False)
+    claimed: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=False)
+    hit_rate: Mapped[Decimal | None] = mapped_column(Numeric(16, 8), nullable=True)
+    median_fwd_return: Mapped[Decimal | None] = mapped_column(Numeric(16, 8), nullable=True)
+    mean_r_after_cost: Mapped[Decimal | None] = mapped_column(Numeric(16, 8), nullable=True)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    cites_candidate: Mapped[str] = mapped_column(String(16), nullable=False)
+    survivorship_tag: Mapped[str] = mapped_column(Text, nullable=False)
+    fixture_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+

@@ -13,6 +13,7 @@ from mm_desks.listings import run_listings_from_fixture
 from mm_desks.watchlist import run_watchlist_from_fixture
 from mm_desks.scorecard import run_scorecard_from_fixture
 from mm_desks.decay import run_decay_from_fixture
+from mm_desks.base_rates import run_base_rates_from_fixture
 from mm_desks.protocol import DEGRADED, FAILED, OK, DeskOutput, DeskStatus
 from mm_desks.research import RESEARCH, DISPLAY_NAME as RESEARCH_DESK
 from mm_desks.roster import IC_RISK, INTEL, OPS, PUBLISHING_DESKS, QUANT
@@ -45,6 +46,7 @@ __all__ = [
     "DeskOutput",
     "DeskStatus",
     "mesh_from_fixture",
+    "run_base_rates_from_fixture",
     "run_decay_from_fixture",
     "run_desks",
     "run_from_fixture",

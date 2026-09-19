@@ -16,6 +16,7 @@ uv run lab deliver listings --fixture tests/fixtures/phase6d/listing_day.json --
 uv run lab scorecard compare --fixture tests/fixtures/phase6e/packs.json --no-send --no-db
 uv run lab deliver scorecard --fixture tests/fixtures/phase6e/packs.json --no-send --no-db
 uv run lab queue check
+uv run lab base-rate compute --fixture tests/fixtures/phase1_base_rates/panel.json --no-db
 ```
 
 **Must not:** depend on the `mm_execution` module or signing; fetch Polygon (Intel/`mm_ingest`); submit orders; self-approve Skeptic/Risk; import Redis; call a live LLM as calculator/router. Telegram send is Ops-owned `lab deliver` / `lab deliver fanout` / `lab deliver watchlist` / `lab deliver listings` (IMP-013 / IMP-016 / IMP-021 / IMP-017), not this package. PLAYBOOK: [../../docs/playbook.md](../../docs/playbook.md).

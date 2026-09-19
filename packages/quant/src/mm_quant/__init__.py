@@ -19,6 +19,12 @@ from mm_quant.scorecard import (
     score_packs,
 )
 from mm_quant.decay import decay_stub_payload, decay_watch_payload
+from mm_quant.base_rates import (
+    CANDIDATE_BENCHMARKS,
+    compute_unconditional_base_rates,
+    load_base_rate_config,
+    snapshot_from_fixture,
+)
 
 __phase__ = 5
 LIVE_TRADING_ENABLED = False
@@ -35,6 +41,10 @@ __all__ = [
     "compute_trade_math",
     "decay_stub_payload",
     "decay_watch_payload",
+    "CANDIDATE_BENCHMARKS",
+    "compute_unconditional_base_rates",
+    "load_base_rate_config",
+    "snapshot_from_fixture",
     "fixed_fractional_budget_pct",
     "load_quant_config",
     "render_quant_card",

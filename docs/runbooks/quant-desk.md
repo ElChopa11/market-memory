@@ -14,6 +14,8 @@ uv run pytest tests/unit/test_phase5c_quant.py tests/adversarial/test_phase5c_po
 
 There is **no** `lab quant-factors` desk runner in 5c. Same `params_hash` / `result_hash` twice on a fixture is the reproducibility gate (see unit tests).
 
+Phase 1 unconditional event-class base rates (IMP-039) are a later Quant sleeve (`lab base-rate compute --fixture --no-db`). They are the C-001/002/003 benchmarks, not a candidate study. See [base-rates.md](base-rates.md).
+
 ## Config (auditable YAML)
 
 Thresholds and windows are versioned files, not model-internal weights:

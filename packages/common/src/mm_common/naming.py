@@ -4,7 +4,7 @@ Machine ids (desk slugs, PLAYBOOK artifact types) are stable. Human labels are
 looked up here and nowhere else. Unknown ids fail closed.
 
 Coord is orchestration only — not a publishing desk. Delivery is Ops-owned.
-Sleeves (crypto, equities, chart, watchlist, listings, scorecard, decay, flow, macro, briefing) and gates (skeptic,
+Sleeves (crypto, equities, chart, watchlist, listings, scorecard, decay, base_rate, flow, macro, briefing) and gates (skeptic,
 risk) are labels, not extra desks.
 
 Must not hold secrets, place orders, or talk to Hyperliquid.
@@ -24,6 +24,7 @@ WATCHLIST = "watchlist"
 LISTINGS = "listings"
 SCORECARD = "scorecard"
 DECAY = "decay"
+BASE_RATE = "base_rate"
 
 COORD = "coord"
 ALERTS = "alerts"
@@ -91,7 +92,7 @@ _PUBLISHING: tuple[NamedSlug, ...] = (
         short="Quant",
         tier="4",
         kind=KIND_PUBLISHING,
-        notes="Closed-verdict triage; factor math; like-for-like pack scorecards; prompt-hash decay watch; not a call",
+        notes="Closed-verdict triage; factor math; like-for-like pack scorecards; prompt-hash decay watch; unconditional event-class base rates; not a call",
     ),
     NamedSlug(
         slug=IC_RISK,
@@ -214,6 +215,14 @@ _SLEEVES: tuple[NamedSlug, ...] = (
         kind=KIND_SLEEVE,
         notes="Prompt and config SHA-256 drift watch. Mismatch → Ops-owned NOTIFY/queue signal. Does not waive gates or invent scorecard numbers. Not a sixth desk.",
     ),
+    NamedSlug(
+        slug="base_rate",
+        display="Quant / unconditional event-class base rates",
+        short="event-class base rates",
+        tier="4",
+        kind=KIND_SLEEVE,
+        notes="Unconditional dip / zone-boundary / first-entry EMA rates. C-001/002/003 cite these as benchmarks. Not a candidate study. Not a sixth desk. DO NOT SIZE.",
+    ),
 )
 
 _GATES: tuple[NamedSlug, ...] = (
@@ -268,6 +277,7 @@ SLEEVE_MAP: dict[str, str] = {
     "listings": RESEARCH,
     "scorecard": QUANT,
     "decay": QUANT,
+    "base_rate": QUANT,
     "flow": INTEL,
     "macro": INTEL,
     "briefing": INTEL,
@@ -444,7 +454,7 @@ def as_config_dict() -> dict[str, Any]:
         return payload
 
     return {
-        "version": "imp-031.1",
+        "version": "imp-039.1",
         "publishing_desks": [named(row) for row in _PUBLISHING],
         "orchestration": [named(row) for row in _ORCHESTRATION],
         "routes": [named(row) for row in _ROUTES],

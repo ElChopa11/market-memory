@@ -30,8 +30,11 @@ STATUSES = (
     "DONE",
     "PARKED",
     "REJECTED",
+    "INTAKE_ONLY",
 )
-IMPLEMENTATION_STATUSES = frozenset({"BACKLOG", "READY", "IN_PROGRESS", "IN_REVIEW", "DONE", "PARKED", "REJECTED"})
+IMPLEMENTATION_STATUSES = frozenset(
+    {"BACKLOG", "READY", "IN_PROGRESS", "IN_REVIEW", "DONE", "PARKED", "REJECTED", "INTAKE_ONLY"}
+)
 INCIDENT_STATUSES = frozenset({"OPEN", "ELIGIBLE", "CLOSED", "RETIRED", "DONE", "PARKED"})
 # Principal incident closure: open → eligible → closed(cite run_id) | retired.
 # --no-db is ELIGIBLE only. CLOSED must cite a persist run_id. Helper never writes.
@@ -230,6 +233,8 @@ def can_start(item_id: str, report: QueueReport) -> tuple[bool, str]:
         return False, f"{item_id} is an incident; OPEN incidents do not occupy IN_PROGRESS and cannot be claimed"
     if target.status == "IN_PROGRESS":
         return False, f"{item_id} is already IN_PROGRESS"
+    if target.status == "INTAKE_ONLY":
+        return False, f"{item_id} is INTAKE_ONLY; blocked until its listed prerequisite exists in Market Memory"
     if target.status != "READY":
         return False, f"{item_id} status is {target.status}; only READY may move to IN_PROGRESS"
     others = [iid for iid in report.in_progress if iid != item_id]

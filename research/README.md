@@ -25,7 +25,7 @@ research/
 
 Coordinator queue snapshots (not thesis workspaces) live under `research/queue/`. They are not lifecycle-gated.
 
-Candidate strategy intake (Principal 2026-09-19; Quant **INTAKE_ONLY** / HYPOTHESIS shelf; not a thesis, not a scan-gate) lives under `research/candidates/`. Locked params: `config/candidates/`. Owner QUANT. No sizing. Nothing computed until Phase 1 base rates + 6e instance auto-track. See [candidates/README.md](candidates/README.md). Validation studies are IMP-039 **READY**.
+Candidate strategy intake (Principal 2026-09-19; Quant **INTAKE_ONLY** / HYPOTHESIS shelf; not a thesis, not a scan-gate) lives under `research/candidates/`. Locked params: `config/candidates/`. Owner QUANT. No sizing. Nothing computed until Phase 1 base rates + 6e instance auto-track. See [candidates/README.md](candidates/README.md). Validation studies are IMP-039 **READY** and stay parked until IMP-040 Phase 1 base rates land.
 
 Quant Review Board (IMP-001; not a call generator) lives under `research/quant/YYYY-MM-DD/`:
 
@@ -53,5 +53,15 @@ uv run lab equities reclaim-screen \
   --fixture tests/fixtures/equities/post_ipo_reclaim_snapshot.yaml \
   --no-db
 ```
+
+Unconditional event-class base rates (IMP-039; Quant sleeve; not a candidate study):
+
+```bash
+uv run lab base-rate compute \
+  --fixture tests/fixtures/phase1_base_rates/panel.json \
+  --no-db
+```
+
+Writes `research/quant/base-rates/`. C-001/C-002/C-003 cite that pack as the benchmark. See [quant/base-rates/README.md](quant/base-rates/README.md).
 
 See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md). Dedicated desk cards (IMP-007; Crypto / Equities): [docs/runbooks/thesis-cards.md](../docs/runbooks/thesis-cards.md).
