@@ -1,4 +1,4 @@
-"""IMP-033 queue hygiene: IMP-033 DONE #59 after merge; current thread is IMP-022."""
+"""IMP-033 queue hygiene: IMP-033 DONE #59 after merge; current thread is IMP-024."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert "`IN_PROGRESS` count: **1**" in queue
     for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
         assert item_id in queue
-    assert queue.count("| **Status** | OPEN |") >= 4
+    assert queue.count("| **Status** | OPEN |") >= 3
     assert (ROOT / "ops" / "plans" / "IMP-033-canonical-watchlist-monitor.md").is_file()
     assert (ROOT / "config" / "watchlist" / "monitor.yaml").is_file()
     assert (ROOT / "ADR" / "0014-canonical-watchlist-monitor.md").is_file()
@@ -29,6 +29,6 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-022",)
+    assert report.in_progress == ("IMP-024",)
     assert report.auto_merge is False
     assert report.auto_waive is False

@@ -193,7 +193,7 @@ def test_queue_imp031_done_imp032_single_thread_open_incidents() -> None:
     assert "`IN_PROGRESS` count: **1**" in queue
     for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
         assert item_id in queue
-    assert queue.count("| **Status** | OPEN |") >= 4
+    assert queue.count("| **Status** | OPEN |") >= 3
     assert "sydney-morning-digest-8am" in queue
     assert (ROOT / "ops" / "plans" / "IMP-032-call-card-language-debt.md").is_file()
     live = LIVE.read_text(encoding="utf-8")

@@ -91,15 +91,15 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Ops |
 | **Owner** | Ops |
 | **Problem** | FRED `missing_env` (`FRED_API_KEY` unset). |
-| **Evidence** | Source-health 2026-09-17 FRED `missing_env`; IMP-002/IMP-003 lessons. |
+| **Evidence** | Full-stack persist run_id `fred-fullstack-20260919-101938-aest`. postgres_attached=true, no_db=false, created_rows=5, observation_ids resolvable. Pulse publishes US10Y=4.94 source=fred. source-health fred=ok, credentials_present=yes, error_class=none; postgres ok. Pack: [ops/reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json](reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json) (`secrets_printed: false`). |
 | **Proposed outcome** | Full-stack close via IMP-022: Postgres attached, FRED rows landed, provenance ids, value in a published artifact. Key is operator-env `FRED_API_KEY` (never git). `--no-db` is ELIGIBLE only. |
-| **Definition of done** | `CLOSED` only after a cited persist `run_id` with Postgres rows + provenance + a published value allowed by `licence_verdict`. `--no-db` / missing Postgres = `ELIGIBLE` at most. Stays `OPEN` until that run. |
+| **Definition of done** | `CLOSED` only after a cited persist `run_id` with Postgres rows + provenance + a published value allowed by `licence_verdict`. `--no-db` / missing Postgres = `ELIGIBLE` at most. Met: run_id `fred-fullstack-20260919-101938-aest`. |
 | **Non-goals** | Committing the key; Don/Coord deciding secrets; inventing FRED prints; closing on `--no-db`. |
-| **Dependencies** | IMP-022 (implementation thread). Principal env on the box. |
+| **Dependencies** | IMP-022 DONE (operator full-stack close 2026-09-19). |
 | **Risk level** | Low (honest unavailable until keyed + persisted). |
-| **Status** | OPEN |
-| **PR** | — |
-| **Lesson learned** | *(open — closure is open→eligible→closed(cite run_id)\|retired; --no-db ≠ closed)* |
+| **Status** | CLOSED |
+| **PR** | operator full-stack close 2026-09-19; ELIGIBLE path [#60](https://github.com/ElChopa11/market-memory/pull/60) |
+| **Lesson learned** | Closed on full-stack persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`). postgres_attached=true, created_rows=5, Pulse US10Y=4.94 via FRED, source-health fred=ok. `--no-db` remains ELIGIBLE only. |
 
 ### IMP-000 — Desk operating model docs
 
@@ -551,15 +551,15 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Intel (ingest) + Ops (env) |
 | **Owner** | Intel / Ops |
 | **Problem** | Pulse, source-health, and macro still show FRED `missing_env` or `--no-db` dry-run only. Full-stack close needs Postgres attached, rows landed, provenance ids, and a value in a published artifact. Key is operator-env `FRED_API_KEY` (never git). |
-| **Evidence** | OPEN incident `SRC-FRED-MISSING-ENV`; Principal FREE SOURCE PRIORITY 2026-09-19; [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) adopt #1. Adapter already exists (`mm_ingest.macro` / Pulse). `licence_verdict: ok_gov` on the FRED adapter. |
+| **Evidence** | CLOSED incident `SRC-FRED-MISSING-ENV` cite run_id `fred-fullstack-20260919-101938-aest`; pack [ops/reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json](reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json). Principal FREE SOURCE PRIORITY 2026-09-19; [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) adopt #1. Adapter already exists (`mm_ingest.macro` / Pulse). `licence_verdict: ok_gov` on the FRED adapter. |
 | **Proposed outcome** | Operator path: env key + `lab ingest` (not `--no-db`) persists FRED observations, writes provenance ids, and a published artifact may show the value (ok_gov). `--no-db` stays ELIGIBLE. ALFRED vintages later. Skip CBOE/S&P Pre-approval series. |
-| **Definition of done** | Queue: IMP-033 DONE (#59). This item the only implementation thread. Plan [plans/IMP-022-fred-fullstack.md](plans/IMP-022-fred-fullstack.md). Fixture `--no-db` → `fred_stack.closure=ELIGIBLE` with value + `claim_hash` provenance; never `CLOSED`. Persist helper exists (`persist_envelopes` + `run_fred_stack`). `SRC-FRED-MISSING-ENV` stays OPEN until an operator cites a persist `run_id`. No secrets in git. Tests + import-boundary. |
+| **Definition of done** | Queue: IMP-033 DONE (#59). Plan [plans/IMP-022-fred-fullstack.md](plans/IMP-022-fred-fullstack.md). Fixture `--no-db` → `fred_stack.closure=ELIGIBLE` with value + `claim_hash` provenance; never `CLOSED`. Persist helper exists (`persist_envelopes` + `run_fred_stack`). `SRC-FRED-MISSING-ENV` CLOSED only after an operator cites a persist `run_id`. No secrets in git. Tests + import-boundary. Met: run_id `fred-fullstack-20260919-101938-aest`. |
 | **Non-goals** | Committing the key; closing the incident on `--no-db`; scraping Stooq; VIXCLS/SP500 until copyright chip allows; paid vendors; LLM training on FRED; `live.yaml` / signing / Redis. |
-| **Dependencies** | IMP-033 DONE (#59). IMP-034 licence schema (this PR). Principal env on the operator box. |
+| **Dependencies** | IMP-033 DONE (#59). IMP-034 DONE (#60). Principal env on the operator box. |
 | **Risk level** | Low (env). Process: third-party FRED copyright; Telegram attribution. |
-| **Status** | IN_PROGRESS |
-| **PR** | *(this PR)* |
-| **Lesson learned** | *(fill at close — cite persist run_id)* |
+| **Status** | DONE |
+| **PR** | operator full-stack close 2026-09-19 (run_id `fred-fullstack-20260919-101938-aest`); ELIGIBLE path [#60](https://github.com/ElChopa11/market-memory/pull/60) |
+| **Lesson learned** | Closed SRC-FRED-MISSING-ENV on persist run_id `fred-fullstack-20260919-101938-aest` (postgres_attached=true, no_db=false, 5 observation_ids, Pulse US10Y=4.94 source=fred, source-health fred=ok). `--no-db` is still ELIGIBLE only. ALFRED vintages remain later. Next free-source thread is IMP-024 EDGAR. |
 
 ### IMP-023 — Test data.binance.vision from AU (separate from geo-blocked API)
 
@@ -574,8 +574,8 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | Principal FREE SOURCE PRIORITY 2026-09-19 item 4; [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) geo table: `api.binance.com` 451 vs `data-api.binance.vision` / `data.binance.vision` 200. `licence_verdict: ok_attr` on `binance.vision`. |
 | **Proposed outcome** | From AU: probe `data.binance.vision` / `data-api.binance.vision` independently of `api.binance.com`. Then point public GETs at the vision host. No signed endpoints. 451 stays `tos_or_blocked`. |
 | **Definition of done** | AU probe recorded; config host change; 451 still classified; vision 200 path covered by tests/fixtures; source-health lists the vision host; no Bybit workaround. |
-| **Non-goals** | Starting while IMP-022 occupies IN_PROGRESS; Bybit; CoinGlass scrape; live futures REST on `fapi`; closing SRC-STOOQ-404. |
-| **Dependencies** | IMP-022 (parked until FRED full-stack leaves the slot). |
+| **Non-goals** | Starting while IMP-024 occupies IN_PROGRESS; Bybit; CoinGlass scrape; live futures REST on `fapi`; closing SRC-STOOQ-404. |
+| **Dependencies** | IMP-022 DONE (run_id `fred-fullstack-20260919-101938-aest`). Parked until IMP-024 leaves the slot. |
 | **Risk level** | Low (official host swap). Residual: UM live REST still geo-blocked. |
 | **Status** | READY |
 | **PR** | — |
@@ -593,12 +593,12 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Problem** | Intel already recorded EDGAR dates for CBRS + SPCX in `monitor.yaml`. There is no EDGAR adapter or store. Filings / IPO / lockup text stay config-only. |
 | **Evidence** | Principal FREE SOURCE PRIORITY 2026-09-19 item 2; `config/watchlist/monitor.yaml` `lockup_watch` (CBRS CIK 2021728, SPCX CIK 1181412); [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md). `licence_verdict: ok_gov` on `edgar` (free, no key). |
 | **Proposed outcome** | Wire `data.sec.gov` adapter + store. Confirm CBRS+SPCX lockup from prospectus (already dated). 8-K 2.02 = confirmed earnings. 10 rps, declared User-Agent. Treasury.gov is IMP-035 (do not bundle). |
-| **Definition of done** | Adapter + typed observations; PIT (`file_date` ≠ knowledge clock); CBRS+SPCX lockup confirmed from stored filing; missing feed → unavailable; no `api.nasdaq.com` scrape; no Yahoo RSS. |
-| **Non-goals** | Starting while IMP-022 occupies IN_PROGRESS; Street consensus; Finnhub estimates; listings as a sixth desk; `live.yaml`. |
-| **Dependencies** | IMP-022 (FRED slot first). IMP-017 DONE (#54) listings sleeve. |
+| **Definition of done** | Queue: IMP-022 DONE (run_id `fred-fullstack-20260919-101938-aest`). This item the only implementation thread. Adapter + typed observations; PIT (`file_date` ≠ knowledge clock); CBRS+SPCX lockup confirmed from stored filing; missing feed → unavailable; no `api.nasdaq.com` scrape; no Yahoo RSS. |
+| **Non-goals** | Street consensus; Finnhub estimates; listings as a sixth desk; `live.yaml`; bundling treasury.gov (IMP-035). |
+| **Dependencies** | IMP-022 DONE (run_id `fred-fullstack-20260919-101938-aest`). IMP-017 DONE (#54) listings sleeve. 6c-1..6c-5 complete. This item is the single implementation thread. |
 | **Risk level** | Medium (SEC fair-access blocks; PAC deletes). |
-| **Status** | READY |
-| **PR** | — |
+| **Status** | IN_PROGRESS |
+| **PR** | *(this PR — queue claim)* |
 | **Lesson learned** | *(fill at close)* |
 
 ### IMP-025 — Alternative.me Fear & Greed (attribution)
@@ -798,8 +798,8 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-033 DONE (#59). |
 | **Risk level** | Low (config). Process: operators must not treat KRX ids as universe promotion. |
 | **Status** | DONE |
-| **PR** | *(this PR)* |
-| **Lesson learned** | Display labels stay SAMSUN/KOSDA. Exchange-qualified ids are KRX. `licence_verdict` is config, not a doc footnote. FRED close is IMP-022 — `--no-db` is ELIGIBLE only. |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/60 |
+| **Lesson learned** | Display labels stay SAMSUN/KOSDA. Exchange-qualified ids are KRX. `licence_verdict` is config, not a doc footnote. FRED close is IMP-022 (DONE on persist run_id `fred-fullstack-20260919-101938-aest`; `--no-db` is ELIGIBLE only). |
 
 ### IMP-035 — treasury.gov as FRED cross-check
 
@@ -814,8 +814,8 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | Principal FREE SOURCE PRIORITY 2026-09-19 item 3; [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) Treasury licence “free, without restriction… commercial or non-commercial”. `licence_verdict: ok_gov` on `treasury`. |
 | **Proposed outcome** | Read-only treasury.gov / Fiscal Data adapter as a FRED cross-check. Contradiction → `contradicted`, never invent. No key. |
 | **Definition of done** | Adapter + fixture; PIT; missing → unavailable; values publishable (ok_gov); does not replace FRED; no paid vendor. |
-| **Non-goals** | Starting while IMP-022 occupies IN_PROGRESS; replacing FRED; CB calendars (stay with later EDGAR/macro work). |
-| **Dependencies** | IMP-022 preferred first. IMP-024 is EDGAR, not this item. |
+| **Non-goals** | Starting while IMP-024 occupies IN_PROGRESS; replacing FRED; CB calendars (stay with later EDGAR/macro work). |
+| **Dependencies** | IMP-022 DONE. Parked until IMP-024 leaves the slot. IMP-024 is EDGAR, not this item. |
 | **Risk level** | Low. |
 | **Status** | READY |
 | **PR** | — |
@@ -834,7 +834,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | Principal FREE SOURCE PRIORITY 2026-09-19 item 5; `config/ingest.yaml` `adapters.yahoo.licence_verdict: prohibited`. |
 | **Proposed outcome** | Keep Yahoo `prohibited` until a licensed path exists. Verdict stays next to the adapter. Do not add Yahoo HTTP. |
 | **Definition of done** | `licence_verdict: prohibited` remains until a Principal-named licensed replacement is wired; Pulse still has no Yahoo fallback. |
-| **Non-goals** | Adding Yahoo; scraping; starting while IMP-022 occupies IN_PROGRESS. |
+| **Non-goals** | Adding Yahoo; scraping; starting while IMP-024 occupies IN_PROGRESS. |
 | **Dependencies** | A licensed replacement (Principal). |
 | **Risk level** | Low (keep-closed). |
 | **Status** | BACKLOG |
@@ -854,8 +854,8 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | Principal FREE SOURCE PRIORITY 2026-09-19 item 6; `adapters.tiingo.licence_verdict: restricted` (internal until display rights confirmed). |
 | **Proposed outcome** | Time-boxed free-tier trial for base-rate backfill only. 500 sym/mo budget. Values stay internal (`restricted`) until display rights are confirmed. Not a second equities vendor for Pulse. |
 | **Definition of done** | Env key only if trialled; rate-limit budget; no published Tiingo values while `restricted`; PIT `available_at`; no Yahoo. |
-| **Non-goals** | Paid Tiingo; replacing Polygon; publishing values before terms allow; starting while IMP-022 occupies IN_PROGRESS. |
-| **Dependencies** | IMP-022 first. IMP-028/029 paid SKUs stay Principal-gated. |
+| **Non-goals** | Paid Tiingo; replacing Polygon; publishing values before terms allow; starting while IMP-024 occupies IN_PROGRESS. |
+| **Dependencies** | IMP-022 DONE. Parked until IMP-024 leaves the slot. IMP-028/029 paid SKUs stay Principal-gated. |
 | **Risk level** | Medium (second vendor vs Polygon lock; Telegram display). |
 | **Status** | BACKLOG |
 | **PR** | — |
@@ -874,7 +874,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | Principal FREE SOURCE PRIORITY 2026-09-19 item 7; `adapters.finnhub.licence_verdict: pending_terms`. |
 | **Proposed outcome** | Hold. If terms later allow derived-value republish to a private channel: calendar/estimates only. Until then: no adapter, no published Finnhub numbers. |
 | **Definition of done** | Written terms verdict next to the adapter. If still personal-use: stay `pending_terms` / do not wire. If allowed: calendar/estimates only; estimates are vendor IP — confirm republish of *derived* values. |
-| **Non-goals** | Wiring Finnhub now; news reprint; starting while IMP-022 occupies IN_PROGRESS. |
+| **Non-goals** | Wiring Finnhub now; news reprint; starting while IMP-024 occupies IN_PROGRESS. |
 | **Dependencies** | Terms review. EDGAR (IMP-024) remains the confirmed-earnings path. |
 | **Risk level** | Medium (ToS). |
 | **Status** | BACKLOG |
@@ -910,9 +910,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-019 | Ops | Don/Ops | DONE | [#51](https://github.com/ElChopa11/market-memory/pull/51) Phase 6c-2 naming layer |
 | IMP-020 | Research | Research | DONE | [#52](https://github.com/ElChopa11/market-memory/pull/52) Phase 6c-4 watchlist monitor |
 | IMP-021 | Ops | Ops | DONE | [#53](https://github.com/ElChopa11/market-memory/pull/53) Phase 6c-5 Ops-owned delivery expansion |
-| IMP-022 | Intel + Ops | Intel / Ops | IN_PROGRESS | FRED full-stack close — Principal FREE SOURCE PRIORITY #1 — this PR |
+| IMP-022 | Intel + Ops | Intel / Ops | DONE | FRED full-stack CLOSED — run_id `fred-fullstack-20260919-101938-aest`; ELIGIBLE path [#60](https://github.com/ElChopa11/market-memory/pull/60) |
 | IMP-023 | Intel | Intel | READY | Test data.binance.vision from AU — priority #4 |
-| IMP-024 | Intel + Research | Intel / Research | READY | Wire SEC EDGAR (CBRS+SPCX lockup) — priority #2 |
+| IMP-024 | Intel + Research | Intel / Research | IN_PROGRESS | Wire SEC EDGAR (CBRS+SPCX lockup) — FREE SOURCE PRIORITY #2 — this PR |
 | IMP-025 | Ops | Ops | BACKLOG | Adopt Alternative.me Fear & Greed — evaluation 2026-09-18 |
 | IMP-026 | Intel | Intel | BACKLOG | Trial Coinalyze (free, cite) — evaluation 2026-09-18 |
 | IMP-027 | Intel | Principal / Intel | BACKLOG | Trial CoinGlass Standard **$299/mo — Principal paid** |
@@ -922,20 +922,20 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-031 | Quant | Quant | DONE | [#56](https://github.com/ElChopa11/market-memory/pull/56) Phase 6f strategy decay-watch |
 | IMP-032 | Ops + Quant | Don/Ops+Quant | DONE | [#57](https://github.com/ElChopa11/market-memory/pull/57) call-card language vs Quant SoT |
 | IMP-033 | Intel / Ops | Intel / Ops | DONE | [#59](https://github.com/ElChopa11/market-memory/pull/59) Canonical watchlist monitor.yaml |
-| IMP-034 | Intel + Ops | Intel / Ops | DONE | Ticker resolutions + licence_verdict schema — this PR |
+| IMP-034 | Intel + Ops | Intel / Ops | DONE | [#60](https://github.com/ElChopa11/market-memory/pull/60) Ticker resolutions + licence_verdict schema |
 | IMP-035 | Intel | Intel | READY | treasury.gov as FRED cross-check — priority #3 |
 | IMP-036 | Intel | Intel | BACKLOG | Retire Yahoo when licensed path exists — priority #5 |
 | IMP-037 | Quant + Intel | Quant / Intel | BACKLOG | Trial Tiingo free tier base-rate backfill only — priority #6 |
 | IMP-038 | Intel | Intel | BACKLOG | Finnhub calendar/estimates after terms allow republish — priority #7 |
 
-`IN_PROGRESS` count: **1** (IMP-022). IMP-000–IMP-021 and IMP-030–IMP-034 are `DONE`. FREE SOURCE PRIORITY order: IMP-022 (in progress) → IMP-024 READY → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG. OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed; `--no-db` = ELIGIBLE only). Single implementation thread.
+`IN_PROGRESS` count: **1** (IMP-024). IMP-000–IMP-022 and IMP-030–IMP-034 are `DONE`. FREE SOURCE PRIORITY order: IMP-022 DONE → IMP-024 (in progress) → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG. OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404. SRC-FRED-MISSING-ENV is CLOSED (run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only). Single implementation thread.
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
 | SCHED-001 | Ops | Ops | OPEN | Sydney 08:00 digest never fired |
 | BRIEF-TAG-20260918 | Ops / Quant scorecard | Ops/Quant | OPEN | 18 Sep pack ~90m pre-open vs 30m anchor |
 | SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive; evaluation 2026-09-18 rejects scrape — lawful proxy is not ES/NQ futures |
-| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | OPEN | full-stack close is IMP-022; `--no-db` = ELIGIBLE only; CLOSED needs cited run_id |
+| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | CLOSED | run_id `fred-fullstack-20260919-101938-aest`; postgres_attached=true; Pulse US10Y=4.94; `--no-db` remains ELIGIBLE only |
 
 
 ---
@@ -970,7 +970,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 DONE** (#34).
 
-Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Principal ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (this PR). FRED full-stack is **IMP-022**.
+Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Principal ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). EDGAR is **IMP-024**.
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
@@ -978,9 +978,9 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (this PR). FRED full-stack is **IMP-022 IN_PROGRESS** (this PR).
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR is **IMP-024 IN_PROGRESS** (this PR).
 
-Principal FREE SOURCE PRIORITY 2026-09-19 reordered source work: **IMP-022** FRED full-stack (IN_PROGRESS) → **IMP-024** EDGAR READY → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036** Yahoo retire BACKLOG → **IMP-037** Tiingo trial BACKLOG → **IMP-038** Finnhub terms BACKLOG. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN.
+Principal FREE SOURCE PRIORITY 2026-09-19 reordered source work: **IMP-022** FRED full-stack (DONE, run_id `fred-fullstack-20260919-101938-aest`) → **IMP-024** EDGAR IN_PROGRESS → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036** Yahoo retire BACKLOG → **IMP-037** Tiingo trial BACKLOG → **IMP-038** Finnhub terms BACKLOG. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is CLOSED.
 
 ## Reconciliation notes
 
@@ -1008,5 +1008,5 @@ Principal FREE SOURCE PRIORITY 2026-09-19 reordered source work: **IMP-022** FRE
 - IMP-017 merged as #54 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-030.
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
 - IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
-- IMP-032 merged as #57. IMP-033 merged as #59. This PR (IMP-034 + IMP-022) applies Principal ticker resolutions (SAMSUN→KRX:005930, KOSDA→KRX:KQ11), records `licence_verdict` next to each adapter, and starts FRED full-stack. OPEN incidents untouched. SRC-STOOQ-404 stays OPEN. SRC-FRED-MISSING-ENV stays OPEN (`--no-db` = ELIGIBLE only). Locked universe unchanged. Paper only. Single-threaded: IMP-022 is the only `IN_PROGRESS`.
-- Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 / 024 / 035 / 023 / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.
+- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). This PR closes `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`), marks IMP-022 DONE, and advances the single `IN_PROGRESS` slot to IMP-024 (SEC EDGAR). SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. Locked universe unchanged. Paper only.
+- Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 IN_PROGRESS / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.

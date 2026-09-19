@@ -1,0 +1,86 @@
+{
+  "ticket": "SRC-FRED-MISSING-ENV",
+  "as_of_knowledge": "2026-09-19T10:19:39+10:00",
+  "as_of_knowledge_label": "2026-09-19 10:19:39 AEST",
+  "postgres_attached": true,
+  "dsn_shape": "postgresql://lab:***@localhost:5432/market_memory",
+  "fred_api_key_present": true,
+  "fred_api_key_length": 32,
+  "fred_api_key_value": null,
+  "ingest": {
+    "mode": "live",
+    "series": {
+      "US10Y": "DGS10"
+    },
+    "object_store": "filesystem",
+    "object_store_path": "/workspace/intel-briefs/object-store",
+    "no_db": false,
+    "created_rows": 5,
+    "ingested_at_aest": "2026-09-19T10:17:37.140079+10:00"
+  },
+  "observation_ids": [
+    "01M2VGD5SQX18X2RGRKSEMW08H",
+    "01M2VGD5T0EJVMQ91J8HA7GY7H",
+    "01M2VGD5T5966R4RZJSTPPX7BG",
+    "01M2VGD5TACQXVR3JG9PZ11PZY",
+    "01M2VGD5TE28S87D2A41SY2ZBK"
+  ],
+  "latest_print": {
+    "observation_id": "01M2VGD5SQX18X2RGRKSEMW08H",
+    "instrument": "US10Y",
+    "series_id": "DGS10",
+    "value": 4.94,
+    "market_date": "2026-09-17",
+    "claim_hash": "06af549e06bfb071e938e894970bdb2ba84e99dc4975c33c9ed37eff48773cc5",
+    "source_url_or_id": "fred:DGS10:2026-09-17"
+  },
+  "run_ids": {
+    "fullstack_close": "fred-fullstack-20260919-101938-aest",
+    "ingest_batch_as_of_knowledge": "2026-09-19T10:17:37.140079+10:00",
+    "source_health_generated_at_utc": "2026-09-19T00:17:43.865038+00:00",
+    "brief_generated_at_aest": "2026-09-19T10:17:57+10:00"
+  },
+  "content_hashes": {
+    "source_health_md": "82d681af88d7c7c42e2078e8fddb92803045bdc698f5c2f0a94f2137f3e64bc5",
+    "pulse_preopen_md": "6a4a0332df11b27b2b8bf1d9e5926c386261c0d8f5325b914defe1a7f1867b74",
+    "db_provenance_md": "7894c61217fd4b44099cc2e55a1b1722323233c78a6c8a410ffb3f085dab830e",
+    "what_did_we_know_json": "abbd5ad0a69868f970735b6cc005e030f9f0e23a4fcae58de709837fc874bcec"
+  },
+  "paths": {
+    "source_health": "/workspace/intel-briefs/ops/reports/source-health/2026-09-19.md",
+    "source_health_sha256": "/workspace/intel-briefs/ops/reports/source-health/2026-09-19.sha256",
+    "pulse_brief": "/workspace/intel-briefs/briefs/2026-09-18/us-pre-market.md",
+    "pulse_brief_legacy": "/workspace/intel-briefs/briefs/2026/09/18/preopen.md",
+    "db_provenance_md": "/workspace/intel-briefs/20260919-101938-aest-fred-db-provenance.md",
+    "what_did_we_know_json": "/workspace/intel-briefs/20260919-101938-aest-fred-what-did-we-know.json",
+    "object_store_raw_dir": "/workspace/intel-briefs/object-store/market-memory/raw/fred/2026/09/19/US10Y/fred_observation/",
+    "repo": "/workspace/market-memory-brief"
+  },
+  "source_health": {
+    "overall": "degraded",
+    "fred": {
+      "status": "ok",
+      "credentials_present": "yes",
+      "error_class": "none",
+      "latency_ms": 277.9,
+      "pulse_role": "optional"
+    },
+    "postgres": {
+      "status": "ok",
+      "credentials_present": "yes",
+      "error_class": "none",
+      "latency_ms": 19.8
+    }
+  },
+  "close_criteria": {
+    "1_postgres_attached_real_dsn": true,
+    "2_fred_observation_rows_in_postgres": true,
+    "3_observation_ids_resolvable": true,
+    "4_value_in_published_artifact": true,
+    "5_run_id_content_hash_paths_cited": true,
+    "no_db_only": false
+  },
+  "eligible_vs_closed_recommendation": "CLOSED",
+  "ops_note": "All five Principal QUEUE CLOSURE RULE full-stack criteria met. Live FRED DGS10 landed in Postgres; source-health fred!=missing_env; Pulse brief publishes US10Y=4.94; observation_ids resolvable via what-did-we-know. A --no-db run would be ELIGIBLE only \u2014 this run is not --no-db.",
+  "secrets_printed": false
+}
