@@ -40,7 +40,8 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Phase 6f decay-watch (IMP-031) is **DONE** (#56).
 - Call-card vs Quant SoT (IMP-032) is **DONE** (#57).
 - Canonical watchlist monitor.yaml (IMP-033) is **DONE** (#59).
-- Ticker resolutions + licence_verdict schema (IMP-034) are **DONE** (this PR).
-- FRED full-stack (IMP-022) is **IN_PROGRESS** (this PR). `--no-db` = ELIGIBLE only. SRC-STOOQ-404 stays OPEN.
-- Principal FREE SOURCE PRIORITY 2026-09-19: IMP-022 → IMP-024 READY → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG.
+- Ticker resolutions + licence_verdict schema (IMP-034) are **DONE** (#60).
+- FRED full-stack (IMP-022) is **DONE** (run_id `fred-fullstack-20260919-101938-aest`). `--no-db` = ELIGIBLE only. SRC-STOOQ-404 stays OPEN. SRC-FRED-MISSING-ENV is CLOSED.
+- SEC EDGAR (IMP-024) is **IN_PROGRESS** (this PR).
+- Principal FREE SOURCE PRIORITY 2026-09-19: IMP-022 DONE → IMP-024 IN_PROGRESS → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.
