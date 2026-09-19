@@ -1,7 +1,7 @@
-# ADR 0016 — Unconditional event-class base rates
+# ADR 0017 — Unconditional event-class base rates
 
 - **Status:** Accepted
-- **Phase:** IMP-039 Phase 1. No live trading. No signing. No Redis. No candidate studies.
+- **Phase:** IMP-040 Phase 1. No live trading. No signing. No Redis. No candidate studies.
 
 ## Context
 

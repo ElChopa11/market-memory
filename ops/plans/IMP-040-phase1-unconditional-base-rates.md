@@ -1,4 +1,4 @@
-# PLAN — IMP-039 Phase 1 unconditional base rates
+# PLAN — IMP-040 Phase 1 unconditional base rates
 
 **Report status:** IN_PROGRESS (this PR).  
 **Owner:** Quant  
@@ -6,11 +6,11 @@
 
 ## Why
 
-Principal order-of-work: nothing is computed on C-001 / C-002 / C-003 until unconditional base rates exist in Market Memory. Candidate intake (`research/candidates/`, PR #61) is INTAKE_ONLY until this pack lands. IMP-034 on main is ticker/licence (#60), not the candidate shelf.
+Principal order-of-work: nothing is computed on C-001 / C-002 / C-003 until unconditional base rates exist in Market Memory. Candidate intake (`research/candidates/`, #61) is IMP-039 READY; cards stay INTAKE_ONLY until this pack lands. IMP-034 on main is ticker/licence (#60), not the candidate shelf.
 
 ## Outcome
 
-- Queue: IMP-024 parked `IN_REVIEW` (EDGAR PRs remain open). This item is the only `IN_PROGRESS`. IMP-040 (C-001/002/003 studies) is `INTAKE_ONLY`, blocked here. OPEN incidents untouched.
+- Queue: IMP-024 DONE (#63). This item is the only `IN_PROGRESS`. IMP-039 (candidate intake #61) stays READY; studies stay blocked. OPEN incidents untouched.
 - `lab base-rate compute --fixture PATH --no-db` emits a deterministic Quant artifact.
 - Naming via `mm_common.naming` (`base_rate` sleeve → quant). Not a sixth desk.
 - Three Quant-defined event classes:

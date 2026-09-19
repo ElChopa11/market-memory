@@ -30,8 +30,8 @@ def test_queue_marks_019_done_020_done_021_this_pr() -> None:
     assert "`IN_PROGRESS` count: **1**" in queue
     assert any("IMP-033" in line and "DONE" in line for line in board_lines)
     assert any("IMP-022" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-039" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert any("IMP-024" in line and "IN_REVIEW" in line for line in board_lines)
+    assert any("IMP-040" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-024" in line and "DONE" in line for line in board_lines)
     assert not any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-022" in line and "IN_PROGRESS" in line for line in board_lines)
     for item_id in (

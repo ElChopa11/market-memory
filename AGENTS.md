@@ -2,7 +2,7 @@
 
 This file is the permission constitution for humans and LLM agents working in `market-memory`. It is stricter than convenience.
 
-**IMP-039:** Quant Phase 1 unconditional event-class base rates (dip / zone-boundary / first-entry EMA). Stored in Market Memory with `as_of_knowledge` + `params_hash`. C-001/002/003 cite these as benchmarks. Naming sleeve `base_rate` → quant. Paper only. **No** candidate study results, no sizing, no scan-gate.
+**IMP-040:** Quant Phase 1 unconditional event-class base rates (dip / zone-boundary / first-entry EMA). Stored in Market Memory with `as_of_knowledge` + `params_hash`. C-001/002/003 cite these as benchmarks. Naming sleeve `base_rate` → quant. Paper only. **No** candidate study results, no sizing, no scan-gate.
 
 **Phase 6f (IMP-031):** Quant prompt-hash decay watch. Detects prompt/config drift via SHA-256. Naming via `mm_common.naming` (`decay` sleeve → quant). Ops-owned `lab deliver decay --no-send`. Mismatch → NOTIFY/queue signal without auto-waiving gates or inventing scorecard numbers. **No** live trading, no wallet code, no `hl_trade` / signing.
 
@@ -20,7 +20,7 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 **IMP-033 DONE #59:** Principal-locked review list `config/watchlist/monitor.yaml` (2026-09-19, Operation Lunch Money). **Intel owns ticker resolution and EDGAR lockup watch.** Research scans the list and must state watchlist tier (`universe` / `monitor` / `blocked`) on every idea. Additions/removals = Principal PR only. Does **not** promote names into `in_universe`.
 
-**IMP-039 READY:** Quant candidate-strategy intake (`research/candidates/`). Owner QUANT. Status `INTAKE_ONLY` / HYPOTHESIS. No sizing. No scan-gate. Retail video/Substack/Reddit = `n=unknown` hypothesis weight. Validation studies parked (not `IN_PROGRESS`; IMP-024 holds the slot).
+**IMP-039 READY (#61):** Quant candidate-strategy intake (`research/candidates/`). Owner QUANT. Status `INTAKE_ONLY` / HYPOTHESIS. No sizing. No scan-gate. Retail video/Substack/Reddit = `n=unknown` hypothesis weight. Validation studies parked (not `IN_PROGRESS`; IMP-040 holds the slot).
 
 **Phase 6c-4 (IMP-020 DONE #52):** Research watchlist monitor + daily scan. IMP-033 points that scan at `config/watchlist/monitor.yaml` while membership remains `config/universe.yaml`. Deterministic artifact with `as_of_knowledge` + `content_hash`. Naming via `mm_common.naming`.
 
@@ -106,4 +106,4 @@ Hive aliases that are **not** numbered delivery tiers: Briefing (Macro Pulse; In
 
 Before claiming a research stage is done, run `./scripts/check-lifecycle.sh` and meet [docs/research-lifecycle.md](docs/research-lifecycle.md).
 
-Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6f scope respected (prompt-hash decay watch on the five-desk roster; naming from IMP-019; Ops delivery from IMP-021; scorecards on main via #55; listings on main via #54; 6c PLAYBOOK/fan-out already on main via #47; IMP-039 Phase 1 unconditional base rates are the C-001/002/003 benchmark pack — no candidate study results in that PR; no execution/signing, no risk service, no live path, no Redis, no live LLM HTTP, no auto-merge, no gate waiver, no auto-disable of prompts), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.
+Before claiming a code change is done: no secrets in the diff, tests/CI green, Phase 6f scope respected (prompt-hash decay watch on the five-desk roster; naming from IMP-019; Ops delivery from IMP-021; scorecards on main via #55; listings on main via #54; 6c PLAYBOOK/fan-out already on main via #47; IMP-040 Phase 1 unconditional base rates are the C-001/002/003 benchmark pack — no candidate study results in that PR; IMP-039 (#61) is candidate intake; no execution/signing, no risk service, no live path, no Redis, no live LLM HTTP, no auto-merge, no gate waiver, no auto-disable of prompts), live still hard-gated, `what_did_we_know` keyed off `as_of_knowledge` (lockstep with `ingested_at`; never `published_at` / `market_time`), backtests keyed off `available_at`, rejected theses still queryable, paper open still requires invalidation + max loss. Import-boundary check (`scripts/check_import_boundaries.py`) is green and statement-anchored. Pytest never hits the live Telegram API. A no-setup fixture day makes zero LLM calls.
