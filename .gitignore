@@ -55,6 +55,9 @@ ops/reports/source-health/**
 ops/reports/scheduler/incidents/**
 !ops/reports/scheduler/incidents/README.md
 
+# Standalone Phase-1 base-rate bar cache (raw vendor series; not a desk artifact)
+research/base-rates/cache/
+
 # Generated Post-IPO reclaim screens (keep README and committed dated samples)
 research/screens/post-ipo-reclaim/**
 !research/screens/post-ipo-reclaim/README.md
