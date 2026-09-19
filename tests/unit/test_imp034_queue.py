@@ -30,9 +30,16 @@ def test_queue_imp033_done_fred_single_thread_open_incidents() -> None:
         assert not any(item_id in line and "IN_PROGRESS" in line for line in board_lines)
     for item_id in ("IMP-036", "IMP-037", "IMP-038"):
         assert any(item_id in line and "BACKLOG" in line for line in board_lines), item_id
-    for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
+    for item_id in (
+        "SCHED-001",
+        "BRIEF-TAG-20260918",
+        "SRC-STOOQ-404",
+        "SRC-FRED-MISSING-ENV",
+        "SRC-OBJECT-STORE",
+        "TG-UNGATED-PRE-HYBRID",
+    ):
         assert item_id in queue
-    assert queue.count("| **Status** | OPEN |") == 3
+    assert queue.count("| **Status** | OPEN |") == 6
     assert "http_404" in queue
     assert "--no-db" in queue
     assert "ELIGIBLE" in queue
@@ -49,4 +56,6 @@ def test_queue_imp033_done_fred_single_thread_open_incidents() -> None:
     assert report.auto_waive is False
     public = report.as_public_dict()
     assert "SRC-STOOQ-404" in public["open_incidents"]
-    assert "SRC-FRED-MISSING-ENV" not in public["open_incidents"]
+    assert "SRC-FRED-MISSING-ENV" in public["open_incidents"]
+    assert "SRC-OBJECT-STORE" in public["open_incidents"]
+    assert "TG-UNGATED-PRE-HYBRID" in public["open_incidents"]

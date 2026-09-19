@@ -1,4 +1,4 @@
-"""SRC-FRED-MISSING-ENV CLOSED on persist run_id; IMP-022 DONE; IMP-024 single thread."""
+"""SRC-FRED-MISSING-ENV OPEN under environment-propagation; IMP-022 DONE; persist pack retained."""
 
 from __future__ import annotations
 
@@ -15,10 +15,18 @@ CLOSE_JSON = (
     / "incident-closures"
     / "20260919-101938-aest-fred-fullstack-close.json"
 )
+CORRECTION_MD = (
+    ROOT
+    / "ops"
+    / "reports"
+    / "incident-closures"
+    / "20260919-environment-audit-record-correction.md"
+)
+UNGATED_MD = ROOT / "ops" / "reports" / "20260919-telegram-ungated-pre-hybrid.md"
 RUN_ID = "fred-fullstack-20260919-101938-aest"
 
 
-def test_src_fred_closed_imp022_done_imp024_single_thread() -> None:
+def test_src_fred_reopened_env_propagation_imp022_done() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-022" in line and "DONE" in line for line in board_lines)
@@ -38,17 +46,28 @@ def test_src_fred_closed_imp022_done_imp024_single_thread() -> None:
     assert "| **ID** | SRC-FRED-MISSING-ENV |" in queue
     assert RUN_ID in queue
     assert "Closed on full-stack persist run_id" in queue
+    assert "environment-propagation" in queue
+    fred_block = queue.split("### SRC-FRED-MISSING-ENV", 1)[1].split("### ", 1)[0]
+    assert "| **Status** | OPEN |" in fred_block
     incident_lines = [line for line in queue.splitlines() if line.startswith("| SRC-FRED-MISSING-ENV |")]
     assert incident_lines
-    assert any("CLOSED" in line and RUN_ID in line for line in incident_lines)
-    for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404"):
+    assert any("OPEN" in line and "environment-propagation" in line for line in incident_lines)
+    assert not any("| CLOSED |" in line for line in incident_lines)
+    for item_id in (
+        "SCHED-001",
+        "BRIEF-TAG-20260918",
+        "SRC-STOOQ-404",
+        "SRC-OBJECT-STORE",
+        "TG-UNGATED-PRE-HYBRID",
+    ):
         assert item_id in queue
-    assert queue.count("| **Status** | OPEN |") == 3
-    assert queue.count("| **Status** | CLOSED |") == 1
+    assert "DOWN SERVICE" in queue
+    assert "**ungated**" in queue
+    assert queue.count("| **Status** | OPEN |") == 6
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
-    assert report.ok
+    assert report.ok, report.errors
     assert report.in_progress == ("IMP-042",)
     assert report.auto_merge is False
     assert report.auto_waive is False
@@ -56,10 +75,22 @@ def test_src_fred_closed_imp022_done_imp024_single_thread() -> None:
     assert "SRC-STOOQ-404" in public["open_incidents"]
     assert "SCHED-001" in public["open_incidents"]
     assert "BRIEF-TAG-20260918" in public["open_incidents"]
-    assert "SRC-FRED-MISSING-ENV" not in public["open_incidents"]
+    assert "SRC-FRED-MISSING-ENV" in public["open_incidents"]
+    assert "SRC-OBJECT-STORE" in public["open_incidents"]
+    assert "TG-UNGATED-PRE-HYBRID" in public["open_incidents"]
     fred = next(item for item in report.items if item.item_id == "SRC-FRED-MISSING-ENV")
-    assert fred.status == "CLOSED"
+    assert fred.status == "OPEN"
+    assert "environment-propagation" in " ".join(fred.fields.values()).lower()
     assert "run_id" in " ".join(fred.fields.values()).lower()
+    obj = next(item for item in report.items if item.item_id == "SRC-OBJECT-STORE")
+    assert obj.status == "OPEN"
+    assert "DOWN SERVICE" in " ".join(obj.fields.values())
+    ungated = next(item for item in report.items if item.item_id == "TG-UNGATED-PRE-HYBRID")
+    assert ungated.status == "OPEN"
+    blob = " ".join(ungated.fields.values())
+    assert "ungated" in blob.lower()
+    assert "22:02" in blob
+    assert "00:03" in blob
     imp022 = next(item for item in report.items if item.item_id == "IMP-022")
     assert imp022.status == "DONE"
     assert RUN_ID in imp022.fields.get("Lesson learned", "")
@@ -86,3 +117,14 @@ def test_fred_close_pack_has_no_secrets_and_meets_criteria() -> None:
     assert "***" in pack["dsn_shape"]
     blob = json.dumps(pack)
     assert "FRED_API_KEY=" not in blob
+    assert CORRECTION_MD.is_file()
+    correction = CORRECTION_MD.read_text(encoding="utf-8")
+    assert "environment-propagation" in correction
+    assert "DOWN SERVICE" in correction
+    assert RUN_ID in correction
+    assert UNGATED_MD.is_file()
+    ungated = UNGATED_MD.read_text(encoding="utf-8")
+    assert "ungated" in ungated.lower()
+    assert "22:02" in ungated
+    assert "00:03" in ungated
+    assert "Coord" in ungated

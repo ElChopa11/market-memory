@@ -22,7 +22,7 @@ Order of work. This PR is **P0 only**. Do not start P1/P2/P3 here.
 | **P0** | Clock / miss detector. Closed window + no completion row → escalate. SCHED-001 stays OPEN until a verified on-anchor fire. | IMP-042 this thread |
 | **P1** | Phase-1 Memory rates — expand if #66 is fixture-only | IMP-040 DONE (#66). Expansion is later. |
 | **P2** | Instance ledger | not this PR |
-| **P3** | Truth-in-repo (source-health regen / desk naming / Telegram inventory / SRC-object_store) | not this PR |
+| **P3** | Truth-in-repo (source-health regen / desk naming / Telegram inventory). `SRC-object_store` is a named OPEN **DOWN SERVICE** on the services/infrastructure list — not a missing-env credential item. | not this PR |
 
 Candidate cards stay `INTAKE_ONLY`. No study compute. No paid data. No new desks. No universe promotions. Canaries run outside this PR.
 
@@ -64,7 +64,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Ops / Quant scorecard |
 | **Owner** | Ops/Quant scorecard |
 | **Problem** | Fri 18 Sep pre-market artifact fired ~90m pre-open (08:00 NY / 22:00 Syd) vs current 30m-pre-open anchor (09:00 NY / 23:00 Syd). Like-for-like scorecard compare is invalid. |
-| **Evidence** | Config `config/schedules/market-pulse.yaml` `pre_open.local_time: "08:00"` America/New_York; Principal 30m-pre-open anchor is 09:00 NY / 23:00 Syd. |
+| **Evidence** | Config `config/schedules/market-pulse.yaml` `pre_open.local_time: "08:00"` America/New_York; Principal 30m-pre-open anchor is 09:00 NY / 23:00 Syd. The ~22:02 AEST fire is also **ungated** (pre-Hybrid Telegram; see `TG-UNGATED-PRE-HYBRID`). Scorecard mismatch and ungated are separate tags. |
 | **Proposed outcome** | Tag that artifact so scorecards do not compare like-for-like vs 30m-pre-open packs. |
 | **Definition of done** | Artifact tagged; scorecard docs note the 90m vs 30m mismatch; item stays OPEN until operators verify no 30m-golden misuse. Tag applied in IMP-030 `config/scorecards/tags.yaml`; incident remains OPEN. |
 | **Non-goals** | Rewriting Pulse; 6c-5; treating the 18 Sep pack as a 30m-pre-open golden. |
@@ -94,25 +94,65 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | — |
 | **Lesson learned** | *(open — do not close)* |
 
-### SRC-FRED-MISSING-ENV — fred missing_env
+### SRC-FRED-MISSING-ENV — environment-propagation (not a key-absent close)
 
 | Field | Value |
 |---|---|
 | **ID** | SRC-FRED-MISSING-ENV |
 | **Priority** | P1 |
-| **Type** | Secrets / env |
+| **Type** | Environment-propagation / run env |
 | **Desk** | Ops |
 | **Owner** | Ops |
-| **Problem** | FRED `missing_env` (`FRED_API_KEY` unset). |
-| **Evidence** | Full-stack persist run_id `fred-fullstack-20260919-101938-aest`. postgres_attached=true, no_db=false, created_rows=5, observation_ids resolvable. Pulse publishes US10Y=4.94 source=fred. source-health fred=ok, credentials_present=yes, error_class=none; postgres ok. Pack: [ops/reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json](reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json) (`secrets_printed: false`). |
-| **Proposed outcome** | Full-stack close via IMP-022: Postgres attached, FRED rows landed, provenance ids, value in a published artifact. Key is operator-env `FRED_API_KEY` (never git). `--no-db` is ELIGIBLE only. |
-| **Definition of done** | `CLOSED` only after a cited persist `run_id` with Postgres rows + provenance + a published value allowed by `licence_verdict`. `--no-db` / missing Postgres = `ELIGIBLE` at most. Met: run_id `fred-fullstack-20260919-101938-aest`. |
-| **Non-goals** | Committing the key; Don/Coord deciding secrets; inventing FRED prints; closing on `--no-db`. |
-| **Dependencies** | IMP-022 DONE (operator full-stack close 2026-09-19). |
-| **Risk level** | Low (honest unavailable until keyed + persisted). |
-| **Status** | CLOSED |
-| **PR** | operator full-stack close 2026-09-19; ELIGIBLE path [#60](https://github.com/ElChopa11/market-memory/pull/60) |
-| **Lesson learned** | Closed on full-stack persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`). postgres_attached=true, created_rows=5, Pulse US10Y=4.94 via FRED, source-health fred=ok. `--no-db` remains ELIGIBLE only. |
+| **Problem** | Root cause is **environment-propagation**, not a simple missing key. Secrets-card / box config for `FRED_API_KEY` may be present while a failing run executes without that process env (config present, run env absent). Earlier `missing_env` symptoms are that class — do not close as key-absent. |
+| **Evidence** | 2026-09-19 environment audit (Don): `FRED_API_KEY` was present on the Secrets card **and** process env at audit time. Prior CLOSED persist note (history retained, not erased): run_id `fred-fullstack-20260919-101938-aest`; pack [ops/reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json](reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json) (`secrets_printed: false`). Record correction: [ops/reports/incident-closures/20260919-environment-audit-record-correction.md](reports/incident-closures/20260919-environment-audit-record-correction.md). `--no-db` remains ELIGIBLE only for the IMP-022 persist criterion. |
+| **Proposed outcome** | FRED-using runs inherit box/process env, or fail as an explicit propagation miss — not a key-absent close. Do not close on “key exists on the Secrets card.” IMP-022 persist path stays DONE. |
+| **Definition of done** | Stays `OPEN` until operators show FRED-using runs inherit `FRED_API_KEY` from the box (or a documented propagation control). Persist run_id `fred-fullstack-20260919-101938-aest` is evidence that a keyed persist path exists; it is **not** a simple key-absent close. |
+| **Non-goals** | Committing the key; treating IMP-022 DONE as this incident’s key-absent close; inventing FRED prints; closing on `--no-db`; scheduler code; equity work. |
+| **Dependencies** | IMP-022 DONE (persist path; run_id cited above). |
+| **Risk level** | Medium (honest unavailable mis-attributed to a missing key). |
+| **Status** | OPEN |
+| **PR** | Reopened 2026-09-19 (Principal record correction). Prior close [#62](https://github.com/ElChopa11/market-memory/pull/62) / pack kept as history; ELIGIBLE path [#60](https://github.com/ElChopa11/market-memory/pull/60). |
+| **Lesson learned** | Closed on full-stack persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) — **that close is retained as persist history, then reopened under environment-propagation.** postgres_attached=true, created_rows=5, Pulse US10Y=4.94 via FRED, source-health fred=ok on that run. `--no-db` remains ELIGIBLE only. |
+
+### SRC-OBJECT-STORE — object_store DOWN SERVICE (MinIO :9000)
+
+| Field | Value |
+|---|---|
+| **ID** | SRC-OBJECT-STORE |
+| **Priority** | P2 |
+| **Type** | Services / infrastructure (DOWN SERVICE) |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | Object store is a **DOWN SERVICE**: MinIO `:9000` connection refused, no container. This is **not** a missing credential. `MINIO_*` keys may still be present as local defaults while the service is down. Source-health 2026-09-17 `missing_env` / credentials_present=no misreads a down daemon. Alias: `SRC-object_store` / source id `object_store`. |
+| **Evidence** | Compose `minio` publishes `:9000` (`market-memory-minio`); no container → connection refused. 2026-09-19 environment audit (Don) + [ops/reports/incident-closures/20260919-environment-audit-record-correction.md](reports/incident-closures/20260919-environment-audit-record-correction.md). Last committed health [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) labelled missing_env — corrected here. |
+| **Proposed outcome** | Stay on the **services / infrastructure OPEN** list (not a missing-env credentials list). Bring MinIO up or document an explicit filesystem/none backend. Do not close by setting `MINIO_*`. |
+| **Definition of done** | `:9000` reachable (or an operator-chosen durable backend) and a down daemon is not filed as missing credentials. Stays OPEN until then. |
+| **Non-goals** | Treating compose/`.env.example` defaults as a credential incident; changing ingest; scheduler code; equity work. |
+| **Dependencies** | None (infra). P3 named `SRC-object_store`; this is the logged OPEN incident, not an implementation thread. |
+| **Risk level** | Medium (raw-object persist / charts fail closed). |
+| **Status** | OPEN |
+| **PR** | — |
+| **Lesson learned** | *(open — DOWN SERVICE, not missing_env)* |
+
+### TG-UNGATED-PRE-HYBRID — pre-Hybrid Telegram is ungated
+
+| Field | Value |
+|---|---|
+| **ID** | TG-UNGATED-PRE-HYBRID |
+| **Priority** | P2 |
+| **Type** | Delivery / pipeline honesty |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | Every Telegram message published **before the Hybrid architecture change** is **ungated**: it did not pass lab delivery controls and must not be treated as evidence of a working pipeline. Hybrid = Ops-owned gated Telegram (IMP-013/018/021). Grok Bot and Coord-as-publisher fires sit outside that path. |
+| **Evidence** | Policy note [ops/reports/20260919-telegram-ungated-pre-hybrid.md](reports/20260919-telegram-ungated-pre-hybrid.md). **Known fires (not an archive):** 18 Sep ~22:02 AEST pre-market (also BRIEF-TAG-20260918); 19 Sep 00:03 cash-open; Coord lines from the publisher audit. Quiet hours 22:00–07:00 Sydney; 22:02 and 00:03 did not pass those controls. Do not invent a full Telegram export. |
+| **Proposed outcome** | Standing **ungated** tag on the pre-Hybrid class. Operators must not cite those fires as gated-pipeline proof. Later gated `lab deliver` sends (thresholds + Ops publisher) are a different class. |
+| **Definition of done** | Policy recorded on this queue + ops note. Known fires listed. Incident stays OPEN until a gated send is the SoT for “pipeline works” (this item does not close SCHED-001 or BRIEF-TAG). |
+| **Non-goals** | Inventing a Telegram archive; treating Grok Bot fire as `lab deliver` success; closing SCHED-001; live send; feature code. |
+| **Dependencies** | None (record). IMP-013/018/021 DONE are the Hybrid cut, not a close of this tag. |
+| **Risk level** | Medium (false confidence that delivery/gates work). |
+| **Status** | OPEN |
+| **PR** | — |
+| **Lesson learned** | *(open — ungated ≠ working pipeline)* |
 
 ### IMP-000 — Desk operating model docs
 
@@ -564,7 +604,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Intel (ingest) + Ops (env) |
 | **Owner** | Intel / Ops |
 | **Problem** | Pulse, source-health, and macro still show FRED `missing_env` or `--no-db` dry-run only. Full-stack close needs Postgres attached, rows landed, provenance ids, and a value in a published artifact. Key is operator-env `FRED_API_KEY` (never git). |
-| **Evidence** | CLOSED incident `SRC-FRED-MISSING-ENV` cite run_id `fred-fullstack-20260919-101938-aest`; pack [ops/reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json](reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json). Principal FREE SOURCE PRIORITY 2026-09-19; [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) adopt #1. Adapter already exists (`mm_ingest.macro` / Pulse). `licence_verdict: ok_gov` on the FRED adapter. |
+| **Evidence** | Persist close pack (history retained): run_id `fred-fullstack-20260919-101938-aest`; [ops/reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json](reports/incident-closures/20260919-101938-aest-fred-fullstack-close.json). Incident `SRC-FRED-MISSING-ENV` was later **reopened** under environment-propagation (Don 2026-09-19 audit) — this IMP stays DONE. Principal FREE SOURCE PRIORITY 2026-09-19; [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) adopt #1. Adapter already exists (`mm_ingest.macro` / Pulse). `licence_verdict: ok_gov` on the FRED adapter. |
 | **Proposed outcome** | Operator path: env key + `lab ingest` (not `--no-db`) persists FRED observations, writes provenance ids, and a published artifact may show the value (ok_gov). `--no-db` stays ELIGIBLE. ALFRED vintages later. Skip CBOE/S&P Pre-approval series. |
 | **Definition of done** | Queue: IMP-033 DONE (#59). Plan [plans/IMP-022-fred-fullstack.md](plans/IMP-022-fred-fullstack.md). Fixture `--no-db` → `fred_stack.closure=ELIGIBLE` with value + `claim_hash` provenance; never `CLOSED`. Persist helper exists (`persist_envelopes` + `run_fred_stack`). `SRC-FRED-MISSING-ENV` CLOSED only after an operator cites a persist `run_id`. No secrets in git. Tests + import-boundary. Met: run_id `fred-fullstack-20260919-101938-aest`. |
 | **Non-goals** | Committing the key; closing the incident on `--no-db`; scraping Stooq; VIXCLS/SP500 until copyright chip allows; paid vendors; LLM training on FRED; `live.yaml` / signing / Redis. |
@@ -572,7 +612,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Risk level** | Low (env). Process: third-party FRED copyright; Telegram attribution. |
 | **Status** | DONE |
 | **PR** | operator full-stack close 2026-09-19 (run_id `fred-fullstack-20260919-101938-aest`); ELIGIBLE path [#60](https://github.com/ElChopa11/market-memory/pull/60) |
-| **Lesson learned** | Closed SRC-FRED-MISSING-ENV on persist run_id `fred-fullstack-20260919-101938-aest` (postgres_attached=true, no_db=false, 5 observation_ids, Pulse US10Y=4.94 source=fred, source-health fred=ok). `--no-db` is still ELIGIBLE only. ALFRED vintages remain later. Next free-source thread is IMP-024 EDGAR. |
+| **Lesson learned** | Closed SRC-FRED-MISSING-ENV on persist run_id `fred-fullstack-20260919-101938-aest` (postgres_attached=true, no_db=false, 5 observation_ids, Pulse US10Y=4.94 source=fred, source-health fred=ok). `--no-db` is still ELIGIBLE only. ALFRED vintages remain later. Next free-source thread is IMP-024 EDGAR. Principal record correction 2026-09-19: the incident is **OPEN** again under environment-propagation; this IMP stays DONE. |
 
 ### IMP-023 — Test data.binance.vision from AU (separate from geo-blocked API)
 
@@ -1025,14 +1065,28 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-041 | Ops | Ops / Principal | DONE | [#67](https://github.com/ElChopa11/market-memory/pull/67) Desk knowledge base `config/knowledge/` |
 | IMP-042 | Ops | Ops | IN_PROGRESS | Miss detector (clock control). Heartbeat-on-fire is a log. SCHED-001 stays OPEN. |
 
-`IN_PROGRESS` count: **1** (IMP-042). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-041 are `DONE`. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404. SRC-FRED-MISSING-ENV is CLOSED (run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only). Single implementation thread. Principal L2 sprint: P0 this PR; P1/P2/P3 parked.
+`IN_PROGRESS` count: **1** (IMP-042). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-041 are `DONE`. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Principal L2 sprint: P0 this PR; P1/P2/P3 parked.
+
+**OPEN incidents — sources / clock / scorecard** (not a missing-env credentials close list)
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
 | SCHED-001 | Ops | Ops | OPEN | P0. Sydney 08:00 digest never fired. Do not close on "no window yet". |
 | BRIEF-TAG-20260918 | Ops / Quant scorecard | Ops/Quant | OPEN | 18 Sep pack ~90m pre-open vs 30m anchor |
 | SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive; evaluation 2026-09-18 rejects scrape — lawful proxy is not ES/NQ futures |
-| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | CLOSED | run_id `fred-fullstack-20260919-101938-aest`; postgres_attached=true; Pulse US10Y=4.94; `--no-db` remains ELIGIBLE only |
+| SRC-FRED-MISSING-ENV | Ops | Ops | OPEN | **environment-propagation** (config present, run env absent). 2026-09-19 Don audit: `FRED_API_KEY` on card+process env. Prior CLOSED persist pack retained: run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only. Do not close as key-absent. |
+
+**OPEN incidents — services / infrastructure** (not a missing-env credentials list)
+
+| ID | Desk | Owner | Status | Notes |
+|---|---|---|---|---|
+| SRC-OBJECT-STORE | Ops | Ops | OPEN | **DOWN SERVICE**: MinIO `:9000` connection refused, no container. Alias `SRC-object_store` / `object_store`. `MINIO_*` defaults may still be present. Do not close by setting keys. |
+
+**OPEN incidents — delivery / pipeline honesty** (not a working-pipeline proof)
+
+| ID | Desk | Owner | Status | Notes |
+|---|---|---|---|---|
+| TG-UNGATED-PRE-HYBRID | Ops | Ops | OPEN | Pre-Hybrid Telegram is **ungated**. Known fires: 18 Sep ~22:02 pre-market; 19 Sep 00:03 cash-open; Coord lines from the publisher audit. Not an archive. |
 
 
 ---
@@ -1077,7 +1131,7 @@ Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008
 
 Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR wire is **IMP-024 DONE** (#63). Candidate strategy intake + Quant validation studies is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 DONE** (#66). Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 IN_PROGRESS**.
 
-Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-stack DONE → **IMP-024** EDGAR DONE (#63) → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036**–**038** BACKLOG. Phase 1 base rates are **IMP-040 DONE** (#66). Candidate intake is **IMP-039 READY** (#61); cards stay INTAKE_ONLY. Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 IN_PROGRESS**. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is CLOSED. SCHED-001 stays OPEN.
+Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-stack DONE → **IMP-024** EDGAR DONE (#63) → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036**–**038** BACKLOG. Phase 1 base rates are **IMP-040 DONE** (#66). Candidate intake is **IMP-039 READY** (#61); cards stay INTAKE_ONLY. Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 IN_PROGRESS**. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is OPEN (environment-propagation; prior CLOSED pack cited). SRC-OBJECT-STORE is OPEN (DOWN SERVICE). TG-UNGATED-PRE-HYBRID is OPEN (pre-Hybrid Telegram **ungated**). SCHED-001 stays OPEN.
 
 ## Reconciliation notes
 
@@ -1105,7 +1159,7 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - IMP-017 merged as #54 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-030.
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
 - IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
-- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. #66 landed IMP-040 Phase 1 fixture base rates. #67 landed IMP-041 desk knowledge base. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. SCHED-001 is P0; do not close on “no window yet”. Locked universe unchanged. Paper only. Single-threaded: IMP-042 miss detector is the only `IN_PROGRESS`.
+- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. Principal record correction 2026-09-19: that close pack is retained; the incident is **OPEN** again under **environment-propagation** (Don audit: key present on card+process env; earlier missing_env = runs that did not inherit box env). #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. #66 landed IMP-040 Phase 1 fixture base rates. #67 landed IMP-041 desk knowledge base. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. SRC-OBJECT-STORE is OPEN as a **DOWN SERVICE** (MinIO :9000; not missing_env). TG-UNGATED-PRE-HYBRID is OPEN: pre-Hybrid Telegram (18 Sep ~22:02 pre-market, 19 Sep 00:03 cash-open, Coord publisher-audit lines) is **ungated** and is not pipeline proof. SCHED-001 is P0; do not close on “no window yet”. Locked universe unchanged. Paper only. Single-threaded: IMP-042 miss detector is the only `IN_PROGRESS`.
 - Candidate strategy intake (C-001/C-002/C-003) is **IMP-039 READY** (#61). IMP-034 on main is ticker/licence (#60), not that shelf. Studies stay parked (Quant-owned; no sizing; no scan-gate). IMP-040 pack exists (#66); expansion is L2 P1. Retail provenance = `n=unknown` hypothesis weight.
 - Desk knowledge base is **IMP-041 DONE** (#67). Does not take the IMP-042 slot. OPEN incidents untouched.
 - Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 DONE / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.
