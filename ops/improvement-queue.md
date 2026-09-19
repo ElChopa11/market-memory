@@ -154,6 +154,26 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | — |
 | **Lesson learned** | *(open — ungated ≠ working pipeline)* |
 
+### TG-BTCUSDC-FALSE-POSITIVE — BTCUSDC.P GrokBot sighting was not Telegram
+
+| Field | Value |
+|---|---|
+| **ID** | TG-BTCUSDC-FALSE-POSITIVE |
+| **Priority** | P2 |
+| **Type** | Delivery / false-positive close |
+| **Desk** | Ops |
+| **Owner** | Ops / Principal |
+| **Problem** | BTCUSDC.P was sighted in the GrokBot panel and read as a Telegram publish. It was desk working-thread output. |
+| **Evidence** | Principal 2026-09-19 close: **FALSE POSITIVE**. Hive search **No Results**. Membership: **Principal + one human + delivery bot only**. Freeze was **never incomplete**. Cause: monitoring GrokBot + Telegram together. House lessons: FALSE POSITIVE block + “Telegram membership is the authoritative publisher inventory.” Prior control-boundary lesson **still stands**. |
+| **Proposed outcome** | Record the close. Do not treat GrokBot working output as a publish. Do not reopen the freeze as incomplete. |
+| **Definition of done** | Recorded on this queue + house lessons. Status **RETIRED** (FALSE POSITIVE; no persist `run_id` — do not invent one; not an OPEN incident). Standing check (membership re-verify; Principal member-list read) stays on IMP-051 BACKLOG. **No tooling.** |
+| **Non-goals** | Feature code. Telegram send. Bot API member-list tooling. Treating admin-only Bot API as complete. Closing SCHED-001 or TG-UNGATED-PRE-HYBRID. Occupying IN_PROGRESS. |
+| **Dependencies** | IMP-051 stays BACKLOG (runbook + standing re-verify). Prior control-boundary lesson kept. |
+| **Risk level** | Low (false-positive close). Residual: mixing GrokBot + Telegram monitoring. |
+| **Status** | RETIRED |
+| **PR** | this PR (docs/queue only) |
+| **Lesson learned** | Working-thread ≠ Telegram. Membership is the inventory. Freeze was never incomplete. Repo-invocation inventory remains structurally incomplete. |
+
 ### IMP-000 — Desk operating model docs
 
 | Field | Value |
@@ -1123,16 +1143,16 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Ops / delivery control (docs + operator hygiene) |
 | **Desk** | Ops |
 | **Owner** | Ops |
-| **Problem** | A control boundary around repo / CLI send misses every publisher that does not use that path. Desk bots that are Hive members, Chart / TradingView webhooks, and panel drift can post without `lab deliver`. |
-| **Evidence** | Principal house lesson 2026-09-19 ([config/knowledge/house-lessons.md](../config/knowledge/house-lessons.md) — “Control boundary around own code misses other publishers”). Hybrid single-exit: desks → GrokBot working chat artifacts → Don compiles → lab deliver CLI → Telegram. IMP-050 (`send_enabled` per channel by PR) already BACKLOG. |
-| **Proposed outcome** | Inventory publishers by who can post (membership / credential / webhook), not by what the repo invokes. Then close the extra exits. |
-| **Definition of done** | Later PR, not this one: (1) Ops runbook inventories publishers by Telegram membership / credential / webhook. (2) Desk bots removed from the Hive group; they are not members and do not hold Telegram credentials or third-party webhooks to Telegram. (3) Chart / TradingView webhook ban recorded and enforced as policy. (4) Principal panel reconcile: five desks + coord + alerts. **Do not build in this PR.** |
-| **Non-goals** | Feature code. Telegram send. Building IMP-050. Lifting the Hive group freeze. Giving desk bots tokens or webhook URLs. Auto-merge. Gate waiver. Occupying the IMP-047 slot. |
-| **Dependencies** | IMP-050 stays BACKLOG (per-channel `send_enabled` by PR). House lesson above. IMP-045 (topics vs groups) is a separate Principal decision. |
-| **Risk level** | High if skipped (uninventoried publishers). Low this PR (queued only). |
+| **Problem** | A control boundary around repo / CLI send misses every publisher that does not use that path. Admin-only Bot API lists are also incomplete. Completeness is Telegram membership via a Principal member-list read. |
+| **Evidence** | Principal 2026-09-19. Control-boundary house lesson **kept** (enumerating by repo invocation is structurally incomplete). BTCUSDC.P GrokBot sighting is **FALSE POSITIVE** (`TG-BTCUSDC-FALSE-POSITIVE` RETIRED): working-thread, not Telegram; Hive **No Results**; membership **Principal + one human + delivery bot only**; freeze **never incomplete**. Standing rule: membership IS the inventory. IMP-050 already BACKLOG. |
+| **Proposed outcome** | Inventory = Telegram membership. Re-verify whenever any bot/integration is added. Principal member-list read required. Then keep extra exits closed (desk bots, Chart/TradingView webhooks). Do not monitor GrokBot and Telegram as one surface. |
+| **Definition of done** | Later, **no tooling in this PR**: (1) Ops runbook: Telegram membership is the authoritative publisher inventory. (2) Re-verify membership whenever any bot or integration is added. (3) Principal member-list read required for completeness; admin-only Bot API list is insufficient. (4) Desk bots stay out of Hive (already: Principal + one human + delivery bot only) and hold no Telegram credentials or third-party webhooks. (5) Chart / TradingView webhook ban recorded. (6) Panel reconcile five desks + coord + alerts without treating GrokBot working output as a publish. |
+| **Non-goals** | Feature code. Bot API member-list tooling. Telegram send. Building IMP-050. Lifting the Hive group freeze. Reopening the freeze as incomplete. Treating admin-only Bot API as complete. Auto-merge. Gate waiver. Occupying the IMP-047 slot. |
+| **Dependencies** | IMP-050 stays BACKLOG. `TG-BTCUSDC-FALSE-POSITIVE` RETIRED. Control-boundary lesson kept. IMP-045 is a separate Principal decision. |
+| **Risk level** | High if membership is not re-read when a bot/integration is added. Low this PR (queued only). |
 | **Status** | BACKLOG |
 | **PR** | — |
-| **Lesson learned** | *(do not build now; enumerate by membership / credential / webhook)* |
+| **Lesson learned** | *(do not build tooling; membership is the inventory; Principal member-list read required)* |
 
 ### IMP-044 — Delivery process isolation (separate user or container)
 
@@ -1252,7 +1272,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-048 | Ops / Research | Ops | BACKLOG | Weekly investment review artifact CLI. Do not allow agent authoring for weekly. |
 | IMP-049 | Ops | Ops | BACKLOG | Canonical copies of the three Hybrid clock prompts + content hash; periodic server read-back. Fail → OPEN incident on drift. Do not build now. |
 | IMP-050 | Ops | Ops | BACKLOG | Per-channel `send_enabled` config gate (DM / Hive group / desk), read by CLI, PR-only. Replaces `--i-mean-it` as the permanent send control. Do not build now. |
-| IMP-051 | Ops | Ops | BACKLOG | Publisher inventory by Telegram membership (ops runbook); remove desk bots from Hive group; Chart/TradingView webhook ban; panel reconcile five desks + coord + alerts. Do not build now. |
+| IMP-051 | Ops | Ops | BACKLOG | Membership IS the inventory. Principal member-list read required; admin-only Bot API insufficient. Re-verify when any bot/integration is added. Chart/TV webhook ban + panel reconcile later. No tooling. |
 
 `IN_PROGRESS` count: **1** (IMP-047). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043 are `DONE`. IMP-044/045/048/049/050/051 stay BACKLOG. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Hybrid Step 5a this PR; Hive group stays frozen. Prompt-body drift watch, per-channel `send_enabled`, and publisher inventory are queued, not built.
 
@@ -1276,6 +1296,12 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
 | TG-UNGATED-PRE-HYBRID | Ops | Ops | OPEN | Pre-Hybrid Telegram is **ungated**. Known fires: 18 Sep ~22:02 pre-market; 19 Sep 00:03 cash-open; Coord lines from the publisher audit. Not an archive. |
+
+**Closed / retired — delivery false positives** (not OPEN; freeze was never incomplete)
+
+| ID | Desk | Owner | Status | Notes |
+|---|---|---|---|---|
+| TG-BTCUSDC-FALSE-POSITIVE | Ops | Ops / Principal | RETIRED | FALSE POSITIVE. BTCUSDC.P in GrokBot panel was desk working-thread, not Telegram. Hive search No Results. Membership: Principal + one human + delivery bot only. |
 
 
 ---
@@ -1351,5 +1377,6 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. Principal record correction 2026-09-19: that close pack is retained; the incident is **OPEN** again under **environment-propagation** (Don audit: key present on card+process env; earlier missing_env = runs that did not inherit box env). #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. #66 landed IMP-040 Phase 1 fixture base rates. #67 landed IMP-041 desk knowledge base. #68 landed IMP-042 miss detector. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. SRC-OBJECT-STORE is OPEN as a **DOWN SERVICE** (MinIO :9000; not missing_env). TG-UNGATED-PRE-HYBRID is OPEN: pre-Hybrid Telegram (18 Sep ~22:02 pre-market, 19 Sep 00:03 cash-open, Coord publisher-audit lines) is **ungated** and is not pipeline proof. SCHED-001 is P0; do not close on “no window yet”. Locked universe unchanged. Paper only. #71 landed IMP-043 Hybrid Step 2. #72 landed IMP-046 Hybrid Step 4. Single-threaded: IMP-047 Hybrid Step 5a (DM-only send) is the only `IN_PROGRESS`. Hive group stays frozen. IMP-048 weekly authoring CLI is BACKLOG.
 - Candidate strategy intake (C-001/C-002/C-003) is **IMP-039 READY** (#61). IMP-034 on main is ticker/licence (#60), not that shelf. Studies stay parked (Quant-owned; no sizing; no scan-gate). IMP-040 pack exists (#66); expansion is L2 P1. Retail provenance = `n=unknown` hypothesis weight.
 - Desk knowledge base is **IMP-041 DONE** (#67). Does not take the IMP-047 slot. OPEN incidents untouched.
-- Publisher inventory (membership / credential / webhook), desk-bot removal, Chart/TradingView webhook ban, and panel reconcile (five desks + coord + alerts) is **IMP-051 BACKLOG**. IMP-050 `send_enabled` per channel stays BACKLOG. Do not build. No Telegram send.
+- Publisher inventory is **IMP-051 BACKLOG**. Telegram membership IS the inventory; Principal member-list read required; admin-only Bot API insufficient; re-verify when any bot/integration is added. Chart/TradingView webhook ban and panel reconcile remain on that item. **No tooling.** IMP-050 `send_enabled` per channel stays BACKLOG. No Telegram send.
+- BTCUSDC.P GrokBot sighting is **TG-BTCUSDC-FALSE-POSITIVE RETIRED** (FALSE POSITIVE). Working-thread, not Telegram. Hive No Results. Membership: Principal + one human + delivery bot only. Freeze was never incomplete. Prior control-boundary lesson kept (repo-invocation inventory is structurally incomplete).
 - Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 DONE / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.
