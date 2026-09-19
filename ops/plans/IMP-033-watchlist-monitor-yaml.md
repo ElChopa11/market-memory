@@ -2,7 +2,7 @@
 
 **Report status:** IN_PROGRESS (intake [#58](https://github.com/ElChopa11/market-memory/pull/58) — paper only).  
 **Owner:** Ops (queue + Telegram hold) / Research (scan remains IMP-020 product)  
-**Scope:** Queue intake + thin plan. Versioned `config/watchlist/monitor.yaml` encodes the Principal lock with tiers/clusters (crypto then base). Implementation lives on sister agent `bc-3c465873` *Canonical watchlist monitor.yaml Principal lock* (interrupted with the same Principal PATCH; PR when linked). **Do not reopen IMP-020.** Do not invent unresolved tickers. No live trading. No execution. No `live.yaml`. No credentials. No delivery send-path edits.
+**Scope:** Queue intake + thin plan. Versioned `config/watchlist/monitor.yaml` encodes the Principal lock with tiers/clusters (crypto then base). Implementation lives on sister [#59](https://github.com/ElChopa11/market-memory/pull/59) *Canonical watchlist monitor.yaml Principal lock* (`bc-3c465873`; merged). **Do not reopen IMP-020.** Do not invent unresolved tickers. No live trading. No execution. No `live.yaml`. No credentials. No delivery send-path edits.
 
 ## Why
 
@@ -52,7 +52,7 @@ EDGAR confirm for CBRS + SPCX — **do not assume 180d**. Lockup inside horizon 
 - Versioned `config/watchlist/monitor.yaml` encodes the lock + tiers/clusters (crypto then base) plus resolved SPCX/CBRS/CHIPIUSD/VVVUSD/PURR aliases and NEW_LISTING / LOCKUP WATCH rules.
 - `lab watchlist scan` (or equivalent) becomes config-backed. Existing IMP-020 product, ADR 0009, and runbook stay the product SoT.
 - Ops does not publish / send until the scan is config-backed.
-- Implementation PR: sister agent `bc-3c465873` *Canonical watchlist monitor.yaml Principal lock* (link when opened).
+- Implementation PR: sister [#59](https://github.com/ElChopa11/market-memory/pull/59) merged (`bc-3c465873`).
 
 ## Pointers (do not reopen IMP-020)
 
