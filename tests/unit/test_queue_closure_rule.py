@@ -50,20 +50,30 @@ def test_closure_rule_section_and_fred_eligible_not_closed() -> None:
 
 
 def test_source_health_20260919_attach_exists() -> None:
+    from mm_common.hashing import sha256_hex
+
     assert REPORT.is_file()
     assert SHA.is_file()
     text = REPORT.read_text(encoding="utf-8")
-    assert "2026-09-19T10:01:05+10" in text
+    assert sha256_hex(text) == SHA.read_text(encoding="utf-8").strip()
+    assert "2026-09-19T10:01:05" in text
+    assert "Australia/Sydney" in text
     assert "lab data source-health" in text
     assert "--no-db" in text
-    assert "status=ok" in text or "Status: `ok`" in text
-    assert "error_class=none" in text or "Error class: `none`" in text
-    assert "credentials_present=yes" in text or "Credentials present: `yes`" in text
+    assert "Status: `ok`" in text
+    assert "Error class: `none`" in text
+    assert "Credentials present: `yes`" in text
     assert "http_404" in text
     assert "object_store" in text
     assert "missing_env" in text
-    assert "never CLOSED" in text or "not a CLOSED" in text
+    assert "probe skipped" in text
     assert "4.21" not in text  # no FRED print
+    # Evidence only — queue status stays ELIGIBLE, not CLOSED.
+    queue = QUEUE.read_text(encoding="utf-8")
+    assert "| **Status** | ELIGIBLE |" in queue
+    assert "| SRC-FRED-MISSING-ENV |" in queue and "| CLOSED |" not in [
+        line for line in queue.splitlines() if line.startswith("| SRC-FRED-MISSING-ENV")
+    ][0]
 
 
 def test_queue_helper_eligible_not_a_slot() -> None:
