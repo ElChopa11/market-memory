@@ -10,7 +10,20 @@ This queue is the operating system, not an investment book. It does not authoris
 2. **One `IN_PROGRESS` implementation item.** Review (`IN_REVIEW`) of docs is allowed while implementation stays parked.
 3. **No duplicate research.** If an artifact already answers the question, close or merge the item with a lesson.
 4. **Reusable artifacts.** Prefer templates, schema records, and desk products over one-off commentary.
-5. Status vocabulary: `OPEN` (ops incident, not closed) → `BACKLOG` → `READY` → `IN_PROGRESS` → `IN_REVIEW` → `DONE` | `PARKED` | `REJECTED`. `OPEN` items are logged incidents; they are **not** closed and do not occupy the single `IN_PROGRESS` implementation slot.
+5. Status vocabulary: `OPEN` (ops incident, not closed) → `BACKLOG` → `READY` → `IN_PROGRESS` → `IN_REVIEW` → `DONE` | `PARKED` | `REJECTED`. Incident states (Principal QUEUE CLOSURE RULE): `OPEN` → `ELIGIBLE` → `CLOSED` (cite `run_id`) | `RETIRED` (reason). `OPEN` / `ELIGIBLE` items are logged incidents; they are **not** closed and do not occupy the single `IN_PROGRESS` implementation slot.
+
+## QUEUE CLOSURE RULE (Principal)
+
+Close an incident **only** on full-stack evidence. A healthier probe is not a close.
+
+1. **Close ONLY** when all of these are true: Postgres attached, rows landed, provenance ids resolvable, value in a published artifact.
+2. **`--no-db` / partial → `ELIGIBLE` only, never `CLOSED`.** Do not invent a CLOSED row from a skipped-Postgres run.
+3. **States:** `OPEN` → `ELIGIBLE` → `CLOSED` (cite `run_id`) | `RETIRED` (reason).
+4. **Triage:**
+   - `missing_env` = ours/config, same-day.
+   - Recur after fix = config drift.
+   - `http_4xx` = external; 3+ consecutive → fix request **or** retire + name the replacement.
+   - Weeks of failure ≠ degraded — treat as **absent**.
 
 ## Required fields (every item)
 
@@ -70,7 +83,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Intel |
 | **Owner** | Intel |
 | **Problem** | Stooq HTTP 404, two consecutive observations. Pulse/source-health already classify `http_404` as terminal (IMP-004). Still OPEN. |
-| **Evidence** | [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) Stooq canary HTTP 404; IMP-002/IMP-003/IMP-004 lessons. Two consecutive. |
+| **Evidence** | [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) Stooq canary HTTP 404; IMP-002/IMP-003/IMP-004 lessons. Two consecutive. [`ops/reports/source-health/2026-09-19.md`](reports/source-health/2026-09-19.md) still `unavailable` / `http_404`. |
 | **Proposed outcome** | Intel owns the source: confirm whether 404 is IP/ToS/path; keep honest unavailable; no scrape fallback. |
 | **Definition of done** | Consecutive-404 record in this queue; Intel note on next source-health run; not closed by IMP-004 (hardening already shipped). |
 | **Non-goals** | ToS-violating scrape URLs; paid data; inventing prints. |
@@ -90,15 +103,15 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Ops |
 | **Owner** | Ops |
 | **Problem** | FRED `missing_env` (`FRED_API_KEY` unset). |
-| **Evidence** | Source-health 2026-09-17 FRED `missing_env`; IMP-002/IMP-003 lessons. |
-| **Proposed outcome** | Set `FRED_API_KEY` in repo secrets + env. **Queued for Principal — Don does not decide secrets.** |
-| **Definition of done** | Principal sets the env/secret; next source-health is not `missing_env`. Stays OPEN until Principal acts. |
-| **Non-goals** | Committing the key; Don/Coord deciding secrets; inventing FRED prints. |
-| **Dependencies** | Principal (secrets). |
-| **Risk level** | Low (honest unavailable until keyed). |
-| **Status** | OPEN |
-| **PR** | — |
-| **Lesson learned** | *(open — queued for Principal; Don does not decide secrets)* |
+| **Evidence** | Source-health 2026-09-17 FRED `missing_env`; IMP-002/IMP-003 lessons. Principal-local [`ops/reports/source-health/2026-09-19.md`](reports/source-health/2026-09-19.md) as_of Australia/Sydney **2026-09-19T10:01:05+10**; command `lab data source-health` `--no-db`; fred `status=ok`, `error_class=none`, `credentials_present=yes` (fred≠missing_env). Postgres skipped — not full-stack. |
+| **Proposed outcome** | Env is present on the Principal-local probe. Stay **ELIGIBLE** until full-stack close (Postgres attached, rows landed, provenance ids resolvable, value in a published artifact). IMP-022 remains the vintage/series adopt path. **Do not CLOSE on --no-db.** |
+| **Definition of done** | **ELIGIBLE** after the 2026-09-19 `--no-db` probe (fred≠missing_env, credentials yes, probe ok). **CLOSED** only under the Principal QUEUE CLOSURE RULE (cite `run_id`). `--no-db` / partial never closes. |
+| **Non-goals** | Committing the key; inventing FRED prints; closing on `--no-db`; inventing a CLOSED row; closing SRC-STOOQ-404 or object_store missing_env. |
+| **Dependencies** | Principal QUEUE CLOSURE RULE. IMP-022 (ALFRED vintages) still BACKLOG. |
+| **Risk level** | Low (eligible, not closed). |
+| **Status** | ELIGIBLE |
+| **PR** | Intake [#58](https://github.com/ElChopa11/market-memory/pull/58) — paper only; not a close |
+| **Lesson learned** | *(eligible — 2026-09-19 --no-db; fred ok / credentials yes; not closed)* |
 
 ### IMP-000 — Desk operating model docs
 
@@ -550,9 +563,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Desk** | Ops (secrets) + Intel (series/vintages) |
 | **Owner** | Ops (Principal for secrets) / Intel |
 | **Problem** | Pulse, source-health, and macro still show FRED `missing_env`. Rates / curve / credit slots are NO DATA. ALFRED vintages are not used, so revisions would be look-ahead if a later adapter overwrote prints. |
-| **Evidence** | OPEN incident `SRC-FRED-MISSING-ENV`; [ops/reports/source-health/2026-09-17.md](reports/source-health/2026-09-17.md); [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) (adopt #1). FRED adapter already exists (`mm_ingest` / Pulse). |
+| **Evidence** | Incident `SRC-FRED-MISSING-ENV` is **ELIGIBLE** (not CLOSED) after 2026-09-19 `--no-db`; [ops/reports/source-health/2026-09-17.md](reports/source-health/2026-09-17.md); [ops/reports/source-health/2026-09-19.md](reports/source-health/2026-09-19.md); [ops/reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md) (adopt #1). FRED adapter already exists (`mm_ingest` / Pulse). |
 | **Proposed outcome** | Principal sets `FRED_API_KEY` in gitignored env / CI secrets (Don does not decide secrets). Later (not this docs PR): ALFRED `realtime_start` / `realtime_end` so each vintage is a new observation; expand **public-domain / citation-required** series only (e.g. DGS10, DGS2, T10Y2Y). Telegram cites “via FRED®” + API disclaimer. Skip CBOE/S&P **Pre-approval required** series. |
-| **Definition of done** | Key present locally/CI without ever appearing in git; source-health FRED row `credentials_present=yes` and not `missing_env` on an operator run; no prints/secrets in reports. Vintage ingest + series expansion only in a later implementation PR with tests. `SRC-FRED-MISSING-ENV` may close only after a real health run shows the env present. |
+| **Definition of done** | Key present locally/CI without ever appearing in git; source-health FRED row `credentials_present=yes` and not `missing_env` on an operator run; no prints/secrets in reports. Vintage ingest + series expansion only in a later implementation PR with tests. `SRC-FRED-MISSING-ENV` is **ELIGIBLE** after 2026-09-19 `--no-db`; **CLOSED** only under the Principal QUEUE CLOSURE RULE (full-stack). |
 | **Non-goals** | Committing the key; scraping Stooq; VIXCLS/SP500 until copyright chip allows; adapters in the evaluation PR; 6c-1..6c-5 cutover; paid vendors; LLM training on FRED. |
 | **Dependencies** | Principal secret. Do **not** take `IN_PROGRESS` while IMP-018 / 6c-1..6c-5 occupy the implementation thread. Evaluation: IMP-022–029 this PR. |
 | **Risk level** | Low (env). Process: third-party FRED copyright; Telegram attribution. |
@@ -772,7 +785,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Problem** | IMP-020 daily scan is DONE (#52) but membership / tiers / clusters are not yet encoded in a versioned `config/watchlist/monitor.yaml` Principal lock. The scan still keys off `config/universe.yaml` + `config/desks/watchlist.yaml`. Ops (sole publisher) holds Telegram until the scan is config-backed. Membership still risks being misread as a call. |
 | **Evidence** | Principal lock already in [`config/universe.yaml`](../config/universe.yaml): `in_universe` crypto BTC + equities NVDA AVGO MSFT META JPM XOM; `watch_only` crypto ETH UNI AAVE + equities SMH XLF; `deferred_must_cut` stays archived. IMP-020 DONE (#52); [ADR 0009](../ADR/0009-phase6c4-watchlist.md); [docs/runbooks/watchlist.md](../docs/runbooks/watchlist.md). Sister agent *Canonical watchlist monitor.yaml Principal lock* (`bc-3c465873`) owns YAML; interrupted with the same Principal PATCH (implementation PR when linked). IMP-032 DONE (#57). Confirmed no other IMP-* `IN_PROGRESS` at intake. **Principal PATCH resolved (do not invent further tickers):** SPCX → NASDAQ:SPCX — Space Exploration Technologies Corp (SpaceX) — USD — NOT SPAC ETF / CAD DRC / memecoin — cluster `idio` (pending corr); CBRS → NASDAQ:CBRS — Cerebras Systems Inc — USD — IPO 2026-05-14 @ $185 — cluster `semis_ai` (MOVED from idio); CHIPIUSD → HL:CHIP (Hyperliquid coin CHIP; display CHIPIUSD); VVVUSD → HL:VVV; PURR → HL:PURR. **Still unresolved (out of ideas until Principal paste):** SAMSUN, KOSDA. |
 | **Proposed outcome** | Versioned `config/watchlist/monitor.yaml` encoding the Principal lock with tiers/clusters for crypto then base, plus resolved SPCX/CBRS/CHIPIUSD/VVVUSD/PURR aliases and NEW_LISTING / LOCKUP WATCH rules. `lab watchlist scan` (or equivalent) reads this config. Membership is not a call. No universe expand. Do not invent unresolved aliases (SAMSUN, KOSDA). OPEN incidents untouched. Ops holds Telegram until the scan is config-backed. |
-| **Definition of done** | Queue: IMP-032 DONE (#57). This item the only implementation thread. Plan [plans/IMP-033-watchlist-monitor-yaml.md](plans/IMP-033-watchlist-monitor-yaml.md). `config/watchlist/monitor.yaml` + tiers/clusters merged (sister `bc-3c465873`, PR when linked). `lab watchlist scan` (or equivalent) config-backed. Tests. OPEN incidents unchanged (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV). No `live.yaml` / signing / credentials / delivery send-path edits. Ops does not publish until config-backed. Do not reopen IMP-020. **NEW_LISTING** (<200 daily bars): tag `NEW_LISTING` + `days_of_history`; SMA200 = `n/a (insufficient history: <n> bars)` never "?" / never silent shorter MA; route LISTINGS pod; post-IPO framework; lockup proximity + float/borrow/spread warnings; `UNTRADEABLE_AT_SIZE` observation-only. **LOCKUP WATCH:** EDGAR confirm for CBRS + SPCX — do not assume 180d. Lockup inside horizon = gate 5 blackout. Do not invent SAMSUN / KOSDA. |
+| **Definition of done** | Queue: IMP-032 DONE (#57). This item the only implementation thread. Plan [plans/IMP-033-watchlist-monitor-yaml.md](plans/IMP-033-watchlist-monitor-yaml.md). `config/watchlist/monitor.yaml` + tiers/clusters merged (sister `bc-3c465873`, PR when linked). `lab watchlist scan` (or equivalent) config-backed. Tests. OPEN incidents unchanged (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404). SRC-FRED-MISSING-ENV is **ELIGIBLE** (not CLOSED) per Principal QUEUE CLOSURE RULE. No `live.yaml` / signing / credentials / delivery send-path edits. Ops does not publish until config-backed. Do not reopen IMP-020. **NEW_LISTING** (<200 daily bars): tag `NEW_LISTING` + `days_of_history`; SMA200 = `n/a (insufficient history: <n> bars)` never "?" / never silent shorter MA; route LISTINGS pod; post-IPO framework; lockup proximity + float/borrow/spread warnings; `UNTRADEABLE_AT_SIZE` observation-only. **LOCKUP WATCH:** EDGAR confirm for CBRS + SPCX — do not assume 180d. Lockup inside horizon = gate 5 blackout. Do not invent SAMSUN / KOSDA. |
 | **Non-goals** | Reopening IMP-020; re-implementing the monitor product; universe ticker expansion; inventing unresolved aliases (SAMSUN, KOSDA); treating membership as a call or Quant verdict; closing OPEN incidents; `live.yaml`; signing; wallets; Redis; delivery send-path changes; auto-publish Telegram before config-backed; assuming 180d lockup without EDGAR; paid data. |
 | **Dependencies** | IMP-020 DONE (#52). IMP-021 DONE (#53) — Ops holds send until config-backed. IMP-032 DONE (#57). Sister implementation agent `bc-3c465873` *Canonical watchlist monitor.yaml Principal lock* (interrupted with the same PATCH; PR when linked). |
 | **Risk level** | Low–medium (language; publishing before config-backed). |
@@ -822,14 +835,15 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-032 | Ops + Quant | Don/Ops+Quant | DONE | [#57](https://github.com/ElChopa11/market-memory/pull/57) call-card language vs Quant SoT |
 | IMP-033 | Ops + Research | Ops/Don | IN_PROGRESS | Canonical watchlist monitor.yaml Principal lock — intake [#58](https://github.com/ElChopa11/market-memory/pull/58); sister `bc-3c465873` (PR when linked). PATCH: SPCX→NASDAQ:SPCX `idio`; CBRS→NASDAQ:CBRS `semis_ai`; CHIPIUSD→HL:CHIP; VVVUSD→HL:VVV; PURR→HL:PURR. Unresolved until Principal paste: SAMSUN, KOSDA. |
 
-`IN_PROGRESS` count: **1**. IMP-000–IMP-021 and IMP-030–IMP-032 are `DONE`. IMP-033 is `IN_PROGRESS` (intake [#58](https://github.com/ElChopa11/market-memory/pull/58) — paper only; implementation PR is sister `bc-3c465873` *Canonical watchlist monitor.yaml Principal lock*, link when opened). IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed). Single implementation thread.
+`IN_PROGRESS` count: **1**. IMP-000–IMP-021 and IMP-030–IMP-032 are `DONE`. IMP-033 is `IN_PROGRESS` (intake [#58](https://github.com/ElChopa11/market-memory/pull/58) — paper only; implementation PR is sister `bc-3c465873` *Canonical watchlist monitor.yaml Principal lock*, link when opened). IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404 (not closed). ELIGIBLE: SRC-FRED-MISSING-ENV (2026-09-19 `--no-db`; not CLOSED). object_store `missing_env` stays OPEN (not a SRC-* id). Single implementation thread.
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
 | SCHED-001 | Ops | Ops | OPEN | Sydney 08:00 digest never fired |
 | BRIEF-TAG-20260918 | Ops / Quant scorecard | Ops/Quant | OPEN | 18 Sep pack ~90m pre-open vs 30m anchor |
-| SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive; evaluation 2026-09-18 rejects scrape — lawful proxy is not ES/NQ futures |
-| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | OPEN | fred missing_env; Don does not decide secrets; adopt path is IMP-022 |
+| SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404; 2026-09-19 still unavailable / http_404; evaluation 2026-09-18 rejects scrape |
+| SRC-FRED-MISSING-ENV | Ops | Ops (Principal for secrets) | ELIGIBLE | 2026-09-19 `--no-db`: fred ok / credentials yes / ≠missing_env; **not CLOSED** (no Postgres / rows / provenance / published value) |
+| (note) object_store | Ops | Ops | OPEN | 2026-09-19 `--no-db`: unavailable / missing_env; not a SRC-* id; stays OPEN |
 
 
 ---
@@ -905,5 +919,6 @@ Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-0
 - IMP-032 intakes call-card vs Quant SoT language alignment (Lunch Money Research L2). IMP-031 DONE (#56). OPEN incidents untouched. Locked universe unchanged. Paper only. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). Do not invent new calls.
 - IMP-032 merged as #57 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-033.
 - IMP-033 intakes canonical watchlist `monitor.yaml` (Principal lock + tiers/clusters). IMP-020 stays DONE (#52) — do not reopen. Paper only. No send. OPEN incidents untouched. Implementation is the sister agent `bc-3c465873` *Canonical watchlist monitor.yaml Principal lock* (PR when linked). Single-threaded: IMP-033 is the only `IN_PROGRESS` item. Confirmed no other IMP-* `IN_PROGRESS` at intake.
-- Principal PATCH on IMP-033 (intake #58, still `IN_PROGRESS`): resolved SPCX → NASDAQ:SPCX `idio` (pending corr); CBRS → NASDAQ:CBRS `semis_ai` (moved from idio); CHIPIUSD → HL:CHIP (display CHIPIUSD); VVVUSD → HL:VVV; PURR → HL:PURR. Unresolved until Principal paste: SAMSUN, KOSDA — do not invent. NEW_LISTING + LOCKUP WATCH (EDGAR confirm CBRS/SPCX; no 180d assumption; lockup inside horizon = gate 5 blackout). Sister `bc-3c465873` interrupted with the same patch. OPEN incidents untouched.
+- Principal PATCH on IMP-033 (intake #58, still `IN_PROGRESS`): resolved SPCX → NASDAQ:SPCX `idio` (pending corr); CBRS → NASDAQ:CBRS `semis_ai` (moved from idio); CHIPIUSD → HL:CHIP (display CHIPIUSD); VVVUSD → HL:VVV; PURR → HL:PURR. Unresolved until Principal paste: SAMSUN, KOSDA — do not invent. NEW_LISTING + LOCKUP WATCH (EDGAR confirm CBRS/SPCX; no 180d assumption; lockup inside horizon = gate 5 blackout). Sister `bc-3c465873` interrupted with the same patch. OPEN incidents SCHED-001 / BRIEF-TAG-20260918 / SRC-STOOQ-404 untouched.
+- Principal QUEUE CLOSURE RULE on #58: SRC-FRED-MISSING-ENV is **ELIGIBLE** from 2026-09-19 `--no-db` (fred ok / credentials yes). Not CLOSED. object_store missing_env noted OPEN (no SRC-* id). Do not invent a CLOSED FRED row.
 - Source evaluation 2026-09-18 (docs-only) intakes IMP-022–IMP-029 as `BACKLOG` adopt/trial recommendations. Does not modify IMP-018/6c-1 cutover, does not close OPEN incidents, does not add adapters or keys. Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) are Principal decision.

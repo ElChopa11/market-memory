@@ -44,6 +44,7 @@ def test_queue_marks_019_done_020_done_021_this_pr() -> None:
     for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
         assert item_id in queue
     assert "| **Status** | OPEN |" in queue or "**Status** | OPEN" in queue
+    assert "| **Status** | ELIGIBLE |" in queue
 
 
 def test_phase6c4_plan_adr_and_config_exist() -> None:

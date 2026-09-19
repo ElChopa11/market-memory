@@ -22,9 +22,11 @@ def test_queue_marks_016_done_018_in_review_017_parked() -> None:
 
 def test_open_ops_incidents_are_logged_not_closed() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
-    for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
+    for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404"):
         assert item_id in queue
         assert f"**Status** | OPEN" in queue or "| **Status** | OPEN |" in queue
+    assert "SRC-FRED-MISSING-ENV" in queue
+    assert "| **Status** | ELIGIBLE |" in queue
     assert "sydney-morning-digest-8am" in queue
     assert "http_404" in queue
     assert "FRED_API_KEY" in queue

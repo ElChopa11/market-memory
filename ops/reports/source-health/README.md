@@ -11,4 +11,6 @@ Path: `ops/reports/source-health/YYYY-MM-DD.md` (UTC date). Health/provenance on
 
 Committed sample from a real read-only run (IMP-003): [2026-09-17.md](2026-09-17.md). That sample predates IMP-004 classification (`http_error` for Stooq 404); new runs emit `http_404`.
 
+Principal-local `--no-db` attach (queue ELIGIBLE, not CLOSED): [2026-09-19.md](2026-09-19.md). FRED probe ok / credentials yes; Stooq `http_404` and object_store `missing_env` stay OPEN. Full-stack close requires Postgres + landed rows + resolvable provenance + a published value.
+
 Dated output is gitignored except this README and explicit committed samples. See [docs/runbooks/source-health.md](../../docs/runbooks/source-health.md), [ops/plans/IMP-003-source-health.md](../plans/IMP-003-source-health.md), and [ops/plans/IMP-004-pulse-source-hardening.md](../plans/IMP-004-pulse-source-hardening.md).

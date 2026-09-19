@@ -19,8 +19,8 @@ OPEN_INCIDENTS = (
     "SCHED-001",
     "BRIEF-TAG-20260918",
     "SRC-STOOQ-404",
-    "SRC-FRED-MISSING-ENV",
 )
+ELIGIBLE_INCIDENTS = ("SRC-FRED-MISSING-ENV",)
 
 
 def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
@@ -38,7 +38,10 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert "`IN_PROGRESS` count: **1**" in queue
     for item_id in OPEN_INCIDENTS:
         assert item_id in queue
-    assert queue.count("| **Status** | OPEN |") >= 4
+    for item_id in ELIGIBLE_INCIDENTS:
+        assert item_id in queue
+    assert queue.count("| **Status** | OPEN |") >= 3
+    assert "| **Status** | ELIGIBLE |" in queue
     assert "sydney-morning-digest-8am" in queue
     assert PLAN.is_file()
     live = LIVE.read_text(encoding="utf-8")
@@ -107,6 +110,8 @@ def test_imp033_required_fields_and_lock() -> None:
     assert "bc-3c465873" in block
     for item_id in OPEN_INCIDENTS:
         assert item_id in block
+    assert "SRC-FRED-MISSING-ENV" in block
+    assert "ELIGIBLE" in block
     universe = UNIVERSE.read_text(encoding="utf-8")
     assert "in_universe:" in universe
     assert "watch_only:" in universe
@@ -155,7 +160,10 @@ def test_queue_helper_single_in_progress_no_auto_merge() -> None:
     assert report.auto_merge is False
     assert report.auto_waive is False
     open_ids = {item.item_id for item in report.items if item.kind == "incident" and item.status == "OPEN"}
+    eligible_ids = {item.item_id for item in report.items if item.kind == "incident" and item.status == "ELIGIBLE"}
     assert set(OPEN_INCIDENTS) <= open_ids
+    assert set(ELIGIBLE_INCIDENTS) <= eligible_ids
+    assert "SRC-FRED-MISSING-ENV" not in open_ids
     parsed = check_queue(QUEUE.read_text(encoding="utf-8"))
     assert parsed.in_progress == ("IMP-033",)
     assert not parsed.errors

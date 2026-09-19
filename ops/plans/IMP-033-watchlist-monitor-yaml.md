@@ -48,7 +48,7 @@ EDGAR confirm for CBRS + SPCX — **do not assume 180d**. Lockup inside horizon 
 
 ## Outcome
 
-- Queue: IMP-032 DONE (#57). IMP-033 this thread (only `IN_PROGRESS`). OPEN incidents untouched (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV).
+- Queue: IMP-032 DONE (#57). IMP-033 this thread (only `IN_PROGRESS`). OPEN incidents untouched (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404). SRC-FRED-MISSING-ENV is **ELIGIBLE** (2026-09-19 `--no-db`; not CLOSED).
 - Versioned `config/watchlist/monitor.yaml` encodes the lock + tiers/clusters (crypto then base) plus resolved SPCX/CBRS/CHIPIUSD/VVVUSD/PURR aliases and NEW_LISTING / LOCKUP WATCH rules.
 - `lab watchlist scan` (or equivalent) becomes config-backed. Existing IMP-020 product, ADR 0009, and runbook stay the product SoT.
 - Ops does not publish / send until the scan is config-backed.

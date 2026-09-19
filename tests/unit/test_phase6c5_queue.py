@@ -43,6 +43,7 @@ def test_queue_marks_020_done_021_in_review_017_parked() -> None:
     for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
         assert item_id in queue
     assert "| **Status** | OPEN |" in queue or "**Status** | OPEN" in queue
+    assert "| **Status** | ELIGIBLE |" in queue
     assert "sydney-morning-digest-8am" in queue
 
 
