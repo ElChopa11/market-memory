@@ -1,0 +1,53 @@
+# Candidate strategy intake (Principal 2026-09-19 evening).
+# Shared gates + cross-candidate overlap. Not a sixth desk.
+# NOTHING computed. Computation stays blocked until both gates land.
+
+version: "imp-039.2"
+kind: candidate_param_lock
+desk: quant
+status: INTAKE_ONLY
+sizing: false
+scan_gate: false
+promote: false
+live: false
+compute: false
+
+# Rule 9 — do not start out of order.
+computation_gates:
+  phase1_unconditional_base_rates:
+    required: true
+    landed: false
+    notes: "Unconditional base rates must exist in Market Memory before any candidate study runs. Listings base rates are not this gate."
+  scorecards_6e_instance_autotrack:
+    required: true
+    landed: false
+    notes: "IMP-030 #55 landed pack-compare scorecards. Instance auto-track for C-00x is not wired. Until it is, intake only."
+
+# Rule 8 — dip-in-uptrend family. Cluster netting will not catch this.
+family: dip-in-uptrend
+members: [C-001, C-002, C-003]
+overlap_n_bars: 5
+overlap_threshold_pct: 40
+promote_at_most_one: true
+prefer_on_collapse: simplest
+
+# Rule 12 — declared stop (no keep-tuning).
+stop:
+  sample_target: 80
+  min_sample: 20
+  window_end: "2026-09-18"
+  verdicts: [PASS, FAIL, INSUFFICIENT_SAMPLE]
+
+# Rule 11 — PASS is not a scan and not a size.
+pass_means: PAPER_ELIGIBLE_UNSIZED
+principal_sizing_gate: separate
+
+# Adversarial acceptance (declared; not run).
+acceptance:
+  no_future_bars: true
+  pivot_confirm_k_bars: 2
+  zones_no_hindsight: true
+  deterministic_params_hash: true
+  count_blow_throughs: true
+  reconcile_vs_raw_detector: true
+  weekly_investment_review: true

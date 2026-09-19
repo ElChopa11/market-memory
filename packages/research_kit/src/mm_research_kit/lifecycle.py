@@ -47,7 +47,20 @@ REQUIRED_TEMPLATES = [
     "output-contract.md",
 ]
 
-SKIP_DIR_NAMES = {".git", "__pycache__", "evidence", "backtests", "paper", "quant", "cards", "queue", "screens"}
+SKIP_DIR_NAMES = {
+    ".git",
+    "__pycache__",
+    "evidence",
+    "backtests",
+    "paper",
+    "quant",
+    "cards",
+    "queue",
+    "screens",
+    "candidates",
+    "failures",
+    "studies",
+}
 
 _PAPER_PLACEHOLDERS = frozenset({"", "-", "n/a", "na", "none", "null", "tbd", "todo", "?", "unknown"})
 

@@ -42,6 +42,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Canonical watchlist monitor.yaml (IMP-033) is **DONE** (#59).
 - Ticker resolutions + licence_verdict schema (IMP-034) are **DONE** (#60).
 - FRED full-stack (IMP-022) is **DONE** (run_id `fred-fullstack-20260919-101938-aest`). `--no-db` = ELIGIBLE only. SRC-STOOQ-404 stays OPEN. SRC-FRED-MISSING-ENV is CLOSED.
-- SEC EDGAR wire (IMP-024) is **IN_PROGRESS** (this PR). CBRS/SPCX lockup formulas persist as observations. `--no-db` = ELIGIBLE only.
+- SEC EDGAR wire (IMP-024) is **IN_PROGRESS**. CBRS/SPCX lockup formulas persist as observations. `--no-db` = ELIGIBLE only.
 - Principal FREE SOURCE PRIORITY 2026-09-19: IMP-022 DONE → IMP-024 IN_PROGRESS → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG.
+- Candidate strategy intake + Quant validation studies (IMP-039) is **READY** (specs under `research/candidates/`; studies not started; not a scan-gate).
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

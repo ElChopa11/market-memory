@@ -25,6 +25,8 @@ research/
 
 Coordinator queue snapshots (not thesis workspaces) live under `research/queue/`. They are not lifecycle-gated.
 
+Candidate strategy intake (Principal 2026-09-19; Quant **INTAKE_ONLY** / HYPOTHESIS shelf; not a thesis, not a scan-gate) lives under `research/candidates/`. Locked params: `config/candidates/`. Owner QUANT. No sizing. Nothing computed until Phase 1 base rates + 6e instance auto-track. See [candidates/README.md](candidates/README.md). Validation studies are IMP-039 **READY**.
+
 Quant Review Board (IMP-001; not a call generator) lives under `research/quant/YYYY-MM-DD/`:
 
 ```bash
