@@ -921,6 +921,26 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | *(this PR)* |
 | **Lesson learned** | *(fill at close)* |
 
+### IMP-041 — Principal-locked desk knowledge base
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-041 |
+| **Priority** | P2 |
+| **Type** | Docs / operating system |
+| **Desk** | Ops |
+| **Owner** | Ops / Principal (file lock) |
+| **Problem** | Desks had no Principal-locked prefix for literature priors, measurement failure modes, or dated house lessons. A strong prior can be misread as a trigger; a no-evidence pattern can be under-tested. |
+| **Evidence** | Principal 2026-09-19 knowledge-base lock (priors / failure modes / five seeded house lessons). [plans/IMP-041-desk-knowledge-base.md](plans/IMP-041-desk-knowledge-base.md). IMP-040 holds the implementation slot. |
+| **Proposed outcome** | `config/knowledge/` with priors, failure modes, house lessons, and usage rules. Cached prompt prefix. Prior never triggers/sizes. House lesson wins over a prior only with date + `run_id`. |
+| **Definition of done** | Files present; standing rule (strong prior still needs our base rates; no-evidence prior needs MORE evidence); each failure mode has look / test / example placeholder; five Principal-listed lessons seeded; README usage rules; one-line read-before-round pointer; light markdown smoke. IMP-040 stays `IN_PROGRESS`. OPEN incidents untouched. No second `IN_PROGRESS`. |
+| **Non-goals** | Strategy instructions; sizing; live; candidate compute; paid data; displacing IMP-040 or a SCHED/miss-detector thread; closing OPEN incidents; auto-merge; gate waiver. |
+| **Dependencies** | None (docs). Do not take the implementation slot while IMP-040 is `IN_PROGRESS`. |
+| **Risk level** | Low (docs). Process risk if a desk treats a prior as a trigger. |
+| **Status** | READY |
+| **PR** | *(this PR — docs parked; IMP-040 keeps the thread)* |
+| **Lesson learned** | *(fill at close)* |
+
 ---
 
 ## Status board
@@ -969,8 +989,9 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-038 | Intel | Intel | BACKLOG | Finnhub calendar/estimates after terms allow republish — priority #7 |
 | IMP-039 | Quant | QUANT | READY | [#61](https://github.com/ElChopa11/market-memory/pull/61) Candidate strategy intake C-001/C-002/C-003; studies parked until IMP-040 |
 | IMP-040 | Quant | Quant | IN_PROGRESS | Phase 1 unconditional event-class base rates — this PR |
+| IMP-041 | Ops | Ops / Principal | READY | Desk knowledge base `config/knowledge/` — docs-only; parked (does not take the slot) |
 
-`IN_PROGRESS` count: **1** (IMP-040). IMP-024 is `DONE` (#63). IMP-034 on main is ticker/licence DONE (#60). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY` until this pack exists. IMP-000–IMP-022 and IMP-030–IMP-034 are `DONE`. OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404. SRC-FRED-MISSING-ENV is CLOSED (run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only). Single implementation thread.
+`IN_PROGRESS` count: **1** (IMP-040). IMP-041 is `READY` (docs-only; parked). IMP-024 is `DONE` (#63). IMP-034 on main is ticker/licence DONE (#60). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY` until this pack exists. IMP-000–IMP-022 and IMP-030–IMP-034 are `DONE`. OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404. SRC-FRED-MISSING-ENV is CLOSED (run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only). Single implementation thread.
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
@@ -1012,7 +1033,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 DONE** (#34).
 
-Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Principal ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR is **IMP-024 DONE** (#63). Candidate strategy intake is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 IN_PROGRESS**.
+Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Principal ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR is **IMP-024 DONE** (#63). Candidate strategy intake is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 IN_PROGRESS**. Desk knowledge base is **IMP-041 READY** (docs-only; parked).
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
@@ -1020,7 +1041,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR wire is **IMP-024 DONE** (#63). Candidate strategy intake + Quant validation studies is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 IN_PROGRESS**.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR wire is **IMP-024 DONE** (#63). Candidate strategy intake + Quant validation studies is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 IN_PROGRESS**. Desk knowledge base is **IMP-041 READY** (docs-only; parked).
 
 Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-stack DONE → **IMP-024** EDGAR DONE (#63) → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036**–**038** BACKLOG. Phase 1 base rates are **IMP-040 IN_PROGRESS**. Candidate intake is **IMP-039 READY** (#61); cards stay INTAKE_ONLY. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is CLOSED.
 
@@ -1050,6 +1071,7 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - IMP-017 merged as #54 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-030.
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
 - IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
-- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. Locked universe unchanged. Paper only. Single-threaded: IMP-040 Phase 1 unconditional base rates is the only `IN_PROGRESS`.
+- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. Locked universe unchanged. Paper only. Single-threaded: IMP-040 Phase 1 unconditional base rates is the only `IN_PROGRESS`. IMP-041 desk knowledge base is `READY` (docs-only; parked).
 - Candidate strategy intake (C-001/C-002/C-003) is **IMP-039 READY** (#61). IMP-034 on main is ticker/licence (#60), not that shelf. Studies stay parked (Quant-owned; no sizing; no scan-gate) until IMP-040 lands. Retail provenance = `n=unknown` hypothesis weight.
+- Desk knowledge base is **IMP-041 READY** (docs-only; parked). Does not take the IMP-040 slot. Does not start a SCHED/miss-detector implementation thread. OPEN incidents untouched.
 - Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 DONE / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.
