@@ -148,6 +148,20 @@ Seed rows below are Principal-listed. Some still lack a persist `run_id`; they s
 
 ---
 
+## 2026-09-19 — Grok/Hive prompt bodies are server-kept (not diffable)
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — Step 3 acceptance is Principal panel read-back, not a persist run)* |
+| **Desk** | Ops |
+| **What happened** | Prompt bodies for Grok/Hive routines live on the Grok server. They are **not** in git. A write API call can change the executed prompt with no PR, no review, and no history. |
+| **Lesson** | Prompt bodies for Grok/Hive routines are **server-kept and not diffable from the repo**. They can be edited outside version control with no PR, no review, no history — an **uncontrolled surface**. Tonight’s Step 3 acceptance is **Principal panel read-back of saved prompt text**, not the success of the write API call. A 200 from the write API is not evidence the saved body matches intent. Mitigation (canonical copies + periodic read-back vs live server; fail → OPEN incident on drift) is queued as IMP-049 BACKLOG — do not build in this PR. |
+| **Does not** | Treat write-API success as Step 3 done. Does not authorise building prompt-hash/read-back tooling now. Does not lift the Hive group freeze. Does not rewrite the miss detector. Does not treat mocks as acceptance. Does not auto-disable prompts. Distinct from IMP-031 (repo `config/prompts/` decay does not cover Grok server bodies). |
+| **Overrides prior** | No — process lesson. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

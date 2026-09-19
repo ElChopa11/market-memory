@@ -23,8 +23,10 @@ from mm_delivery.config import repo_root
 from mm_delivery.telegram import TelegramClient, redact_telegram
 
 SEND_FROZEN_MSG = (
-    "lab: real Telegram send is frozen until Principal step 5 (DM-only). Use --no-send."
+    "lab: SEND_FROZEN for group/desk pack send. Hive group stays frozen. "
+    "DM-only live path: lab deliver test --to-principal-dm --i-mean-it"
 )
+GROUP_SEND_FROZEN = True
 
 
 def add_env_parser(sub) -> None:

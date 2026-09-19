@@ -18,6 +18,8 @@ REASON_DEDUPE = "dedupe_hit"
 REASON_RATE_LIMITED = "rate_limited"
 REASON_MISSING_TOKEN = "missing_env"
 REASON_MISSING_CHAT = "missing_chat_id"
+REASON_MISSING_PRINCIPAL_DM = "missing_principal_dm"
+REASON_DM_IS_GROUP = "principal_dm_is_group"
 REASON_DESK_DISABLED = "desk_disabled"
 REASON_KIND_DISABLED = "kind_disabled"
 

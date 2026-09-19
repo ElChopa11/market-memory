@@ -261,8 +261,8 @@ def test_deliver_send_stays_frozen(capsys) -> None:
     rc = main(["deliver", "test", "--desk", "ops", "--send", "--i-mean-it", "--repo-root", str(ROOT)])
     err = capsys.readouterr().err
     assert rc == 2
-    assert "frozen" in err.lower()
-    assert "step 5" in err.lower()
+    assert "SEND_FROZEN" in err or "frozen" in err.lower()
+    assert "Hive group stays frozen" in err or "frozen" in err.lower()
 
 
 def test_delta_vs_sydney_morning_anchor() -> None:

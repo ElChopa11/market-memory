@@ -19,7 +19,7 @@ Order of work. This PR is **P0 only**. Do not start P1/P2/P3 here.
 
 | Priority | Work | Status this PR |
 |---|---|---|
-| **P0** | Clock / miss detector. Closed window + no completion row → escalate. Hive CLI writes the completion row. SCHED-001 stays OPEN until a verified on-anchor fire. | IMP-046 this thread (IMP-042 DONE #68) |
+| **P0** | DM-only live path. Hive group stays frozen. SCHED-001 stays OPEN. | IMP-047 this thread (IMP-046 DONE #72; IMP-042 DONE #68 — do not touch miss detector). IMP-049 prompt read-back and IMP-050 per-channel `send_enabled` are BACKLOG — do not build. |
 | **P1** | Phase-1 Memory rates — expand if #66 is fixture-only | IMP-040 DONE (#66). Expansion is later. |
 | **P2** | Instance ledger | not this PR |
 | **P3** | Truth-in-repo (source-health regen / desk naming / Telegram inventory). `SRC-object_store` is a named OPEN **DOWN SERVICE** on the services/infrastructure list — not a missing-env credential item. | not this PR |
@@ -1027,12 +1027,92 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Evidence** | Principal Hybrid Step 4 (2026-09-19). IMP-042 miss sweep on main (#68). IMP-043 env preflight on main (#71). Step 3 Grok prompts CLI-clock only (outside this PR). House lesson: instrumentation that records only successes cannot detect silence. |
 | **Proposed outcome** | Every Hive-driven `lab brief` / `lab deliver` / `lab schedule heartbeat` writes a completion JSON (`run_id`, trigger, fire time, offset vs anchor, exit status, payload path). Miss-check loads that directory. Failed CLI is a fire. |
 | **Definition of done** | Disk rows at `ops/reports/scheduler/completions/`. CLI stamps success and failure. Fixture-clock tests: write on CLI path; miss detector sees fire vs miss. Runbook documents location + how miss-sweep reads it. `--no-send` only. SCHED-001 stays OPEN. Single IN_PROGRESS. |
-| **Non-goals** | Real Telegram send (step 5); Hive prompt rewrites; lifting freeze; equity/Polygon feature work; closing SCHED-001; IMP-044 isolation; IMP-045 topics; auto-merge; gate waiver. |
+| **Non-goals** | Real Telegram send (step 5a DM-only is IMP-047); Hive prompt rewrites; lifting freeze; equity/Polygon feature work; closing SCHED-001; IMP-044 isolation; IMP-045 topics; auto-merge; gate waiver. |
 | **Dependencies** | IMP-042 DONE (#68). IMP-043 DONE (#71). Step 3 prompts outside this PR. |
 | **Risk level** | High if skipped — miss detector still cannot see the executed path. |
+| **Status** | DONE |
+| **PR** | [#72](https://github.com/ElChopa11/market-memory/pull/72) |
+| **Lesson learned** | Merged to `main` (#72, 2026-09-19). Hive CLI completion rows for the miss detector. `--no-send` only. Freeze held until Step 5a (DM-only). |
+
+### IMP-047 — Hybrid Step 5a: DM-only live send (group stays frozen)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-047 |
+| **Priority** | P0 |
+| **Type** | Ops / delivery |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | Principal denied a prior Step 5 that would unfreeze the Hive group. Operators still need a gated live path that POSTs only to the Principal DM. |
+| **Evidence** | Principal Step 5a (2026-09-19). IMP-043 env preflight (#71). IMP-046 completion rows (#72). Group `TELEGRAM_CHAT_ID` stays frozen. Cloud VM has no delivery token. |
+| **Proposed outcome** | `lab deliver test --to-principal-dm --i-mean-it` POSTs only to `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. Missing that env → refuse. Never `TELEGRAM_CHAT_ID` (group). Preflight still runs. `--routine-id` still stamps a completion row. Envelope/source/provenance on the test payload. |
+| **Definition of done** | DM-only CLI path. Group/desk `--send` remains SEND_FROZEN. `--i-mean-it` alone does **not** lift the group freeze (`GROUP_SEND_FROZEN` / `group_live and not to_dm`). Tests mock Telegram HTTP. PR documents on-box acceptance (Don). No miss-detector edits. Weekly authoring CLI not built (IMP-048 BACKLOG). Hybrid clock prompt canonical copies + server read-back not built (IMP-049 BACKLOG). Per-channel `send_enabled` config gate not built (IMP-050 BACKLOG). `--i-mean-it` is acceptable only for this one-shot DM test. Single IN_PROGRESS. |
+| **Non-goals** | Lifting the Hive group freeze. Miss-detector / IMP-042 / miss-check edits. Weekly investment review authoring CLI. Hybrid clock prompt-hash / server read-back tooling (IMP-049). Replacing `--i-mean-it` with YAML `send_enabled` (IMP-050). IMP-044 isolation. IMP-045 topics. Claiming live acceptance via mocks. Treating write-API 200 as Step 3 acceptance. Auto-merge. Gate waiver. Agent merge of this PR. |
+| **Dependencies** | IMP-046 DONE (#72). IMP-043 DONE (#71). IMP-042 DONE (#68) — do not modify. |
+| **Risk level** | Medium (live Bot API POST to a private DM). |
 | **Status** | IN_PROGRESS |
 | **PR** | *(this PR)* |
 | **Lesson learned** | *(fill at close)* |
+
+### IMP-048 — Weekly investment review artifact CLI
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-048 |
+| **Priority** | P2 |
+| **Type** | Ops / Research artifact |
+| **Desk** | Ops / Research |
+| **Owner** | Ops |
+| **Problem** | Hive clock `grok.weekly_investment_review` (Fri 17:00 Sydney) has no lab CLI that authors the weekly investment review artifact. Completion rows can stamp a fire; they do not write the review. |
+| **Evidence** | Principal Step 5a (2026-09-19): queue-only. Do not allow agent authoring for weekly. |
+| **Proposed outcome** | A Principal-specified weekly artifact CLI (not agent-authored prose). Hive remains the clock; `lab` publishes. |
+| **Definition of done** | CLI exists that produces the weekly artifact from fixtures/memory without agent authoring. Delivery still Ops-owned. IC/Risk gates unchanged. |
+| **Non-goals** | Building it in the Step 5a DM-only PR. Agent-authored weekly. Lifting group freeze. Miss-detector edits. |
+| **Dependencies** | IMP-047 DM-only send (this thread). IMP-046 completion rows. |
+| **Risk level** | Low (queued). High if agents author the weekly. |
+| **Status** | BACKLOG |
+| **PR** | — |
+| **Lesson learned** | *(do not build now; agents must not author weekly)* |
+
+### IMP-049 — Hybrid clock prompt canonical copies + server read-back
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-049 |
+| **Priority** | P1 |
+| **Type** | Ops / prompt integrity |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | Prompt bodies for Grok/Hive routines are **server-kept and not diffable from the repo**. They can be edited outside version control with no PR, no review, no history — an uncontrolled surface. Write-API success is not proof the saved text matches intent. |
+| **Evidence** | House lesson 2026-09-19 (server-kept prompts). Principal Hybrid Step 3: tonight’s acceptance is Principal panel read-back of saved prompt text, not the success of the write API call. Three Hybrid clock prompts: `grok.sydney_morning`, `grok.us_pre_market`, `grok.weekly_investment_review`. IMP-031 hashes repo `config/prompts/`, not Grok server bodies. |
+| **Proposed outcome** | Keep a canonical copy of each of the three Hybrid clock prompts in the repo with a content hash. Add a periodic read-back comparison against the live server prompts. Drift → fail the check and OPEN an incident (do not silently accept; do not auto-waive gates). |
+| **Definition of done** | Canonical in-repo copies of the three Hybrid clock prompts + content hashes. Periodic read-back vs live server. Mismatch fails and opens an incident. Distinct from IMP-031. **Not built in the IMP-047 DM-only PR.** |
+| **Non-goals** | Building this tooling in Step 5a. Rewriting Hive prompts from the agent. Lifting group freeze. Miss-detector edits. Treating write-API 200 or mocks as acceptance. Auto-disable of prompts. Auto-merge. Gate waiver. |
+| **Dependencies** | IMP-047 DM-only send (this thread). Step 3 Principal panel read-back. IMP-031 is a different surface (repo prompts). |
+| **Risk level** | High if skipped long-term (uncontrolled executed prompt). Low this PR (queued only). |
+| **Status** | BACKLOG |
+| **PR** | — |
+| **Lesson learned** | *(do not build now; Step 3 acceptance is panel read-back, not write API)* |
+
+### IMP-050 — Per-channel `send_enabled` config gate (replace `--i-mean-it`)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-050 |
+| **Priority** | P1 |
+| **Type** | Ops / delivery gate |
+| **Desk** | Ops |
+| **Owner** | Ops |
+| **Problem** | `--i-mean-it` is a caller flag, not a durable send control. Future group unfreeze must not be “pass `--i-mean-it`.” Today group freeze is a **code constant/path** (`GROUP_SEND_FROZEN` / `group_live and not to_dm` in `mm_lab_cli`), not YAML — that is why this item is queued. Module `SEND_ENABLED = False` is a different, global dry-run default. |
+| **Evidence** | Principal before merge of #73 (2026-09-19). Without `--to-principal-dm`, any `--send` / `--i-mean-it` still hits SEND_FROZEN (already true in code). `--i-mean-it` is acceptable only for the one-shot DM test in Step 5a. |
+| **Proposed outcome** | Config gate `send_enabled` **per channel** (DM / Hive group / desk), **read by CLI**, **changed only by PR**. Future group unfreeze flips the Hive-group bit in versioned config, not a caller flag. |
+| **Definition of done** | Versioned config with per-channel `send_enabled`. CLI reads it. Flipping a channel requires a Principal-reviewed PR. `--i-mean-it` is not the permanent control. **Not built in the IMP-047 DM-only PR.** |
+| **Non-goals** | Building this gate in Step 5a. Lifting the Hive group freeze now. Miss-detector edits. Treating `--i-mean-it` as enough to unfreeze the group. Auto-merge. Gate waiver. |
+| **Dependencies** | IMP-047 DM-only send (this thread). Group stays frozen until this gate exists and a later PR enables the group channel. |
+| **Risk level** | High if skipped at group-unfreeze time (caller flag as the only lock). Low this PR (queued only). |
+| **Status** | BACKLOG |
+| **PR** | — |
+| **Lesson learned** | *(do not build now; `--i-mean-it` is Step 5a DM test only)* |
 
 ### IMP-044 — Delivery process isolation (separate user or container)
 
@@ -1147,9 +1227,13 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-043 | Ops | Ops | DONE | [#71](https://github.com/ElChopa11/market-memory/pull/71) Hybrid Step 2: delivery env-file + full-state preflight. `--no-send` only. |
 | IMP-044 | Ops | Ops | BACKLOG | Delivery binary under separate user or own container (hard isolation). Do not build now. |
 | IMP-045 | Ops | Principal / Ops | BACKLOG | Per-desk via forum topics vs separate groups. Not before step 5. |
-| IMP-046 | Ops | Ops | IN_PROGRESS | Hybrid Step 4: Hive CLI completion rows for the miss detector. `--no-send` only. Freeze holds until step 5. |
+| IMP-046 | Ops | Ops | DONE | [#72](https://github.com/ElChopa11/market-memory/pull/72) Hybrid Step 4: Hive CLI completion rows. `--no-send` only. |
+| IMP-047 | Ops | Ops | IN_PROGRESS | Hybrid Step 5a: DM-only live send. Hive group / desk pack `--send` stays SEND_FROZEN. |
+| IMP-048 | Ops / Research | Ops | BACKLOG | Weekly investment review artifact CLI. Do not allow agent authoring for weekly. |
+| IMP-049 | Ops | Ops | BACKLOG | Canonical copies of the three Hybrid clock prompts + content hash; periodic server read-back. Fail → OPEN incident on drift. Do not build now. |
+| IMP-050 | Ops | Ops | BACKLOG | Per-channel `send_enabled` config gate (DM / Hive group / desk), read by CLI, PR-only. Replaces `--i-mean-it` as the permanent send control. Do not build now. |
 
-`IN_PROGRESS` count: **1** (IMP-046). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043 are `DONE`. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Hybrid Step 4 this PR; real Telegram send is Principal step 5.
+`IN_PROGRESS` count: **1** (IMP-047). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043 are `DONE`. IMP-044/045/048/049/050 stay BACKLOG. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Hybrid Step 5a this PR; Hive group stays frozen. Prompt-body drift watch and per-channel `send_enabled` are queued, not built.
 
 **OPEN incidents — sources / clock / scorecard** (not a missing-env credentials close list)
 
@@ -1205,7 +1289,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 DONE** (#34).
 
-Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Principal ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR is **IMP-024 DONE** (#63). Candidate strategy intake is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 DONE** (#66). Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 IN_PROGRESS**.
+Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Principal ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR is **IMP-024 DONE** (#63). Candidate strategy intake is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 DONE** (#66). Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 DONE** (#72). Hybrid Step 5a DM-only send is **IMP-047 IN_PROGRESS**. Weekly review CLI is **IMP-048 BACKLOG**. Hybrid clock prompt canonical copies + server read-back is **IMP-049 BACKLOG**. Per-channel `send_enabled` config gate is **IMP-050 BACKLOG**.
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
@@ -1213,9 +1297,9 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR wire is **IMP-024 DONE** (#63). Candidate strategy intake + Quant validation studies is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 DONE** (#66). Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 IN_PROGRESS**.
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR wire is **IMP-024 DONE** (#63). Candidate strategy intake + Quant validation studies is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 DONE** (#66). Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 DONE** (#72). Hybrid Step 5a DM-only send is **IMP-047 IN_PROGRESS**. Weekly review CLI is **IMP-048 BACKLOG**. Hybrid clock prompt canonical copies + server read-back is **IMP-049 BACKLOG**. Per-channel `send_enabled` config gate is **IMP-050 BACKLOG**.
 
-Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-stack DONE → **IMP-024** EDGAR DONE (#63) → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036**–**038** BACKLOG. Phase 1 base rates are **IMP-040 DONE** (#66). Candidate intake is **IMP-039 READY** (#61); cards stay INTAKE_ONLY. Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 IN_PROGRESS**. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is OPEN (environment-propagation; prior CLOSED pack cited). SRC-OBJECT-STORE is OPEN (DOWN SERVICE). TG-UNGATED-PRE-HYBRID is OPEN (pre-Hybrid Telegram **ungated**). SCHED-001 stays OPEN.
+Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-stack DONE → **IMP-024** EDGAR DONE (#63) → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036**–**038** BACKLOG. Phase 1 base rates are **IMP-040 DONE** (#66). Candidate intake is **IMP-039 READY** (#61); cards stay INTAKE_ONLY. Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 DONE** (#72). Hybrid Step 5a DM-only send is **IMP-047 IN_PROGRESS**. Weekly review CLI is **IMP-048 BACKLOG**. Hybrid clock prompt canonical copies + server read-back is **IMP-049 BACKLOG**. Per-channel `send_enabled` config gate is **IMP-050 BACKLOG**. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is OPEN (environment-propagation; prior CLOSED pack cited). SRC-OBJECT-STORE is OPEN (DOWN SERVICE). TG-UNGATED-PRE-HYBRID is OPEN (pre-Hybrid Telegram **ungated**). SCHED-001 stays OPEN.
 
 ## Reconciliation notes
 
@@ -1243,7 +1327,7 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - IMP-017 merged as #54 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-030.
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
 - IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
-- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. Principal record correction 2026-09-19: that close pack is retained; the incident is **OPEN** again under **environment-propagation** (Don audit: key present on card+process env; earlier missing_env = runs that did not inherit box env). #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. #66 landed IMP-040 Phase 1 fixture base rates. #67 landed IMP-041 desk knowledge base. #68 landed IMP-042 miss detector. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. SRC-OBJECT-STORE is OPEN as a **DOWN SERVICE** (MinIO :9000; not missing_env). TG-UNGATED-PRE-HYBRID is OPEN: pre-Hybrid Telegram (18 Sep ~22:02 pre-market, 19 Sep 00:03 cash-open, Coord publisher-audit lines) is **ungated** and is not pipeline proof. SCHED-001 is P0; do not close on “no window yet”. Locked universe unchanged. Paper only. #71 landed IMP-043 Hybrid Step 2. Single-threaded: IMP-046 Hybrid Step 4 is the only `IN_PROGRESS`.
+- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. Principal record correction 2026-09-19: that close pack is retained; the incident is **OPEN** again under **environment-propagation** (Don audit: key present on card+process env; earlier missing_env = runs that did not inherit box env). #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. #66 landed IMP-040 Phase 1 fixture base rates. #67 landed IMP-041 desk knowledge base. #68 landed IMP-042 miss detector. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. SRC-OBJECT-STORE is OPEN as a **DOWN SERVICE** (MinIO :9000; not missing_env). TG-UNGATED-PRE-HYBRID is OPEN: pre-Hybrid Telegram (18 Sep ~22:02 pre-market, 19 Sep 00:03 cash-open, Coord publisher-audit lines) is **ungated** and is not pipeline proof. SCHED-001 is P0; do not close on “no window yet”. Locked universe unchanged. Paper only. #71 landed IMP-043 Hybrid Step 2. #72 landed IMP-046 Hybrid Step 4. Single-threaded: IMP-047 Hybrid Step 5a (DM-only send) is the only `IN_PROGRESS`. Hive group stays frozen. IMP-048 weekly authoring CLI is BACKLOG.
 - Candidate strategy intake (C-001/C-002/C-003) is **IMP-039 READY** (#61). IMP-034 on main is ticker/licence (#60), not that shelf. Studies stay parked (Quant-owned; no sizing; no scan-gate). IMP-040 pack exists (#66); expansion is L2 P1. Retail provenance = `n=unknown` hypothesis weight.
-- Desk knowledge base is **IMP-041 DONE** (#67). Does not take the IMP-046 slot. OPEN incidents untouched.
+- Desk knowledge base is **IMP-041 DONE** (#67). Does not take the IMP-047 slot. OPEN incidents untouched.
 - Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 DONE / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.

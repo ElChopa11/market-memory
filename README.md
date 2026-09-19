@@ -110,7 +110,7 @@ uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-
 # 14. Telegram delivery dry-run (exact payload under briefs/; no live API)
 uv run lab deliver pack --fixture tests/fixtures/phase5d/frozen_day.json --no-send --no-db
 # Manual real send on the bot box only:
-# uv run lab deliver test --desk ops --i-mean-it
+# uv run lab deliver test --to-principal-dm --i-mean-it
 
 # 15. Desk mesh dry-run (PG NOTIFY / in-memory bus; identical content_hash on double run)
 uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
