@@ -1,0 +1,78 @@
+# Standing schedule catalog — Grok Bot / Hive automations.
+# Lab Pulse + Telegram wall-clock jobs are composed at load time from
+# config/schedules/market-pulse.yaml and config/delivery/telegram.yaml.
+# Miss sweep (IMP-042) is the scheduler *control*: closed window + no
+# completion row → escalate. Heartbeat-on-fire is a log, not the check.
+#
+# created_at / updated_at / ROUTINE_CHANGE are NOT in this repo.
+# Do not invent Hive timestamps. Pending paste from Don.
+#
+# Canaries run outside this PR; they are not listed here and must not be.
+
+version: "imp-042.1"
+lab_timezone: Australia/Sydney
+late_after_seconds: 300
+miss_after_seconds: 900
+lookback_days: 14
+
+# Hive / Grok Bot agent routines. Lab CLI cannot fire these.
+# family is always grok_bot. enabled: true means miss-sweep them.
+routines:
+  - id: grok.sydney_morning_digest_8am
+    family: grok_bot
+    display: Sydney 08:00 digest
+    timezone: Australia/Sydney
+    local_time: "08:00"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+    enabled: true
+    incident: SCHED-001
+    created_at: null
+    updated_at: null
+    notes: >
+      Historical SCHED-001. Weekday 08:00 windows existed. Never fired
+      while NY-cron sibling briefs completed. Stays OPEN. Do not close
+      on "no window yet". Cause unexplained as of 2026-09-19.
+
+  - id: grok.sydney_morning
+    family: grok_bot
+    display: Sydney Morning Round
+    timezone: Australia/Sydney
+    local_time: "06:30"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+    enabled: true
+    incident: null
+    created_at: null
+    updated_at: null
+    notes: >
+      Observed 2026-09-19 as NEVER RUN. Calendar/retarget hypothesis
+      (created after Fri 18 06:30; next weekday Mon 21 Sep) is
+      UNVERIFIED — no ROUTINE_CHANGE / created_at / updated_at in repo.
+
+  - id: grok.weekly_investment_review
+    family: grok_bot
+    display: Weekly Investment Review
+    timezone: Australia/Sydney
+    local_time: "17:00"
+    weekdays: [Fri]
+    enabled: true
+    incident: null
+    created_at: null
+    updated_at: null
+    notes: >
+      Observed 2026-09-19 as NEVER RUN. Next Friday 17:00 is 25 Sep.
+      Calendar hypothesis UNVERIFIED pending Hive timestamps.
+
+  - id: grok.us_pre_market
+    family: grok_bot
+    display: US Pre-Market Round
+    timezone: Australia/Sydney
+    local_time: "23:00"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+    enabled: true
+    incident: BRIEF-TAG-20260918
+    created_at: null
+    updated_at: null
+    notes: >
+      Last observed fire 2026-09-18 ~22:02 AEST vs 23:00 anchor
+      (delta -3480s). Same family as BRIEF-TAG (90m vs 30m pre-open).
+      A fire exists — this is off-anchor, not a miss.

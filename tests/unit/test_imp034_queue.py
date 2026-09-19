@@ -17,7 +17,8 @@ def test_queue_imp033_done_fred_single_thread_open_incidents() -> None:
     assert any("IMP-034" in line and "DONE" in line for line in board_lines)
     assert any("IMP-022" in line and "DONE" in line for line in board_lines)
     assert any("IMP-024" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-040" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-042" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-040" in line and "DONE" in line for line in board_lines)
     assert any("IMP-039" in line and "READY" in line for line in board_lines)
     assert not any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-034" in line and "IN_PROGRESS" in line for line in board_lines)
@@ -43,7 +44,7 @@ def test_queue_imp033_done_fred_single_thread_open_incidents() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-040",)
+    assert report.in_progress == ("IMP-042",)
     assert report.auto_merge is False
     assert report.auto_waive is False
     public = report.as_public_dict()

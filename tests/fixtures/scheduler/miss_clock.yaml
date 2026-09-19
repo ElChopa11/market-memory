@@ -1,0 +1,31 @@
+# Miss fixture — SCHED-001 class. Friday 08:00 Sydney window closed,
+# no completion row. Must escalate. Do not close on "no window yet".
+version: "imp-042-miss"
+now: "2026-09-19T09:49:00Z"
+late_after_seconds: 300
+miss_after_seconds: 900
+lookback_days: 7
+lab_timezone: Australia/Sydney
+routines:
+  - id: grok.sydney_morning_digest_8am
+    family: grok_bot
+    display: Sydney 08:00 digest
+    timezone: Australia/Sydney
+    local_time: "08:00"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+    enabled: true
+    incident: SCHED-001
+  - id: lab.pulse.preopen
+    family: lab
+    display: NY preopen sibling
+    timezone: America/New_York
+    local_time: "08:00"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+    enabled: true
+completions:
+  - routine_id: lab.pulse.preopen
+    run_id: ny-sibling-20260918
+    scheduled_anchor_ts: "2026-09-18T12:00:00Z"
+    fired_at_ts: "2026-09-18T12:02:00Z"
+    as_of_knowledge: "2026-09-18T12:02:00Z"
+    source: fixture

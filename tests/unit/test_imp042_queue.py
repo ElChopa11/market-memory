@@ -1,4 +1,4 @@
-"""IMP-040 DONE #66; IMP-042 miss detector is the single IN_PROGRESS; IMP-039 READY."""
+"""IMP-042 queue hygiene: miss detector is the single IN_PROGRESS; SCHED-001 stays OPEN."""
 
 from __future__ import annotations
 
@@ -9,40 +9,43 @@ from mm_desks.queue import can_start, load_queue
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_queue_imp040_single_thread_candidates_ready() -> None:
+def test_queue_imp042_single_thread_sched001_open_imp040_done() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-042" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-041" in line and "DONE" in line for line in board_lines)
+    assert any("#67" in line for line in board_lines if "IMP-041" in line)
     assert any("IMP-040" in line and "DONE" in line for line in board_lines)
+    assert any("#66" in line for line in board_lines if "IMP-040" in line)
     assert any("IMP-039" in line and "READY" in line for line in board_lines)
-    assert any("IMP-034" in line and "DONE" in line for line in board_lines)
-    assert any("IMP-024" in line and "DONE" in line for line in board_lines)
     assert not any("IMP-040" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-039" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert not any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert not any("IMP-034" in line and "IN_PROGRESS" in line for line in board_lines)
     assert "`IN_PROGRESS` count: **1** (IMP-042)" in queue
-    assert "INTAKE_ONLY" in queue
-    assert "research/candidates/" in queue
-    assert "PR #61" in queue or "#61" in queue
+    assert "Principal L2 sprint" in queue
+    assert "P0 clock" in queue or "P0 clock/heartbeat" in queue or "P0" in queue
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
-    assert (ROOT / "ops" / "plans" / "IMP-040-phase1-unconditional-base-rates.md").is_file()
-    assert (ROOT / "ops" / "plans" / "IMP-039-candidate-strategy-intake.md").is_file()
-    assert (ROOT / "docs" / "runbooks" / "base-rates.md").is_file()
-    assert (ROOT / "ADR" / "0017-unconditional-base-rates.md").is_file()
-    assert (ROOT / "ADR" / "0016-edgar-adapter.md").is_file()
+    assert (ROOT / "ops" / "plans" / "IMP-042-scheduler-heartbeat.md").is_file()
+    assert (ROOT / "ops" / "reports" / "scheduler" / "2026-09-19-sched-001-root-cause.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
     assert report.in_progress == ("IMP-042",)
     assert report.auto_merge is False
     assert report.auto_waive is False
+    public = report.as_public_dict()
+    assert "SCHED-001" in public["open_incidents"]
     ok, reason = can_start("IMP-039", report)
     assert ok is False
     assert "slot occupied" in reason
 
 
-def test_imp034_on_main_is_ticker_not_candidates() -> None:
+def test_sched001_is_p0_and_stays_open() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
-    assert "Ticker resolutions + licence_verdict schema" in queue
-    assert "IMP-034 on main is ticker/licence" in queue
+    assert "| **ID** | SCHED-001 |" in queue
+    # Priority P0 on the incident table.
+    block = queue.split("### SCHED-001", 1)[1].split("### ", 1)[0]
+    assert "| **Priority** | P0 |" in block
+    assert "| **Status** | OPEN |" in block
+    assert "no window yet" in block.lower() or "Do not close" in block
+    assert "sydney-morning-digest-8am" in queue
+    assert queue.count("| **Status** | OPEN |") == 3

@@ -62,7 +62,7 @@ def db_session(postgres_dsn: str):
     session = factory()
     session.execute(
         text(
-            "TRUNCATE event_base_rate, desk_health, desk_envelope, delivery_event, inbound_audit, llm_call, paper_trade, research_run, brief, skeptic_review, thesis_evidence, thesis_status_event, thesis, observation_link, observation, raw_object, source RESTART IDENTITY CASCADE"
+            "TRUNCATE event_base_rate, schedule_heartbeat, desk_health, desk_envelope, delivery_event, inbound_audit, llm_call, paper_trade, research_run, brief, skeptic_review, thesis_evidence, thesis_status_event, thesis, observation_link, observation, raw_object, source RESTART IDENTITY CASCADE"
         )
     )
     session.commit()

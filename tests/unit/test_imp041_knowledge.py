@@ -96,21 +96,22 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
     assert "date + `run_id`" in usage
 
 
-def test_queue_imp041_ready_does_not_take_implementation_slot() -> None:
+def test_queue_imp041_done_does_not_take_implementation_slot() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
-    assert any("IMP-041" in line and "READY" in line for line in board_lines)
+    assert any("IMP-041" in line and "DONE" in line for line in board_lines)
     assert not any("IMP-041" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert any("IMP-040" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-040)" in queue
+    assert any("IMP-042" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-040" in line and "DONE" in line for line in board_lines)
+    assert "`IN_PROGRESS` count: **1** (IMP-042)" in queue
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
     assert (ROOT / "ops" / "plans" / "IMP-041-desk-knowledge-base.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-040",)
+    assert report.in_progress == ("IMP-042",)
     assert report.auto_merge is False
     assert report.auto_waive is False
     ok, reason = can_start("IMP-041", report)
     assert ok is False
-    assert "slot occupied" in reason
+    assert "DONE" in reason

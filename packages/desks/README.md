@@ -16,6 +16,7 @@ uv run lab deliver listings --fixture tests/fixtures/phase6d/listing_day.json --
 uv run lab scorecard compare --fixture tests/fixtures/phase6e/packs.json --no-send --no-db
 uv run lab deliver scorecard --fixture tests/fixtures/phase6e/packs.json --no-send --no-db
 uv run lab queue check
+uv run lab schedule miss-check --fixture tests/fixtures/scheduler/ci_clock.yaml --now 2026-09-19T09:49:00Z --no-db
 uv run lab base-rate compute --fixture tests/fixtures/phase1_base_rates/panel.json --no-db
 ```
 
