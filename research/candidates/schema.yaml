@@ -1,0 +1,60 @@
+# Candidate card schema (Principal intake 2026-09-19).
+# Quant execution spec. Not a strategy implementation. Not a call.
+
+version: "imp-039.1"
+kind: candidate_strategy_intake
+owner_desk: quant
+status_start: HYPOTHESIS
+sizing: false
+scan_gate: false
+promote: false
+live: false
+
+required_yaml_fields:
+  - id
+  - slug
+  - title
+  - owner
+  - desk
+  - status
+  - intake_date
+  - sizing
+  - scan_gate
+  - promote
+  - live
+  - paper_only
+  - claim.restated
+  - claim.source_slogan_status
+  - claim.sample
+  - claim.window
+  - claim.instrument_set
+  - claim.cost_model
+  - claim.split_method
+  - claim.payoff_shape
+  - params.N
+  - params.X
+  - params.Y
+  - params.Z
+  - params.M
+  - look_ahead.pit_clock
+  - look_ahead.notes
+  - survivorship.tag
+  - provenance.class
+  - provenance.n
+  - provenance.weight
+  - study.harness
+  - study.strategy_implemented
+
+allowed_status:
+  - HYPOTHESIS
+  - REJECT
+  - INSUFFICIENT_DATA
+
+allowed_owner:
+  - QUANT
+
+provenance_class_retail:
+  - retail_video_substack_reddit
+
+intake_rules: 7
+seeded_ids: [C-001, C-002, C-003]

@@ -1,0 +1,91 @@
+# C-001 supply / demand zone — Quant HYPOTHESIS spec (Principal intake 2026-09-19).
+# Not a thesis. Not a call. Not a scan-gate. DO NOT SIZE.
+
+id: C-001
+slug: supply-demand-zone
+title: Supply / demand zone
+owner: QUANT
+desk: quant
+status: HYPOTHESIS
+intake_date: "2026-09-19"
+sizing: false
+scan_gate: false
+promote: false
+live: false
+paper_only: true
+
+claim:
+  restated: true
+  source_slogan_status: REJECT
+  source_slogan: "institutions left unfilled orders in the zone, so price must defend it"
+  reject_reason: "unfalsifiable intent; n=unknown retail provenance; no sample/window/costs/split"
+  sample: "trigger events on the instrument set with available_at inside the named split; n unknown until Quant runs; n < 20 → INSUFFICIENT_DATA (config/quant/trade_math.yaml min_sample)"
+  window: "daily completed bars; train 2022-01-01..2024-12-31; embargo 2025-01-01..2025-01-31; test 2025-02-01..2026-09-18"
+  instrument_set:
+    primary:
+      - {symbol: BTC, membership: in_universe, watchlist_tier: universe}
+      - {symbol: NVDA, membership: in_universe, watchlist_tier: universe}
+    extended_if_pit_daily_exists:
+      - {symbol: ETH, membership: watch_only, watchlist_tier: monitor}
+      - {symbol: AVGO, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: MSFT, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: META, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: JPM, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: XOM, membership: in_universe, watchlist_tier: monitor}
+    excluded:
+      - "deferred_must_cut"
+      - "blocked watchlist names (CASHCAT, PONSUSD)"
+      - "unresolved (SAMSUN, KOSDA) — do not invent ids"
+  cost_model: "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24); taker_fee=0.00045 from config/quant/trade_math.yaml; slippage_bps=5 unless flow est_slippage(clip) exists; expected_hold_hours=24; funding_rate=0 on equities; default_clip=10000 is a cost clip only — DO NOT SIZE"
+  split_method: "calendar embargo (purge 1 calendar month); no random shuffle; no fitting on test; params locked in this file before the test split is scored"
+  payoff_shape: "fade-the-return-to-base (mean-reversion after an impulse); many small opposing excursions; fat left tail when the zone fails through M·ATR; time-stop H=10 daily bars caps right tail"
+
+params:
+  N: 5          # min completed bars in the base
+  X: 2.0        # min departure from base in ATR (zone confirms only after this impulse)
+  Y: 0.8        # max base height in ATR
+  Z: 0.25       # touch tolerance in ATR from the near edge
+  M: 0.5        # invalidation beyond the far edge in ATR
+  atr_period: 14
+  time_stop_bars: 10
+  max_concurrent: 1  # study bookkeeping only; not a size
+
+look_ahead:
+  pit_clock: available_at
+  observation_clock: as_of_knowledge
+  risks:
+    - "labeling a base as a zone using a departure that has not completed is look-ahead"
+    - "using market_time / published_at instead of available_at"
+    - "intra-bar touch using a high/low that is not yet available"
+    - "ATR at t using a window that includes t+1"
+  notes: "A zone exists only on the first bar whose available_at is at or after the departure bar that satisfies X. The first return is the first later bar whose available_at range intersects the zone within Z·ATR of the near edge."
+
+survivorship:
+  controlled: false
+  tag: survivorship_uncontrolled
+  notes: "Locked membership only. Delisted or halted names are not in this panel. IMP-029 (EODHD / Polygon Starter) is BACKLOG. Until a delisted tape exists, the study must carry this tag and must not claim a 5y survivorship-safe edge."
+
+provenance:
+  class: retail_video_substack_reddit
+  n: unknown
+  weight: hypothesis
+  sources:
+    - "retail supply/demand zone videos (Seiden-style RBR/DBR / drop-base-rally folklore)"
+    - "Substack / Reddit / Discord zone screenshots"
+  notes: "n=unknown. Hypothesis weight only. Not a sample."
+
+study:
+  harness: packages/backtest
+  existing_stubs: [buy_hold, threshold]
+  strategy_implemented: false
+  bind_thesis: false
+  command: "uv run lab backtest run --fixture PATH --no-db"
+  inherit_trade_math_sizing: false
+
+non_goals:
+  - live trading
+  - sizing
+  - scan-gate promotion
+  - universe or watchlist membership edits
+  - PLAYBOOK idea emission
+  - inventing expectancy or scorecard numbers

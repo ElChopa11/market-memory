@@ -1,0 +1,94 @@
+# C-002 triple RSI mean-reversion — Quant HYPOTHESIS spec (Principal intake 2026-09-19).
+# Not a thesis. Not a call. Not a scan-gate. DO NOT SIZE.
+
+id: C-002
+slug: triple-rsi-mr
+title: Triple RSI mean-reversion
+owner: QUANT
+desk: quant
+status: HYPOTHESIS
+intake_date: "2026-09-19"
+sizing: false
+scan_gate: false
+promote: false
+live: false
+paper_only: true
+
+claim:
+  restated: true
+  source_slogan_status: REJECT
+  source_slogan: "when three RSIs are oversold, price always snaps back"
+  reject_reason: "unfalsifiable always; n=unknown retail provenance; no sample/window/costs/split; multi-TF versions leak unless the higher bar is closed"
+  sample: "trigger events on the instrument set with available_at inside the named split; n unknown until Quant runs; n < 20 → INSUFFICIENT_DATA (config/quant/trade_math.yaml min_sample)"
+  window: "daily completed bars only (same TF for N/X/Y); train 2022-01-01..2024-12-31; embargo 2025-01-01..2025-01-31; test 2025-02-01..2026-09-18"
+  instrument_set:
+    primary:
+      - {symbol: BTC, membership: in_universe, watchlist_tier: universe}
+      - {symbol: NVDA, membership: in_universe, watchlist_tier: universe}
+    extended_if_pit_daily_exists:
+      - {symbol: ETH, membership: watch_only, watchlist_tier: monitor}
+      - {symbol: AVGO, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: MSFT, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: META, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: JPM, membership: in_universe, watchlist_tier: monitor}
+      - {symbol: XOM, membership: in_universe, watchlist_tier: monitor}
+    excluded:
+      - "deferred_must_cut"
+      - "blocked watchlist names (CASHCAT, PONSUSD)"
+      - "unresolved (SAMSUN, KOSDA) — do not invent ids"
+      - "multi-timeframe stacks until each higher-TF bar is closed at available_at (otherwise REJECT for look-ahead)"
+  cost_model: "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24); taker_fee=0.00045 from config/quant/trade_math.yaml; slippage_bps=5 unless flow est_slippage(clip) exists; expected_hold_hours=24; funding_rate=0 on equities; default_clip=10000 is a cost clip only — DO NOT SIZE"
+  split_method: "calendar embargo (purge 1 calendar month); no random shuffle; no fitting on test; params locked in this file before the test split is scored"
+  payoff_shape: "short-horizon mean-reversion; many small opposing excursions when RSI-N exits Z; fat left tail on trend days that stay through M·ATR; time-stop hold_bars=5 caps right tail"
+
+params:
+  N: 2          # fast RSI length (Wilder)
+  X: 7          # mid RSI length
+  Y: 14         # slow RSI length
+  Z: 20         # oversold threshold; overbought = 100 - Z
+  M: 1.5        # ATR invalidation from the trigger close
+  atr_period: 14
+  hold_bars: 5
+  rsi_exit: 50  # flatten when fast RSI crosses this, else hold_bars
+  max_concurrent: 1
+
+look_ahead:
+  pit_clock: available_at
+  observation_clock: as_of_knowledge
+  risks:
+    - "RSI at t using close[t] before available_at"
+    - "multi-TF RSI that reads an unclosed higher-TF bar"
+    - "Wilder smoothing seeded on a series that includes future bars"
+    - "using market_time / published_at instead of available_at"
+  notes: "All three RSIs use the same completed daily TF. A multi-TF restatement is REJECT unless each higher-TF input has available_at ≤ decision clock. RSI uses only closes with available_at ≤ t."
+
+survivorship:
+  controlled: false
+  tag: survivorship_uncontrolled
+  notes: "Locked membership only. Delisted or halted names are not in this panel. IMP-029 is BACKLOG. Carry the tag; do not claim a 5y survivorship-safe edge."
+
+provenance:
+  class: retail_video_substack_reddit
+  n: unknown
+  weight: hypothesis
+  sources:
+    - "retail triple-RSI / multi-TF RSI mean-reversion videos"
+    - "Substack / Reddit oscillator stacks"
+  notes: "n=unknown. Hypothesis weight only. Not a sample."
+
+study:
+  harness: packages/backtest
+  existing_stubs: [buy_hold, threshold]
+  strategy_implemented: false
+  bind_thesis: false
+  command: "uv run lab backtest run --fixture PATH --no-db"
+  inherit_trade_math_sizing: false
+
+non_goals:
+  - live trading
+  - sizing
+  - scan-gate promotion
+  - universe or watchlist membership edits
+  - PLAYBOOK idea emission
+  - inventing expectancy or scorecard numbers
+  - implementing multi-TF RSI without a closed-bar rule
