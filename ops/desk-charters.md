@@ -40,7 +40,7 @@ Principal lock for permissions. Publishing roster is the five desks above. Runbo
 - **Risk BLOCK is terminal** without Principal override. The proposing desk cannot lift a BLOCK.
 - Pipeline is not skippable: `Intel → 3a/3b → Quant → Skeptic → Risk → Principal → Paper`.
 
-Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This file maps those roles onto desks, names artifacts, and forbids skipped gates. Decision tables live in [decision-rights.md](decision-rights.md). Work is queued in [improvement-queue.md](improvement-queue.md).
+Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This file maps those roles onto desks, names artifacts, and forbids skipped gates. Decision tables live in [decision-rights.md](decision-rights.md). Work is queued in [improvement-queue.md](improvement-queue.md). **Read before a round:** Principal-locked knowledge base [`config/knowledge/README.md`](../config/knowledge/README.md) (priors / failure modes / house lessons). A prior never triggers or sizes.
 
 **No agent or desk may override the Principal.** Research priority is not a trading decision.
 
@@ -479,4 +479,5 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 - Security / halt / live.yaml: [docs/security-model.md](../docs/security-model.md)
 - Decision rights: [decision-rights.md](decision-rights.md)
 - Improvement queue: [improvement-queue.md](improvement-queue.md)
+- Desk knowledge base (read before a round): [config/knowledge/README.md](../config/knowledge/README.md)
 - Post-IPO / reclaim screen: [docs/runbooks/post-ipo-reclaim.md](../docs/runbooks/post-ipo-reclaim.md)
