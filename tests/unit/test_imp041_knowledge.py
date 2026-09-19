@@ -98,6 +98,9 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
         "no secret-request",
         "getChat",
         "supergroup",
+        "Controls on a path that never executes are not controls",
+        "Absence of output is not evidence of absence of windows",
+        "Instrumentation that records only successes cannot detect silence",
         "compounds from post-mortems",
     ):
         assert token in lesson_text, token

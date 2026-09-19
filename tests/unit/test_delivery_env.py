@@ -98,7 +98,7 @@ def test_preflight_full_state_names_found_missing_and_not_configured() -> None:
         raise ConnectionRefusedError("Connection refused")
 
     def get_chat(_environ):
-        return STATE_FOUND, "getChat resolved the configured group id (id not printed)"
+        return STATE_FOUND, "getChat verify each run; configured group id resolved (id not printed)"
 
     report = preflight_env(
         env,
@@ -130,8 +130,10 @@ def test_preflight_full_state_names_found_missing_and_not_configured() -> None:
     lines = "\n".join(format_preflight_lines(report))
     assert "NOT CONFIGURED" in lines
     assert "TELEGRAM_CHAT_ID_INTEL NOT CONFIGURED" in lines
-    assert "POLYGON_API_KEY absent" in lines
+    assert "POLYGON_API_KEY ABSENT" in lines
+    assert "named failure" in lines
     assert "DOWN SERVICE (:9000 refused)" in lines
+    assert "delivery file only" in lines
     assert "secret-token-value-do-not-print" not in lines
     assert "dm-id-do-not-print" not in lines
     assert "group-id-do-not-print" not in lines
@@ -163,7 +165,7 @@ def test_get_chat_mismatch_fails_loudly_without_printing_ids() -> None:
         return (
             STATE_MISSING,
             "getChat resolved a different id than TELEGRAM_CHAT_ID "
-            "(possible -100... supergroup conversion); routing would break silently",
+            "(id dead / possible -100... supergroup conversion); fail loud",
         )
 
     report = preflight_env(env, purpose=PURPOSE_CHECKLIST, get_chat=bad)
@@ -192,7 +194,8 @@ def test_lab_env_preflight_cli_names_expected_failures(monkeypatch, capsys) -> N
     err = capsys.readouterr().err
     assert rc == 2
     assert "POLYGON_API_KEY" in err
-    assert "absent" in err
+    assert "ABSENT" in err
+    assert "named failure" in err
     assert "object_store" in err
     assert DOWN_SERVICE in err or "DOWN SERVICE" in err
     assert ":9000 refused" in err

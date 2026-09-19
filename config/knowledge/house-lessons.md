@@ -106,6 +106,48 @@ Seed rows below are Principal-listed. Some still lack a persist `run_id`; they s
 
 ---
 
+## 2026-09-19 — Controls on a path that never executes are not controls
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — SCHED-001 stays OPEN)* |
+| **Desk** | Ops |
+| **What happened** | Hive routines, send gates, and heartbeat-on-fire sat on a path that **never executed**. Config existed; the control never ran. Same class as a preflight nobody invokes. |
+| **Lesson** | **Controls on a path that never executes are not controls.** A check, gate, or heartbeat that is not on the executed path does not protect the box. Preflight, `getChat`, and miss-sweep only count when they actually run. |
+| **Does not** | Close SCHED-001. Does not authorise a real Telegram send. Does not treat a config file as a substitute for a run. |
+| **Overrides prior** | No — process lesson. |
+
+---
+
+## 2026-09-19 — Absence of output is not evidence of absence of windows
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — SCHED-001 stays OPEN)* |
+| **Desk** | Ops |
+| **What happened** | No Hive digest appeared. That silence was readable as “no window,” while weekday windows had already closed unfired. |
+| **Lesson** | **Absence of output is not evidence of absence of windows.** No Hive print ≠ no scheduled window. Do not close SCHED-001 on “no window yet.” |
+| **Does not** | Close SCHED-001. Does not treat a sibling NY-cron success as proof the Sydney job ran. |
+| **Overrides prior** | No — incident still OPEN. Process lesson. |
+
+---
+
+## 2026-09-19 — Instrumentation that records only successes cannot detect silence
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — SCHED-001 stays OPEN)* |
+| **Desk** | Ops |
+| **What happened** | Heartbeat-on-fire writes a row only when a job fires. Jobs that never run leave **no row**, so success-only instrumentation reports a clean log. |
+| **Lesson** | **Instrumentation that records only successes cannot detect silence.** Heartbeat-on-fire is a log, not the control. Closed window + no completion row is the miss (IMP-042 `lab schedule miss-check`). |
+| **Does not** | Replace the miss detector with another write-on-fire. Does not auto-close OPEN incidents. |
+| **Overrides prior** | No — process lesson. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

@@ -41,7 +41,7 @@ DOWN_SERVICE = "DOWN SERVICE"
 
 STATE_FOUND = "FOUND"
 STATE_MISSING = "MISSING"
-STATE_ABSENT = "absent"
+STATE_ABSENT = "ABSENT"
 STATE_DOWN = DOWN_SERVICE
 STATE_NOT_CONFIGURED = "NOT CONFIGURED"
 STATE_SKIPPED = "SKIPPED"
@@ -265,7 +265,7 @@ def probe_object_store(
     backend = (environ.get(OBJECT_STORE_BACKEND_ENV) or "s3").strip().lower()
     missing = object_store_missing_names(environ)
     if missing:
-        return STATE_MISSING, f"{DOWN_SERVICE}; missing {', '.join(missing)}", missing
+        return STATE_MISSING, f"named failure; {DOWN_SERVICE}; missing {', '.join(missing)}", missing
     if backend in {"none", "null", "disabled", "off"}:
         return STATE_FOUND, "backend=none (raw objects disabled; honest)", ()
     if backend in {"memory", "inmemory", "in-memory"}:
@@ -278,7 +278,7 @@ def probe_object_store(
         sock = connect((_host, port), timeout=timeout_s)
     except OSError as exc:
         reason = "refused" if isinstance(exc, ConnectionRefusedError) or "refused" in str(exc).lower() else type(exc).__name__
-        return STATE_DOWN, f"{DOWN_SERVICE} (:{port} {reason})", ()
+        return STATE_DOWN, f"named failure; {DOWN_SERVICE} (:{port} {reason})", ()
     else:
         try:
             sock.close()
@@ -353,24 +353,35 @@ def _severity(*, purpose: str, send: bool, name: str) -> str:
 def _note_for(name: str, *, present: bool) -> str:
     if name == CHAT_ID_ENV:
         if present:
-            return "group route present (Hive plain group; not a fallback to PRINCIPAL_DM)"
+            return (
+                "Hive group route (plain group; not a fallback to PRINCIPAL_DM); "
+                "getChat verify each run; fail loud if id dead; value not printed"
+            )
         return (
             "group route required for desk publish; MUST NOT silently default to "
             f"{PRINCIPAL_DM_CHAT_ID_ENV}"
         )
     if name == PRINCIPAL_DM_CHAT_ID_ENV:
-        return "optional DM-only path (Principal step 5); not a fallback for group route"
+        return "private Principal DM (step 5); value not printed; not a fallback for group route"
     if name == BOT_TOKEN_ENV:
-        return "required for live send; delivery-only env file — never Grok Secrets card"
+        return "delivery file only; never Grok Secrets card; value not printed"
     if name == FRED_API_KEY_ENV:
-        return "no rates invent when missing (error_class=missing_env)"
+        return (
+            "no rates invent when missing (error_class=missing_env)"
+            if not present
+            else "present; value not printed"
+        )
     if name == POLYGON_API_KEY_ENV:
-        return "absent; no OHLCV invent (error_class=missing_env)" if not present else "Polygon key present (value not printed)"
+        return (
+            "named failure; no OHLCV invent (error_class=missing_env)"
+            if not present
+            else "Polygon key present (value not printed)"
+        )
     if name == POSTGRES_DSN_ENV:
-        return "Market Memory DSN; --no-db is ELIGIBLE only"
+        return "Market Memory DSN; --no-db is ELIGIBLE only; value not printed"
     if name in desk_chat_id_env_names():
         return (
-            "Hive is a plain group (not a supergroup); forum topics not enabled; "
+            "expected; Hive is a plain group (not a supergroup); forum topics not enabled; "
             "no message_thread_id; leave unset until Principal chooses topics or separate groups"
             if not present
             else "per-desk route present"
@@ -475,9 +486,7 @@ def format_preflight_lines(report: PreflightReport) -> tuple[str, ...]:
     for note in report.load.notes:
         lines.append(f"env preflight: {redact_env_values(note)}")
     for item in report.items:
-        lines.append(
-            f"env preflight: {item.name} {item.state} ({item.severity}: {item.note})"
-        )
+        lines.append(f"env preflight: {item.name} {item.state} — {item.note}")
     if CHAT_ID_ENV in report.error_names:
         lines.append(
             "env preflight: desk deliver will not use "

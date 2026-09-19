@@ -59,14 +59,14 @@ def live_get_chat_probe(environ) -> tuple[str, str]:
         name = redact_telegram(type(exc).__name__, token)
         return (
             STATE_MISSING,
-            f"getChat failed ({name}); converting Hive to a supergroup or enabling topics "
-            "changes the id to a -100... form; routing would break silently",
+            f"getChat failed ({name}); id dead or drifted; fail loud; converting Hive to a "
+            "supergroup or enabling topics changes the id to a -100... form",
         )
     if not result.ok:
         return (
             STATE_MISSING,
-            "getChat did not resolve TELEGRAM_CHAT_ID; converting Hive to a supergroup "
-            "or enabling topics changes the id to a -100... form; routing would break silently",
+            "getChat did not resolve TELEGRAM_CHAT_ID (id dead); fail loud; converting Hive "
+            "to a supergroup or enabling topics changes the id to a -100... form",
         )
     payload = result.payload or {}
     inner = payload.get("result") if isinstance(payload, dict) else None
@@ -75,9 +75,9 @@ def live_get_chat_probe(environ) -> tuple[str, str]:
         return (
             STATE_MISSING,
             "getChat resolved a different id than TELEGRAM_CHAT_ID "
-            "(possible -100... supergroup conversion); routing would break silently",
+            "(id dead / possible -100... supergroup conversion); fail loud",
         )
-    return STATE_FOUND, "getChat resolved the configured group id (id not printed)"
+    return STATE_FOUND, "getChat verify each run; configured group id resolved (id not printed)"
 
 
 def run_preflight_command(root: Path) -> int:

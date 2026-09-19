@@ -1011,7 +1011,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | IMP-042 DONE (#68). IMP-013/021 delivery already on main. |
 | **Risk level** | Medium (shared-box file-path is a soft boundary; isolation is IMP-044). |
 | **Status** | IN_PROGRESS |
-| **PR** | *(this PR)* |
+| **PR** | [#71](https://github.com/ElChopa11/market-memory/pull/71) |
 | **Lesson learned** | *(fill at close)* |
 
 ### IMP-044 — Delivery process isolation (separate user or container)
