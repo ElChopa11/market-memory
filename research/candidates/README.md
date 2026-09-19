@@ -10,7 +10,7 @@ Owner is **QUANT**. Status starts at **HYPOTHESIS**. **No sizing. No scan-gate p
 
 1. **Owner QUANT. Status HYPOTHESIS.** A candidate is not a thesis, not a Quant Board verdict, not a call, and not a paper position. The accountable owner is Quant. Status starts at `HYPOTHESIS` and stays there until a Quant validation study records a closed desk verdict (`RESEARCH_PRIORITY` \| `MONITOR` \| `DEFER` \| `REJECT` \| `INSUFFICIENT_DATA`) on the *study*, not on an instrument. Intake never authors a trade.
 
-2. **No sizing.** Candidates must not compute, recommend, or inherit a size, `size_pct`, clip-as-position, leverage, or notional. PLAYBOOK trade-math sizing stays unused. Cost clips in `config/quant/trade_math.yaml` are for a cost model only. Cards say **DO NOT SIZE**.
+2. **No sizing.** Candidates must not compute, recommend, or inherit a size, `size_pct`, clip-as-position, or leverage. PLAYBOOK trade-math sizing stays unused. Cost clips in `config/quant/trade_math.yaml` are for a cost model only. Cards say **DO NOT SIZE**.
 
 3. **No scan-gate promotion.** Intake does not add names to `config/watchlist/monitor.yaml`, `config/universe.yaml`, PLAYBOOK ideas, or `EDGE_SCAN`. A named instrument must state its watchlist tier (`universe` / `monitor` / `blocked`) when known. Membership sets stay locked. Monitor ideas remain UNSIZED.
 
