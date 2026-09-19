@@ -174,6 +174,36 @@ Seed rows below are Principal-listed. Some still lack a persist `run_id`; they s
 | **Does not** | Authorise a Telegram send. Does not build IMP-050 (per-channel `send_enabled` by PR) or IMP-051 (membership inventory / desk-bot removal / Chart–TradingView webhook ban / panel reconcile). Does not lift the Hive group freeze. Does not make a desk bot a publisher. |
 | **Overrides prior** | No — process lesson. |
 
+This lesson **still stands**. Enumerating publishers by what the repo invokes is **structurally incomplete**. The 2026-09-19 BTCUSDC.P FALSE POSITIVE does not retire it.
+
+---
+
+## 2026-09-19 — BTCUSDC.P Telegram sighting was FALSE POSITIVE
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(none — Principal FALSE POSITIVE close; no persist run. Do not invent one.)* |
+| **Desk** | Ops |
+| **What happened** | BTCUSDC.P sighted in the GrokBot panel was **desk working-thread output, not Telegram**. Hive search: **No Results**. Membership: **Principal + one human + delivery bot only**. The freeze was **never incomplete**. Cause: monitoring GrokBot and Telegram together and reading working output as a publish. |
+| **Lesson** | Working-thread output is not a publish. GrokBot panel ≠ Telegram. Hive **No Results** plus membership Principal + one human + delivery bot only means the freeze was never incomplete. Do not treat GrokBot desk output as a Telegram send. |
+| **Does not** | Reopen the freeze as incomplete. Does not authorise a Telegram send. Does not build membership-list or Bot API tooling. Does not erase the prior lesson that enumerating publishers by what the repo invokes is structurally incomplete. |
+| **Overrides prior** | No — process lesson. Does not override the control-boundary lesson. |
+
+---
+
+## 2026-09-19 — Telegram membership is the authoritative publisher inventory
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — standing check; bind if an incident/run is recorded)* |
+| **Desk** | Ops |
+| **What happened** | Publisher inventory that starts from repo invocation or from an admin-only Bot API list can miss who can actually post. Completeness requires a Principal member-list read. |
+| **Lesson** | **Telegram membership IS the authoritative publisher inventory.** Re-verify membership whenever any bot or integration is added. An **Admin-only Bot API list is insufficient** — **Principal member-list read is required for completeness**. |
+| **Does not** | Authorise building Bot API member-list tooling. Does not treat `getChatAdministrators` (or any admin-only Bot API list) as complete. Does not retire the prior lesson that enumerating publishers by what the repo invokes is structurally incomplete. Does not authorise a Telegram send. |
+| **Overrides prior** | No — process lesson. Complements the control-boundary lesson; does not replace it. |
+
 ---
 
 ## How this file grows

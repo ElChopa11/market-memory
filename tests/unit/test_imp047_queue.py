@@ -19,6 +19,15 @@ def test_queue_imp047_single_thread_046_done_048_049_050_backlog() -> None:
     assert any("IMP-049" in line and "BACKLOG" in line for line in board_lines)
     assert any("IMP-050" in line and "BACKLOG" in line for line in board_lines)
     assert any("IMP-051" in line and "BACKLOG" in line for line in board_lines)
+    assert "TG-BTCUSDC-FALSE-POSITIVE" in queue
+    assert "FALSE POSITIVE" in queue
+    assert "| **Status** | RETIRED |" in queue
+    assert "Principal member-list read" in queue
+    assert "admin-only bot api" in queue.lower()
+    assert not any(
+        line.startswith("| TG-BTCUSDC-FALSE-POSITIVE |") and "OPEN" in line
+        for line in queue.splitlines()
+    )
     assert "agent authoring" in queue.lower() or "Do not allow agent authoring" in queue
     assert "canonical copy" in queue.lower() or "canonical copies" in queue.lower()
     assert "server-kept" in queue.lower() or "not diffable" in queue.lower()
