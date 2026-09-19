@@ -4,7 +4,7 @@
 
 ## Hybrid clock (Principal 2026-09-19)
 
-Hive is a **clock** (routines / schedules). The `lab` CLI is the **sole Telegram publisher**. Real send is frozen until Principal step 5 (DM-only acceptance). This step is `--no-send` only.
+Hive is a **clock** (routines / schedules). The `lab` CLI is the **sole Telegram publisher**. Real send is frozen until Principal step 5 (DM-only acceptance). This step is `--no-send` only. Every Hive fire must stamp a completion row (`lab brief` / `lab deliver` / `lab schedule heartbeat`) under `ops/reports/scheduler/completions/` so `lab schedule miss-check` can see the executed path. See [scheduler.md](scheduler.md).
 
 | Rule | Detail |
 |---|---|

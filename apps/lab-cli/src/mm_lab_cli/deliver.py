@@ -13,6 +13,7 @@ from mm_delivery.deliver import deliver
 from mm_delivery.inbound import handle_inbound
 from mm_delivery.payload import SEND_ENABLED
 from mm_desks.orchestrator import PIPELINE, run_from_fixture
+from mm_lab_cli.completion import add_completion_args, fired_at_from_args, stamp_cli_fire
 from mm_lab_cli.env_preflight import SEND_FROZEN_MSG, prepare_deliver
 
 
@@ -38,6 +39,7 @@ def add_deliver_parser(sub) -> None:
         action="store_true",
         help="required for a live POST; without it, writes payload only",
     )
+    add_completion_args(test_p)
 
     inbound_p = deliver_sub.add_parser("inbound", help="read-only inbound stub (/status /brief /desk /idea /gaps /halt)")
     inbound_p.add_argument("text", help="inbound message text")
@@ -57,6 +59,7 @@ def add_deliver_parser(sub) -> None:
     watch_p.add_argument("--repo-root", type=Path, default=Path("."))
     watch_p.add_argument("--no-db", action="store_true")
     watch_p.add_argument("--ignore-quiet-hours", action="store_true")
+    add_completion_args(watch_p)
 
     list_p = deliver_sub.add_parser(
         "listings",
@@ -69,6 +72,7 @@ def add_deliver_parser(sub) -> None:
     list_p.add_argument("--repo-root", type=Path, default=Path("."))
     list_p.add_argument("--no-db", action="store_true")
     list_p.add_argument("--ignore-quiet-hours", action="store_true")
+    add_completion_args(list_p)
 
     score_p = deliver_sub.add_parser(
         "scorecard",
@@ -81,6 +85,7 @@ def add_deliver_parser(sub) -> None:
     score_p.add_argument("--repo-root", type=Path, default=Path("."))
     score_p.add_argument("--no-db", action="store_true")
     score_p.add_argument("--ignore-quiet-hours", action="store_true")
+    add_completion_args(score_p)
 
     decay_p = deliver_sub.add_parser(
         "decay",
@@ -93,6 +98,7 @@ def add_deliver_parser(sub) -> None:
     decay_p.add_argument("--repo-root", type=Path, default=Path("."))
     decay_p.add_argument("--no-db", action="store_true")
     decay_p.add_argument("--ignore-quiet-hours", action="store_true")
+    add_completion_args(decay_p)
 
     _add_pack_args(deliver_p)
 
@@ -108,6 +114,7 @@ def _add_pack_args(parser) -> None:
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--no-db", action="store_true")
     parser.add_argument("--ignore-quiet-hours", action="store_true")
+    add_completion_args(parser)
 
 
 def dispatch_deliver(args: Namespace) -> int:
@@ -121,21 +128,43 @@ def dispatch_deliver(args: Namespace) -> int:
         reply = handle_inbound(str(args.text), uid=uid, allow_uids=allow_uids if uid else None)
         print(json.dumps(reply.canonical(), sort_keys=True))
         return 0 if reply.ok or reply.silent else 2
+    fired_at = fired_at_from_args(args)
+    rc = 2
+    payload_path = None
+    try:
+        rc, payload_path = _dispatch_deliver_body(args, cmd)
+    except Exception as exc:
+        print(json.dumps({"error": exc.__class__.__name__, "detail": str(exc)}), file=sys.stderr)
+        rc = 2
+    finally:
+        stamp_cli_fire(
+            args,
+            exit_status=rc,
+            payload_path=payload_path,
+            deliver_cmd=cmd if cmd not in {None, "pack", "fanout", "test"} else None,
+            cli=f"lab deliver {cmd or 'pack'}",
+            fired_at=fired_at,
+            source="lab.deliver",
+        )
+    return rc
+
+
+def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str | None]:
     send = _want_send(args)
     if send is None:
-        return 2
+        return 2, None
     live_test = cmd == "test" and bool(getattr(args, "i_mean_it", False))
     if send or live_test:
         print(SEND_FROZEN_MSG, file=sys.stderr)
         prepare_deliver(send=False)
-        return 2
+        return 2, None
     report = prepare_deliver(send=False)
     if cmd == "fanout":
         from mm_delivery.fanout import fanout_desk
 
         loaded = _load_source(args, Path(args.repo_root).resolve(), str(getattr(args, "desk", None) or "ops"))
         if loaded is None:
-            return 2
+            return 2, None
         markdown, as_of, completeness, session_date, extra = loaded
         result = fanout_desk(
             markdown,
@@ -149,27 +178,39 @@ def dispatch_deliver(args: Namespace) -> int:
         payload = result.as_public_dict()
         payload.update(extra)
         print(json.dumps(payload, sort_keys=True, indent=2))
-        return 2 if not report.ok else 0
+        return (2 if not report.ok else 0), _payload_path(payload)
     if cmd == "watchlist":
         rc = _cmd_watchlist(args)
-        return 2 if not report.ok else rc
+        return (2 if not report.ok else rc), None
     if cmd == "listings":
         rc = _cmd_listings(args)
-        return 2 if not report.ok else rc
+        return (2 if not report.ok else rc), None
     if cmd == "scorecard":
         rc = _cmd_scorecard(args)
-        return 2 if not report.ok else rc
+        return (2 if not report.ok else rc), None
     if cmd == "decay":
         rc = _cmd_decay(args)
-        return 2 if not report.ok else rc
+        return (2 if not report.ok else rc), None
     if cmd == "test":
-        rc = _cmd_test(args)
-        return 2 if not report.ok else rc
+        rc, path = _cmd_test(args)
+        return (2 if not report.ok else rc), path
     if cmd in {None, "pack"}:
-        rc = _cmd_pack(args)
-        return 2 if not report.ok else rc
+        rc, path = _cmd_pack(args)
+        return (2 if not report.ok else rc), path
     print("usage: lab deliver pack|fanout|watchlist|listings|scorecard|decay|test|inbound", file=sys.stderr)
-    return 2
+    return 2, None
+
+
+def _payload_path(payload: dict) -> str | None:
+    written = payload.get("written") if isinstance(payload, dict) else None
+    if isinstance(written, dict):
+        for key in ("json", "payload", "telegram-payload.json"):
+            if written.get(key):
+                return str(written[key])
+        for value in written.values():
+            if value:
+                return str(value)
+    return None
 
 
 def _want_send(args: Namespace) -> bool | None:
@@ -181,18 +222,18 @@ def _want_send(args: Namespace) -> bool | None:
     return send
 
 
-def _cmd_pack(args: Namespace) -> int:
+def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
     send = _want_send(args)
     if send is None:
-        return 2
+        return 2, None
     if SEND_ENABLED:
         print("lab deliver: SEND_ENABLED must stay false; pass --send into deliver()", file=sys.stderr)
-        return 2
+        return 2, None
     root = Path(args.repo_root).resolve()
     desk = str(getattr(args, "desk", None) or "ops")
     loaded = _load_source(args, root, desk)
     if loaded is None:
-        return 2
+        return 2, None
     markdown, as_of, completeness, session_date, extra = loaded
     out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
     result = deliver(
@@ -212,8 +253,8 @@ def _cmd_pack(args: Namespace) -> int:
     payload.update(extra)
     print(json.dumps(payload, sort_keys=True, indent=2))
     if send and not result.sent:
-        return 2
-    return 0
+        return 2, _payload_path(payload)
+    return 0, _payload_path(payload)
 
 
 def _cmd_watchlist(args: Namespace) -> int:
@@ -365,7 +406,7 @@ def _cmd_decay(args: Namespace) -> int:
     return 0 if run.status != "FAILED" else 2
 
 
-def _cmd_test(args: Namespace) -> int:
+def _cmd_test(args: Namespace) -> tuple[int, str | None]:
     root = Path(args.repo_root).resolve()
     desk = str(args.desk)
     as_of = utcnow()
@@ -390,7 +431,7 @@ def _cmd_test(args: Namespace) -> int:
     payload["no_send"] = True
     payload["test"] = True
     print(json.dumps(payload, sort_keys=True, indent=2))
-    return 0
+    return 0, _payload_path(payload)
 
 
 def _load_source(args: Namespace, root: Path, desk: str):

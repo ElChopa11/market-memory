@@ -10,6 +10,7 @@ from mm_common.time import parse_utc, utcnow
 from mm_briefing.config import AlertSettings, load_alert_settings, load_briefing_settings
 from mm_briefing.engine import default_macro_fetcher, generate_from_sources, load_fixture_file
 from mm_briefing.store import index_brief, write_brief
+from mm_lab_cli.completion import add_completion_args, fired_at_from_args, stamp_cli_fire
 from mm_lab_cli.env_preflight import prepare_brief
 from mm_memory.db import dsn_from_env, session_scope
 
@@ -39,6 +40,7 @@ def add_brief_parser(sub) -> None:
             action="store_true",
             help="(tests) run alert-check with empty thresholds; must not push",
         )
+        add_completion_args(p)
 
 
 def dispatch_brief(args: Namespace) -> int:
@@ -46,8 +48,30 @@ def dispatch_brief(args: Namespace) -> int:
     if cmd is None:
         print("usage: lab brief preopen|close|alert-check")
         return 2
-    prepare_brief()
     kind = {"preopen": "preopen", "close": "close", "alert-check": "alert"}[cmd]
+    fired_at = fired_at_from_args(args)
+    rc = 2
+    payload_path = None
+    try:
+        rc, payload_path = _run_brief(args, kind)
+    except Exception as exc:
+        print(json.dumps({"error": exc.__class__.__name__, "detail": str(exc)}))
+        rc = 2
+    finally:
+        stamp_cli_fire(
+            args,
+            exit_status=rc,
+            payload_path=payload_path,
+            brief_kind=kind if kind != "alert" else None,
+            cli=f"lab brief {cmd}",
+            fired_at=fired_at,
+            source="lab.brief",
+        )
+    return rc
+
+
+def _run_brief(args: Namespace, kind: str) -> tuple[int, str | None]:
+    prepare_brief()
     root = Path(args.repo_root).resolve()
     settings = load_briefing_settings(root)
     fixture = load_fixture_file(args.fixture) if args.fixture else None
@@ -95,12 +119,12 @@ def dispatch_brief(args: Namespace) -> int:
         }
         if doc is None:
             print(json.dumps(payload, indent=2))
-            return 0
+            return 0, None
         path = _persist(doc, args, root)
         payload["path"] = str(path)
         payload["content_hash"] = doc.content_hash
         print(json.dumps(payload, indent=2))
-        return 0
+        return 0, str(path)
 
     assert doc is not None
     path = _persist(doc, args, root)
@@ -118,37 +142,7 @@ def dispatch_brief(args: Namespace) -> int:
     if dod is not None:
         payload["dod_path"] = str((Path(args.out).resolve() if args.out else root) / dod)
     print(json.dumps(payload, indent=2))
-    _stamp_brief_heartbeat(kind, as_of, args, root)
-    return 0
-
-
-def _stamp_brief_heartbeat(kind: str, as_of, args: Namespace, root: Path) -> None:
-    """Secondary log. Miss sweep remains the scheduler check."""
-    routine_id = {"preopen": "lab.pulse.preopen", "close": "lab.pulse.close"}.get(kind)
-    if routine_id is None:
-        return
-    try:
-        from mm_desks.scheduler import load_catalog, stamp_fire
-
-        catalog = load_catalog(root)
-        routine = catalog.by_id().get(routine_id)
-        if routine is None:
-            return
-        record = stamp_fire(
-            routine,
-            fired_at=as_of,
-            run_id=f"{routine_id}-{as_of.strftime('%Y%m%dT%H%M%SZ')}",
-            as_of_knowledge=as_of,
-            source="lab.brief",
-        )
-        if args.no_db:
-            return
-        from mm_memory.heartbeat_repository import persist_heartbeat
-
-        with session_scope(args.dsn or dsn_from_env()) as session:
-            persist_heartbeat(session, record.canonical())
-    except Exception:
-        return
+    return 0, str(path)
 
 
 def _persist(doc, args: Namespace, root: Path) -> Path:

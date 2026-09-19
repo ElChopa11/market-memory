@@ -35,6 +35,13 @@ def persist_heartbeat(session: Session, row: Mapping[str, Any]) -> str:
     fired = None if fired_raw in (None, "") else _ts(fired_raw)
     status = str(row.get("status") or "missed")
     as_of = _ts(row.get("as_of_knowledge") or fired_raw or row["scheduled_anchor_ts"])
+    nested = dict(row.get("payload_json") or {})
+    if row.get("exit_status") is not None:
+        nested["exit_status"] = int(row["exit_status"])
+    if row.get("payload_path"):
+        nested["payload_path"] = str(row["payload_path"])
+    if row.get("cli"):
+        nested["cli"] = str(row["cli"])
     payload = {
         "run_id": str(row.get("run_id") or new_ulid()),
         "fired_at_ts": fired,
@@ -42,7 +49,7 @@ def persist_heartbeat(session: Session, row: Mapping[str, Any]) -> str:
         "status": status,
         "as_of_knowledge": as_of,
         "source": str(row.get("source") or "lab"),
-        "payload_json": dict(row.get("payload_json") or {}),
+        "payload_json": nested,
     }
     if existing is not None:
         if RANK.get(status, 0) >= RANK.get(existing.status, 0):
@@ -76,18 +83,25 @@ def load_completions(session: Session) -> list[dict[str, Any]]:
     rows = session.scalars(select(ScheduleHeartbeat).order_by(ScheduleHeartbeat.scheduled_anchor_ts)).all()
     out: list[dict[str, Any]] = []
     for row in rows:
-        out.append(
-            {
-                "routine_id": row.routine_id,
-                "run_id": row.run_id,
-                "scheduled_anchor_ts": as_utc(row.scheduled_anchor_ts).isoformat(),
-                "fired_at_ts": None if row.fired_at_ts is None else as_utc(row.fired_at_ts).isoformat(),
-                "delta_seconds": row.delta_seconds,
-                "status": row.status,
-                "as_of_knowledge": as_utc(row.as_of_knowledge).isoformat(),
-                "source": row.source,
-            }
-        )
+        nested = dict(row.payload_json or {})
+        item: dict[str, Any] = {
+            "routine_id": row.routine_id,
+            "run_id": row.run_id,
+            "scheduled_anchor_ts": as_utc(row.scheduled_anchor_ts).isoformat(),
+            "fired_at_ts": None if row.fired_at_ts is None else as_utc(row.fired_at_ts).isoformat(),
+            "delta_seconds": row.delta_seconds,
+            "status": row.status,
+            "as_of_knowledge": as_utc(row.as_of_knowledge).isoformat(),
+            "source": row.source,
+            "payload_json": nested,
+        }
+        if nested.get("exit_status") is not None:
+            item["exit_status"] = nested["exit_status"]
+        if nested.get("payload_path"):
+            item["payload_path"] = nested["payload_path"]
+        if nested.get("cli"):
+            item["cli"] = nested["cli"]
+        out.append(item)
     return out
 
 

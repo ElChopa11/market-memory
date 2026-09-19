@@ -55,6 +55,10 @@ ops/reports/source-health/**
 ops/reports/scheduler/incidents/**
 !ops/reports/scheduler/incidents/README.md
 
+# Hive → lab CLI completion rows (IMP-046). Miss-check reads these. Keep README.
+ops/reports/scheduler/completions/**
+!ops/reports/scheduler/completions/README.md
+
 # Standalone Phase-1 base-rate bar cache (raw vendor series; not a desk artifact)
 research/base-rates/cache/
 

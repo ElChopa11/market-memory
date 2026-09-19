@@ -1,6 +1,6 @@
 # PLAN — IMP-043 Hybrid Step 2: delivery env-file + env preflight
 
-**Report status:** IN_PROGRESS (this PR).  
+**Report status:** DONE (#71).  
 **Owner:** Ops  
 **Scope:** Delivery-only Telegram env file + full-state preflight. `--no-send` only. No live send. Paper only.
 

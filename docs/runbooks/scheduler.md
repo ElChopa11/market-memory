@@ -15,7 +15,9 @@ uv run lab schedule heartbeat-check --fixture tests/fixtures/scheduler/ci_clock.
 # Prove the 08:00 class escalates:
 uv run lab schedule miss-check --fixture tests/fixtures/scheduler/miss_clock.yaml --now 2026-09-19T09:49:00Z --no-db --out /tmp/sched-miss
 
-# Secondary log (does not pass the check by itself):
+# Secondary log (does not pass the check by itself). Hive → lab CLI also
+# writes ops/reports/scheduler/completions/ so the miss sweep can see a fire:
+uv run lab schedule heartbeat --routine-id grok.sydney_morning --fired-at 2026-09-17T20:32:00Z --exit-status 0 --no-db
 uv run lab schedule record-fire --routine-id lab.pulse.preopen --fired-at 2026-09-18T12:02:00Z --no-db
 
 # Backfill markdown:
@@ -28,4 +30,18 @@ Catalog composition:
 - Lab Pulse: `config/schedules/market-pulse.yaml`
 - Lab Telegram wall-clock: `config/delivery/telegram.yaml` `schedule`
 
-SCHED-001 stays OPEN. Root cause: [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md).
+## Completion rows (Hybrid Step 4)
+
+Hive clock → `lab brief` / `lab deliver` / `lab schedule heartbeat` writes a JSON row:
+
+`ops/reports/scheduler/completions/{routine_id}__{anchor}.json`
+
+Fields: `run_id`, `routine_id` (configured trigger), `fired_at_ts` (actual time), `delta_seconds` (offset vs catalog anchor), `status` (timing `ok`/`late`), `exit_status` (CLI process; failed is still a fire), `payload_path` if a briefs/ artifact exists.
+
+How miss-sweep reads it:
+
+- Operator: `lab schedule miss-check --no-db` loads that directory (and `schedule_heartbeat` unless `--no-db`).
+- CI fixture clock does **not** load the directory unless `--completions-dir` is passed (keeps the clock non-flaky).
+- Hive passes `--routine-id grok.sydney_morning` / `grok.us_pre_market` / `grok.weekly_investment_review`.
+
+`--no-send` only. Real send frozen until Principal step 5. SCHED-001 stays OPEN. Root cause: [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md).

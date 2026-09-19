@@ -204,7 +204,7 @@ def cmd_status() -> int:
     print("Backtest: lab backtest run --fixture PATH (same params_hash → same result)")
     print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
-    print("Schedule: lab schedule miss-check (control: closed window + no completion → escalate). heartbeat-check is an alias. Heartbeat-on-fire is a log.")
+    print("Schedule: lab schedule miss-check (control: closed window + no completion → escalate). heartbeat-check is an alias. Hive CLI writes ops/reports/scheduler/completions/ (lab schedule heartbeat). Heartbeat-on-fire is a log.")
     print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
     print("Equities screen: lab equities reclaim-screen --fixture PATH --no-db (Post-IPO / reclaim triage; not a trading decision)")
     print("Desk run: lab desk run --all --fixture PATH --no-send (deterministic pack; default dry-run)")

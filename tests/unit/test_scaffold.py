@@ -119,6 +119,8 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-040-phase1-unconditional-base-rates.md",
         "ops/plans/IMP-041-desk-knowledge-base.md",
         "ops/plans/IMP-042-scheduler-heartbeat.md",
+        "ops/plans/IMP-043-hybrid-delivery-env.md",
+        "ops/plans/IMP-046-hybrid-cli-completions.md",
         "docs/runbooks/scheduler.md",
         "ADR/0018-schedule-heartbeat.md",
         "config/schedules/routines.yaml",
