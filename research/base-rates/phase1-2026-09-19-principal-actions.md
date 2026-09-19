@@ -38,7 +38,7 @@ House lesson: resolving a ticker to an identifier does **not** prove the returne
 
 **Pooled 1R:2R without SPCX.** This VM cannot recompute the equity-inclusive pool (no Polygon key). The crypto-only pool in [`phase1-2026-09-19.md`](phase1-2026-09-19.md) never included SPCX: gross **32.4%** (5315 targets / 11113 stops); net **31.8%**. On-box re-run after A/B continuity must publish **both** pools (full vs void-excluded). Do not invent that number here.
 
-**Robustness (headline, not a footnote).** Prior numbers: voids barely moved the headline (~32.9%→32.8% gross, ~32.4%→32.3% net). **The coin-flip benchmark holds regardless of how the continuity question resolves.** That is a strength.
+**Robustness (headline, not a footnote).** Prior numbers: voids barely moved the headline (~32.9%→32.8% gross, ~32.4%→32.3% net). **The descriptive mixture holds regardless of how the continuity question resolves.** That is a strength of the continuity test; it is **not** a strategy hurdle.
 
 ---
 
@@ -69,7 +69,7 @@ Trend-up conditioning does **not** raise the 1R:2R bracket hit rate; for several
 
 Crypto-only sample (this VM, generated tables): several trend-up 1-bar means are negative (UNIUSD, LTCUSD, PURR). VVVUSD trend-up long gross hit **47.3%** (n=200) is the interpretable outlier.
 
-This undercuts the shared premise of C-001 / C-002 / C-003 (dip entries gated on a confirmed uptrend) **in this sample**. Do **not** conclude the strategies fail. Conclude the **permission filter does not carry edge on its own**. Any candidate that relies on it must beat **that instrument's own trend-up** bracket rate, not the pooled ~33.3% coin-flip.
+This undercuts the shared premise of C-001 / C-002 / C-003 (dip entries gated on a confirmed uptrend) **in this sample**. Do **not** conclude the strategies fail. Conclude the **permission filter does not carry edge on its own**. Any candidate that relies on it must beat **that instrument's own unconditional** 1R:2R bracket (and, if it uses a trend-up permission filter, **that instrument's own trend-up** bracket). The pooled ~33% is a **descriptive mixture only**, not a strategy hurdle.
 
 Cards stay `INTAKE_ONLY` / HYPOTHESIS. Notes landed on:
 
@@ -117,3 +117,18 @@ Question for Don (queue Gaps only; not resolved here): desks have been reporting
 AVGO/MSFT/META/JPM/XOM while those names are absent from `monitor.yaml`. Either
 they belong in universe via Principal PR, or desks must stop reporting them.
 Do **not** widen the base-rate run to answer that.
+
+---
+
+## IC Gate 1 — verdict distinction (quoted; FAIL intact)
+
+IC attack review: [`phase1-2026-09-19-ic-attack.md`](phase1-2026-09-19-ic-attack.md) (#79). Follow-up: [`phase1-2026-09-19-ic-follow-up.md`](phase1-2026-09-19-ic-follow-up.md).
+
+IC Gate 1 remains **FAIL** as the methodology-build gate for strategies. Do not soften FAIL.
+
+Tables are usable as a **descriptive coin-flip mixture** under **PROVISIONAL** equity history.
+
+The pooled ~33% is **NOT** a strategy hurdle.
+
+**Attack A9 CLOSED stale** vs [#81](https://github.com/ElChopa11/market-memory/pull/81) on-box equity panel (this committed report includes QQQ/NVDA/TSLA and the rest of the monitor equity names with n≥200; SPCX/BMNR voided). Equity rates stay **PROVISIONAL**. The opening note that *this* cloud VM has no `POLYGON_API_KEY` still describes how the crypto-only draft was written; it does not reopen A9.
+

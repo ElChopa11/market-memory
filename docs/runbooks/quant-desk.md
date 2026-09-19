@@ -14,7 +14,7 @@ uv run pytest tests/unit/test_phase5c_quant.py tests/adversarial/test_phase5c_po
 
 There is **no** `lab quant-factors` desk runner in 5c. Same `params_hash` / `result_hash` twice on a fixture is the reproducibility gate (see unit tests).
 
-Phase 1 unconditional event-class base rates (IMP-039) are a later Quant sleeve (`lab base-rate compute --fixture --no-db`). They are the C-001/002/003 benchmarks, not a candidate study. See [base-rates.md](base-rates.md).
+Phase 1 unconditional event-class base rates (IMP-039) are a later Quant sleeve (`lab base-rate compute --fixture --no-db`). They are the C-001/002/003 event-class benchmarks, not a candidate study. See [base-rates.md](base-rates.md). **Instrument-own** unconditional (and later trend-up) 1R:2R brackets are the candidate hurdle; the Phase-1 pooled ~33% is a **descriptive mixture only**, not a strategy null. IC Gate 1 remains FAIL.
 
 ## Config (auditable YAML)
 

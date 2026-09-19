@@ -42,8 +42,22 @@ A later study must:
 
 1. Name the event class it measures against (`CANDIDATE_BENCHMARKS` in `mm_quant.base_rates`).
 2. Copy `params_hash` + `as_of_knowledge` from this pack.
-3. Report study hit-rate / mean R **versus** the unconditional rate for that class.
+3. Report study hit-rate / mean R **versus** the unconditional rate for that class **on that instrument**.
 4. Keep candidate filters out of this compute. Intake (`research/candidates/`, PR #61) stays INTAKE_ONLY until this pack exists.
+
+## Instrument-own hurdle (IC Attack 5 / Principal FIX 1)
+
+Phase-1 **pooled** ~33% 1R:2R is a **descriptive coin-flip mixture** under **PROVISIONAL** equity history. It is **NOT** a strategy hurdle.
+
+Quant convention:
+
+- Every C-001 / C-002 / C-003 study is measured against **that instrument's own** unconditional 1R:2R bracket rate.
+- If the study uses a trend-up permission filter, it must also beat **that instrument's own trend-up** bracket.
+- Do not quote the pooled ~33% as a candidate null, a strategy hurdle, or a PASS bar.
+
+IC Gate 1 (`research/base-rates/phase1-2026-09-19-ic-attack.md`, 2026-09-19) remains **FAIL** as the methodology-build gate for strategies. FIX 1/2 do not soften FAIL.
+
+Unconditional forward-return headlines lead with **median**, mean alongside (IC Attack A8). Positive means with ≤0 medians are right-tail drift, not permission to long.
 
 ## Naming + Memory
 

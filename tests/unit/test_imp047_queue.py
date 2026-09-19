@@ -38,6 +38,10 @@ def test_queue_imp047_single_thread_046_done_048_049_050_backlog() -> None:
     assert not any("IMP-049" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-050" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-051" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-052" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-053" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-054" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-055" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-044" in line and "IN_PROGRESS" in line for line in board_lines)
     assert "`IN_PROGRESS` count: **1** (IMP-047)" in queue
     assert (ROOT / "ops" / "plans" / "IMP-047-hybrid-dm-only-send.md").is_file()

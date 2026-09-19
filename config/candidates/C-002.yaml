@@ -57,5 +57,7 @@ permission_filter_note:
   finding: >
     Trend-up permission filter does not raise the 1R:2R bracket hit rate on
     the Phase-1 instrument sample. Later study must beat the instrument's
-    own trend-up bracket rate, not the pooled coin-flip. Not a promotion.
-    Not a reject.
+    own unconditional 1R:2R bracket (and, if it uses a trend-up permission
+    filter, that instrument's own trend-up bracket). The pooled ~33% is a
+    descriptive mixture only — not a strategy hurdle. IC Gate 1 remains FAIL.
+    Not a promotion. Not a reject.

@@ -78,9 +78,9 @@ A filled example needs **date + `run_id`** (or artifact path + `content_hash`) a
 
 ## Metric substitution
 
-**What it looks like.** A weaker metric is swapped in after the strong one fails: relative-value simple-diff sold as α; membership (`in_universe`) sold as a Quant verdict; YTD post-selection path sold as lock justification; pack completeness sold as conviction; a `NOT_COMPARABLE` pair given invented deltas.
+**What it looks like.** A weaker metric is swapped in after the strong one fails: relative-value simple-diff sold as α; membership (`in_universe`) sold as a Quant verdict; YTD post-selection path sold as lock justification; pack completeness sold as conviction; a `NOT_COMPARABLE` pair given invented deltas; a **pooled ~33% coin-flip mixture** sold as a strategy hurdle when the null is **that instrument's own** unconditional (and later trend-up) 1R:2R bracket.
 
-**Which test catches it.** Language gate (`mm_research_kit.quant_review.language`; IMP-001 / IMP-005 / IMP-032): no active-call / buy / sell / high-confidence / make. Closed Quant set only. `rel ≠ α` (INVALIDATION-20260917 pack). Scorecards: no invented numeric compare on tagged incomparable packs. Thesis cards: watchlist tier stated; monitor ideas UNSIZED.
+**Which test catches it.** Language gate (`mm_research_kit.quant_review.language`; IMP-001 / IMP-005 / IMP-032): no active-call / buy / sell / high-confidence / make. Closed Quant set only. `rel ≠ α` (INVALIDATION-20260917 pack). Scorecards: no invented numeric compare on tagged incomparable packs. Thesis cards: watchlist tier stated; monitor ideas UNSIZED. Quant convention ([docs/runbooks/base-rates.md](../../docs/runbooks/base-rates.md)): C-00x vs instrument-own bracket; pooled ~33% is descriptive only. IC Gate 1 FAIL remains the methodology-build gate.
 
 **Worked example (our history).** *(none yet — fill from a dated post-mortem + run_id)*
 
