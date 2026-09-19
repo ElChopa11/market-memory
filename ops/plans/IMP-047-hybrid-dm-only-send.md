@@ -16,15 +16,16 @@ Principal denied a prior Step 5 that would unfreeze the Hive group. This step is
 - Preflight still runs. Completion row still written if `--routine-id` is passed.
 - Test payload keeps the existing deliver-test envelope (`chat_id_env`, `source`, `as_of_knowledge`, provenance lines).
 - Weekly investment review artifact CLI is queue-only BACKLOG (IMP-048). Agents must not author weekly.
+- Hybrid clock prompt canonical copies + server read-back is queue-only BACKLOG (IMP-049). Do not build tooling. Step 3 acceptance is Principal panel read-back of saved prompt text, not write-API success.
 
 ## Tests
 
 - `tests/unit/test_imp047_dm_send.py` — mock HTTP; DM-only chat_id; group frozen; missing DM refuses; envelope fields; `--routine-id` completion row
-- `tests/unit/test_imp047_queue.py` — single IN_PROGRESS; IMP-046 DONE #72; IMP-048 BACKLOG
+- `tests/unit/test_imp047_queue.py` — single IN_PROGRESS; IMP-046 DONE #72; IMP-048/049 BACKLOG
 
 ## Non-goals
 
-Lift Hive group freeze. Miss-detector edits (IMP-042 / #68). Weekly authoring CLI. IMP-044 isolation. IMP-045 topics. Auto-merge. Gate waiver. Claiming live acceptance via mocks.
+Lift Hive group freeze. Miss-detector edits (IMP-042 / #68). Weekly authoring CLI. Hybrid clock prompt-hash / server read-back tooling. IMP-044 isolation. IMP-045 topics. Auto-merge. Gate waiver. Claiming live acceptance via mocks. Treating write-API 200 as Step 3 acceptance.
 
 ## Rollback
 

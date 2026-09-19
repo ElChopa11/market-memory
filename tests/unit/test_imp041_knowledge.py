@@ -101,6 +101,12 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
         "Controls on a path that never executes are not controls",
         "Absence of output is not evidence of absence of windows",
         "Instrumentation that records only successes cannot detect silence",
+        "server-kept",
+        "not diffable",
+        "uncontrolled surface",
+        "Step 3",
+        "panel read-back",
+        "write API",
         "compounds from post-mortems",
     ):
         assert token in lesson_text, token
