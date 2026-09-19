@@ -35,6 +35,7 @@ def test_group_send_stays_frozen() -> None:
 
 
 def test_lab_deliver_group_send_is_frozen(capsys) -> None:
+    """`--i-mean-it` without `--to-principal-dm` still hits SEND_FROZEN."""
     rc = main(["deliver", "test", "--desk", "ops", "--send", "--i-mean-it", "--repo-root", str(ROOT)])
     err = capsys.readouterr().err
     assert rc == 2

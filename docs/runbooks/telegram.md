@@ -4,7 +4,9 @@
 
 ## Hybrid clock (Principal 2026-09-19)
 
-Hive is a **clock** (routines / schedules). The `lab` CLI is the **sole Telegram publisher**. Hive group / desk pack `--send` is **SEND_FROZEN**. The only live POST in this step is DM-only:
+Hive is a **clock** (routines / schedules). The `lab` CLI is the **sole Telegram publisher**. Hive group / desk pack `--send` is **SEND_FROZEN**. `--i-mean-it` **does not lift that freeze**. Without `--to-principal-dm`, any `--send` / `--i-mean-it` still prints `SEND_FROZEN` and does not POST. The freeze is a **code constant/path** (`GROUP_SEND_FROZEN` / `group_live and not to_dm`), not YAML yet — per-channel `send_enabled` is IMP-050 BACKLOG. `--i-mean-it` is acceptable **only** for the one-shot DM test in Step 5a.
+
+The only live POST in this step is DM-only:
 
 ```bash
 uv run lab deliver test --to-principal-dm --i-mean-it --ignore-quiet-hours
