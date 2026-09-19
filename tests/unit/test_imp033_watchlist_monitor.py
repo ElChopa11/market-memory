@@ -75,7 +75,7 @@ def test_monitor_yaml_is_the_complete_review_list() -> None:
     assert_monitor_invariants(ROOT)
     tickers = monitor_tickers(ROOT)
     assert tickers == CRYPTO + BASE
-    assert len(tickers) == 38
+    assert len(tickers) == 39
     by = {row.ticker: row for row in monitor_names(ROOT)}
     assert by["BTCUSD"].tier == "universe"
     assert by["BTCUSD"].membership == "in_universe"
@@ -174,16 +174,19 @@ def test_cluster_netting_caps() -> None:
         {"instrument": "BTCUSD"},
         {"instrument": "NVDA"},
         {"instrument": "AMD"},
-        {"instrument": "SPX"},
+        {"instrument": "DOGEUSD"},
+        {"instrument": "SAMSUN"},
+        {"instrument": "CASHCAT"},
     )
     netted = net_sized_ideas(ideas, repo_root=ROOT, as_of=AS_OF, corr=None)
     by = {row["ticker"]: row for row in netted}
+    assert "SAMSUN" not in by
+    assert "CASHCAT" not in by
     assert by["BTCUSD"]["size_policy"] == "cluster_capped"
     assert by["NVDA"]["size_policy"] == "cluster_capped"
     assert by["AMD"]["size_policy"] == "UNSIZED"
-    assert "semis_ai" in by["AMD"]["reason"] or "cluster" in by["AMD"]["reason"]
-    assert by["SPX"]["size_policy"] == "UNSIZED"
-    assert "index_futures nets semis_ai" in by["SPX"]["reason"]
+    assert by["AMD"]["reason"] == UNSIZED_REASON
+    assert by["DOGEUSD"]["size_policy"] == "zero"
 
 
 def test_scan_covers_monitor_list_and_renders_unresolved() -> None:
