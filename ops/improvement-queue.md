@@ -938,7 +938,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | None (docs). Do not take the implementation slot while IMP-040 is `IN_PROGRESS`. |
 | **Risk level** | Low (docs). Process risk if a desk treats a prior as a trigger. |
 | **Status** | READY |
-| **PR** | *(this PR — docs parked; IMP-040 keeps the thread)* |
+| **PR** | [#67](https://github.com/ElChopa11/market-memory/pull/67) (docs parked; IMP-040 keeps the thread) |
 | **Lesson learned** | *(fill at close)* |
 
 ---
@@ -989,7 +989,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-038 | Intel | Intel | BACKLOG | Finnhub calendar/estimates after terms allow republish — priority #7 |
 | IMP-039 | Quant | QUANT | READY | [#61](https://github.com/ElChopa11/market-memory/pull/61) Candidate strategy intake C-001/C-002/C-003; studies parked until IMP-040 |
 | IMP-040 | Quant | Quant | IN_PROGRESS | Phase 1 unconditional event-class base rates — this PR |
-| IMP-041 | Ops | Ops / Principal | READY | Desk knowledge base `config/knowledge/` — docs-only; parked (does not take the slot) |
+| IMP-041 | Ops | Ops / Principal | READY | [#67](https://github.com/ElChopa11/market-memory/pull/67) Desk knowledge base `config/knowledge/` — docs-only; parked |
 
 `IN_PROGRESS` count: **1** (IMP-040). IMP-041 is `READY` (docs-only; parked). IMP-024 is `DONE` (#63). IMP-034 on main is ticker/licence DONE (#60). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY` until this pack exists. IMP-000–IMP-022 and IMP-030–IMP-034 are `DONE`. OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404. SRC-FRED-MISSING-ENV is CLOSED (run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only). Single implementation thread.
 
