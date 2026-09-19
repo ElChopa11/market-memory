@@ -344,38 +344,7 @@ def test_spcx_listing_date_voids_and_drops_from_pool(tmp_path: Path) -> None:
     assert "permission filter" in text.lower()
     assert "VVVUSD" in text or "interpretable outlier" in text
     assert "BMNR audit" in text
-
-
-def test_overlay_writes_separate_outside_monitor_file(tmp_path: Path) -> None:
-    mod = _load()
-    out_dir = tmp_path / "out"
-    rc = mod.run(
-        [
-            "--monitor",
-            str(MONITOR),
-            "--output-dir",
-            str(out_dir),
-            "--cache-dir",
-            str(tmp_path / "cache"),
-            "--bars-dir",
-            str(tmp_path / "empty"),
-            "--offline",
-            "--overlay",
-            "AVGO,MSFT",
-            "--overlay-only",
-            "--now",
-            "2026-09-19T12:00:00+00:00",
-            "--no-sleep",
-        ]
-    )
-    assert rc == 0
-    overlay = out_dir / "phase1-2026-09-19-universe-overlay.md"
-    assert overlay.is_file()
-    assert not (out_dir / "phase1-2026-09-19.md").exists()
-    text = overlay.read_text(encoding="utf-8")
-    assert "OUTSIDE" in text and "monitor.yaml" in text
-    assert "not a universe change" in text.lower() or "Not a universe change" in text
-    assert "AVGO" in text and "MSFT" in text
-    assert "NVDA" not in text  # monitor-only name must not leak into overlay-only file
-    assert "PROVISIONAL" in text
+    assert "--overlay" not in text
+    assert "universe-overlay" not in text
+    assert "--overlay" not in SCRIPT.read_text(encoding="utf-8")
 

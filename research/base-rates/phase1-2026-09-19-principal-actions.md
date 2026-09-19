@@ -6,18 +6,17 @@ Do not invent `run_id`. Cite file paths.
 
 This cloud VM does **not** have `POLYGON_API_KEY`. Equity bars were not fetched here.
 Crypto tables live in [`phase1-2026-09-19.md`](phase1-2026-09-19.md) (13 names computed).
-Continuity check and `--overlay` are in `scripts/research/base_rates_phase1.py`.
-Re-run **on the box** (free-tier pace, **no** `--no-sleep`):
+Continuity check is in `scripts/research/base_rates_phase1.py`.
+Re-run **on the box** (free-tier pace, **no** `--no-sleep`; monitor.yaml only — **no overlay fetch**):
 
 ```text
 export POLYGON_API_KEY=...          # box env only; never commit
-uv run python scripts/research/base_rates_phase1.py --overlay
+uv run python scripts/research/base_rates_phase1.py
 # writes research/base-rates/phase1-<Sydney-date>.md
-# and research/base-rates/phase1-<Sydney-date>-universe-overlay.md
 ```
 
-Monitor coverage stays authoritative. Overlay tickers are **OUTSIDE**
-`config/watchlist/monitor.yaml`. No promotion without a Principal PR.
+Monitor coverage stays authoritative. Do not fetch AVGO/MSFT/META/JPM/XOM/SMH/XLF
+in this pass (quota reserved for SPCX/BMNR re-run).
 
 ---
 
@@ -90,11 +89,13 @@ No `listed_on` in `config/research/ticker_continuity.yaml` (not a dated IPO spli
 
 ---
 
-## 4. Universe overlay (approved; OUTSIDE monitor.yaml)
+## 4. Universe overlay — DROPPED this pass
 
-Tickers: **AVGO MSFT META JPM XOM SMH XLF**.
+Do **not** run or implement AVGO/MSFT/META/JPM/XOM/SMH/XLF overlay. Do not fetch those
+tickers. Rationale: mixes non-universe names into a report under correction, and
+burns free-tier Polygon quota needed for SPCX/BMNR re-run.
 
-Path: `scripts/research/base_rates_phase1.py --overlay` →
-`research/base-rates/phase1-<date>-universe-overlay.md`.
-
-This VM's overlay file is the path proof with `POLYGON_API_KEY missing`. Overwrite it on the box. Not a universe change. No promotion without a Principal PR.
+Question for Don (queue Gaps only; not resolved here): desks have been reporting
+AVGO/MSFT/META/JPM/XOM while those names are absent from `monitor.yaml`. Either
+they belong in universe via Principal PR, or desks must stop reporting them.
+Do **not** widen the base-rate run to answer that.

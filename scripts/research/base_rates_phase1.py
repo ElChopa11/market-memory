@@ -7,8 +7,6 @@ envelope, no desk runners, no Telegram, no LLM. Not IMP-040 event-class rates.
 Run (repo root):
 
     python scripts/research/base_rates_phase1.py
-    python scripts/research/base_rates_phase1.py --overlay
-    python scripts/research/base_rates_phase1.py --overlay AVGO,MSFT,META,JPM,XOM,SMH,XLF
 
 If mm_ingest is not on PYTHONPATH, use the workspace venv:
 
@@ -24,8 +22,9 @@ Do **not** pass --no-sleep on Polygon free tier (5 req/min).
 
 Writes research/base-rates/phase1-<YYYY-MM-DD>.md using the Australia/Sydney
 date when the run finishes (UTC timestamp is printed in the file).
-``--overlay`` writes a separate phase1-<date>-universe-overlay.md
-(OUTSIDE monitor.yaml; not a universe change).
+Monitor.yaml is the ticker set. Universe overlay of non-monitor names is
+deferred (queue Gaps question); do not fetch AVGO/MSFT/META/JPM/XOM/SMH/XLF
+in this pass.
 
 Polygon/equities series run a continuity check (listing date + N-sigma MAD).
 ``suspected_ticker_reuse`` is voided and excluded from pooled stats.
@@ -77,16 +76,6 @@ CACHE_REL = Path("research") / "base-rates" / "cache"
 CONTINUITY_REL = Path("config") / "research" / "ticker_continuity.yaml"
 POLYGON_FREE_TIER_CALENDAR_DAYS = 730
 POLYGON_SLEEP_S = 12.1  # free-tier 5 req/min; do not use --no-sleep live
-DEFAULT_OVERLAY = ("AVGO", "MSFT", "META", "JPM", "XOM", "SMH", "XLF")
-OVERLAY_VENUES: dict[str, str] = {
-    "AVGO": "nasdaq",
-    "MSFT": "nasdaq",
-    "META": "nasdaq",
-    "JPM": "nyse",
-    "XOM": "nyse",
-    "SMH": "nasdaq",
-    "XLF": "nyse",
-}
 
 # CoinGecko ids used only as a fallback when HL has no daily OHLC.
 # Unknown names are not guessed.
@@ -324,43 +313,6 @@ def round_trip_cost(spec: SymbolSpec, cost: Mapping[str, float] = COST) -> float
 
 def cache_filename(ticker: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", ticker) + ".json"
-
-
-def parse_overlay_tickers(text: str | None) -> list[str]:
-    if text is None:
-        return []
-    raw = text.strip()
-    if not raw:
-        return list(DEFAULT_OVERLAY)
-    parts = [p.strip().upper() for p in raw.replace(" ", ",").split(",") if p.strip()]
-    return parts or list(DEFAULT_OVERLAY)
-
-
-def overlay_specs(tickers: Sequence[str]) -> list[SymbolSpec]:
-    out: list[SymbolSpec] = []
-    seen: set[str] = set()
-    for ticker in tickers:
-        t = ticker.strip().upper()
-        if not t or t in seen:
-            continue
-        seen.add(t)
-        venue = OVERLAY_VENUES.get(t, "nasdaq")
-        out.append(
-            SymbolSpec(
-                ticker=t,
-                membership_key=t,
-                tape_alias=t,
-                round="base",
-                tier="overlay",
-                cluster="research_overlay",
-                venue=venue,
-                kind="equity",
-                qualified_id=f"{venue.upper()}:{t}",
-                coin=None,
-                note="OUTSIDE monitor.yaml — research overlay, not a universe change",
-            )
-        )
-    return out
 
 
 def load_continuity_config(path: Path) -> dict[str, Any]:
@@ -1210,7 +1162,7 @@ def _is_equity_result(r: InstrumentResult) -> bool:
     return is_equity_series(r.spec, r.source)
 
 
-def _provisional_banner(results: Sequence[InstrumentResult], *, overlay: bool) -> list[str]:
+def _provisional_banner(results: Sequence[InstrumentResult]) -> list[str]:
     cap_rows = [r for r in results if r.polygon_free_tier_cap]
     equity_rows = [r for r in results if _is_equity_result(r) and r.n_raw]
     firsts = [r.bars_first for r in cap_rows if r.bars_first]
@@ -1232,13 +1184,7 @@ def _provisional_banner(results: Sequence[InstrumentResult], *, overlay: bool) -
         if dates:
             signal_starts.append(min(dates))
     sma_start = min(signal_starts).isoformat() if signal_starts else "~2025-07-09"
-    overlay_line = (
-        "**OUTSIDE `config/watchlist/monitor.yaml`.** Research overlay only — "
-        "not a universe change. No promotion without a Principal PR."
-        if overlay
-        else ""
-    )
-    lines = [
+    return [
         "> **PROVISIONAL — equity base rates.** Polygon's **2-year free-tier history limit** "
         f"caps US-listed daily bars ({cap_n}; {span}). This **IS** the vendor cap, "
         "not an inferred 'looks like a window' guess.",
@@ -1248,9 +1194,6 @@ def _provisional_banner(results: Sequence[InstrumentResult], *, overlay: bool) -
         "Every equity base rate in this file is **PROVISIONAL** until we have more history. "
         "That is the headline, not a footnote.",
     ]
-    if overlay_line:
-        lines += [">", f"> {overlay_line}"]
-    return lines
 
 
 def _voided_section(results: Sequence[InstrumentResult]) -> list[str]:
@@ -1453,7 +1396,6 @@ def render_markdown(
     window_end: datetime,
     monitor_path: str,
     cost: Mapping[str, float],
-    overlay: bool = False,
 ) -> str:
     included = [r for r in results if r.exclusion is None]
     excluded = [r for r in results if r.exclusion is not None and not r.void_code]
@@ -1475,21 +1417,13 @@ def render_markdown(
         cost,
     )
     eq_cost = (2.0 * float(cost["taker_fee"])) + (2.0 * float(cost["slippage_bps"]) / 10_000.0)
-    title = (
-        f"# Phase-1 instrument base rates — universe overlay — {report_date.isoformat()}"
-        if overlay
-        else f"# Phase-1 instrument base rates — {report_date.isoformat()}"
-    )
-    coverage_header = (
-        "## Coverage (overlay tickers; OUTSIDE monitor.yaml)"
-        if overlay
-        else "## Coverage (every monitor.yaml name)"
-    )
+    title = f"# Phase-1 instrument base rates — {report_date.isoformat()}"
+    coverage_header = "## Coverage (every monitor.yaml name)"
 
     parts: list[str] = [
         title,
         "",
-        *_provisional_banner(results, overlay=overlay),
+        *_provisional_banner(results),
         "",
         "Standalone research dump. **Not** a desk product, **not** IMP-040 event-class rates, "
         "**not** a Memory write, **not** a Telegram send, **not** a call, **not** a size.",
@@ -1497,9 +1431,8 @@ def render_markdown(
         f"- Report date (Australia/Sydney, when the run finished): `{report_date.isoformat()}`",
         f"- Run finished (UTC): `{finished_utc.isoformat()}`",
         f"- Data window requested: `{window_start.date().isoformat()}` → `{window_end.date().isoformat()}` (UTC)",
-        f"- Monitor file: `{monitor_path}`"
-        + (" — **not** the ticker set for this overlay file" if overlay else ""),
-        "- Principal actions (SPCX void, 2-year cap, permission filter, overlay path): "
+        f"- Monitor file: `{monitor_path}`",
+        "- Principal actions (SPCX void, 2-year cap, permission filter): "
         "`research/base-rates/phase1-2026-09-19-principal-actions.md`",
         f"- Include rule: ≥ {MIN_BARS} cleaned daily OHLC bars; no substitute symbol; no synthetic bars",
         "- Continuity: Polygon/equities series with first bar before known listing date, or a "
@@ -1698,8 +1631,7 @@ def render_markdown(
             ]
 
     parts += _voided_section(results)
-    if not overlay:
-        parts += _bmnr_audit_section(results)
+    parts += _bmnr_audit_section(results)
     parts += _trend_filter_section(included)
     parts += [
         "## Exclusions (repeat, with reasons)",
@@ -1714,11 +1646,6 @@ def render_markdown(
         )
     else:
         parts.append("None.")
-    overlay_cmd = (
-        "python scripts/research/base_rates_phase1.py --overlay\n"
-        "python scripts/research/base_rates_phase1.py --overlay AVGO,MSFT,META,JPM,XOM,SMH,XLF\n"
-        "python scripts/research/base_rates_phase1.py --overlay --overlay-only  # overlay file only"
-    )
     parts += [
         "",
         "## How to re-run",
@@ -1727,15 +1654,14 @@ def render_markdown(
         "python scripts/research/base_rates_phase1.py",
         "uv run python scripts/research/base_rates_phase1.py   # this repo",
         "python scripts/research/base_rates_phase1.py --offline  # cache/bars-dir only",
-        overlay_cmd,
         "```",
         "",
         "Live equities need `POLYGON_API_KEY`. Crypto uses Hyperliquid public `/info` "
         "(no key). CoinGecko OHLC is a fallback only. Same bars file → same tables "
         "(filename date follows Australia/Sydney at finish). "
         "Polygon free tier is 5 req/min — **do not** pass `--no-sleep` on a live free-tier run. "
-        "`--overlay` writes `phase1-<date>-universe-overlay.md` (OUTSIDE monitor.yaml; "
-        "not a universe change; no promotion without a Principal PR).",
+        "Ticker set is `config/watchlist/monitor.yaml` only. Universe overlay of "
+        "non-monitor names is deferred (queue Gaps); do not fetch those names here.",
         "",
     ]
     return "\n".join(parts) + "\n"
@@ -1768,18 +1694,6 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--refresh", action="store_true", help="ignore cache (still writes cache on live fetch)")
     parser.add_argument("--now", default=None, help="freeze finish clock (ISO-8601 UTC)")
     parser.add_argument("--no-sleep", action="store_true", help="do not pace live HTTP (tests only; never on Polygon free tier)")
-    parser.add_argument(
-        "--overlay",
-        nargs="?",
-        const=",".join(DEFAULT_OVERLAY),
-        default=None,
-        help="comma-separated tickers OUTSIDE monitor.yaml (default AVGO,MSFT,META,JPM,XOM,SMH,XLF)",
-    )
-    parser.add_argument(
-        "--overlay-only",
-        action="store_true",
-        help="write only the overlay file (still requires --overlay)",
-    )
     parser.add_argument("--continuity-config", type=Path, default=None)
     args = parser.parse_args(list(argv) if argv is not None else None)
 
@@ -1793,9 +1707,6 @@ def run(argv: Sequence[str] | None = None) -> int:
     window_end = finished
     sleeper: Callable[[float], None] = (lambda _s: None) if args.no_sleep or args.offline else __import__("time").sleep
     continuity_cfg = load_continuity_config(args.continuity_config or (root / CONTINUITY_REL))
-    overlay_tickers = parse_overlay_tickers(args.overlay)
-    if args.overlay_only and not overlay_tickers:
-        overlay_tickers = list(DEFAULT_OVERLAY)
 
     def _compute_one(spec: SymbolSpec) -> InstrumentResult:
         bars, source, fetch_err = load_or_fetch_bars(
@@ -1845,46 +1756,23 @@ def run(argv: Sequence[str] | None = None) -> int:
         )
 
     results: list[InstrumentResult] = []
-    if not args.overlay_only:
-        for spec in load_monitor_symbols(monitor):
-            results.append(_compute_one(spec))
-
-    overlay_results: list[InstrumentResult] = []
-    if overlay_tickers:
-        for spec in overlay_specs(overlay_tickers):
-            overlay_results.append(_compute_one(spec))
+    for spec in load_monitor_symbols(monitor):
+        results.append(_compute_one(spec))
 
     output_dir.mkdir(parents=True, exist_ok=True)
     monitor_rel = str(monitor.relative_to(root) if monitor.is_relative_to(root) else monitor)
-    if results:
-        out_path = output_dir / f"phase1-{report_date.isoformat()}.md"
-        markdown = render_markdown(
-            results,
-            report_date=report_date,
-            finished_utc=finished,
-            window_start=FETCH_START,
-            window_end=window_end,
-            monitor_path=monitor_rel,
-            cost=COST,
-            overlay=False,
-        )
-        out_path.write_text(markdown, encoding="utf-8")
-        print(f"wrote {out_path}")
-    if overlay_results:
-        overlay_path = output_dir / f"phase1-{report_date.isoformat()}-universe-overlay.md"
-        overlay_md = render_markdown(
-            overlay_results,
-            report_date=report_date,
-            finished_utc=finished,
-            window_start=FETCH_START,
-            window_end=window_end,
-            monitor_path=monitor_rel,
-            cost=COST,
-            overlay=True,
-        )
-        overlay_path.write_text(overlay_md, encoding="utf-8")
-        print(f"wrote {overlay_path}")
-        print(f"overlay_tickers={','.join(r.spec.ticker for r in overlay_results)}")
+    out_path = output_dir / f"phase1-{report_date.isoformat()}.md"
+    markdown = render_markdown(
+        results,
+        report_date=report_date,
+        finished_utc=finished,
+        window_start=FETCH_START,
+        window_end=window_end,
+        monitor_path=monitor_rel,
+        cost=COST,
+    )
+    out_path.write_text(markdown, encoding="utf-8")
+    print(f"wrote {out_path}")
     print(f"report_date_australia_sydney={report_date.isoformat()}")
     print(f"finished_utc={finished.isoformat()}")
     print(

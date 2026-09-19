@@ -12,14 +12,12 @@ With this repo’s workspace venv:
 uv run python scripts/research/base_rates_phase1.py
 ```
 
-Writes `research/base-rates/phase1-<YYYY-MM-DD>.md` using the **Australia/Sydney** calendar date when the run finishes (UTC finish time is printed inside the file).
-
-`--overlay` (default `AVGO,MSFT,META,JPM,XOM,SMH,XLF`) writes a **separate** `phase1-<date>-universe-overlay.md`. That file is **OUTSIDE** `config/watchlist/monitor.yaml` — a research overlay, not a universe change. No promotion without a Principal PR.
+Writes `research/base-rates/phase1-<YYYY-MM-DD>.md` using the **Australia/Sydney** calendar date when the run finishes (UTC finish time is printed inside the file). Ticker set is `config/watchlist/monitor.yaml` only. Universe overlay of non-monitor names is deferred (queue Gaps); do not fetch AVGO/MSFT/META/JPM/XOM/SMH/XLF in this pass.
 
 On a box with `POLYGON_API_KEY` (never commit the key; do **not** pass `--no-sleep` on free tier):
 
 ```bash
-uv run python scripts/research/base_rates_phase1.py --overlay
+uv run python scripts/research/base_rates_phase1.py
 ```
 
 Principal actions on the 2026-09-19 dump (SPCX void, 2-year cap, permission filter, BMNR audit): [`phase1-2026-09-19-principal-actions.md`](phase1-2026-09-19-principal-actions.md).
