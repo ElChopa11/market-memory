@@ -26,4 +26,5 @@ uv run lab equities reclaim-screen --fixture tests/fixtures/equities/post_ipo_re
 uv run lab desk run --all --fixture tests/fixtures/phase5d/frozen_day.json --no-send --no-db
 uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
 uv run lab mesh channels
+uv run lab base-rate compute --fixture tests/fixtures/phase1_base_rates/panel.json --no-db
 ```

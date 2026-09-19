@@ -1,0 +1,239 @@
+{
+  "as_of_knowledge": "2025-09-06T00:00:00+00:00",
+  "completeness": 100.0,
+  "content_hash": "1e040909719f4a252f14041b54ef70bd439d456c4a7e86862e83174796184949",
+  "desk": "quant",
+  "engine_version": "imp-039.1",
+  "error_class": null,
+  "fixture_id": "imp039-unconditional-v1",
+  "footer": "Unconditional event-class base rates. Paper only. Not a call. DO NOT SIZE. Not a scan-gate. Not a C-001/C-002/C-003 study. n < n_min \u2192 no claim. Knowledge clock is as_of_knowledge (lockstep ingested_at). Never published_at / market_time.",
+  "gaps": [],
+  "ic_gates": {
+    "paper_open": false,
+    "principal_override_required_for_block": true,
+    "risk_required": true,
+    "self_approve": false,
+    "skeptic_required": true
+  },
+  "ingested_at": "2025-09-06T00:00:00+00:00",
+  "memory_rows": [
+    {
+      "as_of_knowledge": "2025-09-06T00:00:00+00:00",
+      "cites_candidate": "C-002",
+      "claimed": false,
+      "content_hash": "1e040909719f4a252f14041b54ef70bd439d456c4a7e86862e83174796184949",
+      "cost_model": {
+        "clip_is_not_a_size": true,
+        "default_clip": 10000,
+        "expected_hold_hours": 24,
+        "formula": "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24)",
+        "funding_rate": 0.0,
+        "slippage_bps": 5,
+        "taker_fee": 0.00045,
+        "total_fraction": 0.0019
+      },
+      "engine_version": "imp-039.1",
+      "event_class": "dip_touch",
+      "fixture_id": "imp039-unconditional-v1",
+      "hit_rate": null,
+      "ingested_at": "2025-09-06T00:00:00+00:00",
+      "instrument_set": [
+        "BTC",
+        "NVDA"
+      ],
+      "mean_r_after_cost": null,
+      "median_fwd_return": null,
+      "n": 6,
+      "n_min": 20,
+      "params_hash": "c4b98fb1c15150e09473e393888663fcbe4bb9a5bd39d57fe66409cdc7a71682",
+      "reason": "n below configured minimum; no base-rate claim",
+      "survivorship_tag": "survivorship_uncontrolled",
+      "window": {
+        "bar": "daily_completed",
+        "end": "2026-09-18",
+        "split_note": "unconditional pack uses the full visible window; candidate studies keep their own train/embargo/test splits",
+        "start": "2022-01-01"
+      }
+    },
+    {
+      "as_of_knowledge": "2025-09-06T00:00:00+00:00",
+      "cites_candidate": "C-001",
+      "claimed": false,
+      "content_hash": "1e040909719f4a252f14041b54ef70bd439d456c4a7e86862e83174796184949",
+      "cost_model": {
+        "clip_is_not_a_size": true,
+        "default_clip": 10000,
+        "expected_hold_hours": 24,
+        "formula": "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24)",
+        "funding_rate": 0.0,
+        "slippage_bps": 5,
+        "taker_fee": 0.00045,
+        "total_fraction": 0.0019
+      },
+      "engine_version": "imp-039.1",
+      "event_class": "zone_boundary_touch",
+      "fixture_id": "imp039-unconditional-v1",
+      "hit_rate": null,
+      "ingested_at": "2025-09-06T00:00:00+00:00",
+      "instrument_set": [
+        "BTC",
+        "NVDA"
+      ],
+      "mean_r_after_cost": null,
+      "median_fwd_return": null,
+      "n": 8,
+      "n_min": 20,
+      "params_hash": "c4b98fb1c15150e09473e393888663fcbe4bb9a5bd39d57fe66409cdc7a71682",
+      "reason": "n below configured minimum; no base-rate claim",
+      "survivorship_tag": "survivorship_uncontrolled",
+      "window": {
+        "bar": "daily_completed",
+        "end": "2026-09-18",
+        "split_note": "unconditional pack uses the full visible window; candidate studies keep their own train/embargo/test splits",
+        "start": "2022-01-01"
+      }
+    },
+    {
+      "as_of_knowledge": "2025-09-06T00:00:00+00:00",
+      "cites_candidate": "C-003",
+      "claimed": false,
+      "content_hash": "1e040909719f4a252f14041b54ef70bd439d456c4a7e86862e83174796184949",
+      "cost_model": {
+        "clip_is_not_a_size": true,
+        "default_clip": 10000,
+        "expected_hold_hours": 24,
+        "formula": "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24)",
+        "funding_rate": 0.0,
+        "slippage_bps": 5,
+        "taker_fee": 0.00045,
+        "total_fraction": 0.0019
+      },
+      "engine_version": "imp-039.1",
+      "event_class": "pullback_ema_touch",
+      "fixture_id": "imp039-unconditional-v1",
+      "hit_rate": null,
+      "ingested_at": "2025-09-06T00:00:00+00:00",
+      "instrument_set": [
+        "BTC",
+        "NVDA"
+      ],
+      "mean_r_after_cost": null,
+      "median_fwd_return": null,
+      "n": 2,
+      "n_min": 20,
+      "params_hash": "c4b98fb1c15150e09473e393888663fcbe4bb9a5bd39d57fe66409cdc7a71682",
+      "reason": "n below configured minimum; no base-rate claim",
+      "survivorship_tag": "survivorship_uncontrolled",
+      "window": {
+        "bar": "daily_completed",
+        "end": "2026-09-18",
+        "split_note": "unconditional pack uses the full visible window; candidate studies keep their own train/embargo/test splits",
+        "start": "2022-01-01"
+      }
+    }
+  ],
+  "n_llm_calls": 0,
+  "notes": [
+    "unconditional event classes only; candidate filters are not applied",
+    "DO NOT SIZE; default_clip is a cost clip only",
+    "survivorship_uncontrolled",
+    "no claim on: dip_touch, zone_boundary_touch, pullback_ema_touch"
+  ],
+  "paper_only": true,
+  "params_hash": "c4b98fb1c15150e09473e393888663fcbe4bb9a5bd39d57fe66409cdc7a71682",
+  "product": "base_rate",
+  "product_display": "Quant / unconditional event-class base rates",
+  "promote": false,
+  "run_id": "8d7f0277262bbdd5",
+  "scan_gate": false,
+  "session_date": "2026-09-19",
+  "sizing": false,
+  "snapshot": {
+    "as_of_knowledge": "2025-09-06T00:00:00+00:00",
+    "candidate_benchmarks": {
+      "C-001": "zone_boundary_touch",
+      "C-002": "dip_touch",
+      "C-003": "pullback_ema_touch"
+    },
+    "content_hash": "1e040909719f4a252f14041b54ef70bd439d456c4a7e86862e83174796184949",
+    "cost_model": {
+      "clip_is_not_a_size": true,
+      "default_clip": 10000,
+      "expected_hold_hours": 24,
+      "formula": "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24)",
+      "funding_rate": 0.0,
+      "slippage_bps": 5,
+      "taker_fee": 0.00045,
+      "total_fraction": 0.0019
+    },
+    "engine_version": "imp-039.1",
+    "fixture_id": "imp039-unconditional-v1",
+    "footer": "Unconditional event-class base rates. Paper only. Not a call. DO NOT SIZE. Not a scan-gate. Not a C-001/C-002/C-003 study. n < n_min \u2192 no claim. Knowledge clock is as_of_knowledge (lockstep ingested_at). Never published_at / market_time.",
+    "ingested_at": "2025-09-06T00:00:00+00:00",
+    "instrument_set": [
+      "BTC",
+      "NVDA"
+    ],
+    "n_events": 16,
+    "n_llm_calls": 0,
+    "notes": [
+      "unconditional event classes only; candidate filters are not applied",
+      "DO NOT SIZE; default_clip is a cost clip only",
+      "survivorship_uncontrolled"
+    ],
+    "paper_only": true,
+    "params_hash": "c4b98fb1c15150e09473e393888663fcbe4bb9a5bd39d57fe66409cdc7a71682",
+    "promote": false,
+    "rates": [
+      {
+        "cites_candidate": "C-002",
+        "claimed": false,
+        "definition": "First low at/through rising SMA20 after a completed close above that SMA. Unconditional dip class. C-002 adds the triple-RSI filter on top of this class.",
+        "event_class": "dip_touch",
+        "hit_rate": null,
+        "mean_r_after_cost": null,
+        "median_fwd_return": null,
+        "n": 6,
+        "n_censored": 0,
+        "n_min": 20,
+        "reason": "n below configured minimum; no base-rate claim"
+      },
+      {
+        "cites_candidate": "C-001",
+        "claimed": false,
+        "definition": "First later touch of any prior consolidation boundary (base_bars bars with height <= max_height_atr \u00b7 ATR). No X\u00b7ATR departure confirm. C-001 adds that confirm plus first-return fade.",
+        "event_class": "zone_boundary_touch",
+        "hit_rate": null,
+        "mean_r_after_cost": null,
+        "median_fwd_return": null,
+        "n": 8,
+        "n_censored": 0,
+        "n_min": 20,
+        "reason": "n below configured minimum; no base-rate claim"
+      },
+      {
+        "cites_candidate": "C-003",
+        "claimed": false,
+        "definition": "First EMA touch after a completed N-bar extreme breakout that does not take out the breakout bar extreme. First-entry class. C-003 adds the second pullback + trigger.",
+        "event_class": "pullback_ema_touch",
+        "hit_rate": null,
+        "mean_r_after_cost": null,
+        "median_fwd_return": null,
+        "n": 2,
+        "n_censored": 0,
+        "n_min": 20,
+        "reason": "n below configured minimum; no base-rate claim"
+      }
+    ],
+    "scan_gate": false,
+    "sizing": false,
+    "survivorship_tag": "survivorship_uncontrolled",
+    "window": {
+      "bar": "daily_completed",
+      "end": "2026-09-18",
+      "split_note": "unconditional pack uses the full visible window; candidate studies keep their own train/embargo/test splits",
+      "start": "2022-01-01"
+    }
+  },
+  "status": "OK"
+}

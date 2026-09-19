@@ -78,6 +78,58 @@ def _true_range(high: float, low: float, prev_close: float) -> float:
     return max(high - low, abs(high - prev_close), abs(low - prev_close))
 
 
+def sma_series(prices: Sequence[float], period: int) -> tuple[float | None, ...]:
+    """SMA at each index using prices[i-period+1:i+1]. Short prefixes stay None."""
+    n = len(prices)
+    out: list[float | None] = [None] * n
+    if period < 1:
+        return tuple(out)
+    for i in range(period - 1, n):
+        sl = prices[i - period + 1 : i + 1]
+        out[i] = sum(sl) / period
+    return tuple(out)
+
+
+def ema_series(prices: Sequence[float], period: int) -> tuple[float | None, ...]:
+    """Standard EMA (k=2/(period+1)), SMA seed. Prefix before the seed stays None."""
+    n = len(prices)
+    out: list[float | None] = [None] * n
+    if period < 1 or n < period:
+        return tuple(out)
+    seed = sum(prices[:period]) / period
+    out[period - 1] = seed
+    k = 2.0 / (period + 1.0)
+    prev = seed
+    for i in range(period, n):
+        prev = k * float(prices[i]) + (1.0 - k) * prev
+        out[i] = prev
+    return tuple(out)
+
+
+def wilder_atr_series(
+    highs: Sequence[float],
+    lows: Sequence[float],
+    closes: Sequence[float],
+    period: int,
+) -> tuple[float | None, ...]:
+    """Wilder ATR aligned to closes. Index i uses bars 0..i only (no look-ahead)."""
+    n = min(len(highs), len(lows), len(closes))
+    out: list[float | None] = [None] * n
+    if period < 1 or n < period + 1:
+        return tuple(out)
+    trs: list[float] = []
+    for i in range(1, n):
+        trs.append(_true_range(float(highs[i]), float(lows[i]), float(closes[i - 1])))
+    if len(trs) < period:
+        return tuple(out)
+    atr = sum(trs[:period]) / period
+    out[period] = atr
+    for i in range(period, len(trs)):
+        atr = (atr * (period - 1) + trs[i]) / period
+        out[i + 1] = atr
+    return tuple(out)
+
+
 def adx_wilder(
     highs: Sequence[float],
     lows: Sequence[float],

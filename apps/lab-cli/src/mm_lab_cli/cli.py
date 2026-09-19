@@ -22,6 +22,7 @@ from mm_lab_cli.listings import add_listings_parser, dispatch_listings
 from mm_lab_cli.watchlist import add_watchlist_parser, dispatch_watchlist
 from mm_lab_cli.scorecard import add_scorecard_parser, dispatch_scorecard
 from mm_lab_cli.decay import add_decay_parser, dispatch_decay
+from mm_lab_cli.base_rates import add_base_rate_parser, dispatch_base_rate
 from mm_lab_cli.queue import add_queue_parser, dispatch_queue
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.equities import add_equities_parser, dispatch_equities
@@ -117,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     add_listings_parser(sub)
     add_scorecard_parser(sub)
     add_decay_parser(sub)
+    add_base_rate_parser(sub)
     add_queue_parser(sub)
     add_backtest_parser(sub)
     add_paper_parser(sub)
@@ -155,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_scorecard(args)
     if args.cmd == "decay":
         return dispatch_decay(args)
+    if args.cmd == "base-rate":
+        return dispatch_base_rate(args)
     if args.cmd == "queue":
         return dispatch_queue(args)
     if args.cmd == "backtest":
@@ -205,6 +209,7 @@ def cmd_status() -> int:
     print("Listings: lab listings scan --fixture PATH --no-send (IPO / index-event screen; not a sixth desk; not a call)")
     print("Scorecard: lab scorecard compare --fixture PATH --no-send (like-for-like packs; incomparable stay tagged; not a call)")
     print("Decay: lab decay watch --fixture PATH --no-send (prompt/config hashes; mismatch is a NOTIFY/queue signal; not a call)")
+    print("Base rates: lab base-rate compute --fixture PATH --no-db (unconditional dip/zone/first-entry rates; C-001/002/003 cite these; not a study)")
     print("Queue: lab queue check | lab queue can-start IMP-XXX (hygiene only; no auto-merge, no gate waiver)")
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
     print("Rejected theses remain queryable learning records.")

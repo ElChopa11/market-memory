@@ -24,9 +24,10 @@ def test_src_fred_closed_imp022_done_imp024_single_thread() -> None:
     assert any("IMP-022" in line and "DONE" in line for line in board_lines)
     assert any(RUN_ID in line for line in board_lines if "IMP-022" in line)
     assert not any("IMP-022" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert not any("IMP-024" in line and "READY" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-024)" in queue
+    assert any("IMP-024" in line and "IN_REVIEW" in line for line in board_lines)
+    assert not any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-039" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert "`IN_PROGRESS` count: **1** (IMP-039)" in queue
     for item_id in ("IMP-023", "IMP-035"):
         assert any(item_id in line and "READY" in line for line in board_lines), item_id
         assert not any(item_id in line and "IN_PROGRESS" in line for line in board_lines)
@@ -47,7 +48,7 @@ def test_src_fred_closed_imp022_done_imp024_single_thread() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-024",)
+    assert report.in_progress == ("IMP-039",)
     assert report.auto_merge is False
     assert report.auto_waive is False
     public = report.as_public_dict()

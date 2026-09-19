@@ -1,0 +1,64 @@
+# Phase 1 unconditional event-class base rates (IMP-039).
+# Quant-owned. Paper / fixture only. Not a sixth desk. DO NOT SIZE.
+# These are the classes C-001/002/003 measure against — not the candidate signals.
+
+version: "imp-039.1"
+desk: quant
+sleeve: base_rate
+promote: false
+llm: false
+send: false
+sizing: false
+scan_gate: false
+paper_only: true
+
+n_min: 20
+atr_period: 14
+survivorship_tag: survivorship_uncontrolled
+
+# Cost clip only. default_clip is not a position.
+cost:
+  taker_fee: 0.00045
+  slippage_bps: 5
+  funding_rate: 0.0
+  expected_hold_hours: 24
+  default_clip: 10000
+  formula: "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24)"
+
+instrument_set:
+  primary:
+    - {symbol: BTC, membership: in_universe, watchlist_tier: universe}
+    - {symbol: NVDA, membership: in_universe, watchlist_tier: universe}
+  excluded:
+    - deferred_must_cut
+    - blocked
+    - unresolved
+
+window:
+  bar: daily_completed
+  start: "2022-01-01"
+  end: "2026-09-18"
+  split_note: "unconditional pack uses the full visible window; candidate studies keep their own train/embargo/test splits"
+
+classes:
+  dip_touch:
+    sma_period: 20
+    horizon_bars: 5
+    invalidation_atr: 1.5
+    side: bounce
+    cites: C-002
+  zone_boundary_touch:
+    base_bars: 5
+    max_height_atr: 0.8
+    touch_tolerance_atr: 0.25
+    horizon_bars: 10
+    invalidation_atr: 0.5
+    side: fade
+    cites: C-001
+  pullback_ema_touch:
+    ema_period: 20
+    breakout_lookback: 20
+    horizon_bars: 15
+    invalidation_atr: 0.3
+    side: continuation
+    cites: C-003

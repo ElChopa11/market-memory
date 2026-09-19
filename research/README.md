@@ -54,4 +54,14 @@ uv run lab equities reclaim-screen \
   --no-db
 ```
 
+Unconditional event-class base rates (IMP-039; Quant sleeve; not a candidate study):
+
+```bash
+uv run lab base-rate compute \
+  --fixture tests/fixtures/phase1_base_rates/panel.json \
+  --no-db
+```
+
+Writes `research/quant/base-rates/`. C-001/C-002/C-003 cite that pack as the benchmark. See [quant/base-rates/README.md](quant/base-rates/README.md).
+
 See [docs/research-lifecycle.md](../docs/research-lifecycle.md) and [docs/runbooks/research-workspace.md](../docs/runbooks/research-workspace.md). Dedicated desk cards (IMP-007; Crypto / Equities): [docs/runbooks/thesis-cards.md](../docs/runbooks/thesis-cards.md).

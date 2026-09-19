@@ -18,8 +18,9 @@ The working Quant Review Board remains `mm_research_kit.quant_review` (IMP-001 /
 | `mm_quant.sizing` | vol-targeted + fixed-fractional → `% of research budget` only |
 | `mm_quant.trade_math` | Phase 6c inherited R / expectancy / size (PLAYBOOK; not an order) |
 | `mm_quant.card` | `QuantCard` dataclass + markdown (`templates/quant-factor-card.md`) |
+| `mm_quant.base_rates` | Phase 1 unconditional dip / zone-boundary / first-entry EMA rates (IMP-039; C-001/002/003 cite these) |
 
-Config: [`config/quant/factors.yaml`](../../config/quant/factors.yaml), [`config/quant/regime.yaml`](../../config/quant/regime.yaml).
+Config: [`config/quant/factors.yaml`](../../config/quant/factors.yaml), [`config/quant/regime.yaml`](../../config/quant/regime.yaml), [`config/quant/base_rates.yaml`](../../config/quant/base_rates.yaml).
 
 Runbook: [../../docs/runbooks/quant-desk.md](../../docs/runbooks/quant-desk.md).
 

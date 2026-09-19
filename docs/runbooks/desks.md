@@ -181,6 +181,10 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 `lab deliver decay --fixture PATH --no-send` is the Ops Telegram fan-out (quant route + Ops mirror, inherited `content_hash`). Attached scorecard pairs keep `NOT_COMPARABLE` tagged. See [decay.md](decay.md).
 
+## Unconditional event-class base rates (IMP-039)
+
+`lab base-rate compute --fixture PATH --no-db` writes dip / zone-boundary / first-entry EMA unconditional rates with `as_of_knowledge` + `params_hash`. C-001/002/003 cite these as benchmarks. Not a candidate study. Quant sleeve, not a sixth desk. **DO NOT SIZE.** See [base-rates.md](base-rates.md).
+
 ## Licence verdict (IMP-034)
 
 `config/ingest.yaml` records `licence_verdict` next to each adapter. Standing rule: sources whose terms prohibit redistribution may be used for internal computation but values must never appear in published artifacts. Closed set: `ok_gov` | `ok_attr` | `restricted` | `prohibited` | `pending_terms` | `missing`. Incident close: `OPEN` → `ELIGIBLE` → `CLOSED(cite run_id)` | `RETIRED`. `--no-db` is ELIGIBLE only (FRED full-stack is IMP-022).

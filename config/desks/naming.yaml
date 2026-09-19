@@ -5,9 +5,10 @@
 # 6c-4 adds the watchlist monitor product (Research sleeve). 6c-5 delivers that
 # artifact over Ops-owned Telegram. 6d adds the listings / IPO screen (Research
 # sleeve, not a sixth desk). 6e adds the Quant pack scorecard sleeve. 6f adds
-# the Quant prompt-hash decay watch (Ops-owned alert path).
+# the Quant prompt-hash decay watch (Ops-owned alert path). IMP-039 adds
+# unconditional event-class base rates (Quant sleeve; C-001/002/003 cite these).
 
-version: "imp-031.1"
+version: "imp-039.1"
 
 publishing_desks:
   - slug: intel
@@ -27,7 +28,7 @@ publishing_desks:
     short: Quant
     tier: "4"
     kind: publishing
-    notes: Closed-verdict triage; factor math; like-for-like pack scorecards; prompt-hash decay watch; not a call
+    notes: Closed-verdict triage; factor math; like-for-like pack scorecards; prompt-hash decay watch; unconditional event-class base rates; not a call
   - slug: ic_risk
     display: IC/Risk (Investment Committee & Risk)
     short: IC/Risk
@@ -118,6 +119,12 @@ sleeves:
     tier: "4"
     kind: sleeve
     notes: Prompt and config SHA-256 drift watch. Mismatch → Ops-owned NOTIFY/queue signal. Does not waive gates or invent scorecard numbers. Not a sixth desk.
+  - slug: base_rate
+    display: Quant / unconditional event-class base rates
+    short: event-class base rates
+    tier: "4"
+    kind: sleeve
+    notes: Unconditional dip / zone-boundary / first-entry EMA rates. C-001/002/003 cite these as benchmarks. Not a candidate study. Not a sixth desk. DO NOT SIZE.
 
 gates:
   - slug: skeptic
@@ -167,6 +174,7 @@ sleeve_map:
   listings: research
   scorecard: quant
   decay: quant
+  base_rate: quant
   flow: intel
   macro: intel
   briefing: intel
