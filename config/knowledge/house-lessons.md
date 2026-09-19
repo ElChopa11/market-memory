@@ -206,6 +206,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-19 — Ticker resolution is not entity continuity
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(none invented — cite artifact `research/base-rates/phase1-2026-09-19.md`; Principal direction on the Phase-1 equity run)* |
+| **Desk** | Intel / Quant |
+| **What happened** | `NASDAQ:SPCX` resolved to SpaceX, but Polygon daily aggs by ticker string returned the prior listing (The SPAC and New Issue ETF, ~$7M AUM). 454 bars from 2024-09-19, SpaceX IPO 2026. Median 1-bar 0%, vol ~121%, max 1-bar +29.8% — an entity splice, not a price series. |
+| **Lesson** | **Resolving a ticker to an identifier does not prove the returned series belongs to one entity.** Continuity check (listing date and/or N-sigma jump) flags `suspected_ticker_reuse` and **excludes** the series from computation/pools. Do not treat a qualified_id hit as a clean tape. |
+| **Does not** | Promote or demote watchlist membership. Does not invent a spliced-clean series. Does not authorise a size. Does not close OPEN incidents. |
+| **Overrides prior** | No — no persist `run_id`. Process/data lesson. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

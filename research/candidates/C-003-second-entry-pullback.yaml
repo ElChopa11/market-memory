@@ -93,3 +93,14 @@ non_goals:
   - universe or watchlist membership edits
   - PLAYBOOK idea emission
   - inventing expectancy or scorecard numbers
+
+permission_filter_note:
+  date: "2026-09-19"
+  artifact: research/base-rates/phase1-2026-09-19.md
+  status_unchanged: INTAKE_ONLY
+  promote: false
+  finding: >
+    Trend-up permission filter does not raise the 1R:2R bracket hit rate on
+    the Phase-1 instrument sample. A later study must beat the instrument's
+    own trend-up bracket rate, not the pooled coin-flip. Not a promotion.
+    Not a reject. NOTHING computed.

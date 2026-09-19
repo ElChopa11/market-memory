@@ -96,6 +96,9 @@ def test_each_card_is_quant_hypothesis_no_size_no_scan() -> None:
         assert "8." in text and "12." in text
         assert "Deliverable" in text or "deliverable" in text.lower()
         assert "Acceptance" in text or "acceptance" in text.lower()
+        assert "permission filter" in text.lower()
+        assert data["status"] == "INTAKE_ONLY"
+        assert data.get("permission_filter_note", {}).get("status_unchanged") == "INTAKE_ONLY"
 
 
 def test_claim_restated_or_source_slogan_rejected() -> None:

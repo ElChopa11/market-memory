@@ -123,6 +123,8 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
         "Re-verify membership",
         "Admin-only Bot API",
         "Principal member-list read",
+        "Resolving a ticker to an identifier does not prove the returned series belongs to one entity",
+        "suspected_ticker_reuse",
         "compounds from post-mortems",
     ):
         assert token in lesson_text, token

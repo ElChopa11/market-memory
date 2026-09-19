@@ -1327,6 +1327,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 | Gap | Desk that would own | Why not queued now |
 |---|---|---|
+| Desks reporting AVGO/MSFT/META/JPM/XOM while those names are absent from `monitor.yaml` — belong in universe via Principal PR, or desks must stop reporting them? Do not widen the Phase-1 base-rate run to answer. | Principal / Research | Question for Don. Overlay dropped this pass (quota for SPCX/BMNR). |
 | Equity-feed ingest (Polygon); HL structure | Data & Market Memory Desk | IMP-010 DONE (#41) |
 | `risk-review.md` + portfolio exposure report | Risk (independent veto) | Risk *service* is out of Phase 4 |
 | Quant pack rewrite (templates / pack workflow) | Quant & Market Structure Desk | IMP-001 plan placeholder; **not** assigned IMP-003 (source-health took that ID) |
