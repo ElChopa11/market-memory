@@ -111,6 +111,18 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
         "membership / credential / webhook",
         "Hybrid single-exit",
         "Desk bots must not be Telegram members",
+        "still stands",
+        "structurally incomplete",
+        "FALSE POSITIVE",
+        "BTCUSDC.P",
+        "working-thread",
+        "No Results",
+        "delivery bot only",
+        "never incomplete",
+        "authoritative publisher inventory",
+        "Re-verify membership",
+        "Admin-only Bot API",
+        "Principal member-list read",
         "compounds from post-mortems",
     ):
         assert token in lesson_text, token
