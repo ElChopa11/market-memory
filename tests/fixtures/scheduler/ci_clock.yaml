@@ -1,0 +1,31 @@
+# CI fixture clock — Saturday 2026-09-19 09:49 UTC.
+# Isolated catalog so the miss-check is non-flaky. Completions cover the
+# only closed window. Exit 0. Canaries are not listed.
+version: "imp-042-ci"
+now: "2026-09-19T09:49:00Z"
+late_after_seconds: 300
+miss_after_seconds: 900
+lookback_days: 2
+lab_timezone: Australia/Sydney
+routines:
+  - id: ci.pulse.preopen
+    family: lab
+    display: CI Pulse preopen
+    timezone: America/New_York
+    local_time: "08:00"
+    weekdays: [Fri]
+    enabled: true
+  - id: ci.sydney.pending
+    family: grok_bot
+    display: CI next-week pending
+    timezone: Australia/Sydney
+    local_time: "06:30"
+    weekdays: [Mon]
+    enabled: true
+completions:
+  - routine_id: ci.pulse.preopen
+    run_id: ci-preopen-20260918
+    scheduled_anchor_ts: "2026-09-18T12:00:00Z"
+    fired_at_ts: "2026-09-18T12:02:00Z"
+    as_of_knowledge: "2026-09-18T12:02:00Z"
+    source: fixture

@@ -51,6 +51,10 @@ ops/reports/source-health/**
 !ops/reports/source-health/*.md
 !ops/reports/source-health/*.sha256
 
+# Generated scheduler miss-check incidents (keep README + committed reports)
+ops/reports/scheduler/incidents/**
+!ops/reports/scheduler/incidents/README.md
+
 # Generated Post-IPO reclaim screens (keep README and committed dated samples)
 research/screens/post-ipo-reclaim/**
 !research/screens/post-ipo-reclaim/README.md

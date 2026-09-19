@@ -9,7 +9,7 @@ Desk operating model for Market Memory as a **private research lab**. This tree 
 | [improvement-queue.md](improvement-queue.md) | Single continuous-improvement queue; every item has a desk and one accountable owner |
 | [plans/](plans/) | IMP implementation plans |
 | [reports/source-health/](reports/source-health/) | Standing DQ / source-health reports (`lab data source-health`) |
-| [reports/source-evaluation/](reports/source-evaluation/) | Principal source-evaluation research (recommend only; no adapters) |
+| [reports/scheduler/](reports/scheduler/) | SCHED-001 root cause + miss-sweep backfill (`lab schedule miss-check`) |
 
 Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 
@@ -43,7 +43,8 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Ticker resolutions + licence_verdict schema (IMP-034) are **DONE** (#60).
 - FRED full-stack (IMP-022) is **DONE** (run_id `fred-fullstack-20260919-101938-aest`). `--no-db` = ELIGIBLE only. SRC-STOOQ-404 stays OPEN. SRC-FRED-MISSING-ENV is CLOSED.
 - SEC EDGAR wire (IMP-024) is **DONE** (#63). CBRS/SPCX lockup formulas persist as observations. `--no-db` = ELIGIBLE only.
-- Phase 1 unconditional base rates (IMP-040) is **IN_PROGRESS** (this PR). Candidate strategy intake (IMP-039 / #61) stays **READY**; card status remains `INTAKE_ONLY` until this pack exists. No study compute in this PR.
-- Desk knowledge base (IMP-041) is **READY** (docs-only; parked). Does not take the implementation slot.
+- Phase 1 unconditional base rates (IMP-040) is **DONE** (#66). Candidate strategy intake (IMP-039 / #61) stays **READY**; card status remains `INTAKE_ONLY`. Expand beyond fixture is L2 P1.
+- Desk knowledge base (IMP-041) is **DONE** (#67). Cached prompt prefix. A prior never triggers or sizes.
+- Scheduler miss detector (IMP-042) is **IN_PROGRESS** (this PR). Heartbeat-on-fire is a log. SCHED-001 stays OPEN.
 - Principal FREE SOURCE PRIORITY 2026-09-19: IMP-022 DONE → IMP-024 DONE → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

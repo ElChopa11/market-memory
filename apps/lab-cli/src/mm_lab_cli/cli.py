@@ -24,6 +24,7 @@ from mm_lab_cli.scorecard import add_scorecard_parser, dispatch_scorecard
 from mm_lab_cli.decay import add_decay_parser, dispatch_decay
 from mm_lab_cli.base_rates import add_base_rate_parser, dispatch_base_rate
 from mm_lab_cli.queue import add_queue_parser, dispatch_queue
+from mm_lab_cli.schedule import add_schedule_parser, dispatch_schedule
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.equities import add_equities_parser, dispatch_equities
 from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_review
@@ -120,6 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     add_decay_parser(sub)
     add_base_rate_parser(sub)
     add_queue_parser(sub)
+    add_schedule_parser(sub)
     add_backtest_parser(sub)
     add_paper_parser(sub)
     add_quant_review_parser(sub)
@@ -161,6 +163,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_base_rate(args)
     if args.cmd == "queue":
         return dispatch_queue(args)
+    if args.cmd == "schedule":
+        return dispatch_schedule(args)
     if args.cmd == "backtest":
         return dispatch_backtest(args)
     if args.cmd == "paper":
@@ -196,6 +200,7 @@ def cmd_status() -> int:
     print("Backtest: lab backtest run --fixture PATH (same params_hash → same result)")
     print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
+    print("Schedule: lab schedule miss-check (control: closed window + no completion → escalate). heartbeat-check is an alias. Heartbeat-on-fire is a log.")
     print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
     print("Equities screen: lab equities reclaim-screen --fixture PATH --no-db (Post-IPO / reclaim triage; not a trading decision)")
     print("Desk run: lab desk run --all --fixture PATH --no-send (deterministic pack; default dry-run)")

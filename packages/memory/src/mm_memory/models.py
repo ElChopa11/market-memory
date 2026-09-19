@@ -503,3 +503,34 @@ class EventBaseRate(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class ScheduleHeartbeat(Base):
+    """Completion log for a scheduled anchor. Miss sweep is the control; this is the log."""
+
+    __tablename__ = "schedule_heartbeat"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('ok','late','missed','skipped')",
+            name="schedule_heartbeat_status_check",
+        ),
+        UniqueConstraint(
+            "routine_id",
+            "scheduled_anchor_ts",
+            name="schedule_heartbeat_routine_anchor_uidx",
+        ),
+        Index("schedule_heartbeat_as_of_idx", "as_of_knowledge"),
+        Index("schedule_heartbeat_routine_idx", "routine_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    routine_id: Mapped[str] = mapped_column(Text, nullable=False)
+    run_id: Mapped[str] = mapped_column(Text, nullable=False)
+    scheduled_anchor_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    fired_at_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    delta_seconds: Mapped[int | None] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    as_of_knowledge: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source: Mapped[str] = mapped_column(Text, nullable=False, default="lab")
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+

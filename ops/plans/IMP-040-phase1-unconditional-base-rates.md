@@ -1,6 +1,6 @@
 # PLAN — IMP-040 Phase 1 unconditional base rates
 
-**Report status:** IN_PROGRESS (this PR).  
+**Report status:** DONE (#66).  
 **Owner:** Quant  
 **Scope:** Unconditional event-class base rates for the classes C-001/002/003 measure against. Paper / fixture only. No candidate signal studies. No sizing. No scan-gate.
 

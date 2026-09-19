@@ -1,6 +1,6 @@
 # PLAN — IMP-041 Principal-locked desk knowledge base
 
-**Report status:** READY (docs-only; parked). IMP-040 keeps the single `IN_PROGRESS` slot.  
+**Report status:** DONE (#67). IMP-042 holds the single `IN_PROGRESS` slot.  
 **Owner:** Ops (queue + pointer) / Principal (file lock)  
 **Scope:** Seed `config/knowledge/` priors, failure modes, house lessons, and usage rules. Paper only. No candidate compute.
 
@@ -10,7 +10,7 @@ Desks had no Principal-locked prefix for literature priors, measurement failure 
 
 ## Outcome
 
-- Queue: IMP-040 stays `IN_PROGRESS`. IMP-041 **READY** (docs-only). OPEN incidents untouched. No second `IN_PROGRESS`.
+- Queue: IMP-041 **DONE** (#67). IMP-042 holds `IN_PROGRESS`. OPEN incidents untouched. No second `IN_PROGRESS`.
 - `config/knowledge/{README,priors,failure-modes,house-lessons}.md` Principal-locked.
 - Strong / moderate / no-comparable-evidence priors as specified. Standing rule: strong prior still needs our base rates; no-evidence prior needs MORE evidence.
 - Failure modes each have: what it looks like, which test catches it, placeholder worked example.
@@ -29,8 +29,8 @@ Desks had no Principal-locked prefix for literature priors, measurement failure 
 
 ## Non-goals
 
-Strategy instructions. Sizing. Live path. Candidate compute. Displacing IMP-040 or a SCHED/miss-detector thread. Closing OPEN incidents. Auto-merge. Gate waiver. Prompt auto-disable.
+Strategy instructions. Sizing. Live path. Candidate compute. Displacing the SCHED/miss-detector thread. Closing OPEN incidents. Auto-merge. Gate waiver. Prompt auto-disable.
 
 ## Rollback
 
-Revert this PR. Knowledge tree disappears. IMP-040 / IMP-039 / OPEN incidents unchanged. No live path exists to unwind.
+Knowledge tree is on `main` via #67. IMP-042 / IMP-039 / OPEN incidents unchanged. No live path exists to unwind.

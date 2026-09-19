@@ -116,7 +116,37 @@ def dispatch_brief(args: Namespace) -> int:
     if dod is not None:
         payload["dod_path"] = str((Path(args.out).resolve() if args.out else root) / dod)
     print(json.dumps(payload, indent=2))
+    _stamp_brief_heartbeat(kind, as_of, args, root)
     return 0
+
+
+def _stamp_brief_heartbeat(kind: str, as_of, args: Namespace, root: Path) -> None:
+    """Secondary log. Miss sweep remains the scheduler check."""
+    routine_id = {"preopen": "lab.pulse.preopen", "close": "lab.pulse.close"}.get(kind)
+    if routine_id is None:
+        return
+    try:
+        from mm_desks.scheduler import load_catalog, stamp_fire
+
+        catalog = load_catalog(root)
+        routine = catalog.by_id().get(routine_id)
+        if routine is None:
+            return
+        record = stamp_fire(
+            routine,
+            fired_at=as_of,
+            run_id=f"{routine_id}-{as_of.strftime('%Y%m%dT%H%M%SZ')}",
+            as_of_knowledge=as_of,
+            source="lab.brief",
+        )
+        if args.no_db:
+            return
+        from mm_memory.heartbeat_repository import persist_heartbeat
+
+        with session_scope(args.dsn or dsn_from_env()) as session:
+            persist_heartbeat(session, record.canonical())
+    except Exception:
+        return
 
 
 def _persist(doc, args: Namespace, root: Path) -> Path:
