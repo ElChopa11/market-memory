@@ -32,7 +32,7 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert not any("IMP-032" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any(
-        "IMP-033" in line and "#59" in line and "cursor/canonical-watchlist-monitor-5515" in line
+        "IMP-033" in line and "#59" in line and "MERGED" in line
         for line in board_lines
     )
     assert any("IMP-020" in line and "DONE" in line for line in board_lines)
@@ -114,6 +114,11 @@ def test_imp033_required_fields_and_lock() -> None:
     assert "bc-3c465873" in block
     assert "https://github.com/ElChopa11/market-memory/pull/59" in block
     assert "cursor/canonical-watchlist-monitor-5515" in block
+    assert "1403f57" in block
+    assert "**MERGED**" in block
+    assert "YAML DoD satisfied" in block or "YAML implementation DoD item satisfied" in block
+    assert "First scan unblocked" in block
+    assert "Intel scan pack" in block
     assert "PR when linked" not in block
     for item_id in OPEN_INCIDENTS:
         assert item_id in block
@@ -144,7 +149,10 @@ def test_imp033_plan_points_at_imp020_and_sister() -> None:
     assert "bc-3c465873" in plan
     assert "https://github.com/ElChopa11/market-memory/pull/59" in plan
     assert "cursor/canonical-watchlist-monitor-5515" in plan
-    assert "Do not merge" in plan
+    assert "1403f57" in plan
+    assert "**MERGED**" in plan
+    assert "YAML DoD satisfied" in plan
+    assert "Intel scan pack" in plan
     assert "PR when linked" not in plan
     assert "live_trading_enabled: false" in plan
     assert "No send" in plan or "no send" in plan.lower() or "holds Telegram" in plan

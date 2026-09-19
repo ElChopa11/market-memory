@@ -2,13 +2,13 @@
 
 **Report status:** IN_PROGRESS (intake [#58](https://github.com/ElChopa11/market-memory/pull/58) — paper only).  
 **Owner:** Ops (queue + Telegram hold) / Research (scan remains IMP-020 product)  
-**Scope:** Queue intake + thin plan. Versioned `config/watchlist/monitor.yaml` encodes the Principal lock with tiers/clusters (crypto then base). Implementation lives on sister [#59](https://github.com/ElChopa11/market-memory/pull/59) *Canonical watchlist monitor.yaml Principal lock* (`bc-3c465873`; branch `cursor/canonical-watchlist-monitor-5515`; open — do not merge). **Do not reopen IMP-020.** Do not invent unresolved tickers. No live trading. No execution. No `live.yaml`. No credentials. No delivery send-path edits.
+**Scope:** Queue intake + thin plan. Versioned `config/watchlist/monitor.yaml` encodes the Principal lock with tiers/clusters (crypto then base). Implementation **MERGED** on sister [#59](https://github.com/ElChopa11/market-memory/pull/59) *Canonical watchlist monitor.yaml Principal lock* (`bc-3c465873`; branch `cursor/canonical-watchlist-monitor-5515`; merge `1403f57` — YAML on `main`). **Do not reopen IMP-020.** Do not invent unresolved tickers. No live trading. No execution. No `live.yaml`. No credentials. No delivery send-path edits. Do not merge this intake (#58).
 
 ## Why
 
-IMP-020 (#52) already ships `lab watchlist scan` over locked `in_universe` ∪ `watch_only` (ADR 0009, [docs/runbooks/watchlist.md](../../docs/runbooks/watchlist.md)). Membership is already locked in [`config/universe.yaml`](../../config/universe.yaml). What is missing is a versioned monitor config that the scan reads for Principal-locked **tiers/clusters** (crypto then base). Until that file is merged, Ops (sole publisher) holds Telegram.
+IMP-020 (#52) already ships `lab watchlist scan` over locked `in_universe` ∪ `watch_only` (ADR 0009, [docs/runbooks/watchlist.md](../../docs/runbooks/watchlist.md)). Membership is already locked in [`config/universe.yaml`](../../config/universe.yaml). `config/watchlist/monitor.yaml` is now on `main` via [#59](https://github.com/ElChopa11/market-memory/pull/59). YAML DoD satisfied. First scan unblocked for resolved names; SAMSUN/KOSDA still out. Sole publisher holds Telegram until the Intel scan pack.
 
-This item is **intake**. Sister `bc-3c465873` writes `config/watchlist/monitor.yaml` and was interrupted with the same Principal PATCH. This PR does not re-implement the monitor product.
+This item is **intake**. Sister `bc-3c465873` wrote `config/watchlist/monitor.yaml` (same Principal PATCH). This PR does not re-implement the monitor product.
 
 ## Principal lock (already in universe.yaml)
 
@@ -50,16 +50,17 @@ EDGAR confirm for CBRS + SPCX — **do not assume 180d**. Lockup inside horizon 
 
 - Queue: IMP-032 DONE (#57). IMP-033 this thread (only `IN_PROGRESS`). OPEN incidents untouched (SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404). SRC-FRED-MISSING-ENV is **ELIGIBLE** (2026-09-19 `--no-db`; not CLOSED).
 - Versioned `config/watchlist/monitor.yaml` encodes the lock + tiers/clusters (crypto then base) plus resolved SPCX/CBRS/CHIPIUSD/VVVUSD/PURR aliases and NEW_LISTING / LOCKUP WATCH rules.
-- `lab watchlist scan` (or equivalent) becomes config-backed. Existing IMP-020 product, ADR 0009, and runbook stay the product SoT.
-- Ops does not publish / send until the scan is config-backed.
-- Implementation PR: sister [#59](https://github.com/ElChopa11/market-memory/pull/59) open (`bc-3c465873`; branch `cursor/canonical-watchlist-monitor-5515`). Do not merge.
+- `lab watchlist scan` (or equivalent) is config-backed on `main`. Existing IMP-020 product, ADR 0009, ADR 0014, and runbook stay the product SoT.
+- YAML DoD satisfied. First scan unblocked for resolved names; SAMSUN/KOSDA still out.
+- Sole publisher holds Telegram until the Intel scan pack.
+- Implementation PR: sister [#59](https://github.com/ElChopa11/market-memory/pull/59) **MERGED** (`1403f57`; `bc-3c465873`; branch `cursor/canonical-watchlist-monitor-5515`). Do not merge intake #58.
 
 ## Pointers (do not reopen IMP-020)
 
 - Plan: [IMP-020-phase6c4-watchlist.md](IMP-020-phase6c4-watchlist.md) — DONE (#52)
 - ADR: [0009-phase6c4-watchlist.md](../../ADR/0009-phase6c4-watchlist.md)
 - Runbook: [docs/runbooks/watchlist.md](../../docs/runbooks/watchlist.md)
-- Product spec still on main: `config/desks/watchlist.yaml` (IMP-020). Sister PR adds `config/watchlist/monitor.yaml`.
+- Product spec on main: `config/desks/watchlist.yaml` (IMP-020) plus `config/watchlist/monitor.yaml` (sister [#59](https://github.com/ElChopa11/market-memory/pull/59) **MERGED**).
 
 ## Tests
 
