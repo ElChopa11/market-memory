@@ -116,6 +116,6 @@ Live path. Sizing. Scan-gate / universe / watchlist promotion. Invented expectan
 
 ## Deliverable / acceptance
 
-When unblocked: `research/studies/C-002/<date>.md` + combined `research/studies/signal-correlation/<date>.md`. Each states coded definition, params+commit ref, sample, window, split, cost model, benchmark, haircut, results per regime, verdict, what would make it spurious. Base rates in Memory, not only the write-up.
+When unblocked: `research/studies/C-002/<date>.md` + combined `research/studies/signal-correlation/<date>.md`. Each states coded definition, params+commit ref, sample, window, split, cost model, benchmark, haircut, results per regime, verdict, what would render it spurious. Base rates in Memory, not only the write-up.
 
 Acceptance: no future bars; pivots `K=2` bars later; oscillator turns use completed bars only; same-fixture `params_hash`; every instance including blow-throughs; reconcile vs raw detector count; Weekly Investment Review `PASS` or `FAIL`.

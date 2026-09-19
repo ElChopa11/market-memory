@@ -13,6 +13,6 @@ research/studies/C-003/YYYY-MM-DD.md
 research/studies/signal-correlation/YYYY-MM-DD.md
 ```
 
-Each file must state: coded definition, params + commit ref of `config/candidates/<id>.yaml`, sample, window, split, cost model, benchmark, haircut, results per regime, verdict (`PASS` \| `FAIL` \| `INSUFFICIENT SAMPLE`), what would make the result spurious. Base rates belong in Market Memory, not only here.
+Each file must state: coded definition, params + commit ref of `config/candidates/<id>.yaml`, sample, window, split, cost model, benchmark, haircut, results per regime, verdict (`PASS` \| `FAIL` \| `INSUFFICIENT SAMPLE`), what would render the result spurious. Base rates belong in Market Memory, not only here.
 
 A post-hoc param change is `C-00x.v2` with a reset sample. No silent tuning. No sizing. No scan-gate.
