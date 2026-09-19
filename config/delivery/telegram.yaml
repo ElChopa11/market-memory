@@ -1,7 +1,9 @@
 # Telegram Bot API delivery (Phase 5e / IMP-013 + 6c-1 five-desk roster + 6c-5 Ops expansion).
 # Secrets are env-only. Never put TELEGRAM_BOT_TOKEN or chat ids in this file.
-# Per-desk override: TELEGRAM_CHAT_ID_<DESK> (e.g. TELEGRAM_CHAT_ID_INTEL).
-# Default chat: TELEGRAM_CHAT_ID. Token: TELEGRAM_BOT_TOKEN.
+# Default group route: TELEGRAM_CHAT_ID (Hive is a plain group — not a supergroup).
+# Per-desk TELEGRAM_CHAT_ID_<DESK> / thread_id: NOT CONFIGURED (forum topics not enabled).
+# Optional DM-only: TELEGRAM_CHAT_ID_PRINCIPAL_DM — never a silent fallback for TELEGRAM_CHAT_ID.
+# Token: TELEGRAM_BOT_TOKEN in /home/box/agent-data/delivery/telegram.env (not the Grok Secrets card).
 # Delivery is Ops-owned. Coord/Don is orchestration only — not the publisher.
 # Channel matrix must match mm_common.naming ROUTE_SLUGS (five desks + alerts).
 

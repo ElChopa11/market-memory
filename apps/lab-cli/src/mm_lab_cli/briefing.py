@@ -10,6 +10,7 @@ from mm_common.time import parse_utc, utcnow
 from mm_briefing.config import AlertSettings, load_alert_settings, load_briefing_settings
 from mm_briefing.engine import default_macro_fetcher, generate_from_sources, load_fixture_file
 from mm_briefing.store import index_brief, write_brief
+from mm_lab_cli.env_preflight import prepare_brief
 from mm_memory.db import dsn_from_env, session_scope
 
 
@@ -45,6 +46,7 @@ def dispatch_brief(args: Namespace) -> int:
     if cmd is None:
         print("usage: lab brief preopen|close|alert-check")
         return 2
+    prepare_brief()
     kind = {"preopen": "preopen", "close": "close", "alert-check": "alert"}[cmd]
     root = Path(args.repo_root).resolve()
     settings = load_briefing_settings(root)

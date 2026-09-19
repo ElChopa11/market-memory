@@ -187,6 +187,10 @@ class TelegramClient:
             body["message_thread_id"] = int(message_thread_id)
         return self.call("sendMessage", body)
 
+    def get_chat(self, chat_id: str) -> TelegramApiResult:
+        """Read-only Bot API getChat. Not a send. Used by env preflight to catch id drift."""
+        return self.call("getChat", {"chat_id": chat_id})
+
     def send_document(
         self,
         *,

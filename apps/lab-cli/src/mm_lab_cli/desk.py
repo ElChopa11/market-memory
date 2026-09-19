@@ -13,6 +13,7 @@ from mm_desks.naming import PIPELINE, publishing_slugs_help, require_publishing_
 from mm_desks.orchestrator import run_from_fixture, write_dry_run
 from mm_delivery.deliver import deliver
 from mm_delivery.payload import SEND_ENABLED, assert_no_send
+from mm_lab_cli.env_preflight import SEND_FROZEN_MSG, prepare_deliver
 
 
 def add_desk_parser(sub) -> None:
@@ -45,12 +46,16 @@ def dispatch_desk(args: Namespace) -> int:
     if SEND_ENABLED:
         print("lab desk run: SEND_ENABLED must stay false; pass --send into deliver()", file=sys.stderr)
         return 2
-    if not send:
-        try:
-            assert_no_send(send_requested=False)
-        except RuntimeError as exc:
-            print(str(exc), file=sys.stderr)
-            return 2
+    if send:
+        print(SEND_FROZEN_MSG, file=sys.stderr)
+        prepare_deliver(send=False)
+        return 2
+    report = prepare_deliver(send=False)
+    try:
+        assert_no_send(send_requested=False)
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     slug = getattr(args, "desk", None)
     all_desks = bool(getattr(args, "all_desks", False))
     if all_desks and slug:
@@ -89,7 +94,7 @@ def dispatch_desk(args: Namespace) -> int:
             result.pack_markdown,
             desk="ops",
             as_of=result.as_of_knowledge,
-            send=send,
+            send=False,
             kind="desk_pack",
             completeness_pct=completeness,
             repo=root,
@@ -101,12 +106,10 @@ def dispatch_desk(args: Namespace) -> int:
             written.update(delivery.written)
     payload = result.as_public_dict()
     payload["written"] = written
-    payload["no_send"] = not send
+    payload["no_send"] = True
     payload["send"] = False
     if delivery is not None:
         payload["delivery"] = delivery.as_public_dict()
         payload["telegram_payload_hash"] = delivery.payload_hash
     print(json.dumps(payload, sort_keys=True, indent=2))
-    if send and (delivery is None or not delivery.sent):
-        return 2
-    return 0
+    return 2 if not report.ok else 0

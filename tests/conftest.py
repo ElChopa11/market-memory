@@ -24,6 +24,14 @@ def fixture_window() -> dict:
 def _block_live_telegram(monkeypatch):
     """Pytest must never hit the live Telegram Bot API."""
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID_PRINCIPAL_DM", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID_INTEL", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID_RESEARCH", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID_QUANT", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID_IC_RISK", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID_ALERTS", raising=False)
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "pytest-group")
+    monkeypatch.setenv("MM_DELIVERY_ENV_FILE", "/tmp/mm-pytest-no-delivery.env")
     import httpx
 
     real_send = httpx.Client.send

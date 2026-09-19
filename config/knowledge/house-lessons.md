@@ -78,6 +78,34 @@ Seed rows below are Principal-listed. Some still lack a persist `run_id`; they s
 
 ---
 
+## 2026-09-19 — Grok Secrets card / secret-request leak
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — process incident; bind if a rotation run_id is recorded)* |
+| **Desk** | Ops |
+| **What happened** | Grok Bot `secret-request` / Secrets-card secure-input wrote the Telegram bot token onto the **shared multi-agent Secrets card**. That path is a known leak vector on a shared box. A **second rotation** was required after the credential-handling path was used. |
+| **Lesson** | Never route delivery tokens through Grok secure-input or the shared Secrets card. Agents must not receive `TELEGRAM_BOT_TOKEN` via default env. The only safe path is Principal write to the delivery-only file `/home/box/agent-data/delivery/telegram.env` (mode 0600) or `MM_DELIVERY_ENV_FILE`. Rotate if the Secrets-card path was used. |
+| **Does not** | Authorise putting the token in git, yaml, Hive prompts, or CI Secrets for agents. Does not make the shared-box file-path a hard isolation boundary (that fix is queued). |
+| **Overrides prior** | No — process lesson. Not a literature prior. |
+
+---
+
+## 2026-09-19 — Telegram getChat / supergroup id drift
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending)* |
+| **Desk** | Ops |
+| **What happened** | Hive is a **plain group** (not a supergroup). Converting it to a supergroup or enabling forum topics changes the chat id to a `-100...` form. Routing that still points at the old id would break **silently**. Per-desk `TELEGRAM_CHAT_ID_<DESK>` / `message_thread_id` are not configured. |
+| **Lesson** | Preflight must `getChat` the configured group id and **fail loudly** if it does not resolve or if the resolved id differs. Do not assume the id is stable across a supergroup conversion. Per-desk forum topics vs separate groups is a Principal decision — not needed before step 5; single group route is fine. `TELEGRAM_CHAT_ID` (group) must never silently fall back to `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. |
+| **Does not** | Authorise a real send. Does not enable forum topics. Does not invent per-desk chat ids. |
+| **Overrides prior** | No — process lesson. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

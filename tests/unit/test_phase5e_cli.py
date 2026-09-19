@@ -81,10 +81,16 @@ def test_lab_desk_run_send_without_token_fails_closed(capsys) -> None:
             "--send",
         ]
     )
-    out = capsys.readouterr()
+    captured = capsys.readouterr()
+    blob = captured.out + captured.err
     assert rc == 2
-    blob = out.out + out.err
-    assert "missing_env" in blob or "TELEGRAM_BOT_TOKEN" in blob or "sent" in blob.lower()
+    assert (
+        "frozen" in blob.lower()
+        or "step 5" in blob.lower()
+        or "missing_env" in blob
+        or "TELEGRAM_BOT_TOKEN" in blob
+        or "sent" in blob.lower()
+    )
 
 
 def test_lab_deliver_test_without_i_mean_it_is_dry_run(tmp_path: Path, capsys) -> None:

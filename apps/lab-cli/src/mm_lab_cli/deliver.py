@@ -13,6 +13,7 @@ from mm_delivery.deliver import deliver
 from mm_delivery.inbound import handle_inbound
 from mm_delivery.payload import SEND_ENABLED
 from mm_desks.orchestrator import PIPELINE, run_from_fixture
+from mm_lab_cli.env_preflight import SEND_FROZEN_MSG, prepare_deliver
 
 
 def add_deliver_parser(sub) -> None:
@@ -29,6 +30,8 @@ def add_deliver_parser(sub) -> None:
     test_p.add_argument("--desk", default="ops", help=f"desk slug (route + TELEGRAM_CHAT_ID[_DESK]); {route_slugs_help()}")
     test_p.add_argument("--repo-root", type=Path, default=Path("."))
     test_p.add_argument("--out", type=Path, help="write payload under briefs/ (default: repo root)")
+    test_p.add_argument("--no-send", action="store_true", help="dry-run (default); write payload under briefs/")
+    test_p.add_argument("--send", action="store_true", help="gated live send (requires --i-mean-it)")
     test_p.add_argument("--ignore-quiet-hours", action="store_true")
     test_p.add_argument(
         "--i-mean-it",
@@ -118,12 +121,18 @@ def dispatch_deliver(args: Namespace) -> int:
         reply = handle_inbound(str(args.text), uid=uid, allow_uids=allow_uids if uid else None)
         print(json.dumps(reply.canonical(), sort_keys=True))
         return 0 if reply.ok or reply.silent else 2
+    send = _want_send(args)
+    if send is None:
+        return 2
+    live_test = cmd == "test" and bool(getattr(args, "i_mean_it", False))
+    if send or live_test:
+        print(SEND_FROZEN_MSG, file=sys.stderr)
+        prepare_deliver(send=False)
+        return 2
+    report = prepare_deliver(send=False)
     if cmd == "fanout":
         from mm_delivery.fanout import fanout_desk
 
-        send = _want_send(args)
-        if send is None:
-            return 2
         loaded = _load_source(args, Path(args.repo_root).resolve(), str(getattr(args, "desk", None) or "ops"))
         if loaded is None:
             return 2
@@ -132,7 +141,7 @@ def dispatch_deliver(args: Namespace) -> int:
             markdown,
             desk=str(getattr(args, "desk", None) or "ops"),
             as_of=as_of,
-            send=bool(send),
+            send=False,
             completeness_pct=completeness,
             repo=Path(args.repo_root).resolve(),
             out_root=Path(args.out).resolve() if getattr(args, "out", None) else Path(args.repo_root).resolve(),
@@ -140,19 +149,25 @@ def dispatch_deliver(args: Namespace) -> int:
         payload = result.as_public_dict()
         payload.update(extra)
         print(json.dumps(payload, sort_keys=True, indent=2))
-        return 0
+        return 2 if not report.ok else 0
     if cmd == "watchlist":
-        return _cmd_watchlist(args)
+        rc = _cmd_watchlist(args)
+        return 2 if not report.ok else rc
     if cmd == "listings":
-        return _cmd_listings(args)
+        rc = _cmd_listings(args)
+        return 2 if not report.ok else rc
     if cmd == "scorecard":
-        return _cmd_scorecard(args)
+        rc = _cmd_scorecard(args)
+        return 2 if not report.ok else rc
     if cmd == "decay":
-        return _cmd_decay(args)
+        rc = _cmd_decay(args)
+        return 2 if not report.ok else rc
     if cmd == "test":
-        return _cmd_test(args)
+        rc = _cmd_test(args)
+        return 2 if not report.ok else rc
     if cmd in {None, "pack"}:
-        return _cmd_pack(args)
+        rc = _cmd_pack(args)
+        return 2 if not report.ok else rc
     print("usage: lab deliver pack|fanout|watchlist|listings|scorecard|decay|test|inbound", file=sys.stderr)
     return 2
 
@@ -351,7 +366,6 @@ def _cmd_decay(args: Namespace) -> int:
 
 
 def _cmd_test(args: Namespace) -> int:
-    live = bool(getattr(args, "i_mean_it", False))
     root = Path(args.repo_root).resolve()
     desk = str(args.desk)
     as_of = utcnow()
@@ -364,7 +378,7 @@ def _cmd_test(args: Namespace) -> int:
         markdown,
         desk=desk,
         as_of=as_of,
-        send=live,
+        send=False,
         kind="test",
         completeness_pct=100.0,
         repo=root,
@@ -373,11 +387,9 @@ def _cmd_test(args: Namespace) -> int:
         respect_quiet_hours=not bool(getattr(args, "ignore_quiet_hours", False)),
     )
     payload = result.as_public_dict()
-    payload["no_send"] = not live
+    payload["no_send"] = True
     payload["test"] = True
     print(json.dumps(payload, sort_keys=True, indent=2))
-    if live and not result.sent:
-        return 2
     return 0
 
 
