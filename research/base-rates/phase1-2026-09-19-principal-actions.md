@@ -82,18 +82,28 @@ Not a promotion. Not a reject. **DO NOT SIZE**.
 
 ---
 
-## BMNR / STRC audit — quarantine pending adjusted re-fetch, then rule B only
+## BMNR / STRC audit — BMNR VOID cause is business transformation (not ticker reuse)
 
 Principal-cited BMNR: **449 bars**, 1-bar mean **2.141%** vs median **-0.405%**; one bar ~695%.
-STRC: huge robust-sigma on a ~12% bar (#77 N=8 run).
+STRC: huge robust-sigma on a ~12% bar (#77 N=8 run); **cleared A/B** on the #81 `adjusted=true` `--refresh` (stays in both pools).
 
 No `listed_on` (not a dated IPO splice like SPCX / CBRS). **Do not VOID on the single bar (rule C FLAG only).**
 
-**Polygon adjustment check (2026-09-19):** `PolygonEquitiesAdapter._ohlcv` did **not** send `adjusted=`. Polygon /v2/aggs vendor default is true — that is **not** an explicit pin. Code now pins `adjusted=true`. This cloud VM has no `POLYGON_API_KEY`, so BMNR/STRC were not re-fetched here.
+**Polygon adjustment check (2026-09-19):** `PolygonEquitiesAdapter._ohlcv` did **not** send `adjusted=`. Polygon /v2/aggs vendor default is true — that is **not** an explicit pin. Code now pins `adjusted=true`. #81 box `--refresh` re-fetched; then **rule B only**.
 
-**Quarantine** BMNR and STRC until the box `--refresh` re-fetch, then apply **rule B only** (20/20 sustained level-shift). Voiding because the fetch was unadjusted is incorrect.
+**BMNR stays VOID** (excluded from the void-excluded pool). **Do not change void status.**
+
+| Field | Value |
+|---|---|
+| **Ticker** | BMNR (`NASDAQ:BMNR`) |
+| **Issuer** | BitMine Immersion Technologies (CIK `0001829311`) — **same issuer throughout** |
+| **Rule B suspect bar** | `2025-06-30` (20/20 median ratio 7.9139 on #81 `adjusted=true` tape) |
+| **Finding (Principal asked; Intel confirmed)** | **Business transformation, not ticker reuse.** That day: ~$250M PIPE @ $4.50 for ETH treasury + Tom Lee named Chairman (8-K `0001683168-25-004802`). Separate May 15–16 2025 1-for-20 reverse split (Polygon + EDGAR). Identifier continuous; character break = strategy/governance pivot. |
+| **Verdict** | **VOID** under **rule B**. Same exclusion outcome as ticker reuse; **different cause**. The void must state this finding, not only “rule B fired.” Contrast SPCX (true ticker reuse / entity splice under rule A). **Not** an N-sigma void. |
 
 QQQ, NVDA, BB, MRNA: **restore** to the compute pool (legitimate fat tails). Losing QQQ/NVDA costs more than the false N-sigma void protects.
+
+House lesson: a sustained 20/20 level-shift can flag ticker reuse **or** a continuous-identifier business transformation — record which. See `config/knowledge/house-lessons.md`.
 
 ---
 

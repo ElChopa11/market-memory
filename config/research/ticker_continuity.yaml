@@ -22,6 +22,8 @@
 #      median(close after) / median(close before) is most extreme.
 #      VOID if that ratio >= level_shift_ratio or <= 1/level_shift_ratio.
 #      Fewer than window bars each side → skip B with reason.
+#      Cause may be ticker reuse OR a continuous-identifier business
+#      transformation (BMNR 2025-06-30). Record which. Exclusion is the same.
 #   C. Single-bar extreme → FLAG only, never VOID.
 #      FLAG if max |1-bar simple return| >= single_bar_flag_abs.
 #      Robust-sigma multiple is logged as a diagnostic and must not void.
@@ -49,9 +51,9 @@ polygon_adjusted: true
 polygon_adjusted_note: >
   Inspected 2026-09-19: the daily aggs GET did not include `adjusted`.
   Polygon documents default adjusted=true. That is not evidence we fetched
-  adjusted bars. Code now pins adjusted=true. Re-fetch BMNR/STRC (and all
-  equities) on the delivery box with --refresh before treating a 20/20
-  level-shift VOID as final for those two names.
+  adjusted bars. Code now pins adjusted=true. #81 box --refresh re-fetched
+  equities. BMNR still VOID under rule B; Intel cause is business
+  transformation (not ticker reuse) — see BMNR note. STRC cleared A/B.
 
 instruments:
   SPCX:
@@ -78,12 +80,25 @@ instruments:
       different entity and must not enter pools (rule A).
   BMNR:
     qualified_id: NASDAQ:BMNR
-    entity: Bitmine Immersion Technologies
-    pending_adjusted_refetch: true
+    entity: BitMine Immersion Technologies
+    cik: "0001829311"
+    pending_adjusted_refetch: false
+    # Docs only. Does not change continuity A/B/C. BMNR stays VOID / excluded
+    # from the void-excluded pool. Cause is recorded so the void is not only
+    # "rule B fired."
+    void_cause: business_transformation
     note: >
-      On-box N=8 run: one bar ~695% (103× robust-sigma). Consistent with
-      unadjusted corporate action. Quarantine until adjusted=true re-fetch;
-      then apply rule B only. Rule C flags; never void on the single bar.
+      #81 adjusted=true --refresh: rule B VOID on suspect bar 2025-06-30
+      (20/20 median ratio 7.9139). Intel (Principal-asked): this is a
+      business transformation, NOT ticker reuse. Same issuer throughout
+      (BitMine Immersion Technologies, BMNR, CIK 0001829311). 2025-06-30:
+      ~$250M PIPE @ $4.50 for ETH treasury + Tom Lee named Chairman
+      (8-K 0001683168-25-004802). Separate May 15–16 2025 1-for-20 reverse
+      split (Polygon + EDGAR). Identifier continuous; character break =
+      strategy/governance pivot. Same exclusion outcome as ticker reuse
+      (stays out of the void-excluded pool); record this cause. Rule C
+      flags the ~695% bar; never void on the single bar. Not an N-sigma
+      void. Not a listings/new-issue splice (no listed_on).
   STRC:
     qualified_id: NASDAQ:STRC
     entity: Strategy Inc (STRC preferred)
