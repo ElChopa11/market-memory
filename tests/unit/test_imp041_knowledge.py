@@ -107,6 +107,10 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
         "Step 3",
         "panel read-back",
         "write API",
+        "Control boundary around own code misses other publishers",
+        "membership / credential / webhook",
+        "Hybrid single-exit",
+        "Desk bots must not be Telegram members",
         "compounds from post-mortems",
     ):
         assert token in lesson_text, token

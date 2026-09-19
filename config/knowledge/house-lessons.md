@@ -162,6 +162,20 @@ Seed rows below are Principal-listed. Some still lack a persist `run_id`; they s
 
 ---
 
+## 2026-09-19 — Control boundary around own code misses other publishers
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — Principal process lesson; bind if an incident/run is recorded)* |
+| **Desk** | Ops |
+| **What happened** | A control boundary drawn around lab CLI / repo invocation treated “what we call” as the publisher set. Publishers that do not use that path (Telegram membership, a credential, a third-party webhook) were not counted. |
+| **Lesson** | A control boundary drawn around your own code misses every publisher that does not use it. Enumerate publishers by who can post to the channel (membership / credential / webhook), not by what your repo invokes. Hybrid single-exit: desks → GrokBot working chat artifacts → Don compiles → lab deliver CLI → Telegram. Desk bots must not be Telegram members and must not hold Telegram credentials or third-party webhooks to Telegram. |
+| **Does not** | Authorise a Telegram send. Does not build IMP-050 (per-channel `send_enabled` by PR) or IMP-051 (membership inventory / desk-bot removal / Chart–TradingView webhook ban / panel reconcile). Does not lift the Hive group freeze. Does not make a desk bot a publisher. |
+| **Overrides prior** | No — process lesson. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).
