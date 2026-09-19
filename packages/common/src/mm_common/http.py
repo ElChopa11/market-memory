@@ -117,6 +117,7 @@ def http_get(
     url: str,
     *,
     params: Mapping[str, Any] | None = None,
+    headers: Mapping[str, str] | None = None,
     max_attempts: int = DEFAULT_MAX_ATTEMPTS,
     backoff_s: float = DEFAULT_BACKOFF_S,
     sleep: Callable[[float], None] = time.sleep,
@@ -128,6 +129,7 @@ def http_get(
         "GET",
         url,
         params=params,
+        headers=headers,
         max_attempts=max_attempts,
         backoff_s=backoff_s,
         sleep=sleep,
@@ -168,6 +170,7 @@ def _request(
     url: str,
     *,
     params: Mapping[str, Any] | None = None,
+    headers: Mapping[str, str] | None = None,
     json_body: Mapping[str, Any] | None = None,
     data: Mapping[str, Any] | None = None,
     files: Any = None,
@@ -183,7 +186,12 @@ def _request(
     for attempt in range(1, attempts_allowed + 1):
         try:
             if verb == "GET":
-                response = client.get(url, params=dict(params) if params else None)
+                get_kwargs: dict[str, Any] = {}
+                if params:
+                    get_kwargs["params"] = dict(params)
+                if headers:
+                    get_kwargs["headers"] = dict(headers)
+                response = client.get(url, **get_kwargs)
             elif verb == "POST":
                 kwargs: dict[str, Any] = {}
                 if json_body is not None:
@@ -194,6 +202,8 @@ def _request(
                     kwargs["files"] = files
                 if params:
                     kwargs["params"] = dict(params)
+                if headers:
+                    kwargs["headers"] = dict(headers)
                 response = client.post(url, **kwargs)
             else:
                 raise ValueError(f"unsupported HTTP method {method!r}")

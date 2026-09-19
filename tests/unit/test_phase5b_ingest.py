@@ -33,7 +33,7 @@ def test_default_equities_vendor_is_polygon() -> None:
     assert adapter.vendor == "polygon"
     assert load_equity_instruments() == ["NVDA", "AVGO", "SMH", "MSFT", "META", "JPM", "XLF", "XOM"]
     limits = settings["rate_limits"]
-    for name in ("polygon", "hyperliquid", "coingecko", "binance", "fred"):
+    for name in ("polygon", "hyperliquid", "coingecko", "binance", "fred", "edgar"):
         assert "max_requests_per_minute" in limits[name]
 
 

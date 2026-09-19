@@ -1,6 +1,6 @@
 """Read-only ingest pipeline: public feeds → envelopes → Postgres (+ optional objects).
 
-Phase 5b adds Polygon equities, HL structure, spot DQ, FRED/calendar. No signing.
+Phase 5b adds Polygon equities, HL structure, spot DQ, FRED/calendar. IMP-024 adds SEC EDGAR filings/lockups. No signing.
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ from mm_ingest.equities.normalize import (
 from mm_ingest.equities.polygon import parse_aggs, parse_dividends, parse_earnings_events, parse_splits
 from mm_ingest.hl_info import HyperliquidInfoClient
 from mm_ingest.macro import calendar_envelopes_from_payload, normalize_fred_observations
+from mm_ingest.edgar import envelopes_from_payload as edgar_envelopes_from_payload
 from mm_ingest.sources import meta_for
 from mm_ingest.spot import cross_check_envelopes, spot_prints_from_fixture
 from mm_ingest.structure import (
@@ -358,6 +359,7 @@ def envelopes_from_fixture(
     envelopes.extend(
         _calendar_envelopes_from_fixture(fixture, snapshot_ingested=snapshot_ingested, stale_after_seconds=stale_after_seconds)
     )
+    envelopes.extend(_edgar_envelopes_from_fixture(fixture, snapshot_ingested=snapshot_ingested, stale_after_seconds=stale_after_seconds))
     return envelopes
 
 
@@ -725,6 +727,33 @@ def _calendar_envelopes_from_fixture(
         return []
     ingested = _dt(block.get("ingested_at") or snapshot_ingested)
     return calendar_envelopes_from_payload(block, ingested_at=ingested, stale_after_seconds=stale_after_seconds)
+
+
+def _edgar_envelopes_from_fixture(
+    fixture: dict[str, Any],
+    *,
+    snapshot_ingested: datetime,
+    stale_after_seconds: int,
+) -> list[ObservationEnvelope]:
+    block = fixture.get("edgar")
+    if block is None and fixture.get("kind") in {"edgar", "sec", "filings"}:
+        block = fixture
+    if not isinstance(block, dict):
+        return []
+    ingested = _dt(block.get("ingested_at") or snapshot_ingested)
+    if block.get("error_class") and not isinstance(block.get("issuers"), dict):
+        return [
+            feed_status_envelope(
+                source_name="edgar",
+                instrument="EDGAR",
+                ingested_at=ingested,
+                error_class=str(block.get("error_class")),
+                notes=(f"EDGAR unavailable (error_class={block.get('error_class')}); no filings invented",),
+                venue="filings",
+                source_url_or_id="edgar:feed_status",
+            )
+        ]
+    return edgar_envelopes_from_payload(block, ingested_at=ingested, stale_after_seconds=stale_after_seconds)
 
 
 def load_fixture_file(path: Path) -> dict[str, Any]:

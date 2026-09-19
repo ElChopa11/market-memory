@@ -35,6 +35,7 @@ Configured sources used by Market Memory and Pulse, always listed even when down
 | Binance public | optional | `/api/v3/ping` (no prices) |
 | Stooq | optional | one canary CSV; `http_404` / `timeout` / `http_5xx` / `parse_error`; no Close values; **no scrape fallback** |
 | FRED | optional | missing `FRED_API_KEY` → `unavailable` + `missing_env`; else series `limit=1` without printing the yield. `--no-db` is ELIGIBLE only (IMP-022); `licence_verdict: ok_gov` |
+| SEC EDGAR | optional | `data.sec.gov` submissions with declared User-Agent (no key); filing text not copied. Lockups are prospectus formulas, not a flat 180 days. `--no-db` = ELIGIBLE only (IMP-024); `licence_verdict: ok_gov` |
 | Polygon | optional | missing `POLYGON_API_KEY` → `unavailable` + `missing_env`; else reference tickers `limit=1` without OHLCV |
 | `config/briefing/calendar.yaml` | required | file present + YAML parse |
 | Postgres | optional for Pulse | `SELECT 1` + last `observation.ingested_at` |

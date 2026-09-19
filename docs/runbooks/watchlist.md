@@ -38,7 +38,7 @@ Monitor states: `COVERED` | `PARTIAL` | `UNAVAILABLE` | `UNRESOLVED` | `BLOCKED`
 
 Tiers on every idea: `universe` (sizeable, cluster-capped) / `monitor` (UNSIZED — "not in locked universe — promotion requires Principal PR") / `blocked` (never idea).
 
-NEW_LISTING (`<200` daily bars): tag + `days_of_history`; SMA200 = `n/a (insufficient history: <n> bars)` — never `?` and never a shorter MA. Route to the listings sleeve. Lockup inside horizon = Skeptic (gate 5) blackout. EDGAR formulas for CBRS / SPCX — do **not** assume a flat 180 days.
+NEW_LISTING (`<200` daily bars): tag + `days_of_history`; SMA200 = `n/a (insufficient history: <n> bars)` — never `?` and never a shorter MA. Route to the listings sleeve. Lockup inside horizon = Skeptic (gate 5) blackout. EDGAR formulas for CBRS / SPCX — do **not** assume a flat 180 days. IMP-024 persists those formulas as Memory observations (`as_of_knowledge` + 424B4 provenance; `--no-db` = ELIGIBLE only).
 
 ## PLAYBOOK / mesh / delivery
 

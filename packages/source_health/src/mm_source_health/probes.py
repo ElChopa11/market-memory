@@ -97,12 +97,14 @@ class ProbeContext:
         url: str,
         *,
         params: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
         parse_json: bool = False,
     ):
         return http_get(
             self._http,
             url,
             params=params,
+            headers=headers,
             max_attempts=self.max_attempts,
             sleep=self.sleep,
             parse_json=parse_json,
@@ -462,6 +464,59 @@ def probe_fred(ctx: ProbeContext) -> SourceHealth:
         notes=("observations endpoint HTTP 200; yield not copied into this report",),
         endpoint=base,
         probe=f"GET series_id={series_id} limit=1",
+    )
+
+
+def probe_edgar(ctx: ProbeContext) -> SourceHealth:
+    from mm_ingest.edgar import pad_cik, submissions_url
+    from mm_ingest.sources import edgar_headers
+
+    spec = ctx.config.get("edgar") if isinstance(ctx.config.get("edgar"), dict) else {}
+    base = str(spec.get("base_url") or "https://data.sec.gov")
+    issuers = spec.get("issuers") if isinstance(spec.get("issuers"), dict) else {}
+    cbrs = issuers.get("CBRS") if isinstance(issuers.get("CBRS"), dict) else {}
+    cik = str(cbrs.get("cik") or "2021728")
+    url = submissions_url(cik, base_url=base)
+    ua = str(spec.get("user_agent") or "")
+    headers = edgar_headers(ua)
+    result = ctx.http_get(url, headers=headers, parse_json=True)
+    probe = f"GET submissions CIK{pad_cik(cik)}.json (no filing text copied)"
+    if not result.ok:
+        return _row(
+            "edgar",
+            status=STATUS_UNAVAILABLE,
+            error_class=result.error_class,
+            latency_ms=result.latency_ms,
+            credentials_present="n/a",
+            notes=(
+                f"EDGAR HTTP failed (error_class={result.error_class}); declared UA; no lockup invented",
+                f"attempts={result.attempts}",
+            ),
+            endpoint=url,
+            probe=probe,
+        )
+    payload = result.json_payload if isinstance(result.json_payload, dict) else {}
+    filings = payload.get("filings") if isinstance(payload, dict) else None
+    if not isinstance(filings, dict):
+        return _row(
+            "edgar",
+            status=STATUS_DEGRADED,
+            error_class="parse_error",
+            latency_ms=result.latency_ms,
+            credentials_present="n/a",
+            notes=("HTTP 200 but submissions.filings missing; no lockup invented",),
+            endpoint=url,
+            probe=probe,
+        )
+    return _row(
+        "edgar",
+        status=STATUS_OK,
+        latency_ms=result.latency_ms,
+        last_success_at=ctx.captured_at,
+        credentials_present="n/a",
+        notes=("submissions endpoint HTTP 200; filing text and lockup values not copied into this report",),
+        endpoint=url,
+        probe=probe,
     )
 
 
@@ -1002,6 +1057,7 @@ _PROBES = {
     "binance.public": probe_binance,
     "stooq": probe_stooq,
     "fred": probe_fred,
+    "edgar": probe_edgar,
     "polygon": probe_polygon,
     "calendar.yaml": probe_calendar,
     "postgres": probe_postgres,

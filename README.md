@@ -71,6 +71,7 @@ uv run lab migrate
 uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
 # Phase 5b dry-run (no Polygon/FRED keys, no Postgres):
 uv run lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db
+uv run lab ingest --fixture tests/fixtures/edgar/cbrs_spcx_lockup.json --no-db
 # uv run lab ingest --window 7d
 
 # 5. Point-in-time query (as_of_knowledge <= T — never published_at / market_time)

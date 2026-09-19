@@ -30,10 +30,13 @@ def load_inventory_config(root: Path) -> dict[str, Any]:
     macro = load_yaml(root / "config" / "briefing" / "macro.yaml")
     live = macro.get("live") if isinstance(macro.get("live"), dict) else {}
     calendar_path = root / "config" / "briefing" / "calendar.yaml"
+    adapters = ingest.get("adapters") if isinstance(ingest.get("adapters"), dict) else {}
+    edgar = adapters.get("edgar") if isinstance(adapters.get("edgar"), dict) else {}
     return {
         "hl_info_url": str(ingest.get("info_url") or DEFAULT_INFO_URL),
         "stooq": live.get("stooq") if isinstance(live.get("stooq"), dict) else {},
         "fred": live.get("fred") if isinstance(live.get("fred"), dict) else {},
+        "edgar": edgar,
         "coingecko": live.get("coingecko") if isinstance(live.get("coingecko"), dict) else {},
         "calendar_path": calendar_path,
         "polygon": ingest.get("equities") if isinstance(ingest.get("equities"), dict) else {},
