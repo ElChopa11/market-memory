@@ -132,7 +132,14 @@ def test_queue_hygiene_imp007_done_imp008_single_thread() -> None:
     text = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     assert "| **ID** | IMP-007 |" in text
     assert "| **ID** | IMP-008 |" in text
-    assert "do not merge" not in text.lower()
+    # IMP-007/008/009 are DONE and must not carry a merge hold. IMP-033 may
+    # say "do not merge" for sister #59 / intake #58 (Principal hold).
+    imp007 = text[text.index("### IMP-007"): text.index("### IMP-008")]
+    imp008 = text[text.index("### IMP-008"): text.index("### IMP-009")]
+    imp009 = text[text.index("### IMP-009"): text.index("### IMP-010")]
+    assert "do not merge" not in imp007.lower()
+    assert "do not merge" not in imp008.lower()
+    assert "do not merge" not in imp009.lower()
     in_progress = re.findall(r"\| \*\*Status\*\* \| IN_PROGRESS \|", text)
     assert in_progress == ["| **Status** | IN_PROGRESS |"]
     assert re.search(r"### IMP-033.*?(?:\| \*\*Status\*\* \| IN_PROGRESS \|)", text, re.S)
