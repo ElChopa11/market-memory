@@ -9,6 +9,7 @@ from typing import Any
 from mm_common.hashing import canonical_json, sha256_hex
 from mm_common.naming import require_route_slug
 from mm_common.time import as_utc
+from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
 from mm_delivery.config import CHAT_ID_ENV, TelegramSettings, resolve_chat_id_env
 from mm_delivery.format import chunk_markdown_v2
 from mm_delivery.idempotency import idempotency_key
@@ -89,6 +90,7 @@ def build_payload(
     reason: str = "no_send",
     environ: dict[str, str] | None = None,
     content_hash_override: str | None = None,
+    chat_id_env_override: str | None = None,
 ) -> DeliveryPayload:
     """Exact Telegram chunks + idempotency key. Secrets stay in env, not in this object."""
     require_route_slug(desk)
@@ -98,7 +100,13 @@ def build_payload(
     chunks = chunk_markdown_v2(markdown, limit=settings.max_message_chars)
     route = settings.route(desk)
     thread_id = route.thread_id if route else None
-    chat_env = resolve_chat_id_env(desk, settings, environ)
+    if chat_id_env_override == PRINCIPAL_DM_CHAT_ID_ENV:
+        chat_env = PRINCIPAL_DM_CHAT_ID_ENV
+        thread_id = None
+    elif chat_id_env_override:
+        raise ValueError("chat_id_env_override must be TELEGRAM_CHAT_ID_PRINCIPAL_DM or omitted")
+    else:
+        chat_env = resolve_chat_id_env(desk, settings, environ)
     return DeliveryPayload(
         channel=settings.channel,
         text=markdown,

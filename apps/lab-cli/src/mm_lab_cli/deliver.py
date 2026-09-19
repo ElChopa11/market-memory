@@ -7,6 +7,7 @@ import sys
 from argparse import Namespace
 from pathlib import Path
 
+from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
 from mm_common.naming import require_publishing_desk, require_route_slug, route_slugs_help
 from mm_common.time import parse_utc, utcnow
 from mm_delivery.deliver import deliver
@@ -38,6 +39,11 @@ def add_deliver_parser(sub) -> None:
         "--i-mean-it",
         action="store_true",
         help="required for a live POST; without it, writes payload only",
+    )
+    test_p.add_argument(
+        "--to-principal-dm",
+        action="store_true",
+        help="route this test ping to TELEGRAM_CHAT_ID_PRINCIPAL_DM only (never TELEGRAM_CHAT_ID group)",
     )
     add_completion_args(test_p)
 
@@ -153,9 +159,15 @@ def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str |
     send = _want_send(args)
     if send is None:
         return 2, None
+    to_dm = cmd == "test" and bool(getattr(args, "to_principal_dm", False))
     live_test = cmd == "test" and bool(getattr(args, "i_mean_it", False))
-    if send or live_test:
+    group_live = bool(send or live_test) and not to_dm
+    if group_live:
         print(SEND_FROZEN_MSG, file=sys.stderr)
+        prepare_deliver(send=False)
+        return 2, None
+    if to_dm and bool(send) and not live_test:
+        print("lab deliver test: --to-principal-dm live POST requires --i-mean-it", file=sys.stderr)
         prepare_deliver(send=False)
         return 2, None
     report = prepare_deliver(send=False)
@@ -192,6 +204,14 @@ def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str |
         rc = _cmd_decay(args)
         return (2 if not report.ok else rc), None
     if cmd == "test":
+        to_dm = bool(getattr(args, "to_principal_dm", False))
+        live_test = bool(getattr(args, "i_mean_it", False))
+        if to_dm and live_test and not report.ok:
+            print(
+                "lab deliver test: preflight FAIL; no live DM POST (not degraded publish)",
+                file=sys.stderr,
+            )
+            args.i_mean_it = False
         rc, path = _cmd_test(args)
         return (2 if not report.ok else rc), path
     if cmd in {None, "pack"}:
@@ -410,27 +430,41 @@ def _cmd_test(args: Namespace) -> tuple[int, str | None]:
     root = Path(args.repo_root).resolve()
     desk = str(args.desk)
     as_of = utcnow()
-    markdown = (
-        "delivery test ping from lab deliver test\n"
-        "Not an order. Not Execution. Live trading remains HARD-GATED.\n"
-    )
+    to_dm = bool(getattr(args, "to_principal_dm", False))
+    live = to_dm and bool(getattr(args, "i_mean_it", False))
+    chat_env = PRINCIPAL_DM_CHAT_ID_ENV if to_dm else "TELEGRAM_CHAT_ID"
+    lines = [
+        "delivery test ping from lab deliver test",
+        "source: lab.deliver.test",
+        f"as_of_knowledge: {as_of.isoformat()}",
+        f"chat_id_env: {chat_env}",
+        "provenance: delivery test ping; not an observation; not a FRED rates print",
+        "Not an order. Not Execution. Live trading remains HARD-GATED.",
+    ]
+    if to_dm:
+        lines.append("Hive group TELEGRAM_CHAT_ID is not this route.")
+    markdown = "\n".join(lines) + "\n"
     out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
     result = deliver(
         markdown,
         desk=desk,
         as_of=as_of,
-        send=False,
+        send=live,
         kind="test",
         completeness_pct=100.0,
         repo=root,
         out_root=out_root,
         session_date=as_of.date().isoformat(),
         respect_quiet_hours=not bool(getattr(args, "ignore_quiet_hours", False)),
+        chat_id_env_override=PRINCIPAL_DM_CHAT_ID_ENV if to_dm else None,
     )
     payload = result.as_public_dict()
-    payload["no_send"] = True
+    payload["no_send"] = not live
     payload["test"] = True
+    payload["to_principal_dm"] = to_dm
     print(json.dumps(payload, sort_keys=True, indent=2))
+    if live and not result.sent:
+        return 2, _payload_path(payload)
     return 0, _payload_path(payload)
 
 

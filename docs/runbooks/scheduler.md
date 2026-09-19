@@ -44,4 +44,4 @@ How miss-sweep reads it:
 - CI fixture clock does **not** load the directory unless `--completions-dir` is passed (keeps the clock non-flaky).
 - Hive passes `--routine-id grok.sydney_morning` / `grok.us_pre_market` / `grok.weekly_investment_review`.
 
-`--no-send` only. Real send frozen until Principal step 5. SCHED-001 stays OPEN. Root cause: [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md).
+Hive group / desk pack `--send` stays SEND_FROZEN. DM-only live path is `lab deliver test --to-principal-dm --i-mean-it` (does not change miss-check). SCHED-001 stays OPEN. Root cause: [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md).

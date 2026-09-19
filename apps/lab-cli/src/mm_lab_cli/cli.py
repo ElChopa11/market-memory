@@ -213,7 +213,7 @@ def cmd_status() -> int:
     print("Publishing desks: " + "; ".join(roster_lines()) + ". Coord is orchestration only.")
     print("Mesh: lab mesh dry --fixture PATH --no-db (PG NOTIFY bus; --kill-desk leaves FAILED + error_class)")
     print("Env: lab env preflight (FOUND/MISSING/NOT CONFIGURED/DOWN SERVICE; delivery file /home/box/agent-data/delivery/telegram.env or MM_DELIVERY_ENV_FILE; never prints values)")
-    print("Deliver: lab deliver pack|fanout|watchlist|listings|scorecard|decay --fixture PATH --no-send (Ops publishes; Coord orchestrates; real send frozen until Principal step 5)")
+    print("Deliver: lab deliver pack --no-send (group/desk SEND_FROZEN). DM-only: lab deliver test --to-principal-dm --i-mean-it")
     print("Playbook: lab playbook run --fixture PATH --no-send (artifact ladder; LLM writer/critic only)")
     print("Watchlist: lab watchlist scan --fixture PATH --no-send (monitor.yaml review list; not a call)")
     print("Listings: lab listings scan --fixture PATH --no-send (IPO / index-event screen; not a sixth desk; not a call)")

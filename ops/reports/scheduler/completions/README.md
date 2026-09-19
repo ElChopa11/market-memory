@@ -40,4 +40,4 @@ uv run lab deliver pack --no-send --no-db --routine-id grok.weekly_investment_re
 uv run lab schedule heartbeat --routine-id grok.sydney_morning --exit-status 0 --no-db
 ```
 
-Real Telegram send stays frozen until Principal step 5.
+Hive group / desk pack `--send` stays SEND_FROZEN. DM-only: `lab deliver test --to-principal-dm --i-mean-it`.

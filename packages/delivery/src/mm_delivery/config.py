@@ -340,3 +340,10 @@ def chat_id_from_env(slug: str, settings: TelegramSettings, environ: dict[str, s
         return value
     fallback = (env.get(CHAT_ID_ENV) or "").strip()
     return fallback or None
+
+
+def principal_dm_chat_id_from_env(environ: dict[str, str] | None = None) -> str | None:
+    """Principal DM id only. Never falls back to ``TELEGRAM_CHAT_ID`` (group)."""
+    env = environ if environ is not None else os.environ
+    value = (env.get(PRINCIPAL_DM_CHAT_ID_ENV) or "").strip()
+    return value or None

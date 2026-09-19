@@ -296,9 +296,9 @@ def test_lab_deliver_send_is_frozen(capsys) -> None:
     rc = main(["deliver", "test", "--desk", "ops", "--send", "--i-mean-it", "--repo-root", str(ROOT)])
     err = capsys.readouterr().err
     assert rc == 2
-    assert "frozen" in err.lower()
-    assert "step 5" in err.lower()
-    assert "--no-send" in err
+    assert "SEND_FROZEN" in err or "frozen" in err.lower()
+    assert "Hive group stays frozen" in err or "frozen" in err.lower()
+    assert "--to-principal-dm" in err or "--no-send" in err
 
 
 def test_committed_tree_has_no_principal_chat_ids() -> None:

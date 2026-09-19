@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from mm_common.hashing import canonical_json, sha256_hex
-from mm_common.http import ERROR_MISSING_ENV, missing_env_notes
+from mm_common.http import missing_env_notes
 from mm_common.naming import require_route_slug
 from mm_common.time import as_utc, utcnow
+from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
 from mm_delivery.config import (
     BOT_TOKEN_ENV,
     CHAT_ID_ENV,
@@ -18,11 +20,14 @@ from mm_delivery.config import (
     bot_token_from_env,
     chat_id_from_env,
     load_telegram_settings,
+    principal_dm_chat_id_from_env,
     repo_root,
 )
 from mm_delivery.gates import (
     REASON_DEDUPE,
+    REASON_DM_IS_GROUP,
     REASON_MISSING_CHAT,
+    REASON_MISSING_PRINCIPAL_DM,
     REASON_MISSING_TOKEN,
     REASON_NO_SEND,
     REASON_OK,
@@ -57,11 +62,13 @@ class DeliveryResult:
             "desk": self.payload.desk,
             "idempotency_key": self.payload.idempotency_key,
             "kind": self.payload.kind,
+            "chat_id_env": self.payload.chat_id_env,
             "notes": list(self.notes),
             "payload_hash": self.payload_hash,
             "reason": self.reason,
             "send_enabled": SEND_ENABLED,
             "sent": self.sent,
+            "source": "lab.deliver",
             "written": self.written or {},
         }
         if self.payload.desk:
@@ -123,10 +130,13 @@ def deliver(
     png: bytes | None = None,
     png_filename: str | None = None,
     failed_sink: list[dict[str, Any]] | None = None,
+    chat_id_env_override: str | None = None,
 ) -> DeliveryResult:
     """Build the exact payload. POST only when send=True and every gate passes.
 
     Tests must pass a mock ``client`` (never the live Bot API). ``SEND_ENABLED`` stays false.
+    ``chat_id_env_override`` may be ``TELEGRAM_CHAT_ID_PRINCIPAL_DM`` (DM-only).
+    It must never resolve a POST to ``TELEGRAM_CHAT_ID`` (Hive group).
     """
     root = repo_root(repo)
     cfg = settings or load_telegram_settings(root)
@@ -151,6 +161,7 @@ def deliver(
         reason=REASON_NO_SEND,
         environ=environ,
         content_hash_override=content_hash_override,
+        chat_id_env_override=chat_id_env_override,
     )
     written: dict[str, str] | None = None
     if out_root is not None:
@@ -177,15 +188,48 @@ def deliver(
             notes=missing_env_notes(BOT_TOKEN_ENV, source="telegram"),
             written=written,
         )
-    chat_id = chat_id_from_env(desk, cfg, environ)
-    if not chat_id:
-        return DeliveryResult(
-            payload=payload,
-            sent=False,
-            reason=REASON_MISSING_CHAT,
-            notes=missing_env_notes(CHAT_ID_ENV, source="telegram"),
-            written=written,
-        )
+    env = environ if environ is not None else os.environ
+    if chat_id_env_override == PRINCIPAL_DM_CHAT_ID_ENV:
+        chat_id = principal_dm_chat_id_from_env(env)
+        if not chat_id:
+            return DeliveryResult(
+                payload=payload,
+                sent=False,
+                reason=REASON_MISSING_PRINCIPAL_DM,
+                notes=missing_env_notes(PRINCIPAL_DM_CHAT_ID_ENV, source="telegram")
+                + ("DM-only path; never falls back to TELEGRAM_CHAT_ID (group)",),
+                written=written,
+            )
+        group_id = (env.get(CHAT_ID_ENV) or "").strip()
+        if group_id and chat_id == group_id:
+            return DeliveryResult(
+                payload=payload,
+                sent=False,
+                reason=REASON_DM_IS_GROUP,
+                notes=(
+                    "TELEGRAM_CHAT_ID_PRINCIPAL_DM must not equal TELEGRAM_CHAT_ID; "
+                    "DM-only path never POSTs to the Hive group",
+                ),
+                written=written,
+            )
+    else:
+        chat_id = chat_id_from_env(desk, cfg, environ)
+        if not chat_id:
+            return DeliveryResult(
+                payload=payload,
+                sent=False,
+                reason=REASON_MISSING_CHAT,
+                notes=missing_env_notes(CHAT_ID_ENV, source="telegram"),
+                written=written,
+            )
+        if payload.chat_id_env == PRINCIPAL_DM_CHAT_ID_ENV:
+            return DeliveryResult(
+                payload=payload,
+                sent=False,
+                reason=REASON_DM_IS_GROUP,
+                notes=("group/desk send must not resolve to TELEGRAM_CHAT_ID_PRINCIPAL_DM",),
+                written=written,
+            )
 
     store = dedupe or DedupeStore(ttl_seconds=cfg.dedupe_ttl_seconds)
     store.load()

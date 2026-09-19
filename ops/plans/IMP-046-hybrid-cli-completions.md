@@ -1,8 +1,8 @@
 # PLAN — IMP-046 Hybrid Step 4: Hive CLI completion rows
 
-**Report status:** IN_PROGRESS (this PR).  
+**Report status:** DONE (#72).  
 **Owner:** Ops  
-**Scope:** Every Hive fire writes a completion row the IMP-042 miss detector can observe. `--no-send` only. Freeze holds until step 5. Paper only.
+**Scope:** Every Hive fire writes a completion row the IMP-042 miss detector can observe. `--no-send` only. Freeze held until Step 5a (DM-only). Paper only.
 
 ## Why
 

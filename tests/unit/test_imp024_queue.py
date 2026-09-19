@@ -19,7 +19,7 @@ def test_queue_imp022_done_edgar_single_thread_stooq_open() -> None:
     assert any("IMP-024" in line and "DONE" in line for line in board_lines)
     assert not any("IMP-022" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-046)" in queue
+    assert "`IN_PROGRESS` count: **1** (IMP-047)" in queue
     for item_id in ("IMP-023", "IMP-035"):
         assert any(item_id in line and "READY" in line for line in board_lines), item_id
         assert not any(item_id in line and "IN_PROGRESS" in line for line in board_lines)
@@ -42,7 +42,7 @@ def test_queue_imp022_done_edgar_single_thread_stooq_open() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-046",)
+    assert report.in_progress == ("IMP-047",)
     assert report.auto_merge is False
     assert report.auto_waive is False
     public = report.as_public_dict()

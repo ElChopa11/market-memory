@@ -47,6 +47,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Desk knowledge base (IMP-041) is **DONE** (#67). Cached prompt prefix. A prior never triggers or sizes.
 - Scheduler miss detector (IMP-042) is **DONE** (#68). Heartbeat-on-fire is a log. SCHED-001 stays OPEN.
 - Hybrid Step 2 delivery env-file + preflight (IMP-043) is **DONE** (#71). `--no-send` only.
-- Hybrid Step 4 Hive CLI completion rows (IMP-046) is **IN_PROGRESS** (this PR). `--no-send` only. Delivery isolation (IMP-044) and per-desk topics vs groups (IMP-045) are BACKLOG — do not build.
+- Hybrid Step 4 Hive CLI completion rows (IMP-046) is **DONE** (#72).
+- Hybrid Step 5a DM-only live send (IMP-047) is **IN_PROGRESS** (this PR). Hive group / desk pack `--send` stays SEND_FROZEN. Weekly review CLI (IMP-048) is BACKLOG — do not author weekly. Delivery isolation (IMP-044) and per-desk topics vs groups (IMP-045) are BACKLOG — do not build.
 - Principal FREE SOURCE PRIORITY 2026-09-19: IMP-022 DONE → IMP-024 DONE → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.
