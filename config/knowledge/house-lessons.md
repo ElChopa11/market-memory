@@ -214,9 +214,23 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 | **run_id** | *(none invented — cite artifact `research/base-rates/phase1-2026-09-19.md`; Principal direction on the Phase-1 equity run)* |
 | **Desk** | Intel / Quant |
 | **What happened** | `NASDAQ:SPCX` resolved to SpaceX, but Polygon daily aggs by ticker string returned the prior listing (The SPAC and New Issue ETF, ~$7M AUM). 454 bars from 2024-09-19, SpaceX IPO 2026. Median 1-bar 0%, vol ~121%, max 1-bar +29.8% — an entity splice, not a price series. |
-| **Lesson** | **Resolving a ticker to an identifier does not prove the returned series belongs to one entity.** Continuity check (listing date and/or N-sigma jump) flags `suspected_ticker_reuse` and **excludes** the series from computation/pools. Do not treat a qualified_id hit as a clean tape. |
+| **Lesson** | **Resolving a ticker to an identifier does not prove the returned series belongs to one entity.** Continuity check flags `suspected_ticker_reuse` and **excludes** the series from the void-excluded pool. Do not treat a qualified_id hit as a clean tape. **N-sigma VOID is retired** (see the 2026-09-19 follow-up lesson): listing-date + 20/20 sustained level-shift are the voids; a single-bar extreme flags only. |
 | **Does not** | Promote or demote watchlist membership. Does not invent a spliced-clean series. Does not authorise a size. Does not close OPEN incidents. |
 | **Overrides prior** | No — no persist `run_id`. Process/data lesson. |
+
+---
+
+## 2026-09-19 — N-sigma/MAD is the wrong ticker-reuse test
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(none invented — cite artifacts `research/base-rates/phase1-2026-09-19.md`, `config/research/ticker_continuity.yaml`; Principal rejection of PR #77 N=8 retune)* |
+| **Desk** | Intel / Quant |
+| **What happened** | Continuity VOID used `max \|1-bar\| > N × 1.4826×MAD` (N=8). That scale is tail-insensitive: a fat-tail equity day always prints a large multiple. The rule voided QQQ, NVDA, BB, MRNA, STRC (and BMNR) — legitimate tails and possible unadjusted corporate actions — the same way it caught SPCX ticker reuse. Retuning N is parameter fitting. |
+| **Lesson** | **N-sigma / MAD void was the wrong mechanism for ticker reuse.** Correct voids: **listing-date** (first bar precedes known `listed_on`) and **sustained 20/20 median level-shift** (`median(close, 20 after) / median(close, 20 before) >= 3` or `<= 1/3`; scan every bar with a full window; skip B when either side has fewer than 20 bars — do not invent). **Single-bar extremes FLAG only, never VOID.** A flag is information; a void is a decision. **Always prefer adjusted equity bars** (`adjusted=true` on Polygon daily aggs). Voiding because a fetch was unadjusted is incorrect. Report full pool and continuity-void-excluded pool. The coin-flip 1R:2R benchmark holds regardless of how the continuity question resolves. |
+| **Does not** | Authorise retuning N. Does not promote or demote watchlist membership. Does not invent a spliced-clean series. Does not authorise a size. Does not treat a FLAG as a VOID. Does not skip the listing-date check on SPCX. |
+| **Overrides prior** | Yes, the N-sigma VOID *mechanism* in the 2026-09-19 “Ticker resolution is not entity continuity” lesson. Listing-date VOID and the entity-continuity lesson itself still stand. No persist `run_id`; process/data override of the test, not a literature prior. |
 
 ---
 

@@ -6,12 +6,13 @@ Do not invent `run_id`. Cite file paths.
 
 This cloud VM does **not** have `POLYGON_API_KEY`. Equity bars were not fetched here.
 Crypto tables live in [`phase1-2026-09-19.md`](phase1-2026-09-19.md) (13 names computed).
-Continuity check is in `scripts/research/base_rates_phase1.py`.
-Re-run **on the box** (free-tier pace, **no** `--no-sleep`; monitor.yaml only — **no overlay fetch**):
+Continuity check is in `scripts/research/base_rates_phase1.py` (rules A/B VOID, C FLAG).
+Re-run **on the box** (free-tier pace, **no** `--no-sleep`; monitor.yaml only — **no overlay fetch**;
+`--refresh` so Polygon cache is `adjusted=true`):
 
 ```text
 export POLYGON_API_KEY=...          # box env only; never commit
-uv run python scripts/research/base_rates_phase1.py
+uv run python scripts/research/base_rates_phase1.py --refresh
 # writes research/base-rates/phase1-<Sydney-date>.md
 ```
 
@@ -30,12 +31,14 @@ in this pass (quota reserved for SPCX/BMNR re-run).
 | **Identity start** | `listed_on: 2026-06-11` (EDGAR 424B4 expected_pricing_date / prospectus_date; `config/listings/watchlist_new_listings.yaml`, `config/research/ticker_continuity.yaml`) |
 | **Principal-cited tape** | 454 daily bars from 2024-09-19 (Polygon ticker-string splice) |
 | **Principal-cited prints** | median 1-bar **exactly 0.000%**; vol **120.9%**; max 1-bar **+29.8%**; max 10-bar **+101.8%**; chop 10-bar max **+624%** |
-| **Verdict** | **VOID** `suspected_ticker_reuse`. Exclude from pooled stats. Do not trim and keep. |
-| **Code** | `mm_ingest.equities.continuity` (listing date **or** N=8 robust-sigma, `sigma = 1.4826 * MAD`); `PolygonEquitiesAdapter.continuity_check` |
+| **Verdict** | **VOID** `suspected_ticker_reuse` under **rule A** (first bar 2024-09-19 precedes `listed_on` 2026-06-11). Likely also **rule B** (ETF ~$22 → SpaceX ~$150 sustained). Exclude from the void-excluded pool. Do not trim and keep. **Not** an N-sigma void. |
+| **Code** | `mm_ingest.equities.continuity` (A listing-date **or** B 20/20 level-shift); `PolygonEquitiesAdapter.continuity_check`; daily aggs pin `adjusted=true` |
 
 House lesson: resolving a ticker to an identifier does **not** prove the returned series belongs to one entity. See `config/knowledge/house-lessons.md`.
 
-**Pooled 1R:2R without SPCX.** This VM cannot recompute the equity-inclusive pool (no Polygon key). The crypto-only pool in [`phase1-2026-09-19.md`](phase1-2026-09-19.md) never included SPCX: gross **32.4%** (5315 targets / 11113 stops); net **31.8%**. On-box re-run after continuity void must publish the new **equity+crypto** pooled gross/net with SPCX out. Do not invent that number here.
+**Pooled 1R:2R without SPCX.** This VM cannot recompute the equity-inclusive pool (no Polygon key). The crypto-only pool in [`phase1-2026-09-19.md`](phase1-2026-09-19.md) never included SPCX: gross **32.4%** (5315 targets / 11113 stops); net **31.8%**. On-box re-run after A/B continuity must publish **both** pools (full vs void-excluded). Do not invent that number here.
+
+**Robustness (headline, not a footnote).** Prior numbers: voids barely moved the headline (~32.9%→32.8% gross, ~32.4%→32.3% net). **The coin-flip benchmark holds regardless of how the continuity question resolves.** That is a strength.
 
 ---
 
@@ -79,13 +82,18 @@ Not a promotion. Not a reject. **DO NOT SIZE**.
 
 ---
 
-## BMNR audit
+## BMNR / STRC audit — quarantine pending adjusted re-fetch, then rule B only
 
-Principal-cited: **449 bars**, 1-bar mean **2.141%** vs median **-0.405%**.
+Principal-cited BMNR: **449 bars**, 1-bar mean **2.141%** vs median **-0.405%**; one bar ~695%.
+STRC: huge robust-sigma on a ~12% bar (#77 N=8 run).
 
-No `listed_on` in `config/research/ticker_continuity.yaml` (not a dated IPO splice like SPCX / CBRS). This VM did not fetch the tape, so the N-sigma check did not run.
+No `listed_on` (not a dated IPO splice like SPCX / CBRS). **Do not VOID on the single bar (rule C FLAG only).**
 
-**Do not silently keep BMNR in pools if the box continuity check flags `suspected_ticker_reuse`.** Until that re-run: treat the mean/median gap as **unresolved** (fat right tail on one entity, **or** a splice). Not cleared. Not voided here. Not a call.
+**Polygon adjustment check (2026-09-19):** `PolygonEquitiesAdapter._ohlcv` did **not** send `adjusted=`. Polygon /v2/aggs vendor default is true — that is **not** an explicit pin. Code now pins `adjusted=true`. This cloud VM has no `POLYGON_API_KEY`, so BMNR/STRC were not re-fetched here.
+
+**Quarantine** BMNR and STRC until the box `--refresh` re-fetch, then apply **rule B only** (20/20 sustained level-shift). Voiding because the fetch was unadjusted is incorrect.
+
+QQQ, NVDA, BB, MRNA: **restore** to the compute pool (legitimate fat tails). Losing QQQ/NVDA costs more than the false N-sigma void protects.
 
 ---
 

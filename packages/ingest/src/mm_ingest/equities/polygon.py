@@ -2,10 +2,18 @@
 
 Read-only REST. No order endpoints. Degrade-never-invent.
 
+Daily (and intraday) aggs **always** request ``adjusted=true``. Prior code
+did not send ``adjusted=``; Polygon's /v2/aggs vendor default is true, but
+that is not an explicit pin. Unadjusted bars can look like ticker reuse
+(BMNR ~695% one-bar, STRC huge sigma). Prefer adjusted equity bars.
+Voiding because our fetch was unadjusted is incorrect.
+
 Ticker-reuse: Polygon aggregates by ticker *string*. Call
-``continuity_check`` (listing date + N-sigma MAD) after ``ohlcv_daily``.
-A flagged series is ``suspected_ticker_reuse`` — callers that pool must
-exclude it. This method does **not** silently trim bars.
+``continuity_check`` after ``ohlcv_daily`` (listing-date VOID, 20/20
+sustained level-shift VOID, single-bar FLAG only). A **voided** series is
+``suspected_ticker_reuse`` — callers that pool must exclude it from the
+void-excluded pool. A **flag** stays in the compute pool. This method does
+**not** silently trim bars. N-sigma/MAD is diagnostic only and never voids.
 """
 
 from __future__ import annotations
@@ -35,6 +43,8 @@ from mm_ingest.sources import POLYGON_BASE_URL, POLYGON_SOURCE_NAME
 
 API_KEY_ENV = "POLYGON_API_KEY"
 DAILY_PATH = "/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{start}/{end}"
+POLYGON_OHLCV_ADJUSTED = True
+POLYGON_ADJUSTED_QUERY = "true"
 DIVIDENDS_PATH = "/v3/reference/dividends"
 SPLITS_PATH = "/v3/reference/splits"
 # Documented reference events. Free/starter plans often 403/404 — classify, never invent.
@@ -115,20 +125,17 @@ class PolygonEquitiesAdapter:
         bars: Sequence[OHLCVBar],
         *,
         listed_on: date | None = None,
-        n_sigma: float | None = None,
     ):
-        """Flag ``suspected_ticker_reuse`` (listing date or N-sigma jump).
+        """VOID ``suspected_ticker_reuse`` on listing-date (A) or 20/20
+        sustained level-shift (B). Single-bar extremes FLAG only (C).
 
-        Does not drop bars. Phase-1 base rates (and any pool) must exclude a
-        flagged series. N=8, sigma=1.4826*MAD of 1-bar simple returns.
+        Does not drop bars. Phase-1 base rates must exclude a **voided**
+        series from the void-excluded pool and keep a **flagged** series
+        in the compute pool. N-sigma/MAD is not a VOID.
         """
-        from mm_ingest.equities.continuity import CONTINUITY_N_SIGMA, check_ohlcv_continuity
+        from mm_ingest.equities.continuity import check_ohlcv_continuity
 
-        return check_ohlcv_continuity(
-            bars,
-            listed_on=listed_on,
-            n_sigma=CONTINUITY_N_SIGMA if n_sigma is None else float(n_sigma),
-        )
+        return check_ohlcv_continuity(bars, listed_on=listed_on)
 
     def ohlcv_intraday(self, query: EquitiesQuery) -> tuple[OHLCVBar, ...]:
         return self._ohlcv(query, multiplier=self.intraday_multiplier, timespan=self.intraday_timespan)
@@ -167,7 +174,12 @@ class PolygonEquitiesAdapter:
                 start=start,
                 end=end,
             )
-            payload, error_class = self._get(path)
+            if not POLYGON_OHLCV_ADJUSTED:
+                raise RuntimeError("unadjusted Polygon OHLCV is not a research path")
+            payload, error_class = self._get(
+                path,
+                params={"adjusted": POLYGON_ADJUSTED_QUERY},
+            )
             if error_class != ERROR_NONE:
                 self.last_error_class = error_class
                 continue

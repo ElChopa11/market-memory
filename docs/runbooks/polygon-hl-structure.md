@@ -37,7 +37,7 @@ Missing `POLYGON_API_KEY` or `FRED_API_KEY` **never invents** prints. Live adapt
 | Package | `mm_ingest.equities` (`packages/ingest`) — Intel, not `mm_desks` |
 | Vendor | `polygon` (swappable interface; default locked) |
 | Secret | `POLYGON_API_KEY` env only. Update `.env.example`; never commit `.env` |
-| Tape | Daily OHLCV; 5-minute intraday when the plan allows (403/429 → unavailable) |
+| Tape | Daily OHLCV with `adjusted=true` pinned on every `/v2/aggs` call (do not rely on the vendor default); 5-minute intraday when the plan allows (403/429 → unavailable) |
 | Corporate actions | Dividends + splits (`/v3/reference/...`) when the plan returns rows |
 | Earnings | Documented ticker-events path. Free/starter often 403 → `tos_or_blocked`; **not invented** |
 | Rate limit | `config/ingest.yaml` → `rate_limits.polygon` (free-tier default 5 req/min) |

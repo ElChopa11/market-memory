@@ -335,16 +335,98 @@ def test_spcx_listing_date_voids_and_drops_from_pool(tmp_path: Path) -> None:
     assert "IS** the vendor cap" in text or "**IS** the vendor cap" in text
     assert "suspected_ticker_reuse" in text
     assert "| SPCX |" in text and "void" in text
-    assert "Voided ``suspected_ticker_reuse`` names are **not** in this pool: SPCX" in text
+    assert "Voided ``suspected_ticker_reuse`` names are **not** in the void-excluded pool: SPCX" in text
     # BTC is in the pool; SPCX is not listed as computed in three-line "Enough history".
     assert "Enough history to study at all" in text
     assert "BTCUSD" in text
     line2 = [ln for ln in text.splitlines() if "Enough history to study at all" in ln][0]
     assert "SPCX" not in line2
+    assert "full pool" in text.lower() or "Full pool" in text
+    assert "continuity-void-excluded" in text
+    assert "coin-flip benchmark holds regardless" in text.lower()
+    assert "listing-date" in text.lower() or "listing date" in text.lower()
+    assert "level-shift" in text.lower() or "level shift" in text.lower()
+    assert "FLAG only" in text or "flag only" in text.lower()
+    assert "adjusted=true" in text
     assert "permission filter" in text.lower()
     assert "VVVUSD" in text or "interpretable outlier" in text
-    assert "BMNR audit" in text
+    assert "BMNR" in text and "STRC" in text
     assert "--overlay" not in text
     assert "universe-overlay" not in text
     assert "--overlay" not in SCRIPT.read_text(encoding="utf-8")
+
+
+def _eq_spec(mod, ticker: str = "NVDA"):
+    return mod.SymbolSpec(
+        ticker=ticker,
+        membership_key=ticker,
+        tape_alias=ticker,
+        round="base",
+        tier="universe",
+        cluster="eq",
+        venue="nasdaq",
+        kind="equity",
+        qualified_id=f"NASDAQ:{ticker}",
+        coin=None,
+        note="",
+    )
+
+
+def test_nvda_like_fat_tail_stays_in_void_excluded_pool() -> None:
+    mod = _load()
+    start = date(2024, 9, 19)
+    bars = []
+    px = 100.0
+    for i in range(250):
+        if i == 120:
+            px = px * 1.1872
+        else:
+            px = px * 1.0015
+        bars.append(_bar(start + timedelta(days=i), px, open_=px, high=px + 1, low=px - 1))
+    result = mod.compute_for_bars(
+        _eq_spec(mod, "NVDA"), bars, source="polygon:NVDA", cost_frac=0.0019, ann=252.0
+    )
+    result = mod.apply_continuity(
+        result,
+        bars,
+        spec=_eq_spec(mod, "NVDA"),
+        source="polygon:NVDA",
+        continuity_cfg=mod.load_continuity_config(ROOT / "config" / "research" / "ticker_continuity.yaml"),
+    )
+    assert result.exclusion is None
+    assert result.void_code is None
+    assert result.regimes
+    # Dual pools: this name is in both.
+    assert result in mod._void_excluded_pool([result])
+    assert result in mod._full_pool([result])
+
+
+def test_level_shift_voids_but_remains_in_full_pool() -> None:
+    mod = _load()
+    start = date(2024, 9, 19)
+    bars = []
+    for i in range(220):
+        px = 22.0 if i < 40 else 150.0
+        bars.append(_bar(start + timedelta(days=i), px, open_=px, high=px + 1, low=px - 1))
+    spec = _eq_spec(mod, "SPCX")
+    result = mod.compute_for_bars(spec, bars, source="polygon:SPCX", cost_frac=0.0019, ann=252.0)
+    cfg = {
+        "level_shift_window": 20,
+        "level_shift_ratio": 3.0,
+        "single_bar_flag_abs": 0.20,
+        "instruments": {},  # no listed_on — void on B only
+    }
+    result = mod.apply_continuity(result, bars, spec=spec, source="polygon:SPCX", continuity_cfg=cfg)
+    assert result.void_code == "suspected_ticker_reuse"
+    assert result.exclusion is not None
+    assert result.regimes  # stats kept so the full pool can include it
+    full = mod._full_pool([result])
+    clean = mod._void_excluded_pool([result])
+    assert full == [result]
+    assert clean == []
+    rates_full = mod._pool_long_rates(full)
+    rates_clean = mod._pool_long_rates(clean)
+    assert rates_full["gross_hits"] + rates_full["gross_stops"] > 0
+    assert rates_clean["gross_hits"] == 0 and rates_clean["gross_stops"] == 0
+
 

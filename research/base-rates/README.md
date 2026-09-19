@@ -25,7 +25,8 @@ Principal actions on the 2026-09-19 dump (SPCX void, 2-year cap, permission filt
 - Equities: Polygon (`POLYGON_API_KEY`). Crypto: Hyperliquid public `/info` `candleSnapshot` (no key); CoinGecko OHLC only as fallback.
 - Offline / cached: `--offline` reads `--bars-dir` / `--cache-dir` only. Live fetches also write `research/base-rates/cache/` (gitignored).
 - Polygon free tier is 5 req/min. **Do not** pass `--no-sleep` on a live free-tier run.
-- Continuity check (`mm_ingest.equities.continuity`, listing dates in `config/research/ticker_continuity.yaml`): first bar before known listing date, or a single-bar move beyond N=8 robust-sigma (1.4826×MAD), flags `suspected_ticker_reuse` and **excludes** the series from pools. Resolving a ticker to an identifier does not prove the series is one entity.
+- Continuity check (`mm_ingest.equities.continuity`, listing dates in `config/research/ticker_continuity.yaml`): **A** listing-date VOID; **B** 20/20 sustained level-shift VOID; **C** single-bar extreme FLAG only (never VOID). N-sigma/MAD is diagnostic, not a VOID. Resolving a ticker to an identifier does not prove the series is one entity. Polygon daily aggs pin `adjusted=true`.
+- Report **full pool** (with voids) and **continuity-void-excluded** so every exclusion's effect is visible. The coin-flip 1R:2R benchmark holds regardless of how the continuity question resolves.
 - Every `config/watchlist/monitor.yaml` `names:` ticker appears in the monitor report (computed, void, or excluded with a reason). Under 200 daily bars → exclude; no substitute symbol, no synthetic fill.
 - Equity daily history on the free tier **IS** Polygon's **2-year** cap. Equity base rates are **PROVISIONAL** until more history exists.
 - No Market Memory write, no `run_id`, no desk runner, no Telegram, no LLM.

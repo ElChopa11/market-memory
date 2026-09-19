@@ -1,31 +1,57 @@
-# Known instrument identity-start dates for the Polygon ticker-reuse check.
-# Not a universe change. Not a monitor.yaml membership edit. Paper only.
+# Known instrument identity-start dates and continuity rules for Polygon
+# ticker-reuse checks. Not a universe change. Not a monitor.yaml membership
+# edit. Paper only.
 #
 # Polygon aggregates daily bars by ticker *string*. Resolving NASDAQ:SPCX
 # does not prove the series is SpaceX — the same ticker previously belonged
 # to The SPAC and New Issue ETF (~$7M AUM).
 #
 # listed_on is the first session of the *current* legal entity (EDGAR /
-# Principal cited). First bar before listed_on → suspected_ticker_reuse →
-# exclude from computation/pools. Do not invent run_ids. Do not trim silently.
+# Principal cited). First bar before listed_on → rule A VOID
+# (suspected_ticker_reuse) → exclude from the void-excluded pool. Do not
+# invent run_ids. Do not trim silently.
+#
+# Principal 2026-09-19: N-sigma / 1.4826×MAD is NOT a VOID. It is a
+# tail-insensitive scale; retuning N is parameter fitting. Rules:
+#
+#   A. Listing-date violation → VOID (first bar precedes listed_on).
+#   B. Sustained level shift → VOID.
+#      Suspect bar: scan EVERY index i that has `level_shift_window` closes
+#      strictly before and strictly after. Do not invent a window.
+#      Reported suspect bar = the scanned index whose
+#      median(close after) / median(close before) is most extreme.
+#      VOID if that ratio >= level_shift_ratio or <= 1/level_shift_ratio.
+#      Fewer than window bars each side → skip B with reason.
+#   C. Single-bar extreme → FLAG only, never VOID.
+#      FLAG if max |1-bar simple return| >= single_bar_flag_abs.
+#      Robust-sigma multiple is logged as a diagnostic and must not void.
 
 version: "2026-09-19"
 kind: ticker_continuity
 owner: intel
 promote: false
 
-# N-sigma method (also hardcoded in mm_ingest.equities.continuity):
-#   sigma = 1.4826 * MAD(1-bar simple returns)
-#   flag if max |1-bar| > n_sigma * sigma
-#   if MAD is 0 (flat tape), flag if max |1-bar| > mad_zero_abs_floor
-n_sigma: 8.0
-sigma_method: robust_mad
-mad_zero_abs_floor: 0.05
+level_shift_window: 20
+level_shift_ratio: 3.0
+single_bar_flag_abs: 0.20
+sigma_method: robust_mad_diagnostic_only
 polygon_free_tier_calendar_days: 730
 polygon_free_tier_note: >
   Polygon's 2-year free-tier history limit. On the 2026-09-19 Phase-1 run
   that is 2024-09-19 → 2026-09-18 inclusive (~501 daily bars). This IS the
   vendor cap, not an inferred window.
+
+# Daily aggs pin. Prior mm_ingest.equities.polygon._ohlcv did not send
+# `adjusted=` (Polygon /v2/aggs vendor default is true, but that is not an
+# explicit pin). We now send adjusted=true on every aggs call. Prefer
+# adjusted equity bars. Voiding because a fetch was unadjusted is incorrect.
+polygon_adjusted: true
+polygon_adjusted_note: >
+  Inspected 2026-09-19: the daily aggs GET did not include `adjusted`.
+  Polygon documents default adjusted=true. That is not evidence we fetched
+  adjusted bars. Code now pins adjusted=true. Re-fetch BMNR/STRC (and all
+  equities) on the delivery box with --refresh before treating a 20/20
+  level-shift VOID as final for those two names.
 
 instruments:
   SPCX:
@@ -39,7 +65,9 @@ instruments:
     prior_entity: "The SPAC and New Issue ETF (~$7M AUM, avg vol ~1.67K)"
     note: >
       Ticker reuse / entity splice. Polygon returns the ETF tape under the
-      same string. Principal 2026-09-19: void; exclude from pooled stats.
+      same string. Principal 2026-09-19: VOID under rule A (first bar
+      precedes listed_on). Likely also B (ETF ~$22 → SpaceX ~$150 sustained).
+      Exclude from the void-excluded pool. Not an N-sigma void.
   CBRS:
     qualified_id: NASDAQ:CBRS
     entity: Cerebras Systems Inc
@@ -47,4 +75,20 @@ instruments:
     listed_on_source: "config/watchlist/monitor.yaml resolution.CBRS.listing_date"
     note: >
       NEW_LISTING. Pre-listing CBRS bars, if Polygon returns them, are a
-      different entity and must not enter pools.
+      different entity and must not enter pools (rule A).
+  BMNR:
+    qualified_id: NASDAQ:BMNR
+    entity: Bitmine Immersion Technologies
+    pending_adjusted_refetch: true
+    note: >
+      On-box N=8 run: one bar ~695% (103× robust-sigma). Consistent with
+      unadjusted corporate action. Quarantine until adjusted=true re-fetch;
+      then apply rule B only. Rule C flags; never void on the single bar.
+  STRC:
+    qualified_id: NASDAQ:STRC
+    entity: Strategy Inc (STRC preferred)
+    pending_adjusted_refetch: true
+    note: >
+      On-box N=8 run: huge robust-sigma on a ~12% bar. Consistent with
+      unadjusted corporate action. Quarantine until adjusted=true re-fetch;
+      then apply rule B only. Rule C flags; never void on the single bar.
