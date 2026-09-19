@@ -48,4 +48,4 @@ def test_sched001_is_p0_and_stays_open() -> None:
     assert "| **Status** | OPEN |" in block
     assert "no window yet" in block.lower() or "Do not close" in block
     assert "sydney-morning-digest-8am" in queue
-    assert queue.count("| **Status** | OPEN |") == 3
+    assert queue.count("| **Status** | OPEN |") == 6
