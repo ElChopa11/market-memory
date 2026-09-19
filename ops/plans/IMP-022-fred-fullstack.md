@@ -1,6 +1,6 @@
 # PLAN — IMP-022 FRED full-stack close
 
-**Report status:** DONE (operator persist run_id `fred-fullstack-20260919-101938-aest`, 2026-09-19).  
+**Report status:** DONE (operator persist run_id `fred-fullstack-20260919-101938-aest`, 2026-09-19).
 **Owner:** Intel (ingest) / Ops (env)  
 **Scope:** Close `SRC-FRED-MISSING-ENV` with persist + provenance + published value. `--no-db` = ELIGIBLE only. Paper only.
 

@@ -21,6 +21,9 @@ uv run lab ingest --fixture tests/fixtures/phase5b/fred_series.json --no-db
 uv run lab ingest --fixture tests/fixtures/phase5b/fred_missing_key.json --no-db
 uv run lab ingest --fixture tests/fixtures/phase5b/economic_calendar.yaml --no-db
 
+# SEC EDGAR CBRS/SPCX lockup (IMP-024; --no-db = ELIGIBLE only)
+uv run lab ingest --fixture tests/fixtures/edgar/cbrs_spcx_lockup.json --no-db
+
 # Persist a fixture window when Postgres + `--no-objects` (existing Phase 1 path)
 uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
 ```

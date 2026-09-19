@@ -9,6 +9,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from mm_common.time import parse_utc, utcnow
 from mm_lab_cli.backtest import add_backtest_parser, dispatch_backtest
@@ -227,8 +228,8 @@ def cmd_ingest(args: argparse.Namespace) -> int:
     from mm_ingest.pipeline import (
         envelopes_from_fixture,
         ingest_from_client,
-        ingest_from_fixture,
         load_fixture_file,
+        persist_envelopes,
         stats_from_envelopes,
     )
 
@@ -246,11 +247,15 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         stats = stats_from_envelopes(envelopes, dry_run=True)
         payload = stats.as_public_dict()
         payload["qualities"] = sorted({e.data_quality.value for e in envelopes})
+        from mm_ingest.edgar_stack import edgar_envelopes, run_edgar_stack
         from mm_ingest.fred_stack import fred_envelopes, run_fred_stack
 
         if fred_envelopes(envelopes):
             stack = run_fred_stack(envelopes, no_db=True)
             payload["fred_stack"] = stack.as_public_dict()
+        if edgar_envelopes(envelopes):
+            stack = run_edgar_stack(envelopes, no_db=True)
+            payload["edgar_stack"] = stack.as_public_dict()
         print(json.dumps(payload))
         return 0
 
@@ -264,16 +269,24 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         print(str(exc), file=sys.stderr)
         return 2
     instruments = load_instruments()
+    payload: dict[str, Any]
     with session_scope(dsn) as session:
         if args.fixture:
             fixture = load_fixture_file(args.fixture)
-            stats = ingest_from_fixture(
-                session,
+            envelopes = envelopes_from_fixture(
                 fixture,
-                object_store=store,
                 stale_after_seconds=int(settings.get("stale_after_seconds", 120)),
                 instruments=fixture.get("instruments") or instruments,
             )
+            from mm_ingest.edgar_stack import edgar_envelopes, run_edgar_stack
+            from mm_ingest.fred_stack import fred_envelopes, run_fred_stack
+
+            stats = persist_envelopes(session, envelopes, object_store=store)
+            payload = stats.as_public_dict()
+            if fred_envelopes(envelopes):
+                payload["fred_stack"] = run_fred_stack(envelopes, no_db=False, session=session).as_public_dict()
+            if edgar_envelopes(envelopes):
+                payload["edgar_stack"] = run_edgar_stack(envelopes, no_db=False, session=session).as_public_dict()
         else:
             start = parse_utc(args.start) if args.start else None
             end = parse_utc(args.end) if args.end else None
@@ -299,7 +312,8 @@ def cmd_ingest(args: argparse.Namespace) -> int:
                     candle_interval=str(settings.get("candle_interval", "1h")),
                     stale_after_seconds=int(settings.get("stale_after_seconds", 120)),
                 )
-    print(json.dumps(stats.as_public_dict()))
+            payload = stats.as_public_dict()
+    print(json.dumps(payload))
     return 0
 
 

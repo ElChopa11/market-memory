@@ -248,7 +248,7 @@ As of Phase 6c-1 these are **Intel** sleeves. Historical "Macro & Cross-Asset De
 **May**
 
 - Resolve exchange-qualified ids into the monitor table.
-- Record EDGAR-confirmed lockup formulas (do **not** assume a flat 180 days).
+- Record EDGAR-confirmed lockup formulas (do **not** assume a flat 180 days). IMP-024 persists those formulas as Memory observations (`as_of_knowledge` + 424B4 provenance).
 - Mark Ambiguous names `unresolved` until Principal resolves them. IMP-034 resolved SAMSUN→`KRX:005930` and KOSDA→`KRX:KQ11`. Do not invent a CHIPI listing; CHIPIUSD display is Principal-confirmed as `HL:CHIP`.
 
 **Must not**

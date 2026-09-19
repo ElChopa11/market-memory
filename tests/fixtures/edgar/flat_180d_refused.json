@@ -1,0 +1,20 @@
+{
+  "kind": "edgar",
+  "ingested_at": "2026-09-19T09:00:00+00:00",
+  "issuers": {
+    "FAKE": {
+      "qualified_id": "NASDAQ:FAKE",
+      "cik": "0000000001",
+      "lockup": {
+        "assume_180d": true,
+        "filing": "424B4",
+        "file_date": "2026-01-01",
+        "accession": "0000000000-26-000001",
+        "url": "https://www.sec.gov/Archives/edgar/data/1/000000000026000001/fake.htm",
+        "fail_closed_blackout_until": "2026-07-01",
+        "lockup_period": "180 days after the prospectus",
+        "excerpt": "The lock-up expires 180 days after the date of this prospectus."
+      }
+    }
+  }
+}

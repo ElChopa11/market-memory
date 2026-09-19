@@ -72,7 +72,21 @@ adapters:
   edgar:
     licence_verdict: ok_gov
     attribution: "SEC EDGAR"
-    licence_notes: "Free, no key. Filings/IPO/lockups. CBRS+SPCX lockup already recorded; wire adapter + store (IMP-024)."
+    licence_notes: >
+      Free, no key. Closed-set ok_gov is the accurate redistributable_official
+      grant (15 U.S.C. § 78ll). Filings/IPO/lockups. 10 rps, declared User-Agent.
+      CBRS+SPCX lockup is a prospectus formula, not a flat 180d. --no-db = ELIGIBLE only.
+    user_agent: "ElChopa11-market-memory filings (https://github.com/ElChopa11/market-memory)"
+    base_url: https://data.sec.gov
+    issuers:
+      CBRS:
+        qualified_id: NASDAQ:CBRS
+        cik: "2021728"
+        filing: 424B4
+      SPCX:
+        qualified_id: NASDAQ:SPCX
+        cik: "1181412"
+        filing: 424B4
   treasury:
     licence_verdict: ok_gov
     attribution: "U.S. Treasury Fiscal Data"
@@ -117,6 +131,11 @@ rate_limits:
     timeout_seconds: 8
     max_attempts: 2
     backoff_s: 0.25
+  edgar:
+    max_requests_per_minute: 60
+    timeout_seconds: 8
+    max_attempts: 2
+    backoff_s: 0.15
 
 # Principal lock: equities default vendor = Polygon. Ask is N/A.
 equities:
@@ -181,3 +200,7 @@ macro:
     licence_verdict: ok_gov
     source: fixture
     path: config/briefing/calendar.yaml
+  edgar:
+    licence_verdict: ok_gov
+    base_url: https://data.sec.gov
+    user_agent: "ElChopa11-market-memory filings (https://github.com/ElChopa11/market-memory)"

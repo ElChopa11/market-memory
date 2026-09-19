@@ -1,0 +1,66 @@
+{
+  "kind": "edgar",
+  "ingested_at": "2026-09-19T09:00:00+00:00",
+  "issuers": {
+    "CBRS": {
+      "qualified_id": "NASDAQ:CBRS",
+      "cik": "2021728",
+      "forms": ["424B4"],
+      "url": "https://www.sec.gov/Archives/edgar/data/2021728/000162828026035214/cerebras-424b4.htm",
+      "submissions": {
+        "cik": "0002021728",
+        "name": "Cerebras Systems Inc.",
+        "filings": {
+          "recent": {
+            "form": ["424B4"],
+            "accessionNumber": ["0001628280-26-035214"],
+            "filingDate": ["2026-05-13"],
+            "primaryDocument": ["cerebras-424b4.htm"]
+          }
+        }
+      },
+      "lockup": {
+        "assume_180d": false,
+        "filing": "424B4",
+        "file_date": "2026-05-13",
+        "prospectus_date": "2026-05-13",
+        "accession": "0001628280-26-035214",
+        "url": "https://www.sec.gov/Archives/edgar/data/2021728/000162828026035214/cerebras-424b4.htm",
+        "fail_closed_blackout_until": "2026-11-09",
+        "staged_early_releases": true,
+        "lockup_period": "earlier of (i) 06:00 ET 2nd trading day after QE 2026-09-30 earnings or (ii) 180d post-prospectus. Staged early releases in 424B4. Do not treat 180d as a flat expiry.",
+        "excerpt": "The lock-up ends on the earlier of (i) 6:00 a.m. Eastern Time on the second trading day after the Company publicly announces earnings for the quarter ending September 30, 2026, or (ii) 180 days after the date of this prospectus. Staged early releases are documented. This is not a flat 180-day lock-up."
+      }
+    },
+    "SPCX": {
+      "qualified_id": "NASDAQ:SPCX",
+      "cik": "1181412",
+      "forms": ["424B4"],
+      "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm",
+      "submissions": {
+        "cik": "0001181412",
+        "name": "Space Exploration Technologies Corp.",
+        "filings": {
+          "recent": {
+            "form": ["424B4"],
+            "accessionNumber": ["0001628280-26-042639"],
+            "filingDate": ["2026-06-11"],
+            "primaryDocument": ["spaceexplorationtechnologi.htm"]
+          }
+        }
+      },
+      "lockup": {
+        "assume_180d": false,
+        "filing": "424B4",
+        "file_date": "2026-06-11",
+        "prospectus_date": "2026-06-11",
+        "accession": "0001628280-26-042639",
+        "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm",
+        "fail_closed_blackout_until": "2027-06-12",
+        "staged_early_releases": true,
+        "lockup_period": "Staged releases; 180th day 2026-12-08; Musk extension through 2027-06-12 plus 2nd trading day after QE 2027-06-30 earnings. Do not treat 180d as a flat expiry.",
+        "excerpt": "Lock-up shares are subject to staged releases. The 180th day after this prospectus is December 8, 2026. Certain shares attributable to Elon Musk remain locked through June 12, 2027, plus the second trading day after earnings for the quarter ending June 30, 2027. This is an extension, not a flat 180-day expiry."
+      }
+    }
+  }
+}

@@ -38,6 +38,12 @@ CLOSED_SET = frozenset(
     }
 )
 PUBLISHABLE = frozenset({VERDICT_OK_GOV, VERDICT_OK_ATTR})
+# Plain-language aliases Principal/docs may use; stored closed-set remains ok_gov / ok_attr.
+VERDICT_ALIASES = {
+    "redistributable_official": VERDICT_OK_GOV,
+    "redistributable": VERDICT_OK_GOV,
+    "ok-gov": VERDICT_OK_GOV,
+}
 
 # Adapter id → where the verdict sits in ingest.yaml (human path for errors).
 REQUIRED_ADAPTERS = (
@@ -80,6 +86,7 @@ class LicenceVerdict:
 
 def normalize_verdict(raw: Any) -> str:
     value = str(raw or "").strip().lower().replace("-", "_").replace(" ", "_")
+    value = VERDICT_ALIASES.get(value, value)
     if value not in CLOSED_SET:
         return VERDICT_MISSING
     return value
@@ -103,6 +110,8 @@ def verdict_for(adapter: str, settings: Mapping[str, Any] | None = None) -> Lice
             block = dict((loaded.get("macro") or {}).get("fred") or {})
         elif adapter == "calendar":
             block = dict((loaded.get("macro") or {}).get("calendar") or {})
+        elif adapter == "edgar":
+            block = dict((loaded.get("macro") or {}).get("edgar") or {})
         elif adapter == "coingecko":
             spot = (loaded.get("crypto") or {}).get("spot_cross_check") or {}
             block = dict(spot.get("coingecko") or {})

@@ -18,9 +18,10 @@ LIMITATIONS = (
     "No paid-data purchases; FRED stays unavailable without env FRED_API_KEY (set locally or in CI secrets; never committed).",
     "Polygon stays unavailable without env POLYGON_API_KEY (set locally or in CI secrets; never committed). Earnings calendar degrades when not on plan.",
     "Stooq failures are classified (timeout / http_404 / http_5xx / parse / tos_or_blocked). Bounded GET retry on timeout/5xx/429 only; 404 is terminal. No ToS-violating scrape workaround.",
-    "CoinGecko/Binance public/Stooq/FRED/Polygon last success is this probe or unknown unless Memory has a matching source row.",
+    "CoinGecko/Binance public/Stooq/FRED/EDGAR/Polygon last success is this probe or unknown unless Memory has a matching source row.",
     "Calendar health is YAML presence (no live economic-calendar API).",
     "Hyperliquid structure (l2Book / predictedFundings) is public /info only; forbidden user types stay blocked.",
+    "EDGAR is free (no key). Probe uses declared User-Agent on data.sec.gov submissions; filing text is not copied. Lockups are prospectus formulas, not a flat 180 days.",
     "This report never copies mids, marks, yields, OHLCV, or CSV Close values into the artifact.",
 )
 

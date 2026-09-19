@@ -22,6 +22,7 @@ SOURCE_INVENTORY: tuple[str, ...] = (
     "binance.public",
     "stooq",
     "fred",
+    "edgar",
     "polygon",
     "calendar.yaml",
     "postgres",
@@ -35,6 +36,7 @@ PULSE_ROLE: dict[str, str] = {
     "binance.public": PULSE_OPTIONAL,
     "stooq": PULSE_OPTIONAL,
     "fred": PULSE_OPTIONAL,
+    "edgar": PULSE_OPTIONAL,
     "polygon": PULSE_OPTIONAL,
     "calendar.yaml": PULSE_REQUIRED,
     "postgres": PULSE_OPTIONAL,  # Pulse can run --no-db
@@ -48,6 +50,7 @@ DISPLAY_NAME: dict[str, str] = {
     "binance.public": "binance.public",
     "stooq": "stooq",
     "fred": "fred",
+    "edgar": "sec edgar",
     "polygon": "polygon",
     "calendar.yaml": "config/briefing/calendar.yaml",
     "postgres": "postgres",

@@ -45,6 +45,11 @@ def _handler(request: httpx.Request) -> httpx.Response:
             200,
             json={"observations": [{"date": "2026-09-16", "value": "4.21"}]},
         )
+    if "data.sec.gov" in url:
+        return httpx.Response(
+            200,
+            json={"cik": "0002021728", "filings": {"recent": {"form": ["424B4"]}}},
+        )
     return httpx.Response(404, text="no")
 
 

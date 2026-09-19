@@ -29,6 +29,16 @@ FRED_SOURCE_NAME = "fred"
 FRED_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 FRED_TOS_NOTES = "FRED observations API. Env FRED_API_KEY only. Missing key → unavailable, never invent a series."
 
+EDGAR_SOURCE_NAME = "edgar"
+EDGAR_BASE_URL = "https://data.sec.gov"
+EDGAR_TOS_NOTES = (
+    "SEC EDGAR public records (data.sec.gov submissions + Archives). Free, no API key. "
+    "Declared User-Agent required. Fair-access max 10 rps. licence_verdict ok_gov "
+    "(redistributable_official via 15 U.S.C. § 78ll). Lockups are prospectus formulas, "
+    "not a flat 180 days. file_date is not the knowledge clock."
+)
+EDGAR_DEFAULT_UA = "ElChopa11-market-memory filings (https://github.com/ElChopa11/market-memory)"
+
 COINGECKO_SOURCE_NAME = "coingecko"
 COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3/simple/price"
 COINGECKO_TOS_NOTES = "CoinGecko public REST. No key for simple/price. Rate-limit → unavailable."
@@ -65,6 +75,13 @@ REGISTRY: dict[str, SourceMeta] = {
         trust_tier=3,
         tos_notes=FRED_TOS_NOTES,
     ),
+    EDGAR_SOURCE_NAME: SourceMeta(
+        name=EDGAR_SOURCE_NAME,
+        kind=SourceKind.NEWS,
+        base_url=EDGAR_BASE_URL,
+        trust_tier=4,
+        tos_notes=EDGAR_TOS_NOTES,
+    ),
     COINGECKO_SOURCE_NAME: SourceMeta(
         name=COINGECKO_SOURCE_NAME,
         kind=SourceKind.EXCHANGE,
@@ -87,6 +104,15 @@ REGISTRY: dict[str, SourceMeta] = {
         tos_notes=CALENDAR_TOS_NOTES,
     ),
 }
+
+
+def edgar_headers(user_agent: str | None = None) -> dict[str, str]:
+    ua = (user_agent or EDGAR_DEFAULT_UA).strip() or EDGAR_DEFAULT_UA
+    return {
+        "User-Agent": ua,
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "application/json, text/plain, */*",
+    }
 
 
 def meta_for(name: str, *, kind: str | None = None, base_url: str | None = None) -> SourceMeta:
