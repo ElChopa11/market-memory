@@ -20,7 +20,7 @@ On a box with `POLYGON_API_KEY` (never commit the key; do **not** pass `--no-sle
 uv run python scripts/research/base_rates_phase1.py
 ```
 
-Principal actions on the 2026-09-19 dump (SPCX void, 2-year cap, permission filter, BMNR audit): [`phase1-2026-09-19-principal-actions.md`](phase1-2026-09-19-principal-actions.md).
+Principal actions on the 2026-09-19 dump (SPCX ticker-reuse void, 2-year cap, permission filter, BMNR business-transformation void): [`phase1-2026-09-19-principal-actions.md`](phase1-2026-09-19-principal-actions.md).
 
 - Equities: Polygon (`POLYGON_API_KEY`). Crypto: Hyperliquid public `/info` `candleSnapshot` (no key); CoinGecko OHLC only as fallback.
 - Offline / cached: `--offline` reads `--bars-dir` / `--cache-dir` only. Live fetches also write `research/base-rates/cache/` (gitignored).

@@ -234,6 +234,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-19 — Sustained level-shift can be ticker reuse or a business transformation
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(none invented — cite artifacts `research/base-rates/phase1-2026-09-19.md`, `config/research/ticker_continuity.yaml`; Intel confirm of Principal-asked BMNR 2025-06-30)* |
+| **Desk** | Intel / Quant |
+| **What happened** | Rule B voided BMNR on 2025-06-30 (20/20 median ratio ~7.91 on the #81 `adjusted=true` tape). The mechanical label was `suspected_ticker_reuse`. Intel: same issuer BitMine Immersion Technologies (BMNR, CIK 0001829311); that day was a ~$250M PIPE @ $4.50 for ETH treasury + Tom Lee named Chairman (8-K 0001683168-25-004802), not a ticker-string splice. Reverse split is a separate May 15–16 2025 event. Identifier continuous; character break = strategy/governance pivot. Exclusion outcome matches ticker reuse; cause does not. |
+| **Lesson** | **A sustained 20/20 level-shift can flag ticker reuse OR a continuous-identifier business transformation; record which.** BMNR 2025-06-30 is the latter. Do not leave the void as only “rule B fired.” Void status unchanged (still excluded from the void-excluded pool). Contrast SPCX (true ticker reuse under rule A). |
+| **Does not** | Change BMNR void status or restore it to the void-excluded pool. Does not retune rule B. Does not treat a FLAG as a VOID. Does not authorise a size. Does not promote or demote watchlist membership. |
+| **Overrides prior** | No — complements the entity-continuity and N-sigma lessons. Process/data annotation of void *cause*, not a literature prior. No persist `run_id`. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).
