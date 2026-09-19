@@ -2,7 +2,9 @@
 
 Deliverable path for Quant validation **after** intake gates land (rule 9).
 
-**STATUS: INTAKE_ONLY.** No dated study files. NOTHING computed. Phase 1 unconditional base rates are not in Memory yet. 6e instance auto-track is not wired.
+**STATUS: INTAKE_ONLY** for C-001 / C-002 / C-003. Those cards stay `compute: false` / `results: []`. Do **not** write dated candidate-compute files under `C-001/`, `C-002/`, `C-003/`, or `signal-correlation/` until computation is unblocked.
+
+Methodology / permission-filter studies that change the queue (analysis only, not strategy compute) may live under sibling folders such as `trend-permission-filter/`. They do not unpark C-00x.
 
 When unblocked, write:
 

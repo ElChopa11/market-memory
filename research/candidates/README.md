@@ -34,7 +34,7 @@ Owner is **QUANT**. Status starts at **HYPOTHESIS**. **No sizing. No scan-gate p
 
 ## Deliverable (when computation is unblocked)
 
-`research/studies/<candidate-id>/<date>.md` for each id, **plus** one combined `research/studies/signal-correlation/<date>.md`. Each study file states: coded definition; params + commit ref of `config/candidates/<id>.yaml`; sample; window; split; cost model; benchmark; haircut; results per regime; verdict; what would render the result spurious. Base rates live in Market Memory, not only in the write-up. **No dated study files exist yet.** Status is `INTAKE_ONLY`.
+`research/studies/<candidate-id>/<date>.md` for each id, **plus** one combined `research/studies/signal-correlation/<date>.md`. Each study file states: coded definition; params + commit ref of `config/candidates/<id>.yaml`; sample; window; split; cost model; benchmark; haircut; results per regime; verdict; what would render the result spurious. Base rates live in Market Memory, not only in the write-up. **No dated candidate-compute study files exist yet** (`C-001/` / `C-002/` / `C-003/` / `signal-correlation/`). Methodology studies (e.g. `research/studies/trend-permission-filter/`) are analysis-only and do not unpark these cards. Status is `INTAKE_ONLY`.
 
 ## Acceptance (when a study is allowed to run)
 

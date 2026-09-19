@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -25,6 +26,16 @@ SEEDED = (
 
 REQUIRED_CLAIM = ("sample", "window", "instrument_set", "cost_model", "split_method", "payoff_shape")
 REQUIRED_PARAMS = ("N", "X", "Y", "Z", "M")
+# Dated C-00x / signal-correlation write-ups are strategy compute. Methodology
+# folders (trend-permission-filter/, and similar) may exist while cards stay INTAKE_ONLY.
+_CANDIDATE_COMPUTE_STUDY_RE = re.compile(
+    r"(?:^|/)(?:C-00[123](?:[-/.]|$)|signal-correlation(?:/|$))"
+)
+
+
+def _looks_like_candidate_compute_study(path: Path, studies_root: Path) -> bool:
+    rel = path.relative_to(studies_root).as_posix()
+    return _CANDIDATE_COMPUTE_STUDY_RE.search(rel) is not None
 
 
 def _cards() -> list[tuple[str, dict, str]]:
@@ -172,8 +183,31 @@ def test_config_candidates_intake_only_params_match_and_no_results() -> None:
     studies = ROOT / "research" / "studies"
     assert (studies / "README.md").is_file()
     dated = [p for p in studies.rglob("*.md") if p.name != "README.md"]
-    assert dated == []
+    forbidden = [p for p in dated if _looks_like_candidate_compute_study(p, studies)]
+    assert forbidden == [], forbidden
     assert "studies" in SKIP_DIR_NAMES
+
+
+def test_methodology_studies_allowed_candidate_compute_studies_forbidden() -> None:
+    studies = ROOT / "research" / "studies"
+    assert _looks_like_candidate_compute_study(studies / "C-001" / "2026-09-19.md", studies)
+    assert _looks_like_candidate_compute_study(studies / "C-002" / "2026-09-19.md", studies)
+    assert _looks_like_candidate_compute_study(studies / "C-003" / "2026-09-19.md", studies)
+    assert _looks_like_candidate_compute_study(
+        studies / "signal-correlation" / "2026-09-19.md", studies
+    )
+    assert _looks_like_candidate_compute_study(
+        studies / "C-001-supply-demand-zone" / "2026-09-19.md", studies
+    )
+    assert _looks_like_candidate_compute_study(studies / "C-002.md", studies)
+    assert not _looks_like_candidate_compute_study(
+        studies / "trend-permission-filter" / "2026-09-19.md", studies
+    )
+    assert not _looks_like_candidate_compute_study(
+        studies / "permission-filter" / "notes.md", studies
+    )
+    dated = [p for p in studies.rglob("*.md") if p.name != "README.md"]
+    assert any(p.name == "2026-09-19.md" and "trend-permission-filter" in p.parts for p in dated)
 
 
 def test_candidates_are_not_thesis_workspaces() -> None:
