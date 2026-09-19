@@ -26,8 +26,11 @@ Monitor.yaml is the ticker set. Universe overlay of non-monitor names is
 deferred (queue Gaps question); do not fetch AVGO/MSFT/META/JPM/XOM/SMH/XLF
 in this pass.
 
-Polygon/equities series run a continuity check (listing date + N-sigma MAD).
-``suspected_ticker_reuse`` is voided and excluded from pooled stats.
+Polygon/equities series run a continuity check: listing-date VOID (A),
+20/20 sustained level-shift VOID (B), single-bar extreme FLAG only (C).
+N-sigma/MAD is diagnostic and never voids. Report full pool and
+void-excluded pool. ``suspected_ticker_reuse`` voids are excluded from
+the void-excluded pool only.
 """
 
 from __future__ import annotations
@@ -190,10 +193,15 @@ class InstrumentResult:
     cost_frac: float
     regimes: dict[str, RegimeStats] = field(default_factory=dict)
     void_code: str | None = None
+    flag_code: str | None = None
     continuity_detail: str | None = None
     listed_on: date | None = None
     max_1bar: float | None = None
     max_10bar: float | None = None
+    max_abs_1bar_in_sigma: float | None = None
+    level_shift_ratio: float | None = None
+    level_shift_skip_reason: str | None = None
+    pending_adjusted_refetch: bool = False
     polygon_free_tier_cap: bool = False
 
 
@@ -316,15 +324,25 @@ def cache_filename(ticker: str) -> str:
 
 
 def load_continuity_config(path: Path) -> dict[str, Any]:
+    defaults: dict[str, Any] = {
+        "level_shift_window": 20,
+        "level_shift_ratio": 3.0,
+        "single_bar_flag_abs": 0.20,
+        "polygon_adjusted": True,
+        "polygon_free_tier_calendar_days": POLYGON_FREE_TIER_CALENDAR_DAYS,
+        "instruments": {},
+    }
     if not path.is_file():
-        return {"n_sigma": 8.0, "instruments": {}}
+        return defaults
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
-        return {"n_sigma": 8.0, "instruments": {}}
+        return defaults
     instruments = data.get("instruments") if isinstance(data.get("instruments"), dict) else {}
     return {
-        "n_sigma": float(data.get("n_sigma") or 8.0),
-        "mad_zero_abs_floor": float(data.get("mad_zero_abs_floor") or 0.05),
+        "level_shift_window": int(data.get("level_shift_window") or 20),
+        "level_shift_ratio": float(data.get("level_shift_ratio") or 3.0),
+        "single_bar_flag_abs": float(data.get("single_bar_flag_abs") or 0.20),
+        "polygon_adjusted": bool(data.get("polygon_adjusted", True)),
         "polygon_free_tier_calendar_days": int(
             data.get("polygon_free_tier_calendar_days") or POLYGON_FREE_TIER_CALENDAR_DAYS
         ),
@@ -381,17 +399,28 @@ def apply_continuity(
         return result
     from mm_ingest.equities.continuity import check_bar_continuity
 
+    instruments = continuity_cfg.get("instruments") if isinstance(continuity_cfg.get("instruments"), dict) else {}
+    row = instruments.get(spec.ticker) if isinstance(instruments.get(spec.ticker), dict) else {}
+    result.pending_adjusted_refetch = bool(row.get("pending_adjusted_refetch"))
     verdict = check_bar_continuity(
         bars,
         listed_on=listed,
-        n_sigma=float(continuity_cfg.get("n_sigma") or 8.0),
-        mad_zero_abs_floor=float(continuity_cfg.get("mad_zero_abs_floor") or 0.05),
+        level_shift_window=int(continuity_cfg.get("level_shift_window") or 20),
+        level_shift_ratio=float(continuity_cfg.get("level_shift_ratio") or 3.0),
+        single_bar_flag_abs=float(continuity_cfg.get("single_bar_flag_abs") or 0.20),
     )
     result.continuity_detail = verdict.detail
-    if verdict.flagged:
+    result.level_shift_ratio = verdict.level_shift_ratio
+    result.level_shift_skip_reason = verdict.level_shift_skip_reason
+    result.max_abs_1bar_in_sigma = verdict.max_abs_1bar_in_sigma
+    if verdict.max_abs_1bar is not None:
+        result.max_1bar = verdict.max_abs_1bar
+    if verdict.void:
         result.void_code = verdict.reason_code or "suspected_ticker_reuse"
         extra = f"suspected_ticker_reuse / entity splice ({verdict.detail})"
         result.exclusion = f"{result.exclusion}; {extra}" if result.exclusion else extra
+    elif verdict.flag:
+        result.flag_code = verdict.flag_code or "single_bar_extreme"
     return result
 
 
@@ -1094,9 +1123,59 @@ def _fwd_row(ticker: str, d: Dist) -> list[str]:
     ]
 
 
+def _has_compute(r: InstrumentResult) -> bool:
+    return bool(r.regimes) and r.n_raw >= MIN_BARS
+
+
+def _full_pool(results: Sequence[InstrumentResult]) -> list[InstrumentResult]:
+    """n≥200 with computed stats, including continuity voids."""
+    return [r for r in results if _has_compute(r)]
+
+
+def _void_excluded_pool(results: Sequence[InstrumentResult]) -> list[InstrumentResult]:
+    """n≥200 with computed stats, dropping listing-date / level-shift voids."""
+    return [r for r in results if r.exclusion is None]
+
+
+def _pool_long_rates(rows: Sequence[InstrumentResult]) -> dict[str, Any]:
+    long_hits = long_stops = net_hits = net_stops = 0
+    names: list[str] = []
+    for r in rows:
+        u = r.regimes.get("unconditional")
+        if u is None:
+            continue
+        names.append(r.spec.ticker)
+        g = u.bracket_long_gross
+        n = u.bracket_long_net
+        long_hits += g.n_target
+        long_stops += g.n_stop
+        net_hits += n.n_target
+        net_stops += n.n_stop
+    gross_den = long_hits + long_stops
+    net_den = net_hits + net_stops
+    return {
+        "names": names,
+        "gross": (long_hits / gross_den) if gross_den else None,
+        "net": (net_hits / net_den) if net_den else None,
+        "gross_hits": long_hits,
+        "gross_stops": long_stops,
+        "net_hits": net_hits,
+        "net_stops": net_stops,
+    }
+
+
+def _fmt_pool_rate(pool: Mapping[str, Any]) -> str:
+    return (
+        f"gross {_n(pool['gross'], pct=True, digits=1)} "
+        f"({pool['gross_hits']} targets / {pool['gross_stops']} stops pooled); "
+        f"net {_n(pool['net'], pct=True, digits=1)}"
+    )
+
+
 def _three_line_summary(results: Sequence[InstrumentResult]) -> str:
-    included = [r for r in results if r.exclusion is None]
-    excluded = [r for r in results if r.exclusion is not None]
+    included = _void_excluded_pool(results)
+    full = _full_pool(results)
+    excluded = [r for r in results if r.exclusion is not None and not r.void_code]
     bits: list[str] = []
     for r in included:
         u = r.regimes["unconditional"]
@@ -1119,31 +1198,23 @@ def _three_line_summary(results: Sequence[InstrumentResult]) -> str:
         )
     names = ", ".join(r.spec.ticker for r in included) if included else "(none)"
     line2 = (
-        f"Enough history to study at all (n≥{MIN_BARS} daily bars): {names}. "
-        f"Excluded {len(excluded)} / {len(results)} names (reasons in Coverage)."
+        f"Enough history to study at all (n≥{MIN_BARS} daily bars, void-excluded pool): {names}. "
+        f"Excluded {len(excluded)} / {len(results)} names for history/fetch (reasons in Coverage). "
+        f"Continuity voids: {sum(1 for r in results if r.void_code)}."
     )
-    long_hits = long_stops = 0
-    net_hits = net_stops = 0
-    for r in included:
-        g = r.regimes["unconditional"].bracket_long_gross
-        n = r.regimes["unconditional"].bracket_long_net
-        long_hits += g.n_target
-        long_stops += g.n_stop
-        net_hits += n.n_target
-        net_stops += n.n_stop
-    gross = (long_hits / (long_hits + long_stops)) if (long_hits + long_stops) else None
-    net = (net_hits / (net_hits + net_stops)) if (net_hits + net_stops) else None
+    full_rates = _pool_long_rates(full)
+    clean_rates = _pool_long_rates(included)
+    voided = [r for r in results if r.void_code]
     line3 = (
-        f"Coin-flip 1R:2R long bracket (R=1×ATR20, first touch within {BRACKET_BARS} bars, ties separate): "
-        f"gross hit rate {_n(gross, pct=True, digits=1)} "
-        f"({long_hits} targets / {long_stops} stops pooled); "
-        f"net of the flat cost below {_n(net, pct=True, digits=1)}. "
+        f"Coin-flip 1R:2R long bracket (R=1×ATR20, first touch within {BRACKET_BARS} bars, ties separate). "
+        f"**Full pool** (n≥{MIN_BARS}, including continuity voids): {_fmt_pool_rate(full_rates)}. "
+        f"**Continuity-void-excluded** (drop listing-date and 20/20 level-shift voids): "
+        f"{_fmt_pool_rate(clean_rates)}. "
         f"A fair 1:2 coin-flip is ~33.3%. Every future strategy claim must beat this after costs."
     )
-    voided = [r for r in results if r.void_code]
     if voided:
         line3 += (
-            " Voided ``suspected_ticker_reuse`` names are **not** in this pool: "
+            " Voided ``suspected_ticker_reuse`` names are **not** in the void-excluded pool: "
             + ", ".join(r.spec.ticker for r in voided)
             + "."
         )
@@ -1196,17 +1267,84 @@ def _provisional_banner(results: Sequence[InstrumentResult]) -> list[str]:
     ]
 
 
+def _robustness_section() -> list[str]:
+    return [
+        "## Robustness — the coin-flip holds regardless of continuity",
+        "",
+        "This is a headline finding, not a footnote.",
+        "",
+        "Prior pooled 1R:2R long (Principal-cited, N-sigma VOID era): voids barely moved "
+        "the headline (~32.9% → 32.8% gross; ~32.4% → 32.3% net). "
+        "**The coin-flip benchmark holds regardless of how the continuity question resolves.** "
+        "That is a strength. Listing-date and 20/20 level-shift voids are still the correct "
+        "entity-splice test; they are not a lever on the ~33.3% coin-flip.",
+        "",
+        "N=8 robust-sigma (1.4826×MAD) was the wrong *test*, not a mistuned threshold. "
+        "It is tail-insensitive: a fat-tail equity day always prints a large multiple. "
+        "Retuning N is parameter fitting. Single-bar extremes FLAG; they do not VOID.",
+        "",
+    ]
+
+
+def _dual_pool_section(results: Sequence[InstrumentResult]) -> list[str]:
+    full = _pool_long_rates(_full_pool(results))
+    clean = _pool_long_rates(_void_excluded_pool(results))
+    voided = [r for r in results if r.void_code]
+    return [
+        "## Pooled 1R:2R long — full pool vs continuity-void-excluded",
+        "",
+        "Every continuity exclusion's effect is visible. Full pool = every name with "
+        f"n≥{MIN_BARS} computed stats, **including** listing-date / level-shift voids. "
+        "Void-excluded drops only rules A and B. Rule C flags stay in both pools.",
+        "",
+        _md_table(
+            ["pool", "tickers", "gross hit", "gross 2R / 1R", "net hit", "net 2R / 1R"],
+            [
+                [
+                    "full (with voids)",
+                    str(len(full["names"])),
+                    _n(full["gross"], pct=True, digits=1),
+                    f"{full['gross_hits']} / {full['gross_stops']}",
+                    _n(full["net"], pct=True, digits=1),
+                    f"{full['net_hits']} / {full['net_stops']}",
+                ],
+                [
+                    "continuity-void-excluded",
+                    str(len(clean["names"])),
+                    _n(clean["gross"], pct=True, digits=1),
+                    f"{clean['gross_hits']} / {clean['gross_stops']}",
+                    _n(clean["net"], pct=True, digits=1),
+                    f"{clean['net_hits']} / {clean['net_stops']}",
+                ],
+            ],
+        ),
+        "",
+        (
+            "Voided this run: " + ", ".join(r.spec.ticker for r in voided) + "."
+            if voided
+            else "Voided this run: none."
+        ),
+        "",
+    ]
+
+
 def _voided_section(results: Sequence[InstrumentResult]) -> list[str]:
     voided = [r for r in results if r.void_code]
     parts = [
-        "## Voided — suspected_ticker_reuse / entity splice",
+        "## Voided — suspected_ticker_reuse / entity splice (rules A and B only)",
         "",
         "Resolving a ticker to an identifier does **not** prove the returned series belongs "
-        "to one entity. Polygon aggregates by ticker string. Flagged series are **void** and "
-        "**excluded from pooled stats**. Continuity check: known listing date (first bar "
-        "precedes identity-start) **or** a single-bar move beyond N=8 robust-sigma "
-        "(sigma = 1.4826 × MAD of 1-bar simple returns; MAD=0 flat tape uses a 5% floor). "
-        "See `mm_ingest.equities.continuity` and `config/research/ticker_continuity.yaml`.",
+        "to one entity. Polygon aggregates by ticker string. **VOID** (exclude from the "
+        "void-excluded pool) only when:",
+        "",
+        "- **A. Listing-date:** first bar precedes known `listed_on`.",
+        "- **B. Sustained level shift:** scan every bar with a full 20 closes before and "
+        "20 after; VOID if `median(close after) / median(close before) >= 3.0` or `<= 1/3`. "
+        "The reported suspect bar is the most extreme 20/20 ratio. Fewer than 20 bars "
+        "each side → skip B with reason; do not invent.",
+        "",
+        "Single-bar extremes are **not** voids (rule C). N-sigma / 1.4826×MAD is diagnostic "
+        "only. See `mm_ingest.equities.continuity` and `config/research/ticker_continuity.yaml`.",
         "",
     ]
     if not voided:
@@ -1224,8 +1362,8 @@ def _voided_section(results: Sequence[InstrumentResult]) -> list[str]:
                 "1b mean",
                 "1b median",
                 "vol20 mean",
-                "max 1-bar",
-                "max 10-bar",
+                "max |1-bar|",
+                "level-shift ratio",
                 "reason",
             ],
             [
@@ -1241,56 +1379,113 @@ def _voided_section(results: Sequence[InstrumentResult]) -> list[str]:
                     if "unconditional" in r.regimes
                     else "n/a",
                     _n(r.max_1bar, pct=True, digits=1),
-                    _n(r.max_10bar, pct=True, digits=1),
+                    _n(r.level_shift_ratio, digits=3) if r.level_shift_ratio is not None else (r.level_shift_skip_reason or "n/a"),
                     r.exclusion or r.void_code or "",
                 ]
                 for r in voided
             ],
         )
     )
-    parts += ["", "Not in the pooled 1R:2R bracket. Not a substitute series. Not trimmed.", ""]
+    parts += ["", "Not in the void-excluded 1R:2R pool. Still counted in the full pool. Not a substitute series. Not trimmed.", ""]
+    return parts
+
+
+def _flag_section(results: Sequence[InstrumentResult]) -> list[str]:
+    flagged = [r for r in results if r.flag_code and not r.void_code]
+    parts = [
+        "## Single-bar extremes — FLAG only, never VOID (rule C)",
+        "",
+        "A flag is information; a void is a decision. Names below stay in the compute pool. "
+        f"FLAG when max |1-bar simple return| ≥ 20%. Robust-sigma multiple (1.4826×MAD) is "
+        "logged as a diagnostic and **must not void**. QQQ / NVDA / BB / MRNA fat tails "
+        "belong here, not in the void table.",
+        "",
+    ]
+    if not flagged:
+        parts += ["None this run.", ""]
+        return parts
+    parts.append(
+        _md_table(
+            [
+                "ticker",
+                "n_bars",
+                "max |1-bar|",
+                "robust-σ multiple (diagnostic)",
+                "level-shift ratio",
+                "detail",
+            ],
+            [
+                [
+                    r.spec.ticker,
+                    str(r.n_raw),
+                    _n(r.max_1bar, pct=True, digits=1),
+                    _n(r.max_abs_1bar_in_sigma, digits=2),
+                    _n(r.level_shift_ratio, digits=3)
+                    if r.level_shift_ratio is not None
+                    else (r.level_shift_skip_reason or "n/a"),
+                    r.continuity_detail or r.flag_code or "",
+                ]
+                for r in flagged
+            ],
+        )
+    )
+    parts += ["", "Kept in both pooled 1R:2R brackets. Not a size. Not a call.", ""]
     return parts
 
 
 def _bmnr_audit_section(results: Sequence[InstrumentResult]) -> list[str]:
     by = {r.spec.ticker: r for r in results}
-    r = by.get("BMNR")
     parts = [
-        "## BMNR audit (ticker-reuse screen)",
+        "## BMNR / STRC audit (adjustment first, then rule B only)",
         "",
-        "Principal asked whether BMNR (449 bars cited on the equity run; mean vs median gap) "
-        "is the same splice class as SPCX. Same continuity check; no silent keep-in-pool if voided.",
+        "Principal: BMNR (one bar ~695%) and STRC (huge robust-sigma) are consistent with "
+        "**unadjusted** corporate actions. Voiding because the fetch was unadjusted is "
+        "incorrect. Inspected: `PolygonEquitiesAdapter._ohlcv` previously did **not** send "
+        "`adjusted=` (Polygon /v2/aggs vendor default is true — not an explicit pin). "
+        "Code now pins `adjusted=true`. Quarantine these two until the delivery-box "
+        "`--refresh` re-fetch; then apply **rule B only**. Rule C may FLAG; it must not VOID.",
         "",
-    ]
-    if r is None:
-        parts += ["BMNR was not in this run's ticker set.", ""]
-        return parts
-    u = r.regimes.get("unconditional")
-    mean_s = _n(u.fwd[1].mean, pct=True) if u else "n/a"
-    med_s = _n(u.fwd[1].median, pct=True) if u else "n/a"
-    vol_s = _n(u.vol20_mean, pct=True, digits=1) if u else "n/a"
-    status = _coverage_status(r)
-    if r.void_code:
-        verdict = (
-            f"**VOID** `{r.void_code}`. Excluded from pools. "
-            f"{r.continuity_detail or r.exclusion or ''}"
-        )
-    elif r.exclusion:
-        verdict = f"Not in pools ({r.exclusion}). Continuity: {r.continuity_detail or 'n/a'}."
-    else:
-        listed = r.listed_on.isoformat() if r.listed_on else "not in ticker_continuity.yaml / monitor listing_date"
-        first = r.bars_first.isoformat() if r.bars_first else "n/a"
-        verdict = (
-            f"**Clears** the continuity check (not `suspected_ticker_reuse`). "
-            f"listed_on={listed}; first bar={first}. "
-            f"1-bar mean {mean_s} vs median {med_s} (vol20 mean {vol_s}) is a fat right tail "
-            "on one entity, not a ticker-string splice. Stays in pools. Not a call."
-        )
-    parts += [
-        f"- Coverage status: `{status}`; n={r.n_raw}; source `{r.source or '—'}`",
-        f"- {verdict}",
+        "QQQ, NVDA, BB, MRNA: restore to the compute pool (legitimate fat tails). "
+        "SPCX stays VOID under rule A (and likely B).",
         "",
     ]
+    for ticker in ("BMNR", "STRC"):
+        r = by.get(ticker)
+        if r is None:
+            parts += [f"- **{ticker}:** not in this run's ticker set.", ""]
+            continue
+        u = r.regimes.get("unconditional")
+        mean_s = _n(u.fwd[1].mean, pct=True) if u else "n/a"
+        med_s = _n(u.fwd[1].median, pct=True) if u else "n/a"
+        pending = "yes" if r.pending_adjusted_refetch else "no"
+        status = _coverage_status(r)
+        if r.void_code:
+            verdict = (
+                f"**VOID** `{r.void_code}` (A/B only). Excluded from the void-excluded pool. "
+                f"{r.continuity_detail or r.exclusion or ''}"
+            )
+        elif r.exclusion:
+            verdict = (
+                f"Not in pools ({r.exclusion}). "
+                f"Continuity: {r.continuity_detail or 'n/a'}. "
+                f"`pending_adjusted_refetch={pending}`."
+            )
+        else:
+            listed = r.listed_on.isoformat() if r.listed_on else "not in ticker_continuity.yaml / monitor listing_date"
+            first = r.bars_first.isoformat() if r.bars_first else "n/a"
+            flag_bit = f" Rule C FLAG `{r.flag_code}`." if r.flag_code else " No rule C FLAG."
+            verdict = (
+                f"**Clears A/B** (not `suspected_ticker_reuse`). "
+                f"listed_on={listed}; first bar={first}; "
+                f"20/20 ratio={_n(r.level_shift_ratio, digits=3)}. "
+                f"1-bar mean {mean_s} vs median {med_s}."
+                f"{flag_bit} Stays in pools. `pending_adjusted_refetch={pending}`. Not a call."
+            )
+        parts += [
+            f"- **{ticker}** coverage `{status}`; n={r.n_raw}; source `{r.source or '—'}`",
+            f"  {verdict}",
+            "",
+        ]
     return parts
 
 
@@ -1397,7 +1592,7 @@ def render_markdown(
     monitor_path: str,
     cost: Mapping[str, float],
 ) -> str:
-    included = [r for r in results if r.exclusion is None]
+    included = _void_excluded_pool(results)
     excluded = [r for r in results if r.exclusion is not None and not r.void_code]
     voided = [r for r in results if r.void_code]
     perp_cost = round_trip_cost(
@@ -1435,9 +1630,12 @@ def render_markdown(
         "- Principal actions (SPCX void, 2-year cap, permission filter): "
         "`research/base-rates/phase1-2026-09-19-principal-actions.md`",
         f"- Include rule: ≥ {MIN_BARS} cleaned daily OHLC bars; no substitute symbol; no synthetic bars",
-        "- Continuity: Polygon/equities series with first bar before known listing date, or a "
-        "single-bar move beyond N=8 robust-sigma (1.4826×MAD), are **void** "
-        "(`suspected_ticker_reuse`) and excluded from pools",
+        "- Continuity: **A** listing-date VOID (first bar precedes `listed_on`); **B** 20/20 "
+        "sustained level-shift VOID (`median(after)/median(before) >= 3` or `<= 1/3`, every "
+        "eligible bar scanned); **C** single-bar extreme FLAG only (never VOID). "
+        "N-sigma/MAD is diagnostic and is **not** a VOID. Polygon daily aggs pin `adjusted=true`",
+        "- Pools: report **full pool** (with voids) and **continuity-void-excluded** so every "
+        "exclusion's effect is visible",
         f"- Indicators: SMA{SMA_FAST} / SMA{SMA_SLOW} / ATR{ATR_PERIOD} (Wilder) from bars at or before the signal bar",
         f"- Forward returns: `close[t+h]/close[t] - 1` for h={list(HORIZONS)} (the bars **after** the signal close)",
         f"- Regime: trend-up = close>SMA200 and SMA50[t]>SMA50[t-{SMA_SLOPE_LOOKBACK}]; "
@@ -1458,6 +1656,8 @@ def render_markdown(
         "",
         _three_line_summary(results),
         "",
+        *_robustness_section(),
+        *_dual_pool_section(results),
         coverage_header,
         "",
         _md_table(
@@ -1631,6 +1831,7 @@ def render_markdown(
             ]
 
     parts += _voided_section(results)
+    parts += _flag_section(results)
     parts += _bmnr_audit_section(results)
     parts += _trend_filter_section(included)
     parts += [
@@ -1654,12 +1855,15 @@ def render_markdown(
         "python scripts/research/base_rates_phase1.py",
         "uv run python scripts/research/base_rates_phase1.py   # this repo",
         "python scripts/research/base_rates_phase1.py --offline  # cache/bars-dir only",
+        "python scripts/research/base_rates_phase1.py --refresh  # box: re-fetch adjusted=true bars",
         "```",
         "",
         "Live equities need `POLYGON_API_KEY`. Crypto uses Hyperliquid public `/info` "
         "(no key). CoinGecko OHLC is a fallback only. Same bars file → same tables "
         "(filename date follows Australia/Sydney at finish). "
         "Polygon free tier is 5 req/min — **do not** pass `--no-sleep` on a live free-tier run. "
+        "Daily aggs pin `adjusted=true`. After this pin, re-fetch equities with `--refresh` "
+        "so BMNR/STRC (and all names) are not stale unadjusted cache. "
         "Ticker set is `config/watchlist/monitor.yaml` only. Universe overlay of "
         "non-monitor names is deferred (queue Gaps); do not fetch those names here.",
         "",
@@ -1736,8 +1940,11 @@ def run(argv: Sequence[str] | None = None) -> int:
                 result.exclusion = (
                     f"{fetch_err}; standing continuity: listed_on {listed.isoformat()} "
                     "— a first bar before that date is suspected_ticker_reuse and is voided "
-                    "(see config/research/ticker_continuity.yaml)"
+                    "under rule A (see config/research/ticker_continuity.yaml)"
                 )
+            inst = continuity_cfg.get("instruments") if isinstance(continuity_cfg.get("instruments"), dict) else {}
+            row = inst.get(spec.ticker) if isinstance(inst.get(spec.ticker), dict) else {}
+            result.pending_adjusted_refetch = bool(row.get("pending_adjusted_refetch"))
             return result
         result = compute_for_bars(
             spec,

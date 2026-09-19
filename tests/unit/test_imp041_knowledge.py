@@ -125,6 +125,11 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
         "Principal member-list read",
         "Resolving a ticker to an identifier does not prove the returned series belongs to one entity",
         "suspected_ticker_reuse",
+        "N-sigma / MAD void was the wrong mechanism",
+        "listing-date",
+        "sustained 20/20",
+        "FLAG only, never VOID",
+        "adjusted equity bars",
         "compounds from post-mortems",
     ):
         assert token in lesson_text, token
