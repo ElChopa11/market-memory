@@ -249,7 +249,7 @@ As of Phase 6c-1 these are **Intel** sleeves. Historical "Macro & Cross-Asset De
 
 - Resolve exchange-qualified ids into the monitor table.
 - Record EDGAR-confirmed lockup formulas (do **not** assume a flat 180 days).
-- Mark Ambiguous names `unresolved` (today: SAMSUN, KOSDA).
+- Mark Ambiguous names `unresolved` (today: SAMSUN, KOSDA — equities/index, not HL). Do not invent a CHIPI listing; CHIPIUSD display is Principal-confirmed as `HL:CHIP`.
 
 **Must not**
 

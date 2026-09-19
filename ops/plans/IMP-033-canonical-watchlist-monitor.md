@@ -15,7 +15,7 @@ IMP-020 scans locked `in_universe` ∪ `watch_only`. Principal then locked a lar
 - Universe tier matches locked `in_universe` only (BTCUSD, NVDA). No promotion into `universe.yaml`.
 - Blocked: CASHCAT, PONSUSD. Monitor-by-archive: HYPEUSD, SOLUSD, NEARUSD, ARBUSD.
 - Unresolved only: SAMSUN, KOSDA. Do not invent.
-- Resolved HL: VVVUSD→HL:VVV, PURR→HL:PURR, CHIPIUSD→HL:CHIP. SPCX→NASDAQ:SPCX (idio, pending corr). CBRS→NASDAQ:CBRS (semis_ai).
+- Resolved HL perps (USD): VVVUSD→HL:VVV (coin VVV on HL per Intel snapshot), PURR→HL:PURR, CHIPIUSD display→HL:CHIP (Principal coin-id confirm; CHIPI absent on HL meta — do not invent CHIPI). SPCX→NASDAQ:SPCX (idio, pending corr). CBRS→NASDAQ:CBRS (semis_ai).
 - EDGAR lockups confirmed; **not** a flat 180d. Lockup inside horizon = gate 5 blackout.
 - NEW_LISTING → listings sleeve; SMA200 `n/a (insufficient history: <n> bars)`.
 - Research states watchlist tier on every idea. Monitor ideas UNSIZED.

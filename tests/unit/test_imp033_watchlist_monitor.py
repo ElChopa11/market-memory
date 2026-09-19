@@ -114,9 +114,15 @@ def test_universe_yaml_not_promoted() -> None:
 
 def test_resolution_hl_and_nasdaq_and_unresolved() -> None:
     by = {row.ticker: row for row in monitor_names(ROOT)}
+    spec_text = (ROOT / "config" / "watchlist" / "monitor.yaml").read_text(encoding="utf-8")
     assert by["VVVUSD"].qualified_id == "HL:VVV"
+    assert "coin VVV present on HL" in spec_text
     assert by["PURR"].qualified_id == "HL:PURR"
+    assert "HL:PURR" in spec_text and "kind: perp" in spec_text
     assert by["CHIPIUSD"].qualified_id == "HL:CHIP"
+    assert "CHIPIUSD display → HL:CHIP" in spec_text
+    assert "Do not invent a CHIPI listing" in spec_text
+    assert "qualified_id: HL:CHIPI" not in spec_text
     assert by["SPCX"].qualified_id == "NASDAQ:SPCX"
     assert by["SPCX"].cluster == "idio"
     assert by["CBRS"].qualified_id == "NASDAQ:CBRS"
@@ -126,6 +132,7 @@ def test_resolution_hl_and_nasdaq_and_unresolved() -> None:
         assert by[ticker].resolution_status == "unresolved"
         assert by[ticker].qualified_id is None
     assert set(UNRESOLVED_TICKERS) == {"SAMSUN", "KOSDA"}
+    assert "equities/index; not HL" in spec_text
 
 
 def test_lockup_confirmed_not_flat_180d() -> None:

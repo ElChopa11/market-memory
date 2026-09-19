@@ -32,7 +32,7 @@ The complete review list is [`config/watchlist/monitor.yaml`](../../config/watch
 
 Membership (`in_universe` / `watch_only` / `deferred_must_cut`) still comes from [`config/universe.yaml`](../../config/universe.yaml). Names on the monitor that are not in that file default to **monitor** tier. `universe` tier must match locked `in_universe` (today: BTCUSD → BTC, NVDA). Risk-blocked: CASHCAT, PONSUSD (state only). Monitor-by-archive: HYPEUSD, SOLUSD, NEARUSD, ARBUSD.
 
-Unresolved tickers (do not invent): **SAMSUN**, **KOSDA**. Scan renders `UNRESOLVED` and excludes them from ideas.
+Unresolved tickers (do not invent): **SAMSUN**, **KOSDA** (equities/index — not HL). Scan renders `UNRESOLVED` and excludes them from ideas. Crypto display CHIPIUSD is Principal-confirmed as `HL:CHIP` (perp, USD); do not invent a CHIPI listing.
 
 Monitor states: `COVERED` | `PARTIAL` | `UNAVAILABLE` | `UNRESOLVED` | `BLOCKED`. Missing tape stays unavailable (never invented).
 
