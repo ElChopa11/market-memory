@@ -5,7 +5,7 @@
 | **Id** | C-003 |
 | **Owner** | QUANT |
 | **Desk** | Quant |
-| **Status** | HYPOTHESIS |
+| **Status** | INTAKE_ONLY (claim class HYPOTHESIS) |
 | **Intake** | Principal 2026-09-19 |
 | **Sizing** | no — **DO NOT SIZE** |
 | **Scan gate** | no — does not promote into watchlist / universe / PLAYBOOK |
@@ -46,7 +46,7 @@ Daily **completed** bars. Train `2022-01-01`–`2024-12-31`. Embargo `2025-01-01
 | BTC | `in_universe` | `universe` |
 | NVDA | `in_universe` | `universe` |
 
-Extended only with PIT daily: ETH (`watch_only` / `monitor`); AVGO, MSFT, META, JPM, XOM (`in_universe` / `monitor`). Excluded: `deferred_must_cut`, blocked names, unresolved SAMSUN/KOSDA. **No membership edits.**
+Extended only with PIT daily: ETH (`watch_only` / `monitor`); AVGO, MSFT, META, JPM, XOM (`in_universe` / `monitor`). Excluded: `deferred_must_cut`, blocked names, KRX:005930 / KRX:KQ11 (resolved #60; not `in_universe`). **No membership edits.**
 
 ### Cost model
 
@@ -103,4 +103,22 @@ Trend-continuation after a **second** pullback. First pullbacks are skipped by c
 
 ## Non-goals
 
-Live path. Sizing. Scan-gate / universe / watchlist promotion. Invented expectancy. Treating a skipped first pullback as a labeled failure from the future.
+Live path. Sizing. Scan-gate / universe / watchlist promotion. Invented expectancy. Treating a skipped first pullback as a labeled failure from the future. **No computation on this card.**
+
+## Evening append (rules 8–12)
+
+8. **Cross-candidate correlation.** C-003 is a dip-in-uptrend variant with C-001 and C-002. Before any promotion: pairwise overlap % within 5 bars, same instrument + direction, plus a correlation matrix next to individual results. Overlap > 40% → keep **one** (simplest). Cluster netting will not catch this. **Not computed at intake.**
+
+9. **Order of work.** Phase 1 unconditional base rates in Memory first. 6e scorecards must auto-track instances. Until both land: **INTAKE_ONLY** — params proposed, NOTHING computed.
+
+10. **Params before first run.** Locked in [`config/candidates/C-003.yaml`](../../config/candidates/C-003.yaml) (`N=20`, `X=0.5`, `Y=0.4`, `Z=0.1`, `M=0.3`, ATR 14, horizon `H=15`). Post-hoc change = `C-003.v2` and sample reset.
+
+11. **Passing.** `PASS` ≠ scan. Moves to PAPER-ELIGIBLE, UNSIZED, via scorecard, until live forward instances match the backtest interval. Principal decides sizing later. Separate gates.
+
+12. **Stop.** Close when sample 80 is reached, the window is exhausted, or instances < 20. Verdict `PASS` \| `FAIL` \| `INSUFFICIENT SAMPLE`. No keep-tuning.
+
+## Deliverable / acceptance
+
+When unblocked: `research/studies/C-003/<date>.md` + combined `research/studies/signal-correlation/<date>.md`. Each states coded definition, params+commit ref, sample, window, split, cost model, benchmark, haircut, results per regime, verdict, what would make it spurious. Base rates in Memory, not only the write-up.
+
+Acceptance: no future bars; pivots `K=2` bars later (second-pullback extreme confirmed after `K` completed bars); same-fixture `params_hash`; every instance including blow-throughs; reconcile vs raw detector count; Weekly Investment Review `PASS` or `FAIL`.

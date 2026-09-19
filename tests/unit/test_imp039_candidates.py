@@ -49,9 +49,9 @@ def test_intake_files_and_failures_archive_exist() -> None:
     assert not (ROOT / "ops" / "plans" / "IMP-034-candidate-strategy-intake.md").is_file()
 
 
-def test_readme_has_intake_rules_1_through_7() -> None:
+def test_readme_has_intake_rules_1_through_12() -> None:
     text = (CANDIDATES / "README.md").read_text(encoding="utf-8")
-    for n in range(1, 8):
+    for n in range(1, 13):
         assert f"{n}." in text, n
     lowered = text.lower()
     assert "owner quant" in lowered or "**owner quant**" in lowered
@@ -61,6 +61,16 @@ def test_readme_has_intake_rules_1_through_7() -> None:
     assert "n=unknown" in lowered
     assert "look-ahead" in lowered
     assert "survivorship" in lowered
+    assert "cross-candidate correlation" in lowered
+    assert "order of work" in lowered
+    assert "parameters declared before" in lowered or "params before first run" in lowered or "declared before the first run" in lowered
+    assert "what passing means" in lowered
+    assert "stop condition" in lowered
+    assert "intake_only" in lowered
+    assert "paper-eligible" in lowered
+    assert "nothing computed" in lowered
+    assert "## deliverable" in lowered
+    assert "## acceptance" in lowered
     failures = (CANDIDATES / "failures" / "README.md").read_text(encoding="utf-8")
     assert "do not delete" in failures.lower()
     assert "do not silently reopen" in failures.lower()
@@ -69,17 +79,23 @@ def test_readme_has_intake_rules_1_through_7() -> None:
 def test_each_card_is_quant_hypothesis_no_size_no_scan() -> None:
     for slug, data, text in _cards():
         assert data["owner"] == "QUANT", slug
-        assert data["status"] == "HYPOTHESIS", slug
+        assert data["status"] == "INTAKE_ONLY", slug
+        assert data["hypothesis_status"] == "HYPOTHESIS", slug
         assert data["sizing"] is False, slug
         assert data["scan_gate"] is False, slug
         assert data["promote"] is False, slug
         assert data["live"] is False, slug
+        assert data["compute"] is False, slug
         assert data["paper_only"] is True, slug
         assert data["intake_date"] == "2026-09-19", slug
+        assert "INTAKE_ONLY" in text
         assert "HYPOTHESIS" in text
         assert "QUANT" in text
         assert "DO NOT SIZE" in text
         assert "Scan gate" in text or "scan gate" in text.lower()
+        assert "8." in text and "12." in text
+        assert "Deliverable" in text or "deliverable" in text.lower()
+        assert "Acceptance" in text or "acceptance" in text.lower()
 
 
 def test_claim_restated_or_source_slogan_rejected() -> None:
@@ -107,6 +123,7 @@ def test_params_n_x_y_z_m_atr_locked() -> None:
             assert params[key] is not None
         assert params["atr_period"] == 14
         assert data["study"]["strategy_implemented"] is False
+        assert data["study"]["compute"] is False
         assert data["study"]["inherit_trade_math_sizing"] is False
         assert data["study"]["bind_thesis"] is False
 
@@ -122,11 +139,45 @@ def test_primary_tape_is_locked_membership_only() -> None:
             assert row["watchlist_tier"] == "universe"
 
 
+def test_config_candidates_intake_only_params_match_and_no_results() -> None:
+    desk = yaml.safe_load((ROOT / "config" / "candidates" / "desk.yaml").read_text(encoding="utf-8"))
+    assert desk["status"] == "INTAKE_ONLY"
+    assert desk["compute"] is False
+    assert desk["computation_gates"]["phase1_unconditional_base_rates"]["landed"] is False
+    assert desk["computation_gates"]["scorecards_6e_instance_autotrack"]["landed"] is False
+    assert desk["overlap_n_bars"] == 5
+    assert desk["overlap_threshold_pct"] == 40
+    assert desk["promote_at_most_one"] is True
+    assert desk["family"] == "dip-in-uptrend"
+    for cid, slug in (
+        ("C-001", "C-001-supply-demand-zone"),
+        ("C-002", "C-002-triple-rsi-mr"),
+        ("C-003", "C-003-second-entry-pullback"),
+    ):
+        locked = yaml.safe_load((ROOT / "config" / "candidates" / f"{cid}.yaml").read_text(encoding="utf-8"))
+        card = yaml.safe_load((CANDIDATES / f"{slug}.yaml").read_text(encoding="utf-8"))
+        assert locked["status"] == "INTAKE_ONLY", cid
+        assert locked["compute"] is False, cid
+        assert locked["results"] == [], cid
+        assert locked["declared_before_first_run"] is True, cid
+        assert locked["version"] == "v1", cid
+        for key in REQUIRED_PARAMS:
+            assert locked["params"][key] == card["params"][key], f"{cid}.{key}"
+        assert "thresholds" in locked["params"]
+        assert "horizons" in locked["params"]
+        assert card["locked_params"] == f"config/candidates/{cid}.yaml"
+    studies = ROOT / "research" / "studies"
+    assert (studies / "README.md").is_file()
+    dated = [p for p in studies.rglob("*.md") if p.name != "README.md"]
+    assert dated == []
+    assert "studies" in SKIP_DIR_NAMES
+
+
 def test_candidates_are_not_thesis_workspaces() -> None:
     assert "candidates" in SKIP_DIR_NAMES
     assert "failures" in SKIP_DIR_NAMES
     found = discover_workspaces(ROOT / "research")
-    leaked = [path for path in found if "candidates" in path.parts]
+    leaked = [path for path in found if "candidates" in path.parts or "studies" in path.parts]
     assert leaked == []
 
 

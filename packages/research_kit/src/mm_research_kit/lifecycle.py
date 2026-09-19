@@ -59,6 +59,7 @@ SKIP_DIR_NAMES = {
     "screens",
     "candidates",
     "failures",
+    "studies",
 }
 
 _PAPER_PLACEHOLDERS = frozenset({"", "-", "n/a", "na", "none", "null", "tbd", "todo", "?", "unknown"})

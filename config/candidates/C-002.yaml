@@ -1,0 +1,51 @@
+# C-002 proposed params — committed BEFORE any result (rule 10).
+# STATUS: INTAKE_ONLY. NOTHING computed.
+
+id: C-002
+version: v1
+slug: triple-rsi-mr
+owner: QUANT
+desk: quant
+status: INTAKE_ONLY
+intake_date: "2026-09-19"
+sizing: false
+scan_gate: false
+promote: false
+live: false
+compute: false
+results: []
+
+computation_blocked_until:
+  - phase1_unconditional_base_rates
+  - scorecards_6e_instance_autotrack
+
+params:
+  N: 2
+  X: 7
+  Y: 14
+  Z: 20
+  M: 1.5
+  atr_period: 14
+  thresholds:
+    rsi_fast_len: 2             # N
+    rsi_mid_len: 7              # X
+    rsi_slow_len: 14            # Y
+    oversold: 20                # Z
+    overbought: 80              # 100 - Z
+    rsi_exit: 50
+    invalidation_atr: 1.5       # M
+  horizons:
+    hold_bars: 5
+    pivot_confirm_k_bars: 2
+
+stop:
+  sample_target: 80
+  min_sample: 20
+  window: "train 2022-01-01..2024-12-31; embargo 2025-01-01..2025-01-31; test 2025-02-01..2026-09-18"
+
+family: dip-in-uptrend
+overlap_n_bars: 5
+overlap_threshold_pct: 40
+
+declared_before_first_run: true
+post_hoc_change_requires: C-002.v2

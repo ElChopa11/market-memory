@@ -6,13 +6,16 @@ slug: second-entry-pullback
 title: Second-entry pullback
 owner: QUANT
 desk: quant
-status: HYPOTHESIS
+status: INTAKE_ONLY
+hypothesis_status: HYPOTHESIS
 intake_date: "2026-09-19"
 sizing: false
 scan_gate: false
 promote: false
 live: false
 paper_only: true
+compute: false
+locked_params: config/candidates/C-003.yaml
 
 claim:
   restated: true
@@ -35,7 +38,7 @@ claim:
     excluded:
       - "deferred_must_cut"
       - "blocked watchlist names (CASHCAT, PONSUSD)"
-      - "unresolved (SAMSUN, KOSDA) — do not invent ids"
+      - "KRX:005930 / KRX:KQ11 (resolved #60; not in_universe — excluded)"
   cost_model: "taker_fee*2 + slippage_bps/1e4*2 + funding_rate*(expected_hold_hours/24); taker_fee=0.00045 from config/quant/trade_math.yaml; slippage_bps=5 unless flow est_slippage(clip) exists; expected_hold_hours=24; funding_rate=0 on equities; default_clip=10000 is a cost clip only — DO NOT SIZE"
   split_method: "calendar embargo (purge 1 calendar month); no random shuffle; no fitting on test; params locked in this file before the test split is scored"
   payoff_shape: "trend-continuation after a second pullback; skipped first pullbacks by construction; right tail if the impulse extends; left tail if the second entry is a reversal through M·ATR; time-stop H=15 daily bars caps the hold"
@@ -78,6 +81,7 @@ study:
   harness: packages/backtest
   existing_stubs: [buy_hold, threshold]
   strategy_implemented: false
+  compute: false
   bind_thesis: false
   command: "uv run lab backtest run --fixture PATH --no-db"
   inherit_trade_math_sizing: false

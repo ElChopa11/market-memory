@@ -5,7 +5,7 @@
 | **Id** | C-001 |
 | **Owner** | QUANT |
 | **Desk** | Quant |
-| **Status** | HYPOTHESIS |
+| **Status** | INTAKE_ONLY (claim class HYPOTHESIS) |
 | **Intake** | Principal 2026-09-19 |
 | **Sizing** | no — **DO NOT SIZE** |
 | **Scan gate** | no — does not promote into watchlist / universe / PLAYBOOK |
@@ -46,7 +46,7 @@ Primary tape only unless a PIT daily series exists:
 | BTC | `in_universe` | `universe` |
 | NVDA | `in_universe` | `universe` |
 
-Extended (only with PIT daily): ETH (`watch_only` / `monitor`); AVGO, MSFT, META, JPM, XOM (`in_universe` / `monitor`). Excluded: `deferred_must_cut`, blocked names (CASHCAT, PONSUSD), unresolved SAMSUN/KOSDA (do not invent ids). **No membership edits.**
+Extended (only with PIT daily): ETH (`watch_only` / `monitor`); AVGO, MSFT, META, JPM, XOM (`in_universe` / `monitor`). Excluded: `deferred_must_cut`, blocked names (CASHCAT, PONSUSD), KRX:005930 / KRX:KQ11 (resolved #60; not `in_universe`). **No membership edits.**
 
 ### Cost model
 
@@ -101,4 +101,22 @@ Fade-the-return-to-base (mean-reversion after an impulse). Many small opposing e
 
 ## Non-goals
 
-Live path. Sizing. Scan-gate / universe / watchlist promotion. Invented expectancy. Telegram as a signal.
+Live path. Sizing. Scan-gate / universe / watchlist promotion. Invented expectancy. Telegram as a signal. **No computation on this card.**
+
+## Evening append (rules 8–12)
+
+8. **Cross-candidate correlation.** C-001 is a dip-in-uptrend variant with C-002 and C-003. Before any promotion: pairwise overlap % within 5 bars, same instrument + direction, plus a correlation matrix next to individual results. Overlap > 40% → keep **one** (simplest). Cluster netting will not catch this. **Not computed at intake.**
+
+9. **Order of work.** Phase 1 unconditional base rates in Memory first. 6e scorecards must auto-track instances. Until both land: **INTAKE_ONLY** — params proposed, NOTHING computed.
+
+10. **Params before first run.** Locked in [`config/candidates/C-001.yaml`](../../config/candidates/C-001.yaml) (`N=5`, `X=2.0`, `Y=0.8`, `Z=0.25`, `M=0.5`, ATR 14, horizon `H=10`). Post-hoc change = `C-001.v2` and sample reset.
+
+11. **Passing.** `PASS` ≠ scan. Moves to PAPER-ELIGIBLE, UNSIZED, via scorecard, until live forward instances match the backtest interval. Principal decides sizing later. Separate gates.
+
+12. **Stop.** Close when sample 80 is reached, the window is exhausted, or instances < 20. Verdict `PASS` \| `FAIL` \| `INSUFFICIENT SAMPLE`. No keep-tuning.
+
+## Deliverable / acceptance
+
+When unblocked: `research/studies/C-001/<date>.md` + combined `research/studies/signal-correlation/<date>.md`. Each states coded definition, params+commit ref, sample, window, split, cost model, benchmark, haircut, results per regime, verdict, what would make it spurious. Base rates in Memory, not only the write-up.
+
+Acceptance: no future bars; pivots `K=2` bars later; zones without hindsight; same-fixture `params_hash`; every instance including blow-throughs; reconcile vs raw detector count; Weekly Investment Review `PASS` or `FAIL`.

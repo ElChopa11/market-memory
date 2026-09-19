@@ -1,14 +1,17 @@
 # Candidate card schema (Principal intake 2026-09-19).
 # Quant execution spec. Not a strategy implementation. Not a call.
 
-version: "imp-039.1"
+version: "imp-039.2"
 kind: candidate_strategy_intake
 owner_desk: quant
-status_start: HYPOTHESIS
+status_start: INTAKE_ONLY
+hypothesis_status: HYPOTHESIS
 sizing: false
 scan_gate: false
 promote: false
 live: false
+compute: false
+locked_params_root: config/candidates/
 
 required_yaml_fields:
   - id
@@ -46,9 +49,13 @@ required_yaml_fields:
   - study.strategy_implemented
 
 allowed_status:
+  - INTAKE_ONLY
   - HYPOTHESIS
   - REJECT
   - INSUFFICIENT_DATA
+  - PASS
+  - FAIL
+  - INSUFFICIENT_SAMPLE
 
 allowed_owner:
   - QUANT
@@ -56,5 +63,8 @@ allowed_owner:
 provenance_class_retail:
   - retail_video_substack_reddit
 
-intake_rules: 7
+intake_rules: 12
 seeded_ids: [C-001, C-002, C-003]
+family: dip-in-uptrend
+overlap_n_bars: 5
+overlap_threshold_pct: 40
