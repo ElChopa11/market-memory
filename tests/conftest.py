@@ -21,6 +21,13 @@ def fixture_window() -> dict:
 
 
 @pytest.fixture(autouse=True)
+def _isolate_schedule_completions(tmp_path_factory, monkeypatch):
+    """Hive completion JSON is a runtime log. Tests must not write into the git tree."""
+    dest = tmp_path_factory.mktemp("schedule-completions")
+    monkeypatch.setenv("MM_SCHEDULE_COMPLETIONS_DIR", str(dest))
+
+
+@pytest.fixture(autouse=True)
 def _block_live_telegram(monkeypatch):
     """Pytest must never hit the live Telegram Bot API."""
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)

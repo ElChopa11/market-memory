@@ -1,0 +1,43 @@
+# Scheduler completion rows (IMP-046 / Hybrid Step 4)
+
+Hive is a clock. `lab` CLI is the executed path. Every Hive-driven `lab brief` / `lab deliver` / `lab schedule heartbeat` writes one JSON file here so the miss detector can observe a **fire**.
+
+Miss sweep (`lab schedule miss-check`) is still the control: **closed window + no file (and no `schedule_heartbeat` row) → miss**. A failed CLI run (`exit_status != 0`) is a fire, not a miss. Heartbeat-on-fire remains a log.
+
+## Location
+
+Canonical: `ops/reports/scheduler/completions/{routine_id}__{YYYYMMDDTHHMMSSZ}.json`
+
+Override: `--completions-dir` or `MM_SCHEDULE_COMPLETIONS_DIR`.
+
+Do not commit generated JSON. Postgres table `schedule_heartbeat` is the optional DB copy (skipped with `--no-db`).
+
+## Row fields
+
+| Field | Meaning |
+|---|---|
+| `run_id` | This fire |
+| `routine_id` | Configured trigger (`grok.sydney_morning`, `grok.us_pre_market`, `grok.weekly_investment_review`, or lab pulse/delivery id) |
+| `fired_at_ts` | Actual fire time (UTC) |
+| `scheduled_anchor_ts` | Catalog anchor |
+| `delta_seconds` | Offset vs anchor (negative = early) |
+| `status` | Timing class: `ok` / `late` (a fire). Not process exit. |
+| `exit_status` | CLI process exit (0 or nonzero). Failed is still a fire. |
+| `payload_path` | briefs/ payload if any |
+| `cli` | Invoked command |
+
+## How miss-sweep reads it
+
+1. CI / fixture clock: `--fixture tests/fixtures/scheduler/ci_clock.yaml` does **not** load this directory (isolated). Pass `--completions-dir` to merge disk rows into a fixture catalog (tests).
+2. Operator / Hive box: `lab schedule miss-check --no-db` loads this directory (and DB unless `--no-db`).
+3. Same `(routine_id, scheduled_anchor_ts)` key as the table. Higher-rank timing status wins (`ok` > `late` > `skipped` > `missed`).
+
+Hive clocks (catalog in `config/schedules/routines.yaml`):
+
+```bash
+uv run lab brief preopen --no-db --no-send --routine-id grok.us_pre_market
+uv run lab deliver pack --no-send --no-db --routine-id grok.weekly_investment_review --from-markdown PATH --as-of ...
+uv run lab schedule heartbeat --routine-id grok.sydney_morning --exit-status 0 --no-db
+```
+
+Real Telegram send stays frozen until Principal step 5.

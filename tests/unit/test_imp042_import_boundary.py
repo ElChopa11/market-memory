@@ -25,11 +25,14 @@ def _imported_top_levels(path: Path) -> set[str]:
 
 def test_scheduler_module_has_no_execution_import() -> None:
     sched = ROOT / "packages" / "desks" / "src" / "mm_desks" / "scheduler.py"
+    completions = ROOT / "packages" / "desks" / "src" / "mm_desks" / "completions.py"
     repo = ROOT / "packages" / "memory" / "src" / "mm_memory" / "heartbeat_repository.py"
     assert "mm_execution" not in _imported_top_levels(sched)
+    assert "mm_execution" not in _imported_top_levels(completions)
     assert "mm_execution" not in _imported_top_levels(repo)
     for snippet in ("sign_l1_action", "hl_trade", "submit_order"):
         assert snippet not in sched.read_text(encoding="utf-8")
+        assert snippet not in completions.read_text(encoding="utf-8")
         assert snippet not in repo.read_text(encoding="utf-8")
     assert persist_heartbeat is not None
     catalog = load_catalog(ROOT)

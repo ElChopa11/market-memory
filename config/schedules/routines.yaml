@@ -15,7 +15,8 @@ late_after_seconds: 300
 miss_after_seconds: 900
 lookback_days: 14
 
-# Hive / Grok Bot agent routines. Lab CLI cannot fire these.
+# Hive is a clock. lab CLI is the executed path and writes a completion
+# row (ops/reports/scheduler/completions/) the miss detector can observe.
 # family is always grok_bot. enabled: true means miss-sweep them.
 routines:
   - id: grok.sydney_morning_digest_8am

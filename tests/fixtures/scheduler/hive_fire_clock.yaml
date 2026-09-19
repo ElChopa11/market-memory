@@ -1,0 +1,16 @@
+# One closed Hive window, no completion. After a CLI fire, miss-check must not escalate this routine.
+version: "imp-046-hive"
+now: "2026-09-18T13:20:00Z"
+late_after_seconds: 300
+miss_after_seconds: 900
+lookback_days: 1
+lab_timezone: Australia/Sydney
+routines:
+  - id: grok.us_pre_market
+    family: grok_bot
+    display: US Pre-Market Round
+    timezone: Australia/Sydney
+    local_time: "23:00"
+    weekdays: [Mon, Tue, Wed, Thu, Fri]
+    enabled: true
+completions: []

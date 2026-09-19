@@ -93,9 +93,12 @@ class Completion:
     status: str
     as_of_knowledge: datetime
     source: str = "fixture"
+    exit_status: int | None = None
+    payload_path: str | None = None
+    cli: str | None = None
 
     def canonical(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "routine_id": self.routine_id,
             "run_id": self.run_id,
             "scheduled_anchor_ts": as_utc(self.scheduled_anchor_ts).isoformat(),
@@ -105,6 +108,19 @@ class Completion:
             "as_of_knowledge": as_utc(self.as_of_knowledge).isoformat(),
             "source": self.source,
         }
+        extra: dict[str, Any] = {}
+        if self.exit_status is not None:
+            payload["exit_status"] = int(self.exit_status)
+            extra["exit_status"] = int(self.exit_status)
+        if self.payload_path:
+            payload["payload_path"] = self.payload_path
+            extra["payload_path"] = self.payload_path
+        if self.cli:
+            payload["cli"] = self.cli
+            extra["cli"] = self.cli
+        if extra:
+            payload["payload_json"] = extra
+        return payload
 
 
 @dataclass(frozen=True)
@@ -415,6 +431,10 @@ def completion_from_mapping(row: Mapping[str, Any], *, catalog: Catalog | None =
     if status not in STATUSES:
         raise ValueError(f"unknown heartbeat status {status!r}")
     as_of = parse_utc(str(row.get("as_of_knowledge") or row.get("fired_at_ts") or row["scheduled_anchor_ts"]))
+    nested = row.get("payload_json") if isinstance(row.get("payload_json"), dict) else {}
+    exit_raw = row.get("exit_status", nested.get("exit_status") if nested else None)
+    payload_path = row.get("payload_path") or (nested.get("payload_path") if nested else None)
+    cli = row.get("cli") or (nested.get("cli") if nested else None)
     return Completion(
         routine_id=routine_id,
         run_id=str(row.get("run_id") or f"{routine_id}-{as_utc(anchor).strftime('%Y%m%dT%H%M%SZ')}"),
@@ -424,6 +444,9 @@ def completion_from_mapping(row: Mapping[str, Any], *, catalog: Catalog | None =
         status=status,
         as_of_knowledge=as_of,
         source=str(row.get("source") or "fixture"),
+        exit_status=None if exit_raw in (None, "") else int(exit_raw),
+        payload_path=None if not payload_path else str(payload_path),
+        cli=None if not cli else str(cli),
     )
 
 
@@ -638,8 +661,11 @@ def stamp_fire(
     run_id: str,
     as_of_knowledge: datetime | None = None,
     source: str = "lab",
+    exit_status: int | None = None,
+    payload_path: str | None = None,
+    cli: str | None = None,
 ) -> Completion:
-    """Secondary log. Not the scheduler check."""
+    """Secondary log. Not the scheduler check. A failed CLI run is still a fire."""
     fired = as_utc(fired_at)
     day = fired.astimezone(routine.tz()).date()
     weekday = WEEKDAY_NAMES[day.weekday()]
@@ -662,4 +688,7 @@ def stamp_fire(
         status=status,
         as_of_knowledge=as_of,
         source=source,
+        exit_status=exit_status,
+        payload_path=payload_path,
+        cli=cli,
     )
