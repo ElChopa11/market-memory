@@ -1,0 +1,40 @@
+{
+  "kind": "edgar",
+  "ingested_at": "2026-09-19T09:56:30+10:00",
+  "filings": [
+    {
+      "instrument": "CBRS",
+      "form": "424B4",
+      "cik": "2021728",
+      "accession": "0001628280-26-035214",
+      "file_date": "2026-05-13",
+      "prospectus_dated": "2026-05-13",
+      "delivery_expected": "2026-05-15",
+      "url": "https://www.sec.gov/Archives/edgar/data/2021728/000162828026035214/cerebras-424b4.htm",
+      "html_path": "tests/fixtures/edgar/cbrs-424b4-shares-eligible.html"
+    },
+    {
+      "instrument": "SPCX",
+      "form": "424B4",
+      "cik": "1181412",
+      "accession": "0001628280-26-042639",
+      "file_date": "2026-06-11",
+      "prospectus_dated": "2026-06-11",
+      "delivery_expected": "2026-06-15",
+      "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm",
+      "html_path": "tests/fixtures/edgar/spcx-424b4-shares-eligible.html"
+    }
+  ],
+  "eight_k": [
+    {
+      "instrument": "CBRS",
+      "form": "8-K",
+      "cik": "2021728",
+      "accession": "0001628280-26-099001",
+      "file_date": "2026-08-01",
+      "items": ["2.02"],
+      "url": "https://www.sec.gov/Archives/edgar/data/2021728/000162828026099001/cbrs-8k.htm",
+      "html": "<html><body><p>Item 2.02 Results of Operations and Financial Condition.</p><p>The Company is furnishing this 8-K. No earnings estimate is stated.</p></body></html>"
+    }
+  ]
+}

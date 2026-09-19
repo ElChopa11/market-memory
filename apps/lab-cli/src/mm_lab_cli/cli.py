@@ -39,7 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("status", help="show phase and hard-gates")
     sub.add_parser("migrate", help="apply Alembic migrations to Postgres")
 
-    ingest = sub.add_parser("ingest", help="read-only public ingest (HL /info, Polygon, FRED/calendar)")
+    ingest = sub.add_parser("ingest", help="read-only public ingest (HL /info, Polygon, FRED/calendar, EDGAR)")
     ingest.add_argument("--window", default="7d", help="lookback window, e.g. 7d, 24h")
     ingest.add_argument("--start", help="UTC start instant (ISO-8601)")
     ingest.add_argument("--end", help="UTC end instant (ISO-8601)")
@@ -183,7 +183,7 @@ def cmd_status() -> int:
     print("Live trading: HARD-GATED")
     print("Research cannot access trading credentials.")
     print("research_kit writes git artifacts only; it does not import execution or ingest private keys.")
-    print("Ingest: Hyperliquid public /info + Polygon (POLYGON_API_KEY env) + FRED/calendar. No signing, no private keys.")
+    print("Ingest: Hyperliquid public /info + Polygon (POLYGON_API_KEY env) + FRED/calendar + EDGAR (no key). No signing, no private keys.")
     print("Equities vendor: polygon (Principal lock; Ask is N/A). Missing POLYGON_API_KEY → unavailable, never invent.")
     print("Point-in-time: what_did_we_know(T) uses as_of_knowledge <= T (lockstep with ingested_at). published_at and market_time never gate knowledge.")
     print("Theses: lab thesis new | link-evidence | advance ; lab skeptic open | record")
@@ -192,6 +192,7 @@ def cmd_status() -> int:
     print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
     print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
+    print("EDGAR: lab ingest --fixture tests/fixtures/edgar/cbrs-spcx-lockup.json --no-db | lab data edgar --fixture PATH --no-db")
     print("Equities screen: lab equities reclaim-screen --fixture PATH --no-db (Post-IPO / reclaim triage; not a trading decision)")
     print("Desk run: lab desk run --all --fixture PATH --no-send (deterministic pack; default dry-run)")
     from mm_common.naming import roster_lines
@@ -246,11 +247,14 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         stats = stats_from_envelopes(envelopes, dry_run=True)
         payload = stats.as_public_dict()
         payload["qualities"] = sorted({e.data_quality.value for e in envelopes})
+        from mm_ingest.edgar_stack import edgar_envelopes, run_edgar_stack
         from mm_ingest.fred_stack import fred_envelopes, run_fred_stack
 
         if fred_envelopes(envelopes):
             stack = run_fred_stack(envelopes, no_db=True)
             payload["fred_stack"] = stack.as_public_dict()
+        if edgar_envelopes(envelopes):
+            payload["edgar_stack"] = run_edgar_stack(envelopes, no_db=True).as_public_dict()
         print(json.dumps(payload))
         return 0
 

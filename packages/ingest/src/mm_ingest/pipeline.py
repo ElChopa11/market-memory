@@ -34,6 +34,7 @@ from mm_ingest.equities.normalize import (
 )
 from mm_ingest.equities.polygon import parse_aggs, parse_dividends, parse_earnings_events, parse_splits
 from mm_ingest.hl_info import HyperliquidInfoClient
+from mm_ingest.edgar import envelopes_from_stored_or_error
 from mm_ingest.macro import calendar_envelopes_from_payload, normalize_fred_observations
 from mm_ingest.sources import meta_for
 from mm_ingest.spot import cross_check_envelopes, spot_prints_from_fixture
@@ -358,6 +359,7 @@ def envelopes_from_fixture(
     envelopes.extend(
         _calendar_envelopes_from_fixture(fixture, snapshot_ingested=snapshot_ingested, stale_after_seconds=stale_after_seconds)
     )
+    envelopes.extend(_edgar_envelopes_from_fixture(fixture, snapshot_ingested=snapshot_ingested, stale_after_seconds=stale_after_seconds))
     return envelopes
 
 
@@ -709,6 +711,53 @@ def _fred_envelopes_from_fixture(
                     stale_after_seconds=stale_after_seconds,
                 )
             )
+    return envelopes
+
+
+def _edgar_envelopes_from_fixture(
+    fixture: dict[str, Any],
+    *,
+    snapshot_ingested: datetime,
+    stale_after_seconds: int,
+) -> list[ObservationEnvelope]:
+    block = fixture.get("edgar")
+    if isinstance(block, list):
+        block = {"filings": block, "ingested_at": fixture.get("ingested_at")}
+    if block is None and fixture.get("kind") in {"edgar", "filings", "lockup"}:
+        block = fixture
+    if not isinstance(block, dict):
+        return []
+    ingested = _dt(block.get("ingested_at") or snapshot_ingested)
+    rows = block.get("filings") or block.get("documents") or []
+    extra = block.get("eight_k") or block.get("8k") or []
+    envelopes: list[ObservationEnvelope] = []
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, dict):
+                envelopes.extend(
+                    envelopes_from_stored_or_error(row, ingested_at=ingested, stale_after_seconds=stale_after_seconds)
+                )
+    if isinstance(extra, list):
+        for row in extra:
+            if isinstance(row, dict):
+                body = dict(row)
+                body.setdefault("form", "8-K")
+                envelopes.extend(
+                    envelopes_from_stored_or_error(body, ingested_at=ingested, stale_after_seconds=stale_after_seconds)
+                )
+    if block.get("error_class") and not rows and not extra:
+        envelopes.extend(
+            envelopes_from_stored_or_error(
+                {
+                    "instrument": str(block.get("instrument") or "EDGAR"),
+                    "error_class": str(block.get("error_class")),
+                    "notes": block.get("notes"),
+                    "url": block.get("url"),
+                },
+                ingested_at=ingested,
+                stale_after_seconds=stale_after_seconds,
+            )
+        )
     return envelopes
 
 

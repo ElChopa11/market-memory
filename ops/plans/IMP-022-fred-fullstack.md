@@ -1,6 +1,6 @@
 # PLAN — IMP-022 FRED full-stack close
 
-**Report status:** IN_PROGRESS (this PR).  
+**Report status:** DONE (#60). SRC-FRED-MISSING-ENV stays OPEN until a cited persist run_id.  
 **Owner:** Intel (ingest) / Ops (env)  
 **Scope:** Path toward closing `SRC-FRED-MISSING-ENV`: persist + provenance + published value. `--no-db` = ELIGIBLE only. Paper only.
 

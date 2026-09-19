@@ -85,6 +85,10 @@ The Hyperliquid client **refuses** user-private types (`clearinghouseState`, `us
 
 See [polygon-hl-structure.md](polygon-hl-structure.md): Polygon OHLCV + corporate actions (env `POLYGON_API_KEY`); HL basis / L2 / predicted funding; optional CoinGecko/Binance public spot DQ; FRED + fixture calendar. Missing keys → `unavailable` + `error_class`; never invent.
 
+## EDGAR (IMP-024)
+
+See [edgar.md](edgar.md). `data.sec.gov` + Archives; no key; declared User-Agent; ≤10 rps. Fixture: `uv run lab ingest --fixture tests/fixtures/edgar/cbrs-spcx-lockup.json --no-db`. `file_date` is not the knowledge clock. 403 → unavailable. No `api.nasdaq.com`. No Yahoo RSS.
+
 ## Provenance
 
 Each row is an observation envelope: source, source URL/id, `published_at`, `ingested_at`, `market_time`, claim, `claim_hash`, confidence, evidence type, data quality, optional raw object pointer.

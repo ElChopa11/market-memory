@@ -1,4 +1,4 @@
-"""IMP-033 queue hygiene: IMP-033 DONE #59 after merge; current thread is IMP-022."""
+"""IMP-033 queue hygiene: IMP-033 DONE #59 after merge; current thread is IMP-024."""
 
 from __future__ import annotations
 
@@ -29,6 +29,6 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-022",)
+    assert report.in_progress == ("IMP-024",)
     assert report.auto_merge is False
     assert report.auto_waive is False

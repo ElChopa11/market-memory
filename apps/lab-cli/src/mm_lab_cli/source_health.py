@@ -7,6 +7,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from mm_common.time import utcnow
+from mm_lab_cli.edgar import add_edgar_parser, cmd_edgar
 from mm_source_health.engine import generate_source_health
 from mm_source_health.probes import DEFAULT_TIMEOUT
 from mm_source_health.store import write_source_health_report
@@ -26,6 +27,7 @@ def add_source_health_parser(sub) -> None:
     data_sub = data.add_subparsers(dest="data_cmd")
     health = data_sub.add_parser("source-health", help="standing source-health / data-quality report")
     _add_health_args(health)
+    add_edgar_parser(data_sub)
 
     dq = sub.add_parser("dq", help="data-quality aliases")
     dq_sub = dq.add_subparsers(dest="dq_cmd")
@@ -41,8 +43,10 @@ def dispatch_source_health(args: Namespace) -> int:
     if args.cmd == "dq" and cmd is None:
         print("usage: lab dq report")
         return 2
+    if cmd == "edgar":
+        return cmd_edgar(args)
     if cmd not in {"source-health", "report"}:
-        print("usage: lab data source-health | lab dq report")
+        print("usage: lab data source-health | lab data edgar | lab dq report")
         return 2
     return cmd_source_health(args)
 

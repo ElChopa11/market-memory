@@ -114,6 +114,8 @@ def verdict_for(adapter: str, settings: Mapping[str, Any] | None = None) -> Lice
                 "licence_verdict": (loaded.get("venue_licence_verdict") or loaded.get("licence_verdict")),
                 "notes": loaded.get("licence_notes") or "",
             }
+        elif adapter == "edgar":
+            block = dict((loaded.get("filings") or {}).get("edgar") or {})
     verdict = normalize_verdict(block.get("licence_verdict"))
     return LicenceVerdict(
         adapter=adapter,

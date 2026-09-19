@@ -41,6 +41,14 @@ CALENDAR_SOURCE_NAME = "calendar.yaml"
 CALENDAR_BASE_URL = "config/briefing/calendar.yaml"
 CALENDAR_TOS_NOTES = "Fixture-friendly economic calendar. No live calendar API in Phase 5b."
 
+EDGAR_SOURCE_NAME = "edgar"
+EDGAR_BASE_URL = "https://data.sec.gov"
+EDGAR_TOS_NOTES = (
+    "SEC EDGAR public records (data.sec.gov + Archives). No API key. "
+    "Declared User-Agent and ≤10 rps required. 403/blocks → unavailable; never invent filing text. "
+    "file_date is not the knowledge clock."
+)
+
 HL_STRUCTURE_SOURCE_NAME = HL_SOURCE_NAME
 
 REGISTRY: dict[str, SourceMeta] = {
@@ -85,6 +93,13 @@ REGISTRY: dict[str, SourceMeta] = {
         base_url=CALENDAR_BASE_URL,
         trust_tier=2,
         tos_notes=CALENDAR_TOS_NOTES,
+    ),
+    EDGAR_SOURCE_NAME: SourceMeta(
+        name=EDGAR_SOURCE_NAME,
+        kind=SourceKind.NEWS,
+        base_url=EDGAR_BASE_URL,
+        trust_tier=4,
+        tos_notes=EDGAR_TOS_NOTES,
     ),
 }
 

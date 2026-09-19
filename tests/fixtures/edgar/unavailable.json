@@ -1,0 +1,15 @@
+{
+  "kind": "edgar",
+  "ingested_at": "2026-09-19T09:56:30+10:00",
+  "filings": [
+    {
+      "instrument": "CBRS",
+      "form": "424B4",
+      "cik": "2021728",
+      "url": "https://www.sec.gov/Archives/edgar/data/2021728/000162828026035214/cerebras-424b4.htm",
+      "error_class": "tos_or_blocked",
+      "status_code": 403,
+      "notes": "EDGAR HTTP failed (error_class=tos_or_blocked); filing text not invented"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "CBRS": {
+    "observation_id": "edgar-CBRS-424b4-20260513",
+    "form": "424B4",
+    "cik": "2021728",
+    "accession": "0001628280-26-035214",
+    "file_date": "2026-05-13",
+    "prospectus_dated": "2026-05-13",
+    "delivery_expected": "2026-05-15",
+    "assume_180d": false,
+    "formula_180d_bound": "2026-11-09",
+    "must_include_dates": [
+      "2026-08-19",
+      "2026-09-02",
+      "2026-09-16",
+      "2026-09-30",
+      "2026-10-14",
+      "2026-10-28",
+      "2026-11-09"
+    ],
+    "lock_up_period_needles": [
+      "earlier of",
+      "second trading day",
+      "September 30, 2026",
+      "180 days"
+    ]
+  },
+  "SPCX": {
+    "observation_id": "edgar-SPCX-424b4-20260611",
+    "form": "424B4",
+    "cik": "1181412",
+    "accession": "0001628280-26-042639",
+    "file_date": "2026-06-11",
+    "prospectus_dated": "2026-06-11",
+    "delivery_expected": "2026-06-15",
+    "assume_180d": false,
+    "day_180": "2026-12-08",
+    "musk_extension_through": "2027-06-12",
+    "must_include_dates": [
+      "2026-08-20",
+      "2026-09-09",
+      "2026-09-10",
+      "2026-09-24",
+      "2026-10-09",
+      "2026-10-24",
+      "2026-12-08",
+      "2027-03-18",
+      "2027-05-17",
+      "2027-06-12"
+    ],
+    "lock_up_period_needles": [
+      "First Earnings Release Date",
+      "June 30, 2026"
+    ]
+  }
+}

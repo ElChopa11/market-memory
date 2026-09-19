@@ -65,4 +65,6 @@ IMP-003 sample [`ops/reports/source-health/2026-09-17.md`](../../ops/reports/sou
 - Hyperliquid stays on the public `/info` allowlist. Forbidden user/wallet types are refused locally (no HTTP).
 - Do not treat this report as a Quant verdict or a trading decision.
 
+EDGAR is a separate paper probe (not this inventory): `uv run lab data edgar --fixture tests/fixtures/edgar/cbrs-spcx-lockup.json --no-db`. See [edgar.md](edgar.md).
+
 See also: [ingest runbook](ingest.md), [Market Pulse runbook](market-pulse.md), [Polygon + HL structure](polygon-hl-structure.md). Plan: [ops/plans/IMP-004-pulse-source-hardening.md](../../ops/plans/IMP-004-pulse-source-hardening.md).

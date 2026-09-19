@@ -40,7 +40,7 @@ Index events are a separate stream from IPO deals. Post-IPO reclaim screen remai
 
 NEW_LISTING names on [`config/watchlist/monitor.yaml`](../../config/watchlist/monitor.yaml) (CBRS, SPCX as of 2026-09-19) route here, not through the general equities scan. Standing feed: [`config/listings/watchlist_new_listings.yaml`](../../config/listings/watchlist_new_listings.yaml). Ideas use the post-IPO framework (offer, day-1 VWAP, reclaim, listing base rates) — **not SMA200**. SMA200 renders `n/a (insufficient history: <n> bars)` when bars `<200`. Mandatory warning: days of history, float %, lockup proximity, borrow flag, spread/depth. `UNTRADEABLE_AT_SIZE` is observation only; Risk blocks by `rule_id`.
 
-EDGAR lockups are confirmed formulas, **not** a flat 180 days. Lockup inside horizon = Skeptic (gate 5) blackout.
+EDGAR lockups are confirmed formulas from a stored 424B4 (IMP-024), **not** a flat 180 days. Resolvable ids: `edgar-CBRS-424b4-20260513`, `edgar-SPCX-424b4-20260611`. Lockup inside horizon = Skeptic (gate 5) blackout. See [edgar.md](edgar.md).
 
 ## Not this phase
 

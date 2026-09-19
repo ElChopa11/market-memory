@@ -183,7 +183,7 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 ## Licence verdict (IMP-034)
 
-`config/ingest.yaml` records `licence_verdict` next to each adapter. Standing rule: sources whose terms prohibit redistribution may be used for internal computation but values must never appear in published artifacts. Closed set: `ok_gov` | `ok_attr` | `restricted` | `prohibited` | `pending_terms` | `missing`. Incident close: `OPEN` → `ELIGIBLE` → `CLOSED(cite run_id)` | `RETIRED`. `--no-db` is ELIGIBLE only (FRED full-stack is IMP-022).
+`config/ingest.yaml` records `licence_verdict` next to each adapter. Standing rule: sources whose terms prohibit redistribution may be used for internal computation but values must never appear in published artifacts. Closed set: `ok_gov` | `ok_attr` | `restricted` | `prohibited` | `pending_terms` | `missing`. Incident close: `OPEN` → `ELIGIBLE` → `CLOSED(cite run_id)` | `RETIRED`. `--no-db` is ELIGIBLE only (FRED full-stack is IMP-022 DONE #60; EDGAR is IMP-024). See [edgar.md](edgar.md).
 
 ## Gates kept
 

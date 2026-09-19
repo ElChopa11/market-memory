@@ -72,7 +72,11 @@ adapters:
   edgar:
     licence_verdict: ok_gov
     attribution: "SEC EDGAR"
-    licence_notes: "Free, no key. Filings/IPO/lockups. CBRS+SPCX lockup already recorded; wire adapter + store (IMP-024)."
+    user_agent: "MarketMemory research-lab (github.com/ElChopa11/market-memory; intel-ingest; paper-only)"
+    base_url: https://data.sec.gov
+    archives_base: https://www.sec.gov/Archives/edgar/data
+    max_rps: 10
+    licence_notes: "Free, no key. data.sec.gov + Archives. Declared User-Agent, ≤10 rps. 403 → unavailable. file_date ≠ knowledge clock. CBRS+SPCX lockup from stored 424B4."
   treasury:
     licence_verdict: ok_gov
     attribution: "U.S. Treasury Fiscal Data"
@@ -114,6 +118,12 @@ rate_limits:
     backoff_s: 0.25
   fred:
     max_requests_per_minute: 20
+    timeout_seconds: 8
+    max_attempts: 2
+    backoff_s: 0.25
+  edgar:
+    max_requests_per_minute: 600
+    max_requests_per_second: 10
     timeout_seconds: 8
     max_attempts: 2
     backoff_s: 0.25
@@ -181,3 +191,14 @@ macro:
     licence_verdict: ok_gov
     source: fixture
     path: config/briefing/calendar.yaml
+
+# IMP-024 EDGAR. No key. Lockup targets come from config/watchlist/monitor.yaml.
+filings:
+  edgar:
+    licence_verdict: ok_gov
+    attribution: "SEC EDGAR"
+    user_agent: "MarketMemory research-lab (github.com/ElChopa11/market-memory; intel-ingest; paper-only)"
+    base_url: https://data.sec.gov
+    archives_base: https://www.sec.gov/Archives/edgar/data
+    max_rps: 10
+    lockup_targets_from_watchlist: true
