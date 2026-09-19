@@ -128,11 +128,11 @@ def test_resolution_hl_and_nasdaq_and_unresolved() -> None:
     assert by["CBRS"].qualified_id == "NASDAQ:CBRS"
     assert by["CBRS"].cluster == "semis_ai"
     assert by["CBRS"].new_listing is True
-    for ticker in UNRESOLVED_TICKERS:
-        assert by[ticker].resolution_status == "unresolved"
-        assert by[ticker].qualified_id is None
-    assert set(UNRESOLVED_TICKERS) == {"SAMSUN", "KOSDA"}
-    assert "equities/index; not HL" in spec_text
+    assert UNRESOLVED_TICKERS == ()
+    assert by["SAMSUN"].resolution_status == "resolved"
+    assert by["SAMSUN"].qualified_id == "KRX:005930"
+    assert by["KOSDA"].resolution_status == "resolved"
+    assert by["KOSDA"].qualified_id == "KRX:KQ11"
 
 
 def test_lockup_confirmed_not_flat_180d() -> None:
@@ -164,7 +164,9 @@ def test_ideas_exclude_unresolved_blocked_new_listing() -> None:
     cbrs = name_by_ticker("CBRS", ROOT)
     btc = name_by_ticker("BTCUSD", ROOT)
     eth = name_by_ticker("ETHUSD", ROOT)
-    assert samsun is not None and idea_eligible(samsun, as_of=AS_OF, repo_root=ROOT)[0] is False
+    ok_kr, reason_kr = idea_eligible(samsun, as_of=AS_OF, repo_root=ROOT)  # type: ignore[arg-type]
+    assert ok_kr is True
+    assert reason_kr == UNSIZED_REASON
     assert cashcat is not None and idea_eligible(cashcat, as_of=AS_OF, repo_root=ROOT)[0] is False
     assert cbrs is not None and idea_eligible(cbrs, as_of=AS_OF, repo_root=ROOT)[0] is False
     ok, reason = idea_eligible(btc, as_of=AS_OF, repo_root=ROOT)  # type: ignore[arg-type]
@@ -187,7 +189,8 @@ def test_cluster_netting_caps() -> None:
     )
     netted = net_sized_ideas(ideas, repo_root=ROOT, as_of=AS_OF, corr=None)
     by = {row["ticker"]: row for row in netted}
-    assert "SAMSUN" not in by
+    assert by["SAMSUN"]["size_policy"] == "UNSIZED"
+    assert by["SAMSUN"]["reason"] == UNSIZED_REASON
     assert "CASHCAT" not in by
     assert by["BTCUSD"]["size_policy"] == "cluster_capped"
     assert by["NVDA"]["size_policy"] == "cluster_capped"
@@ -208,9 +211,11 @@ def test_scan_covers_monitor_list_and_renders_unresolved() -> None:
     assert by["ETHUSD"].membership == "watch_only"
     assert by["NVDA"].monitor_state == "COVERED"
     assert by["UNIUSD"].monitor_state == "UNAVAILABLE"
-    assert by["SAMSUN"].monitor_state == "UNRESOLVED"
-    assert by["KOSDA"].monitor_state == "UNRESOLVED"
-    assert by["SAMSUN"].idea_eligible is False
+    assert by["SAMSUN"].monitor_state == "UNAVAILABLE"
+    assert by["KOSDA"].monitor_state == "UNAVAILABLE"
+    assert by["SAMSUN"].qualified_id == "KRX:005930"
+    assert by["KOSDA"].qualified_id == "KRX:KQ11"
+    assert by["SAMSUN"].idea_eligible is True
     assert by["CASHCAT"].monitor_state == "BLOCKED"
     assert by["CBRS"].new_listing is True
     assert by["CBRS"].scan_pod == "listings"

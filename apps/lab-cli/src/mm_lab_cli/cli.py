@@ -246,6 +246,11 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         stats = stats_from_envelopes(envelopes, dry_run=True)
         payload = stats.as_public_dict()
         payload["qualities"] = sorted({e.data_quality.value for e in envelopes})
+        from mm_ingest.fred_stack import fred_envelopes, run_fred_stack
+
+        if fred_envelopes(envelopes):
+            stack = run_fred_stack(envelopes, no_db=True)
+            payload["fred_stack"] = stack.as_public_dict()
         print(json.dumps(payload))
         return 0
 

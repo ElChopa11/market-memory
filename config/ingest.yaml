@@ -1,5 +1,6 @@
 # Phase 1 + Phase 5b read-only ingest (no secrets).
 venue: hyperliquid
+licence_verdict: ok_attr
 info_url: https://api.hyperliquid.xyz/info
 candle_interval: 1h
 # Snapshot rows whose lab-capture published_at is older than this at ingest time are flagged stale.
@@ -7,6 +8,87 @@ candle_interval: 1h
 stale_after_seconds: 120
 store_raw_objects: true
 source_trust_tier: 4
+
+# Principal 2026-09-19 standing rule. licence_verdict is recorded next to each
+# adapter below (and in adapters:) — not only in docs.
+# Sources whose terms prohibit redistribution may be used for internal
+# computation but values must never appear in published artifacts.
+licence:
+  standing_rule: >
+    Sources whose terms prohibit redistribution may be used for internal
+    computation but values must never appear in published artifacts.
+  closed_set:
+    - ok_gov
+    - ok_attr
+    - restricted
+    - prohibited
+    - pending_terms
+    - missing
+  publish_values:
+    ok_gov: true
+    ok_attr: true
+    restricted: false
+    prohibited: false
+    pending_terms: false
+    missing: false
+  incident_closure: open→eligible→closed(cite run_id)|retired
+  no_db_is: ELIGIBLE
+
+# One row per adapter. Planned / unwired adapters still carry a verdict so
+# operators do not have to hunt docs. Unknown slug fails closed.
+adapters:
+  hyperliquid:
+    licence_verdict: ok_attr
+    attribution: "Hyperliquid public /info allowlist"
+    licence_notes: "Public /info only. No signing. No user-private types."
+  polygon:
+    licence_verdict: ok_attr
+    attribution: "Polygon.io"
+    licence_notes: "Principal-locked equities vendor. Env POLYGON_API_KEY only."
+  coingecko:
+    licence_verdict: restricted
+    attribution: "CoinGecko"
+    licence_notes: "Public simple/price OK as DQ. Raw API redistribution not permitted; values stay internal unless attribution path is explicit."
+  binance:
+    licence_verdict: ok_attr
+    attribution: "Binance public market data"
+    licence_notes: "api.binance.com is geo-blocked from AU (451). Lawful host is data-api.binance.vision / data.binance.vision (IMP-023)."
+  binance.vision:
+    licence_verdict: ok_attr
+    attribution: "Binance vision market-data-only hosts"
+    licence_notes: "Test from AU separately from geo-blocked api.binance.com. No signed endpoints."
+  fred:
+    licence_verdict: ok_gov
+    attribution: "via FRED®"
+    licence_notes: "Treasury/Fed public-domain series only. Skip CBOE/S&P Pre-approval required. --no-db = ELIGIBLE only."
+  calendar:
+    licence_verdict: ok_gov
+    attribution: "fixture calendar.yaml"
+    licence_notes: "Fixture-friendly economic calendar. No live calendar API in 5b."
+  stooq:
+    licence_verdict: restricted
+    attribution: "Stooq"
+    licence_notes: "SRC-STOOQ-404 stays OPEN (http_404). No scrape fallback. No published Close invented."
+  edgar:
+    licence_verdict: ok_gov
+    attribution: "SEC EDGAR"
+    licence_notes: "Free, no key. Filings/IPO/lockups. CBRS+SPCX lockup already recorded; wire adapter + store (IMP-024)."
+  treasury:
+    licence_verdict: ok_gov
+    attribution: "U.S. Treasury Fiscal Data"
+    licence_notes: "Free, no key. FRED cross-check. Redistrib clause is the cleanest gov grant (IMP-035)."
+  yahoo:
+    licence_verdict: prohibited
+    attribution: ""
+    licence_notes: "Retire when a licensed path exists. Verdict lives here so Yahoo cannot silently re-enter Pulse."
+  tiingo:
+    licence_verdict: restricted
+    attribution: "Tiingo"
+    licence_notes: "Trial free tier base-rate backfill ONLY (500 sym/mo). Values stay internal until display rights are confirmed (IMP-037)."
+  finnhub:
+    licence_verdict: pending_terms
+    attribution: "Finnhub"
+    licence_notes: "Free calendar/estimates only after terms allow republishing derived values to a private channel (IMP-038)."
 
 # Per-source request budgets. Exhaustion → unavailable + error_class=rate_limited (never invent).
 rate_limits:
@@ -39,6 +121,7 @@ rate_limits:
 # Principal lock: equities default vendor = Polygon. Ask is N/A.
 equities:
   vendor: polygon
+  licence_verdict: ok_attr
   api_key_env: POLYGON_API_KEY
   base_url: https://api.polygon.io
   daily:
@@ -71,6 +154,7 @@ crypto:
     # DQ event if |perp-spot|/spot exceeds this. Not executable-arb.
     divergence_bps: 50
     coingecko:
+      licence_verdict: restricted
       base_url: https://api.coingecko.com/api/v3/simple/price
       ids:
         BTC: bitcoin
@@ -78,6 +162,7 @@ crypto:
         UNI: uniswap
         AAVE: aave
     binance:
+      licence_verdict: ok_attr
       base_url: https://api.binance.com/api/v3/ticker/price
       symbols:
         BTC: BTCUSDT
@@ -87,10 +172,12 @@ crypto:
 
 macro:
   fred:
+    licence_verdict: ok_gov
     api_key_env: FRED_API_KEY
     base_url: https://api.stlouisfed.org/fred/series/observations
     series:
       US10Y: DGS10
   calendar:
+    licence_verdict: ok_gov
     source: fixture
     path: config/briefing/calendar.yaml

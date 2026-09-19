@@ -157,7 +157,7 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 ## Watchlist monitor (Phase 6c-4) + Ops delivery (Phase 6c-5)
 
-`lab watchlist scan --fixture PATH --no-send` lists every name on the Principal review list (`config/watchlist/monitor.yaml`). Intel owns ticker resolution; Research must state watchlist tier on every idea. Membership still comes from `config/universe.yaml` and is not promoted. Unresolved tickers render unresolved. PLAYBOOK setups are flagged only — trade math stays on the ladder.
+`lab watchlist scan --fixture PATH --no-send` lists every name on the Principal review list (`config/watchlist/monitor.yaml`). Intel owns ticker resolution; Research must state watchlist tier on every idea. Membership still comes from `config/universe.yaml` and is not promoted. Unresolved tickers render unresolved (none after IMP-034: SAMSUN=`KRX:005930`, KOSDA=`KRX:KQ11`). PLAYBOOK setups are flagged only — trade math stays on the ladder.
 
 `lab deliver watchlist --fixture PATH --no-send` is the Ops Telegram fan-out of that artifact (research route + Ops mirror, inherited `content_hash`). Coord is not the publisher. See [watchlist.md](watchlist.md) and [telegram.md](telegram.md).
 
@@ -180,6 +180,10 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 `lab decay watch --fixture PATH --no-send` hashes versioned prompts and listed configs against pinned SHA-256. Mismatch / missing / unpinned is `DEGRADED` and NOTIFYs `desk.quant.alert` plus a queue *signal* that does not write the queue. Quant sleeve, not a sixth desk.
 
 `lab deliver decay --fixture PATH --no-send` is the Ops Telegram fan-out (quant route + Ops mirror, inherited `content_hash`). Attached scorecard pairs keep `NOT_COMPARABLE` tagged. See [decay.md](decay.md).
+
+## Licence verdict (IMP-034)
+
+`config/ingest.yaml` records `licence_verdict` next to each adapter. Standing rule: sources whose terms prohibit redistribution may be used for internal computation but values must never appear in published artifacts. Closed set: `ok_gov` | `ok_attr` | `restricted` | `prohibited` | `pending_terms` | `missing`. Incident close: `OPEN` → `ELIGIBLE` → `CLOSED(cite run_id)` | `RETIRED`. `--no-db` is ELIGIBLE only (FRED full-stack is IMP-022).
 
 ## Gates kept
 

@@ -20,11 +20,9 @@ def test_queue_marks_030_done_031_done_open_incidents() -> None:
     assert not any("IMP-031" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-031" in line and "PARKED" in line for line in board_lines)
     assert "`IN_PROGRESS` count: **1**" in queue
-    assert any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-033" in line and "DONE" in line for line in board_lines)
+    assert any("IMP-022" in line and "IN_PROGRESS" in line for line in board_lines)
     for item_id in (
-        "IMP-022",
-        "IMP-023",
-        "IMP-024",
         "IMP-025",
         "IMP-026",
         "IMP-027",

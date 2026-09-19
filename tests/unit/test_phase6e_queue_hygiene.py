@@ -109,6 +109,19 @@ def test_ready_may_start_when_slot_free() -> None:
     assert "does not write" in reason
 
 
+def test_incident_eligible_ok_closed_requires_run_id() -> None:
+    eligible = MINIMAL.replace("| **Status** | OPEN |", "| **Status** | ELIGIBLE |", 1)
+    report = check_queue(eligible)
+    assert report.ok
+    closed = MINIMAL.replace("| **Status** | OPEN |", "| **Status** | CLOSED |", 1)
+    bad = check_queue(closed)
+    assert not bad.ok
+    assert any("run_id" in err for err in bad.errors)
+    cited = closed.replace("| **Lesson learned** | *(open)* |", "| **Lesson learned** | closed cite run_id=fred-test |")
+    ok_closed = check_queue(cited)
+    assert ok_closed.ok
+
+
 def test_refuses_auto_merge_and_waiver() -> None:
     assert refuse_forbidden("merge")
     assert refuse_forbidden("waive")

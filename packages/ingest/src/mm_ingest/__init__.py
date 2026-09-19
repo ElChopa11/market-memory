@@ -8,6 +8,7 @@ from mm_ingest.hl_info import (
     HyperliquidInfoClient,
     HyperliquidInfoError,
 )
+from mm_ingest.licence import assert_licence_invariants, may_publish_value, verdict_for
 from mm_ingest.pipeline import (
     envelopes_from_fixture,
     ingest_from_client,
@@ -30,11 +31,14 @@ __all__ = [
     "HyperliquidInfoClient",
     "HyperliquidInfoError",
     "LIVE_TRADING_ENABLED",
+    "assert_licence_invariants",
     "envelopes_from_fixture",
     "get_equities_adapter",
     "ingest_from_client",
     "ingest_from_fixture",
     "load_fixture_file",
+    "may_publish_value",
     "persist_envelopes",
     "stats_from_envelopes",
+    "verdict_for",
 ]

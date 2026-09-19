@@ -15,7 +15,7 @@ IMP-020 (#52) shipped a Research daily scan over `config/universe.yaml` `in_univ
 | Review list | `config/watchlist/monitor.yaml` is THE complete list. Owner: Intel. Additions/removals = Principal PR only |
 | Membership | Still `config/universe.yaml`. Monitor names are **not** promoted into `in_universe` |
 | Tiers | `universe` (must match `in_universe`) / `monitor` (UNSIZED ideas) / `blocked` (state only) |
-| Resolution | Exchange-qualified table. Unresolved (SAMSUN, KOSDA) render unresolved and are excluded from ideas |
+| Resolution | Exchange-qualified table. Unresolved names render unresolved and are excluded from ideas. IMP-034 resolved SAMSUN→KRX:005930 and KOSDA→KRX:KQ11 |
 | NEW_LISTING | `<200` daily bars → listings sleeve; SMA200 is an n/a string; post-IPO framework |
 | Lockup | EDGAR-confirmed formulas. Do not assume flat 180d. Inside horizon → Skeptic (gate 5) blackout |
 | Scan | `lab watchlist scan` walks monitor.yaml. Publishing desk remains Research |
@@ -28,4 +28,4 @@ IMP-020 (#52) shipped a Research daily scan over `config/universe.yaml` `in_univ
 
 ## Not this ADR
 
-Universe ticker expansion. Live/signing/Redis. Paid data. Resolving SAMSUN/KOSDA.
+Universe ticker expansion. Live/signing/Redis. Paid data. Re-unresolving SAMSUN/KOSDA after IMP-034.

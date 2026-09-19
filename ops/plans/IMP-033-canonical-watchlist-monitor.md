@@ -1,6 +1,6 @@
 # PLAN — IMP-033 Canonical watchlist monitor.yaml
 
-**Report status:** IN_PROGRESS (this PR).  
+**Report status:** DONE (#59). SAMSUN/KOSDA resolved in IMP-034.  
 **Owner:** Intel (resolution + EDGAR lockup) / Ops (queue + scan wire)  
 **Scope:** Principal-lock `config/watchlist/monitor.yaml` as THE complete review list (2026-09-19, Operation Lunch Money). Wire `lab watchlist scan`. No universe promotion. Paper only.
 

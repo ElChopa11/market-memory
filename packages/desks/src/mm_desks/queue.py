@@ -20,6 +20,9 @@ from typing import Any
 QUEUE_REL = Path("ops") / "improvement-queue.md"
 STATUSES = (
     "OPEN",
+    "ELIGIBLE",
+    "CLOSED",
+    "RETIRED",
     "BACKLOG",
     "READY",
     "IN_PROGRESS",
@@ -29,6 +32,9 @@ STATUSES = (
     "REJECTED",
 )
 IMPLEMENTATION_STATUSES = frozenset({"BACKLOG", "READY", "IN_PROGRESS", "IN_REVIEW", "DONE", "PARKED", "REJECTED"})
+INCIDENT_STATUSES = frozenset({"OPEN", "ELIGIBLE", "CLOSED", "RETIRED", "DONE", "PARKED"})
+# Principal incident closure: open → eligible → closed(cite run_id) | retired.
+# --no-db is ELIGIBLE only. CLOSED must cite a persist run_id. Helper never writes.
 REQUIRED_FIELDS = (
     "ID",
     "Priority",
@@ -108,6 +114,7 @@ class QueueReport:
             "auto_waive": self.auto_waive,
             "n_items": len(self.items),
             "open_incidents": [i.item_id for i in self.items if i.kind == "incident" and i.status == "OPEN"],
+            "eligible_incidents": [i.item_id for i in self.items if i.kind == "incident" and i.status == "ELIGIBLE"],
         }
 
 
@@ -184,8 +191,12 @@ def check_queue(text: str, *, path: str = str(QUEUE_REL)) -> QueueReport:
                 errors.append(f"{item.item_id} missing required fields: {', '.join(missing)}")
             if item.status == "OPEN":
                 errors.append(f"{item.item_id} is an implementation item with OPEN; OPEN is for incidents")
-        if item.kind == "incident" and item.status not in {"OPEN", "DONE", "PARKED"}:
-            warnings.append(f"{item.item_id} incident status {item.status!r} (incidents stay OPEN until verified)")
+        if item.kind == "incident" and item.status not in INCIDENT_STATUSES:
+            warnings.append(f"{item.item_id} incident status {item.status!r} (use OPEN|ELIGIBLE|CLOSED|RETIRED)")
+        if item.kind == "incident" and item.status == "CLOSED":
+            blob = " ".join(str(v) for v in item.fields.values())
+            if "run_id" not in blob.lower():
+                errors.append(f"{item.item_id} CLOSED without citing run_id")
     in_progress = implementation_in_progress(items)
     if len(in_progress) > 1:
         errors.append(
