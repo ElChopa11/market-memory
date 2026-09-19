@@ -117,6 +117,9 @@ def test_monitor_tickers_all_appear_when_offline_missing(tmp_path: Path) -> None
     assert "excluded" in report
     assert "Australia/Sydney" in report
     assert "offline: no bars-dir/cache file" in report
+    assert "2-year free-tier history limit" in report
+    assert "PROVISIONAL" in report
+    assert "principal-actions" in report
 
 
 def test_under_200_bars_excluded_no_substitute() -> None:
@@ -265,3 +268,114 @@ def test_hl_coin_uses_resolution_chip_not_chipi() -> None:
     assert mod.polygon_ticker(symbols["NQ1!"]) is None
     assert mod.polygon_ticker(symbols["NVDA"]) == "NVDA"
     assert mod.polygon_ticker(symbols["SPX"]) == "I:SPX"
+    assert symbols["CBRS"].listing_date == date(2026, 5, 14)
+    assert symbols["SPCX"].listing_date is None  # unresolved in monitor; yaml listed_on is 2026-06-11
+
+
+def test_spcx_listing_date_voids_and_drops_from_pool(tmp_path: Path) -> None:
+    import json
+
+    mod = _load()
+    bars_dir = tmp_path / "bars"
+    bars_dir.mkdir()
+    start = date(2024, 9, 19)
+    btc = {
+        "ticker": "BTCUSD",
+        "source": "fixture",
+        "bars": [
+            {
+                "date": (date(2023, 1, 1) + timedelta(days=i)).isoformat(),
+                "open": 100 + i,
+                "high": 101 + i,
+                "low": 99 + i,
+                "close": 100.5 + i,
+            }
+            for i in range(250)
+        ],
+    }
+    # Pre-IPO SpaceX ticker string: ETF tape from the 2y window start.
+    spcx = {
+        "ticker": "SPCX",
+        "source": "polygon:SPCX",
+        "bars": [
+            {
+                "date": (start + timedelta(days=i)).isoformat(),
+                "open": 10.0,
+                "high": 10.1,
+                "low": 9.9,
+                "close": 10.0 if i < 200 else 10.0 + (i - 199) * 0.01,
+                "volume": 1670,
+            }
+            for i in range(250)
+        ],
+    }
+    (bars_dir / "BTCUSD.json").write_text(json.dumps(btc), encoding="utf-8")
+    (bars_dir / "SPCX.json").write_text(json.dumps(spcx), encoding="utf-8")
+    out_dir = tmp_path / "out"
+    rc = mod.run(
+        [
+            "--monitor",
+            str(MONITOR),
+            "--output-dir",
+            str(out_dir),
+            "--cache-dir",
+            str(tmp_path / "cache"),
+            "--bars-dir",
+            str(bars_dir),
+            "--offline",
+            "--now",
+            "2026-09-19T12:00:00+00:00",
+            "--no-sleep",
+        ]
+    )
+    assert rc == 0
+    text = (out_dir / "phase1-2026-09-19.md").read_text(encoding="utf-8")
+    assert "PROVISIONAL" in text
+    assert "2-year free-tier history limit" in text
+    assert "IS** the vendor cap" in text or "**IS** the vendor cap" in text
+    assert "suspected_ticker_reuse" in text
+    assert "| SPCX |" in text and "void" in text
+    assert "Voided ``suspected_ticker_reuse`` names are **not** in this pool: SPCX" in text
+    # BTC is in the pool; SPCX is not listed as computed in three-line "Enough history".
+    assert "Enough history to study at all" in text
+    assert "BTCUSD" in text
+    line2 = [ln for ln in text.splitlines() if "Enough history to study at all" in ln][0]
+    assert "SPCX" not in line2
+    assert "permission filter" in text.lower()
+    assert "VVVUSD" in text or "interpretable outlier" in text
+    assert "BMNR audit" in text
+
+
+def test_overlay_writes_separate_outside_monitor_file(tmp_path: Path) -> None:
+    mod = _load()
+    out_dir = tmp_path / "out"
+    rc = mod.run(
+        [
+            "--monitor",
+            str(MONITOR),
+            "--output-dir",
+            str(out_dir),
+            "--cache-dir",
+            str(tmp_path / "cache"),
+            "--bars-dir",
+            str(tmp_path / "empty"),
+            "--offline",
+            "--overlay",
+            "AVGO,MSFT",
+            "--overlay-only",
+            "--now",
+            "2026-09-19T12:00:00+00:00",
+            "--no-sleep",
+        ]
+    )
+    assert rc == 0
+    overlay = out_dir / "phase1-2026-09-19-universe-overlay.md"
+    assert overlay.is_file()
+    assert not (out_dir / "phase1-2026-09-19.md").exists()
+    text = overlay.read_text(encoding="utf-8")
+    assert "OUTSIDE" in text and "monitor.yaml" in text
+    assert "not a universe change" in text.lower() or "Not a universe change" in text
+    assert "AVGO" in text and "MSFT" in text
+    assert "NVDA" not in text  # monitor-only name must not leak into overlay-only file
+    assert "PROVISIONAL" in text
+

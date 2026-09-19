@@ -7,6 +7,8 @@ envelope, no desk runners, no Telegram, no LLM. Not IMP-040 event-class rates.
 Run (repo root):
 
     python scripts/research/base_rates_phase1.py
+    python scripts/research/base_rates_phase1.py --overlay
+    python scripts/research/base_rates_phase1.py --overlay AVGO,MSFT,META,JPM,XOM,SMH,XLF
 
 If mm_ingest is not on PYTHONPATH, use the workspace venv:
 
@@ -18,8 +20,15 @@ Env (live fetch only):
     CoinGecko         optional fallback for crypto not on HL (public REST; may 401)
 
 Prefer --offline with --bars-dir / --cache-dir when bars are already on disk.
+Do **not** pass --no-sleep on Polygon free tier (5 req/min).
+
 Writes research/base-rates/phase1-<YYYY-MM-DD>.md using the Australia/Sydney
 date when the run finishes (UTC timestamp is printed in the file).
+``--overlay`` writes a separate phase1-<date>-universe-overlay.md
+(OUTSIDE monitor.yaml; not a universe change).
+
+Polygon/equities series run a continuity check (listing date + N-sigma MAD).
+``suspected_ticker_reuse`` is voided and excluded from pooled stats.
 """
 
 from __future__ import annotations
@@ -65,6 +74,19 @@ SYDNEY = ZoneInfo("Australia/Sydney")
 MONITOR_REL = Path("config") / "watchlist" / "monitor.yaml"
 OUTPUT_REL = Path("research") / "base-rates"
 CACHE_REL = Path("research") / "base-rates" / "cache"
+CONTINUITY_REL = Path("config") / "research" / "ticker_continuity.yaml"
+POLYGON_FREE_TIER_CALENDAR_DAYS = 730
+POLYGON_SLEEP_S = 12.1  # free-tier 5 req/min; do not use --no-sleep live
+DEFAULT_OVERLAY = ("AVGO", "MSFT", "META", "JPM", "XOM", "SMH", "XLF")
+OVERLAY_VENUES: dict[str, str] = {
+    "AVGO": "nasdaq",
+    "MSFT": "nasdaq",
+    "META": "nasdaq",
+    "JPM": "nyse",
+    "XOM": "nyse",
+    "SMH": "nasdaq",
+    "XLF": "nyse",
+}
 
 # CoinGecko ids used only as a fallback when HL has no daily OHLC.
 # Unknown names are not guessed.
@@ -116,6 +138,7 @@ class SymbolSpec:
     qualified_id: str
     coin: str | None
     note: str
+    listing_date: date | None = None
 
 
 @dataclass
@@ -177,6 +200,12 @@ class InstrumentResult:
     ann_factor: float
     cost_frac: float
     regimes: dict[str, RegimeStats] = field(default_factory=dict)
+    void_code: str | None = None
+    continuity_detail: str | None = None
+    listed_on: date | None = None
+    max_1bar: float | None = None
+    max_10bar: float | None = None
+    polygon_free_tier_cap: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +243,13 @@ def load_monitor_symbols(path: Path) -> list[SymbolSpec]:
         coin = res.get("coin")
         coin_s = str(coin).strip().upper() if coin else None
         note = str(res.get("note") or row.get("resolution_note") or "")
+        listing_raw = res.get("listing_date")
+        listing_date = None
+        if listing_raw not in (None, "", "unresolved"):
+            try:
+                listing_date = date.fromisoformat(str(listing_raw).strip()[:10])
+            except ValueError:
+                listing_date = None
         out.append(
             SymbolSpec(
                 ticker=ticker,
@@ -227,6 +263,7 @@ def load_monitor_symbols(path: Path) -> list[SymbolSpec]:
                 qualified_id=qid,
                 coin=coin_s,
                 note=note,
+                listing_date=listing_date,
             )
         )
     if not out:
@@ -287,6 +324,123 @@ def round_trip_cost(spec: SymbolSpec, cost: Mapping[str, float] = COST) -> float
 
 def cache_filename(ticker: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", ticker) + ".json"
+
+
+def parse_overlay_tickers(text: str | None) -> list[str]:
+    if text is None:
+        return []
+    raw = text.strip()
+    if not raw:
+        return list(DEFAULT_OVERLAY)
+    parts = [p.strip().upper() for p in raw.replace(" ", ",").split(",") if p.strip()]
+    return parts or list(DEFAULT_OVERLAY)
+
+
+def overlay_specs(tickers: Sequence[str]) -> list[SymbolSpec]:
+    out: list[SymbolSpec] = []
+    seen: set[str] = set()
+    for ticker in tickers:
+        t = ticker.strip().upper()
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        venue = OVERLAY_VENUES.get(t, "nasdaq")
+        out.append(
+            SymbolSpec(
+                ticker=t,
+                membership_key=t,
+                tape_alias=t,
+                round="base",
+                tier="overlay",
+                cluster="research_overlay",
+                venue=venue,
+                kind="equity",
+                qualified_id=f"{venue.upper()}:{t}",
+                coin=None,
+                note="OUTSIDE monitor.yaml — research overlay, not a universe change",
+            )
+        )
+    return out
+
+
+def load_continuity_config(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {"n_sigma": 8.0, "instruments": {}}
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return {"n_sigma": 8.0, "instruments": {}}
+    instruments = data.get("instruments") if isinstance(data.get("instruments"), dict) else {}
+    return {
+        "n_sigma": float(data.get("n_sigma") or 8.0),
+        "mad_zero_abs_floor": float(data.get("mad_zero_abs_floor") or 0.05),
+        "polygon_free_tier_calendar_days": int(
+            data.get("polygon_free_tier_calendar_days") or POLYGON_FREE_TIER_CALENDAR_DAYS
+        ),
+        "instruments": instruments,
+    }
+
+
+def listed_on_for(spec: SymbolSpec, continuity_cfg: Mapping[str, Any]) -> date | None:
+    instruments = continuity_cfg.get("instruments") if isinstance(continuity_cfg.get("instruments"), dict) else {}
+    row = instruments.get(spec.ticker) if isinstance(instruments.get(spec.ticker), dict) else {}
+    raw = row.get("listed_on") if row else None
+    if raw:
+        try:
+            return date.fromisoformat(str(raw).strip()[:10])
+        except ValueError:
+            pass
+    return spec.listing_date
+
+
+def is_equity_series(spec: SymbolSpec, source: str) -> bool:
+    if "polygon:" in (source or ""):
+        return True
+    return spec.venue in EQUITY_VENUES and spec.round != "crypto"
+
+
+def polygon_free_tier_cap(bars: Sequence[Bar], *, window_end: date | None = None) -> bool:
+    if len(bars) < 400:
+        return False
+    first, last = bars[0].date, bars[-1].date
+    span = (last - first).days
+    if span < POLYGON_FREE_TIER_CALENDAR_DAYS - 15:
+        return False
+    if window_end is None:
+        return span >= POLYGON_FREE_TIER_CALENDAR_DAYS - 15
+    expected = window_end - timedelta(days=POLYGON_FREE_TIER_CALENDAR_DAYS)
+    return abs((first - expected).days) <= 5
+
+
+def apply_continuity(
+    result: InstrumentResult,
+    bars: Sequence[Bar],
+    *,
+    spec: SymbolSpec,
+    source: str,
+    continuity_cfg: Mapping[str, Any],
+    window_end: date | None = None,
+) -> InstrumentResult:
+    listed = listed_on_for(spec, continuity_cfg)
+    result.listed_on = listed
+    result.polygon_free_tier_cap = bool(bars) and is_equity_series(spec, source) and polygon_free_tier_cap(
+        bars, window_end=window_end
+    )
+    if not bars or not is_equity_series(spec, source):
+        return result
+    from mm_ingest.equities.continuity import check_bar_continuity
+
+    verdict = check_bar_continuity(
+        bars,
+        listed_on=listed,
+        n_sigma=float(continuity_cfg.get("n_sigma") or 8.0),
+        mad_zero_abs_floor=float(continuity_cfg.get("mad_zero_abs_floor") or 0.05),
+    )
+    result.continuity_detail = verdict.detail
+    if verdict.flagged:
+        result.void_code = verdict.reason_code or "suspected_ticker_reuse"
+        extra = f"suspected_ticker_reuse / entity splice ({verdict.detail})"
+        result.exclusion = f"{result.exclusion}; {extra}" if result.exclusion else extra
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -615,7 +769,7 @@ def fetch_polygon_daily(ticker: str, *, start: datetime, end: datetime) -> tuple
         return [], f"{API_KEY_ENV} missing; no cached daily bars"
 
     ingested = datetime.now(timezone.utc)
-    adapter = PolygonEquitiesAdapter(budget=RateLimitBudget(name="polygon", max_requests_per_minute=10_000))
+    adapter = PolygonEquitiesAdapter(budget=RateLimitBudget(name="polygon", max_requests_per_minute=5))
     try:
         query = EquitiesQuery(
             tickers=(ticker,),
@@ -730,7 +884,7 @@ def load_or_fetch_bars(
             if not os.environ.get(API_KEY_ENV, "").strip():
                 errors.append(f"{API_KEY_ENV} missing; no cached daily bars")
             else:
-                sleeper(12.1)
+                sleeper(POLYGON_SLEEP_S)
                 p_bars, p_err = fetch_polygon_daily(pticker, start=start, end=end)
                 if p_bars:
                     bars, source = p_bars, f"polygon:{pticker}"
@@ -915,6 +1069,16 @@ def compute_for_bars(
         )
 
     regime_stats = {name: stats_for(name, idxs) for name, idxs in regimes_idx.items()}
+    max_1bar = None
+    max_10bar = None
+    # Max signed forward return (Principal evidence: SPCX +29.8% / +101.8%).
+    # Recompute from the same close series used for Dist (no look-ahead).
+    if n >= 2:
+        xs1 = [closes[i + 1] / closes[i] - 1.0 for i in range(n - 1) if closes[i] > 0]
+        max_1bar = max(xs1) if xs1 else None
+    if n >= 11:
+        xs10 = [closes[i + 10] / closes[i] - 1.0 for i in range(n - 10) if closes[i] > 0]
+        max_10bar = max(xs10) if xs10 else None
     return InstrumentResult(
         spec=spec,
         source=source,
@@ -925,6 +1089,8 @@ def compute_for_bars(
         ann_factor=ann,
         cost_frac=cost_frac,
         regimes=regime_stats,
+        max_1bar=max_1bar,
+        max_10bar=max_10bar,
     )
 
 
@@ -942,9 +1108,12 @@ def _n(v: float | None, *, pct: bool = False, digits: int = 3) -> str:
 
 
 def _md_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> str:
-    line = "| " + " | ".join(headers) + " |"
+    def cell(value: str) -> str:
+        return str(value).replace("|", "/")
+
+    line = "| " + " | ".join(cell(h) for h in headers) + " |"
     sep = "| " + " | ".join("---" for _ in headers) + " |"
-    body = ["| " + " | ".join(r) + " |" for r in rows]
+    body = ["| " + " | ".join(cell(c) for c in r) + " |" for r in rows]
     return "\n".join([line, sep, *body])
 
 
@@ -1019,7 +1188,260 @@ def _three_line_summary(results: Sequence[InstrumentResult]) -> str:
         f"net of the flat cost below {_n(net, pct=True, digits=1)}. "
         f"A fair 1:2 coin-flip is ~33.3%. Every future strategy claim must beat this after costs."
     )
+    voided = [r for r in results if r.void_code]
+    if voided:
+        line3 += (
+            " Voided ``suspected_ticker_reuse`` names are **not** in this pool: "
+            + ", ".join(r.spec.ticker for r in voided)
+            + "."
+        )
     return "\n".join([f"1. {line1}", f"2. {line2}", f"3. {line3}"])
+
+
+def _coverage_status(r: InstrumentResult) -> str:
+    if r.void_code:
+        return "void"
+    if r.exclusion is None:
+        return "computed"
+    return "excluded"
+
+
+def _is_equity_result(r: InstrumentResult) -> bool:
+    return is_equity_series(r.spec, r.source)
+
+
+def _provisional_banner(results: Sequence[InstrumentResult], *, overlay: bool) -> list[str]:
+    cap_rows = [r for r in results if r.polygon_free_tier_cap]
+    equity_rows = [r for r in results if _is_equity_result(r) and r.n_raw]
+    firsts = [r.bars_first for r in cap_rows if r.bars_first]
+    lasts = [r.bars_last for r in cap_rows if r.bars_last]
+    span = "2024-09-19 → 2026-09-18 inclusive on a 2026-09-19 run"
+    if firsts and lasts:
+        span = f"{min(firsts).isoformat()} → {max(lasts).isoformat()} inclusive on this run"
+    n_cap = max((r.n_raw for r in cap_rows), default=None)
+    cap_n = f"~{n_cap} daily bars" if n_cap else "roughly 501 daily bars"
+    signal_starts: list[date] = []
+    for r in equity_rows:
+        if r.exclusion:
+            continue
+        dates = [
+            r.regimes[name].first
+            for name in ("trend-up", "trend-down", "chop")
+            if name in r.regimes and r.regimes[name].first
+        ]
+        if dates:
+            signal_starts.append(min(dates))
+    sma_start = min(signal_starts).isoformat() if signal_starts else "~2025-07-09"
+    overlay_line = (
+        "**OUTSIDE `config/watchlist/monitor.yaml`.** Research overlay only — "
+        "not a universe change. No promotion without a Principal PR."
+        if overlay
+        else ""
+    )
+    lines = [
+        "> **PROVISIONAL — equity base rates.** Polygon's **2-year free-tier history limit** "
+        f"caps US-listed daily bars ({cap_n}; {span}). This **IS** the vendor cap, "
+        "not an inferred 'looks like a window' guess.",
+        ">",
+        f"> SMA200 needs 200 bars → equity regime signals start **{sma_start}**. "
+        "Equity base rates cover roughly **one year of usable signals in a single regime**. "
+        "Every equity base rate in this file is **PROVISIONAL** until we have more history. "
+        "That is the headline, not a footnote.",
+    ]
+    if overlay_line:
+        lines += [">", f"> {overlay_line}"]
+    return lines
+
+
+def _voided_section(results: Sequence[InstrumentResult]) -> list[str]:
+    voided = [r for r in results if r.void_code]
+    parts = [
+        "## Voided — suspected_ticker_reuse / entity splice",
+        "",
+        "Resolving a ticker to an identifier does **not** prove the returned series belongs "
+        "to one entity. Polygon aggregates by ticker string. Flagged series are **void** and "
+        "**excluded from pooled stats**. Continuity check: known listing date (first bar "
+        "precedes identity-start) **or** a single-bar move beyond N=8 robust-sigma "
+        "(sigma = 1.4826 × MAD of 1-bar simple returns; MAD=0 flat tape uses a 5% floor). "
+        "See `mm_ingest.equities.continuity` and `config/research/ticker_continuity.yaml`.",
+        "",
+    ]
+    if not voided:
+        parts.append("None this run.")
+        parts.append("")
+        return parts
+    parts.append(
+        _md_table(
+            [
+                "ticker",
+                "n_bars",
+                "first",
+                "last",
+                "listed_on",
+                "1b mean",
+                "1b median",
+                "vol20 mean",
+                "max 1-bar",
+                "max 10-bar",
+                "reason",
+            ],
+            [
+                [
+                    r.spec.ticker,
+                    str(r.n_raw),
+                    r.bars_first.isoformat() if r.bars_first else "—",
+                    r.bars_last.isoformat() if r.bars_last else "—",
+                    r.listed_on.isoformat() if r.listed_on else "—",
+                    _n(r.regimes["unconditional"].fwd[1].mean, pct=True) if "unconditional" in r.regimes else "n/a",
+                    _n(r.regimes["unconditional"].fwd[1].median, pct=True) if "unconditional" in r.regimes else "n/a",
+                    _n(r.regimes["unconditional"].vol20_mean, pct=True, digits=1)
+                    if "unconditional" in r.regimes
+                    else "n/a",
+                    _n(r.max_1bar, pct=True, digits=1),
+                    _n(r.max_10bar, pct=True, digits=1),
+                    r.exclusion or r.void_code or "",
+                ]
+                for r in voided
+            ],
+        )
+    )
+    parts += ["", "Not in the pooled 1R:2R bracket. Not a substitute series. Not trimmed.", ""]
+    return parts
+
+
+def _bmnr_audit_section(results: Sequence[InstrumentResult]) -> list[str]:
+    by = {r.spec.ticker: r for r in results}
+    r = by.get("BMNR")
+    parts = [
+        "## BMNR audit (ticker-reuse screen)",
+        "",
+        "Principal asked whether BMNR (449 bars cited on the equity run; mean vs median gap) "
+        "is the same splice class as SPCX. Same continuity check; no silent keep-in-pool if voided.",
+        "",
+    ]
+    if r is None:
+        parts += ["BMNR was not in this run's ticker set.", ""]
+        return parts
+    u = r.regimes.get("unconditional")
+    mean_s = _n(u.fwd[1].mean, pct=True) if u else "n/a"
+    med_s = _n(u.fwd[1].median, pct=True) if u else "n/a"
+    vol_s = _n(u.vol20_mean, pct=True, digits=1) if u else "n/a"
+    status = _coverage_status(r)
+    if r.void_code:
+        verdict = (
+            f"**VOID** `{r.void_code}`. Excluded from pools. "
+            f"{r.continuity_detail or r.exclusion or ''}"
+        )
+    elif r.exclusion:
+        verdict = f"Not in pools ({r.exclusion}). Continuity: {r.continuity_detail or 'n/a'}."
+    else:
+        listed = r.listed_on.isoformat() if r.listed_on else "not in ticker_continuity.yaml / monitor listing_date"
+        first = r.bars_first.isoformat() if r.bars_first else "n/a"
+        verdict = (
+            f"**Clears** the continuity check (not `suspected_ticker_reuse`). "
+            f"listed_on={listed}; first bar={first}. "
+            f"1-bar mean {mean_s} vs median {med_s} (vol20 mean {vol_s}) is a fat right tail "
+            "on one entity, not a ticker-string splice. Stays in pools. Not a call."
+        )
+    parts += [
+        f"- Coverage status: `{status}`; n={r.n_raw}; source `{r.source or '—'}`",
+        f"- {verdict}",
+        "",
+    ]
+    return parts
+
+
+def _trend_filter_section(included: Sequence[InstrumentResult]) -> list[str]:
+    parts = [
+        "## Trend-filter finding (permission filter; changes the candidate queue)",
+        "",
+        "Trend-up conditioning (**close > SMA200 and SMA50 rising**) does **not** raise the "
+        "1R:2R long bracket hit rate on this sample; for several names it falls sharply. "
+        "Several trend-up buckets show **negative** mean 1-bar returns.",
+        "",
+        "This undercuts the shared premise of C-001 / C-002 / C-003 (dip entries that assume "
+        "a confirmed-uptrend **permission filter**) **in this sample**. "
+        "Do **not** conclude those strategies fail — they are still `INTAKE_ONLY` / HYPOTHESIS, "
+        "and this file is not a candidate study. Conclude the **permission filter does not "
+        "carry edge on its own**. Any later study that relies on it must beat **that "
+        "instrument's own trend-up** bracket rate, not the pooled ~33.3% coin-flip.",
+        "",
+        "Bucket n<100 is do-not-interpret (same rule as the regime tables).",
+        "",
+    ]
+    if not included:
+        parts += ["No included names this run.", ""]
+        return parts
+    rows: list[list[str]] = []
+    interpretable_up: list[tuple[str, float, int]] = []
+    for r in included:
+        up = r.regimes.get("trend-up")
+        un = r.regimes.get("unconditional")
+        if up is None or un is None:
+            continue
+        u_hit = un.bracket_long_gross.hit_rate_resolved()
+        t_hit = up.bracket_long_gross.hit_rate_resolved()
+        delta = (t_hit - u_hit) if (t_hit is not None and u_hit is not None) else None
+        rows.append(
+            [
+                r.spec.ticker,
+                str(un.n_bars),
+                _n(u_hit, pct=True, digits=1),
+                str(up.n_bars),
+                "yes — do not interpret" if up.under_min else "no",
+                _n(t_hit, pct=True, digits=1),
+                _n(delta, pct=True, digits=1) if delta is not None else "n/a",
+                _n(up.fwd[1].mean, pct=True),
+            ]
+        )
+        if not up.under_min and t_hit is not None:
+            interpretable_up.append((r.spec.ticker, t_hit, up.n_bars))
+    parts += [
+        _md_table(
+            [
+                "ticker",
+                "uncond n",
+                "uncond long hit",
+                "trend-up n",
+                "n<100",
+                "trend-up long hit",
+                "Δ hit (up−uncond)",
+                "trend-up 1b mean",
+            ],
+            rows,
+        ),
+        "",
+    ]
+    down_k = sum(1 for r in included if r.regimes.get("trend-down") and r.regimes["trend-down"].under_min)
+    chop_k = sum(1 for r in included if r.regimes.get("chop") and r.regimes["chop"].under_min)
+    n_inc = len(included)
+    parts += [
+        f"Do-not-interpret counts **among included names** (cite the regime tables): "
+        f"trend-down {down_k}/{n_inc}; chop {chop_k}/{n_inc}.",
+        "",
+    ]
+    if interpretable_up:
+        best = max(interpretable_up, key=lambda t: t[1])
+        vvv = next((t for t in interpretable_up if t[0] == "VVVUSD"), None)
+        if vvv:
+            parts += [
+                f"**VVVUSD** is the interpretable outlier: trend-up long gross hit "
+                f"{vvv[1] * 100:.1f}% (n={vvv[2]}). Worth a dedicated look. "
+                "Not a promotion. Not a size.",
+                "",
+            ]
+        elif best[0] != "VVVUSD":
+            parts += [
+                f"Highest interpretable trend-up long hit this run: {best[0]} "
+                f"{best[1] * 100:.1f}% (n={best[2]}). VVVUSD not in the included set.",
+                "",
+            ]
+    parts += [
+        "Queue note: C-001 / C-002 / C-003 stay `INTAKE_ONLY`. Permission-filter finding "
+        "is recorded on those cards. Do not promote. Do not reject on this evidence alone.",
+        "",
+    ]
+    return parts
 
 
 def render_markdown(
@@ -1031,9 +1453,11 @@ def render_markdown(
     window_end: datetime,
     monitor_path: str,
     cost: Mapping[str, float],
+    overlay: bool = False,
 ) -> str:
     included = [r for r in results if r.exclusion is None]
-    excluded = [r for r in results if r.exclusion is not None]
+    excluded = [r for r in results if r.exclusion is not None and not r.void_code]
+    voided = [r for r in results if r.void_code]
     perp_cost = round_trip_cost(
         SymbolSpec(
             ticker="BTCUSD",
@@ -1051,9 +1475,21 @@ def render_markdown(
         cost,
     )
     eq_cost = (2.0 * float(cost["taker_fee"])) + (2.0 * float(cost["slippage_bps"]) / 10_000.0)
+    title = (
+        f"# Phase-1 instrument base rates — universe overlay — {report_date.isoformat()}"
+        if overlay
+        else f"# Phase-1 instrument base rates — {report_date.isoformat()}"
+    )
+    coverage_header = (
+        "## Coverage (overlay tickers; OUTSIDE monitor.yaml)"
+        if overlay
+        else "## Coverage (every monitor.yaml name)"
+    )
 
     parts: list[str] = [
-        f"# Phase-1 instrument base rates — {report_date.isoformat()}",
+        title,
+        "",
+        *_provisional_banner(results, overlay=overlay),
         "",
         "Standalone research dump. **Not** a desk product, **not** IMP-040 event-class rates, "
         "**not** a Memory write, **not** a Telegram send, **not** a call, **not** a size.",
@@ -1061,8 +1497,14 @@ def render_markdown(
         f"- Report date (Australia/Sydney, when the run finished): `{report_date.isoformat()}`",
         f"- Run finished (UTC): `{finished_utc.isoformat()}`",
         f"- Data window requested: `{window_start.date().isoformat()}` → `{window_end.date().isoformat()}` (UTC)",
-        f"- Monitor file: `{monitor_path}`",
+        f"- Monitor file: `{monitor_path}`"
+        + (" — **not** the ticker set for this overlay file" if overlay else ""),
+        "- Principal actions (SPCX void, 2-year cap, permission filter, overlay path): "
+        "`research/base-rates/phase1-2026-09-19-principal-actions.md`",
         f"- Include rule: ≥ {MIN_BARS} cleaned daily OHLC bars; no substitute symbol; no synthetic bars",
+        "- Continuity: Polygon/equities series with first bar before known listing date, or a "
+        "single-bar move beyond N=8 robust-sigma (1.4826×MAD), are **void** "
+        "(`suspected_ticker_reuse`) and excluded from pools",
         f"- Indicators: SMA{SMA_FAST} / SMA{SMA_SLOW} / ATR{ATR_PERIOD} (Wilder) from bars at or before the signal bar",
         f"- Forward returns: `close[t+h]/close[t] - 1` for h={list(HORIZONS)} (the bars **after** the signal close)",
         f"- Regime: trend-up = close>SMA200 and SMA50[t]>SMA50[t-{SMA_SLOPE_LOOKBACK}]; "
@@ -1083,7 +1525,7 @@ def render_markdown(
         "",
         _three_line_summary(results),
         "",
-        "## Coverage (every monitor.yaml name)",
+        coverage_header,
         "",
         _md_table(
             ["ticker", "tier", "round", "venue", "source", "n_bars", "first", "last", "status", "reason"],
@@ -1097,14 +1539,14 @@ def render_markdown(
                     str(r.n_raw),
                     r.bars_first.isoformat() if r.bars_first else "—",
                     r.bars_last.isoformat() if r.bars_last else "—",
-                    "computed" if r.exclusion is None else "excluded",
+                    _coverage_status(r),
                     r.exclusion or "—",
                 ]
                 for r in results
             ],
         ),
         "",
-        f"Computed: {len(included)}. Excluded: {len(excluded)}. Silent drops: 0.",
+        f"Computed: {len(included)}. Voided: {len(voided)}. Excluded: {len(excluded)}. Silent drops: 0.",
         "",
     ]
 
@@ -1255,19 +1697,28 @@ def render_markdown(
                 "",
             ]
 
+    parts += _voided_section(results)
+    if not overlay:
+        parts += _bmnr_audit_section(results)
+    parts += _trend_filter_section(included)
     parts += [
         "## Exclusions (repeat, with reasons)",
         "",
     ]
-    if excluded:
+    if excluded or voided:
         parts.append(
             _md_table(
-                ["ticker", "n_bars", "reason"],
-                [[r.spec.ticker, str(r.n_raw), r.exclusion or ""] for r in excluded],
+                ["ticker", "n_bars", "status", "reason"],
+                [[r.spec.ticker, str(r.n_raw), _coverage_status(r), r.exclusion or ""] for r in results if r.exclusion],
             )
         )
     else:
         parts.append("None.")
+    overlay_cmd = (
+        "python scripts/research/base_rates_phase1.py --overlay\n"
+        "python scripts/research/base_rates_phase1.py --overlay AVGO,MSFT,META,JPM,XOM,SMH,XLF\n"
+        "python scripts/research/base_rates_phase1.py --overlay --overlay-only  # overlay file only"
+    )
     parts += [
         "",
         "## How to re-run",
@@ -1276,11 +1727,15 @@ def render_markdown(
         "python scripts/research/base_rates_phase1.py",
         "uv run python scripts/research/base_rates_phase1.py   # this repo",
         "python scripts/research/base_rates_phase1.py --offline  # cache/bars-dir only",
+        overlay_cmd,
         "```",
         "",
         "Live equities need `POLYGON_API_KEY`. Crypto uses Hyperliquid public `/info` "
         "(no key). CoinGecko OHLC is a fallback only. Same bars file → same tables "
-        "(filename date follows Australia/Sydney at finish).",
+        "(filename date follows Australia/Sydney at finish). "
+        "Polygon free tier is 5 req/min — **do not** pass `--no-sleep` on a live free-tier run. "
+        "`--overlay` writes `phase1-<date>-universe-overlay.md` (OUTSIDE monitor.yaml; "
+        "not a universe change; no promotion without a Principal PR).",
         "",
     ]
     return "\n".join(parts) + "\n"
@@ -1312,7 +1767,20 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--offline", action="store_true", help="do not hit HL / Polygon / CoinGecko")
     parser.add_argument("--refresh", action="store_true", help="ignore cache (still writes cache on live fetch)")
     parser.add_argument("--now", default=None, help="freeze finish clock (ISO-8601 UTC)")
-    parser.add_argument("--no-sleep", action="store_true", help="do not pace live HTTP (tests)")
+    parser.add_argument("--no-sleep", action="store_true", help="do not pace live HTTP (tests only; never on Polygon free tier)")
+    parser.add_argument(
+        "--overlay",
+        nargs="?",
+        const=",".join(DEFAULT_OVERLAY),
+        default=None,
+        help="comma-separated tickers OUTSIDE monitor.yaml (default AVGO,MSFT,META,JPM,XOM,SMH,XLF)",
+    )
+    parser.add_argument(
+        "--overlay-only",
+        action="store_true",
+        help="write only the overlay file (still requires --overlay)",
+    )
+    parser.add_argument("--continuity-config", type=Path, default=None)
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     root = repo_root()
@@ -1324,10 +1792,12 @@ def run(argv: Sequence[str] | None = None) -> int:
     report_date = finished.astimezone(SYDNEY).date()
     window_end = finished
     sleeper: Callable[[float], None] = (lambda _s: None) if args.no_sleep or args.offline else __import__("time").sleep
+    continuity_cfg = load_continuity_config(args.continuity_config or (root / CONTINUITY_REL))
+    overlay_tickers = parse_overlay_tickers(args.overlay)
+    if args.overlay_only and not overlay_tickers:
+        overlay_tickers = list(DEFAULT_OVERLAY)
 
-    symbols = load_monitor_symbols(monitor)
-    results: list[InstrumentResult] = []
-    for spec in symbols:
+    def _compute_one(spec: SymbolSpec) -> InstrumentResult:
         bars, source, fetch_err = load_or_fetch_bars(
             spec,
             start=FETCH_START,
@@ -1339,45 +1809,90 @@ def run(argv: Sequence[str] | None = None) -> int:
             sleeper=sleeper,
         )
         if fetch_err and not bars:
-            results.append(
-                InstrumentResult(
-                    spec=spec,
-                    source=source,
-                    exclusion=fetch_err,
-                    n_raw=0,
-                    bars_first=None,
-                    bars_last=None,
-                    ann_factor=ann_factor_for(spec),
-                    cost_frac=round_trip_cost(spec),
-                )
-            )
-            continue
-        results.append(
-            compute_for_bars(
-                spec,
-                bars,
+            result = InstrumentResult(
+                spec=spec,
                 source=source,
+                exclusion=fetch_err,
+                n_raw=0,
+                bars_first=None,
+                bars_last=None,
+                ann_factor=ann_factor_for(spec),
                 cost_frac=round_trip_cost(spec),
-                ann=ann_factor_for(spec),
             )
+            listed = listed_on_for(spec, continuity_cfg)
+            result.listed_on = listed
+            if listed is not None:
+                result.exclusion = (
+                    f"{fetch_err}; standing continuity: listed_on {listed.isoformat()} "
+                    "— a first bar before that date is suspected_ticker_reuse and is voided "
+                    "(see config/research/ticker_continuity.yaml)"
+                )
+            return result
+        result = compute_for_bars(
+            spec,
+            bars,
+            source=source,
+            cost_frac=round_trip_cost(spec),
+            ann=ann_factor_for(spec),
+        )
+        return apply_continuity(
+            result,
+            bars,
+            spec=spec,
+            source=source,
+            continuity_cfg=continuity_cfg,
+            window_end=window_end.date(),
         )
 
+    results: list[InstrumentResult] = []
+    if not args.overlay_only:
+        for spec in load_monitor_symbols(monitor):
+            results.append(_compute_one(spec))
+
+    overlay_results: list[InstrumentResult] = []
+    if overlay_tickers:
+        for spec in overlay_specs(overlay_tickers):
+            overlay_results.append(_compute_one(spec))
+
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"phase1-{report_date.isoformat()}.md"
-    markdown = render_markdown(
-        results,
-        report_date=report_date,
-        finished_utc=finished,
-        window_start=FETCH_START,
-        window_end=window_end,
-        monitor_path=str(monitor.relative_to(root) if monitor.is_relative_to(root) else monitor),
-        cost=COST,
-    )
-    out_path.write_text(markdown, encoding="utf-8")
-    print(f"wrote {out_path}")
+    monitor_rel = str(monitor.relative_to(root) if monitor.is_relative_to(root) else monitor)
+    if results:
+        out_path = output_dir / f"phase1-{report_date.isoformat()}.md"
+        markdown = render_markdown(
+            results,
+            report_date=report_date,
+            finished_utc=finished,
+            window_start=FETCH_START,
+            window_end=window_end,
+            monitor_path=monitor_rel,
+            cost=COST,
+            overlay=False,
+        )
+        out_path.write_text(markdown, encoding="utf-8")
+        print(f"wrote {out_path}")
+    if overlay_results:
+        overlay_path = output_dir / f"phase1-{report_date.isoformat()}-universe-overlay.md"
+        overlay_md = render_markdown(
+            overlay_results,
+            report_date=report_date,
+            finished_utc=finished,
+            window_start=FETCH_START,
+            window_end=window_end,
+            monitor_path=monitor_rel,
+            cost=COST,
+            overlay=True,
+        )
+        overlay_path.write_text(overlay_md, encoding="utf-8")
+        print(f"wrote {overlay_path}")
+        print(f"overlay_tickers={','.join(r.spec.ticker for r in overlay_results)}")
     print(f"report_date_australia_sydney={report_date.isoformat()}")
     print(f"finished_utc={finished.isoformat()}")
-    print(f"symbols={len(results)} computed={sum(1 for r in results if r.exclusion is None)} excluded={sum(1 for r in results if r.exclusion)}")
+    print(
+        "symbols="
+        f"{len(results)} computed={sum(1 for r in results if r.exclusion is None)} "
+        f"voided={sum(1 for r in results if r.void_code)} "
+        f"excluded={sum(1 for r in results if r.exclusion)}"
+    )
     return 0
 
 

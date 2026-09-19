@@ -122,3 +122,12 @@ Live path. Sizing. Scan-gate / universe / watchlist promotion. Invented expectan
 When unblocked: `research/studies/C-003/<date>.md` + combined `research/studies/signal-correlation/<date>.md`. Each states coded definition, params+commit ref, sample, window, split, cost model, benchmark, haircut, results per regime, verdict, what would render it spurious. Base rates in Memory, not only the write-up.
 
 Acceptance: no future bars; pivots `K=2` bars later (second-pullback extreme confirmed after `K` completed bars); same-fixture `params_hash`; every instance including blow-throughs; reconcile vs raw detector count; Weekly Investment Review `PASS` or `FAIL`.
+
+## Permission-filter note (Phase-1 instrument base rates, 2026-09-19)
+
+Status remains **INTAKE_ONLY** / HYPOTHESIS. Not a promotion. Not a reject. **DO NOT SIZE**. NOTHING computed on this card.
+
+Phase-1 instrument dump [`research/base-rates/phase1-2026-09-19.md`](../base-rates/phase1-2026-09-19.md): trend-up conditioning (close above SMA200 and SMA50 rising) does **not** raise the 1R:2R bracket hit rate on that sample; for several names it falls. The **permission filter** (confirmed uptrend as a gate) does not carry edge on its own.
+
+Any later study of C-003 must beat **that instrument's own trend-up** bracket rate, not the pooled ~33.3% coin-flip. VVVUSD is recorded on the same artifact as an interpretable outlier (dedicated look later; not a scan-gate).
+

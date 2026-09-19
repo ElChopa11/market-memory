@@ -1,14 +1,19 @@
 """Polygon.io default equities adapter (Principal lock). Env key only.
 
 Read-only REST. No order endpoints. Degrade-never-invent.
+
+Ticker-reuse: Polygon aggregates by ticker *string*. Call
+``continuity_check`` (listing date + N-sigma MAD) after ``ohlcv_daily``.
+A flagged series is ``suspected_ticker_reuse`` — callers that pool must
+exclude it. This method does **not** silently trim bars.
 """
 
 from __future__ import annotations
 
 import os
 from collections.abc import Callable, Mapping
-from datetime import datetime, timezone
-from typing import Any
+from datetime import date, datetime, timezone
+from typing import Any, Sequence
 
 import httpx
 
@@ -104,6 +109,26 @@ class PolygonEquitiesAdapter:
 
     def ohlcv_daily(self, query: EquitiesQuery) -> tuple[OHLCVBar, ...]:
         return self._ohlcv(query, multiplier=self.daily_multiplier, timespan=self.daily_timespan)
+
+    def continuity_check(
+        self,
+        bars: Sequence[OHLCVBar],
+        *,
+        listed_on: date | None = None,
+        n_sigma: float | None = None,
+    ):
+        """Flag ``suspected_ticker_reuse`` (listing date or N-sigma jump).
+
+        Does not drop bars. Phase-1 base rates (and any pool) must exclude a
+        flagged series. N=8, sigma=1.4826*MAD of 1-bar simple returns.
+        """
+        from mm_ingest.equities.continuity import CONTINUITY_N_SIGMA, check_ohlcv_continuity
+
+        return check_ohlcv_continuity(
+            bars,
+            listed_on=listed_on,
+            n_sigma=CONTINUITY_N_SIGMA if n_sigma is None else float(n_sigma),
+        )
 
     def ohlcv_intraday(self, query: EquitiesQuery) -> tuple[OHLCVBar, ...]:
         return self._ohlcv(query, multiplier=self.intraday_multiplier, timespan=self.intraday_timespan)
