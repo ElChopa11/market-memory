@@ -10,7 +10,8 @@ Research (Investment Research) / equities sleeve artifact. Companion to generic 
 - **Asset class:** equity
 - **Time horizon:**
 - **Principal membership:** unset
-- **Membership note:** Principal keys are `in_universe` / `watch_only` (IMP-005). Membership is not a Quant verdict and not a recommendation. This card does not change `config/universe.yaml`.
+- **Watchlist tier:** unset
+- **Membership note:** Principal keys are `in_universe` / `watch_only` (IMP-005). Watchlist tiers are `universe` / `monitor` / `blocked` (`config/watchlist/monitor.yaml`). Membership is not a Quant verdict and not a recommendation. This card does not change `config/universe.yaml`. Research must state tier on every idea. Monitor-tier ideas publish UNSIZED. NEW_LISTING names use the listings / post-IPO framework, not SMA200.
 - **Working Quant verdict:** unset
 - **Reason code(s):**
 - **Knowledge watermark (as_of_knowledge):**

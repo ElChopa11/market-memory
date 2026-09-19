@@ -198,6 +198,27 @@ def run_playbook(
         notes.append("FRED unavailable; rates not invented")
 
     ideas_all = _ideas(day)
+    try:
+        from mm_desks.monitor import idea_eligible, name_by_ticker
+
+        kept: list[dict[str, Any]] = []
+        for idea in ideas_all:
+            row = name_by_ticker(str(idea.get("instrument") or ""), repo_root)
+            if row is None:
+                kept.append(idea)
+                continue
+            ok, reason = idea_eligible(row, as_of=as_of, repo_root=repo_root)
+            if not ok:
+                notes.append(f"{row.ticker}: idea excluded ({reason})")
+                continue
+            idea = dict(idea)
+            idea["watchlist_tier"] = row.tier
+            if row.tier == "monitor":
+                idea["size_policy"] = "UNSIZED"
+            kept.append(idea)
+        ideas_all = kept
+    except FileNotFoundError:
+        pass
     n_total = len(ideas_all)
     ideas = ideas_all[:max_ideas]
     if n_total > max_ideas:

@@ -10,7 +10,8 @@ Research (Investment Research) / crypto sleeve artifact. Companion to generic `t
 - **Asset class:** crypto_perp
 - **Time horizon:**
 - **Principal membership:** unset
-- **Membership note:** Principal keys are `in_universe` / `watch_only` (IMP-005). Membership is not a Quant verdict and not a recommendation.
+- **Watchlist tier:** unset
+- **Membership note:** Principal keys are `in_universe` / `watch_only` (IMP-005). Watchlist tiers are `universe` / `monitor` / `blocked` (`config/watchlist/monitor.yaml`). Membership is not a Quant verdict and not a recommendation. Research must state tier on every idea. Monitor-tier ideas publish UNSIZED.
 - **Working Quant verdict:** unset
 - **Reason code(s):**
 - **Knowledge watermark (as_of_knowledge):**

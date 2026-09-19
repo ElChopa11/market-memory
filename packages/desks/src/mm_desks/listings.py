@@ -50,6 +50,7 @@ from mm_research_kit.quant_review.language import assert_language_clean
 
 PRODUCT_SLUG = LISTINGS
 LISTINGS_CFG_REL = Path("config/listings/desk.yaml")
+WATCHLIST_NEW_LISTINGS_REL = Path("config/listings/watchlist_new_listings.yaml")
 NO_INVENTED_MATH = "listings_does_not_invent_trade_math"
 FOOTER = CARD_FOOTER
 IC_GATES = {
@@ -171,6 +172,9 @@ def listings_inputs(ctx: DeskContext) -> dict[str, Any]:
     fixture_id = ctx.fixture.fixture_id
     deals_raw = list(raw.get("deals") or []) + _extend_from_path(ctx, raw.get("deals_path"), "deals")
     filings_raw = list(raw.get("filings") or []) + _extend_from_path(ctx, raw.get("filings_path"), "filings")
+    if WATCHLIST_NEW_LISTINGS_REL.as_posix() not in {str(raw.get("deals_path") or ""), str(raw.get("filings_path") or "")}:
+        deals_raw += _extend_from_path(ctx, str(WATCHLIST_NEW_LISTINGS_REL), "deals")
+        filings_raw += _extend_from_path(ctx, str(WATCHLIST_NEW_LISTINGS_REL), "filings")
     index_raw = list(raw.get("index_events") or []) + _extend_from_path(
         ctx, raw.get("index_events_path"), "events"
     )

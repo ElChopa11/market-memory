@@ -1,20 +1,22 @@
-# Phase 6c-4 / IMP-020 watchlist monitor (Research product).
-# Locked universe only: in_universe ∪ watch_only from config/universe.yaml.
-# Not a call. Not a Quant verdict. No promotion. No LLM. No send.
-# deferred_must_cut stays archived. Telegram fan-out is Ops-owned IMP-021.
-# 6d listings stay out.
+# Watchlist monitor (IMP-020 scan + IMP-033 Principal review list).
+# Review list: config/watchlist/monitor.yaml (Intel-owned resolution).
+# Membership still from config/universe.yaml. No promotion. No LLM. No send.
+# Telegram fan-out is Ops-owned IMP-021.
 
-version: "imp-020.1"
+version: "imp-033.1"
 desk: research
 product: watchlist
 cadence: daily
 op: observation
+owner_config: intel
+monitor: config/watchlist/monitor.yaml
 universe: config/universe.yaml
 include:
   - in_universe
   - watch_only
+  - monitor_review_list
 exclude:
-  - deferred_must_cut
+  - deferred_must_cut_as_membership
 promote: false
 llm: false
 send: false
@@ -22,10 +24,13 @@ states:
   - COVERED
   - PARTIAL
   - UNAVAILABLE
+  - UNRESOLVED
+  - BLOCKED
 playbook:
   # Flag existing PLAYBOOK EDGE_SCAN setups. Do not compute trade math here.
   inherit_setup_flag: true
   inherit_trade_math: false
 footer: >
   Not a call. Not a Quant verdict. Locked membership is not promotion.
-  deferred_must_cut names stay archived. Missing tape stays unavailable.
+  Review list is config/watchlist/monitor.yaml. deferred_must_cut names on
+  that list are monitor-by-archive only. Missing tape stays unavailable.

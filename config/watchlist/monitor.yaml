@@ -1,0 +1,294 @@
+# Canonical watchlist — Principal lock 2026-09-19 (Operation Lunch Money).
+# Owner: Intel (Market Intelligence). Path is source of truth for the review list.
+# Additions / removals = Principal PR only. This file does NOT promote names into
+# config/universe.yaml in_universe. Paper only. No live path.
+#
+# Tiers:
+#   universe = sizeable; must match Principal-locked in_universe in universe.yaml
+#   monitor  = scanned / reported; any idea publishes UNSIZED with reason
+#              "not in locked universe — promotion requires Principal PR"
+#   blocked  = state only; never idea / never size
+# Names on this list that are not in universe.yaml default to monitor.
+# deferred_must_cut names listed here are "monitor by archive" (scanned, not membership).
+
+version: "2026-09-19"
+status: locked
+lock: "Principal 2026-09-19 Operation Lunch Money"
+owner: intel
+product: watchlist
+additions_removals: principal_pr_only
+universe_file: config/universe.yaml
+promote: false
+llm: false
+send: false
+paper_only: true
+
+unsized_reason: "not in locked universe — promotion requires Principal PR"
+
+rounds:
+  crypto:
+    local_time: "06:30"
+    tz: Australia/Sydney
+    names:
+      - BTCUSD
+      - ETHUSD
+      - SOLUSD
+      - HYPEUSD
+      - NEARUSD
+      - ARBUSD
+      - UNIUSD
+      - VVVUSD
+      - ZECUSD
+      - XMRUSD
+      - LTCUSD
+      - CASHCAT
+      - PONSUSD
+      - CHIPIUSD
+      - DOGEUSD
+  base:
+    local_time: "23:00"
+    tz: Australia/Sydney
+    names:
+      - SPX
+      - NQ1!
+      - QQQ
+      - CL1!
+      - CRCL
+      - TSLA
+      - SPCX
+      - NVDA
+      - SAMSUN
+      - BB
+      - GLXY
+      - IBIT
+      - BMNR
+      - PURR
+      - MRNA
+      - BTC1!
+      - KOSDA
+      - GOOG
+      - HOOD
+      - NOW
+      - CBRS
+      - MSTR
+      - STRC
+      - AMD
+
+tiers:
+  universe:
+    sizeable: true
+    must_match: in_universe
+  monitor:
+    sizeable: false
+    idea_size: UNSIZED
+  blocked:
+    sizeable: false
+    idea: false
+    size: false
+
+blocked_names:
+  - CASHCAT
+  - PONSUSD
+blocked_reason: risk_blocked
+
+monitor_by_archive:
+  - HYPEUSD
+  - SOLUSD
+  - NEARUSD
+  - ARBUSD
+
+unresolved:
+  - SAMSUN
+  - KOSDA
+
+clusters:
+  crypto_major: { max_sized: 1 }
+  crypto_alt: { max_sized: 1 }
+  privacy: { max_sized: 1 }
+  meme_t3: { max_sized: 0, size_pct: 0, always_unsized: true }
+  crypto_beta_equity: { max_sized: 1 }
+  semis_ai: { max_sized: 1 }
+  index_futures: { max_sized: 1 }
+  energy: { max_sized: 1 }
+  idio: { max_sized: 1 }
+netting:
+  max_sized_per_cluster: 1
+  max_sized_per_round: 3
+  index_futures_nets: semis_ai
+  corr_threshold: 0.65
+  corr_unavailable: fail_closed
+  semis_ai_net_vs:
+    - NVDA
+    - AMD
+    - SAMSUN
+    - NOW
+    - GOOG
+    - QQQ
+    - KOSDA
+    - CBRS
+
+new_listing:
+  max_daily_bars: 200
+  sma200_insufficient: "n/a (insufficient history: {n} bars)"
+  never_question_mark: true
+  never_shorter_ma_substitute: true
+  route: listings
+  idea_framework: post_ipo
+  warning_fields:
+    - days_of_history
+    - float_pct
+    - lockup_proximity_days
+    - borrow_flag
+    - spread_bps
+    - depth_usd
+  untradeable_at_size: observation_only
+  risk_blocks_by: rule_id
+
+lockup_watch:
+  owner: intel
+  source: EDGAR
+  assume_180d: false
+  gate_if_inside_horizon: skeptic
+  gate_tier: 5
+  names:
+    CBRS:
+      qualified_id: NASDAQ:CBRS
+      cik: "2021728"
+      prospectus_date: "2026-05-13"
+      listing_date: "2026-05-14"
+      filing: 424B4
+      url: "https://www.sec.gov/Archives/edgar/data/2021728/000162828026035214/cerebras-424b4.htm"
+      assume_180d: false
+      lockup_period: >
+        earlier of (i) 06:00 ET 2nd trading day after QE 2026-09-30 earnings
+        or (ii) 180d post-prospectus ≈ 2026-11-09. Staged early releases
+        documented in 424B4. Do not treat 180d as a flat expiry.
+      earliest_trigger: QE_2026-09-30_plus_2nd_TD_0600_ET
+      formula_180d_bound: "2026-11-09"
+      fail_closed_blackout_until: "2026-11-09"
+      staged_early_releases: true
+      confirmed: true
+    SPCX:
+      qualified_id: NASDAQ:SPCX
+      cik: "1181412"
+      prospectus_date: "2026-06-11"
+      listing_date: unresolved
+      filing: 424B4
+      url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm"
+      assume_180d: false
+      lockup_period: >
+        Staged releases; 180th day 2026-12-08; Musk extension through 2027-06-12
+        plus 2nd trading day after QE 2027-06-30 earnings. Do not treat 180d
+        as a flat expiry.
+      day_180: "2026-12-08"
+      musk_extension_through: "2027-06-12"
+      musk_qe_trigger: QE_2027-06-30_plus_2nd_TD
+      fail_closed_blackout_until: "2027-06-12"
+      staged_early_releases: true
+      confirmed: true
+
+# Exchange-qualified resolution table (Intel-owned). Do not guess.
+# Unresolved names render UNRESOLVED on scan and are excluded from ideas.
+resolution:
+  BTCUSD: { status: resolved, qualified_id: "HL:BTC", venue: hyperliquid, note: "locked HL perp; membership_key BTC" }
+  ETHUSD: { status: resolved, qualified_id: "HL:ETH", venue: hyperliquid, note: "locked HL perp; watch_only" }
+  SOLUSD: { status: resolved, qualified_id: "HL:SOL", venue: hyperliquid, note: "identity resolved; monitor by archive; not in_universe" }
+  HYPEUSD: { status: resolved, qualified_id: "HL:HYPE", venue: hyperliquid, note: "identity resolved; monitor by archive; not in_universe" }
+  NEARUSD: { status: resolved, qualified_id: "HL:NEAR", venue: hyperliquid, note: "identity resolved; monitor by archive; not in_universe" }
+  ARBUSD: { status: resolved, qualified_id: "HL:ARB", venue: hyperliquid, note: "identity resolved; monitor by archive; not in_universe" }
+  UNIUSD: { status: resolved, qualified_id: "HL:UNI", venue: hyperliquid, note: "locked HL perp; watch_only" }
+  VVVUSD: { status: resolved, qualified_id: "HL:VVV", venue: hyperliquid }
+  ZECUSD: { status: resolved, qualified_id: "CRYPTO:ZEC", venue: unspecified, note: "identity resolved; venue not guessed" }
+  XMRUSD: { status: resolved, qualified_id: "CRYPTO:XMR", venue: unspecified, note: "identity resolved; venue not guessed" }
+  LTCUSD: { status: resolved, qualified_id: "CRYPTO:LTC", venue: unspecified, note: "identity resolved; venue not guessed" }
+  CASHCAT: { status: resolved, qualified_id: "WATCHLIST:CASHCAT", venue: unspecified, note: "risk-blocked; state only" }
+  PONSUSD: { status: resolved, qualified_id: "WATCHLIST:PONSUSD", venue: unspecified, note: "risk-blocked; state only" }
+  CHIPIUSD: { status: resolved, qualified_id: "HL:CHIP", venue: hyperliquid }
+  DOGEUSD: { status: resolved, qualified_id: "CRYPTO:DOGE", venue: unspecified, note: "identity resolved; venue not guessed" }
+  SPX: { status: resolved, qualified_id: "INDEX:SPX", venue: index }
+  NQ1!: { status: resolved, qualified_id: "CME:NQ1!", venue: cme }
+  QQQ: { status: resolved, qualified_id: "NASDAQ:QQQ", venue: nasdaq }
+  CL1!: { status: resolved, qualified_id: "NYMEX:CL1!", venue: nymex }
+  CRCL: { status: resolved, qualified_id: "NYSE:CRCL", venue: nyse }
+  TSLA: { status: resolved, qualified_id: "NASDAQ:TSLA", venue: nasdaq }
+  SPCX:
+    status: resolved
+    qualified_id: NASDAQ:SPCX
+    venue: nasdaq
+    legal_name: Space Exploration Technologies Corp (SpaceX)
+    currency: USD
+    not:
+      - SPAC/New Issue ETF
+      - CAD DRC
+      - memecoin
+    cluster: idio
+    cluster_note: pending corr check
+  NVDA: { status: resolved, qualified_id: "NASDAQ:NVDA", venue: nasdaq }
+  SAMSUN: { status: unresolved, qualified_id: null, venue: null, note: "Ambiguous; do not invent" }
+  BB: { status: resolved, qualified_id: "NYSE:BB", venue: nyse }
+  GLXY: { status: resolved, qualified_id: "NASDAQ:GLXY", venue: nasdaq }
+  IBIT: { status: resolved, qualified_id: "NASDAQ:IBIT", venue: nasdaq }
+  BMNR: { status: resolved, qualified_id: "NASDAQ:BMNR", venue: nasdaq }
+  PURR: { status: resolved, qualified_id: "HL:PURR", venue: hyperliquid }
+  MRNA: { status: resolved, qualified_id: "NASDAQ:MRNA", venue: nasdaq }
+  BTC1!: { status: resolved, qualified_id: "CME:BTC1!", venue: cme }
+  KOSDA: { status: unresolved, qualified_id: null, venue: null, note: "Ambiguous; do not invent" }
+  GOOG: { status: resolved, qualified_id: "NASDAQ:GOOG", venue: nasdaq }
+  HOOD: { status: resolved, qualified_id: "NASDAQ:HOOD", venue: nasdaq }
+  NOW: { status: resolved, qualified_id: "NYSE:NOW", venue: nyse }
+  CBRS:
+    status: resolved
+    qualified_id: NASDAQ:CBRS
+    venue: nasdaq
+    legal_name: Cerebras Systems Inc
+    currency: USD
+    listing_date: "2026-05-14"
+    offer_price: 185
+    cluster: semis_ai
+    new_listing: true
+  MSTR: { status: resolved, qualified_id: "NASDAQ:MSTR", venue: nasdaq }
+  STRC: { status: resolved, qualified_id: "NASDAQ:STRC", venue: nasdaq }
+  AMD: { status: resolved, qualified_id: "NASDAQ:AMD", venue: nasdaq }
+
+# Review rows. ticker is the Principal label. membership_key maps to universe.yaml
+# without promoting. tape_alias is the fixture / memory instrument when different.
+names:
+  - { ticker: BTCUSD, membership_key: BTC, tape_alias: BTC, round: crypto, tier: universe, cluster: crypto_major }
+  - { ticker: ETHUSD, membership_key: ETH, tape_alias: ETH, round: crypto, tier: monitor, cluster: crypto_major }
+  - { ticker: SOLUSD, membership_key: SOL, tape_alias: SOL, round: crypto, tier: monitor, cluster: crypto_alt, archive: true }
+  - { ticker: HYPEUSD, membership_key: HYPE, tape_alias: HYPE, round: crypto, tier: monitor, cluster: crypto_alt, archive: true }
+  - { ticker: NEARUSD, membership_key: NEAR, tape_alias: NEAR, round: crypto, tier: monitor, cluster: crypto_alt, archive: true }
+  - { ticker: ARBUSD, membership_key: ARB, tape_alias: ARB, round: crypto, tier: monitor, cluster: crypto_alt, archive: true }
+  - { ticker: UNIUSD, membership_key: UNI, tape_alias: UNI, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: VVVUSD, membership_key: VVV, tape_alias: VVV, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: ZECUSD, membership_key: ZEC, tape_alias: ZEC, round: crypto, tier: monitor, cluster: privacy }
+  - { ticker: XMRUSD, membership_key: XMR, tape_alias: XMR, round: crypto, tier: monitor, cluster: privacy }
+  - { ticker: LTCUSD, membership_key: LTC, tape_alias: LTC, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: CASHCAT, membership_key: CASHCAT, tape_alias: CASHCAT, round: crypto, tier: blocked, cluster: meme_t3 }
+  - { ticker: PONSUSD, membership_key: PONS, tape_alias: PONS, round: crypto, tier: blocked, cluster: meme_t3 }
+  - { ticker: CHIPIUSD, membership_key: CHIP, tape_alias: CHIP, round: crypto, tier: monitor, cluster: meme_t3 }
+  - { ticker: DOGEUSD, membership_key: DOGE, tape_alias: DOGE, round: crypto, tier: monitor, cluster: meme_t3 }
+  - { ticker: SPX, membership_key: SPX, tape_alias: SPX, round: base, tier: monitor, cluster: index_futures }
+  - { ticker: NQ1!, membership_key: NQ1!, tape_alias: NQ1!, round: base, tier: monitor, cluster: index_futures }
+  - { ticker: QQQ, membership_key: QQQ, tape_alias: QQQ, round: base, tier: monitor, cluster: index_futures }
+  - { ticker: CL1!, membership_key: CL1!, tape_alias: CL1!, round: base, tier: monitor, cluster: energy }
+  - { ticker: CRCL, membership_key: CRCL, tape_alias: CRCL, round: base, tier: monitor, cluster: crypto_beta_equity }
+  - { ticker: TSLA, membership_key: TSLA, tape_alias: TSLA, round: base, tier: monitor, cluster: idio }
+  - { ticker: SPCX, membership_key: SPCX, tape_alias: SPCX, round: base, tier: monitor, cluster: idio, new_listing: true, cluster_note: pending corr check }
+  - { ticker: NVDA, membership_key: NVDA, tape_alias: NVDA, round: base, tier: universe, cluster: semis_ai }
+  - { ticker: SAMSUN, membership_key: SAMSUN, tape_alias: SAMSUN, round: base, tier: monitor, cluster: unresolved }
+  - { ticker: BB, membership_key: BB, tape_alias: BB, round: base, tier: monitor, cluster: idio }
+  - { ticker: GLXY, membership_key: GLXY, tape_alias: GLXY, round: base, tier: monitor, cluster: crypto_beta_equity }
+  - { ticker: IBIT, membership_key: IBIT, tape_alias: IBIT, round: base, tier: monitor, cluster: crypto_beta_equity }
+  - { ticker: BMNR, membership_key: BMNR, tape_alias: BMNR, round: base, tier: monitor, cluster: crypto_beta_equity }
+  - { ticker: PURR, membership_key: PURR, tape_alias: PURR, round: base, tier: monitor, cluster: meme_t3 }
+  - { ticker: MRNA, membership_key: MRNA, tape_alias: MRNA, round: base, tier: monitor, cluster: idio }
+  - { ticker: BTC1!, membership_key: BTC1!, tape_alias: BTC1!, round: base, tier: monitor, cluster: crypto_beta_equity }
+  - { ticker: KOSDA, membership_key: KOSDA, tape_alias: KOSDA, round: base, tier: monitor, cluster: unresolved }
+  - { ticker: GOOG, membership_key: GOOG, tape_alias: GOOG, round: base, tier: monitor, cluster: idio }
+  - { ticker: HOOD, membership_key: HOOD, tape_alias: HOOD, round: base, tier: monitor, cluster: idio }
+  - { ticker: NOW, membership_key: NOW, tape_alias: NOW, round: base, tier: monitor, cluster: idio }
+  - { ticker: CBRS, membership_key: CBRS, tape_alias: CBRS, round: base, tier: monitor, cluster: semis_ai, new_listing: true }
+  - { ticker: MSTR, membership_key: MSTR, tape_alias: MSTR, round: base, tier: monitor, cluster: crypto_beta_equity }
+  - { ticker: STRC, membership_key: STRC, tape_alias: STRC, round: base, tier: monitor, cluster: crypto_beta_equity }
+  - { ticker: AMD, membership_key: AMD, tape_alias: AMD, round: base, tier: monitor, cluster: semis_ai }

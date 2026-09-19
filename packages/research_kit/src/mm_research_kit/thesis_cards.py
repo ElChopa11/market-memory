@@ -50,6 +50,32 @@ def normalize_instrument(raw: str) -> str:
     return "".join(ch for ch in token.upper() if ch.isalnum())
 
 
+def watchlist_tier_for(instrument: str, repo_root: Path | None = None) -> str:
+    """Read Intel-owned monitor.yaml. Unset if the name is not on the review list."""
+    root = Path(repo_root) if repo_root is not None else Path(__file__).resolve().parents[4]
+    path = root / "config" / "watchlist" / "monitor.yaml"
+    if not path.is_file():
+        return "unset"
+    try:
+        import yaml
+    except ImportError:
+        return "unset"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return "unset"
+    want = normalize_instrument(instrument)
+    raw = instrument.strip().upper()
+    for row in data.get("names") or []:
+        if not isinstance(row, dict):
+            continue
+        ticker = str(row.get("ticker") or "")
+        key = str(row.get("membership_key") or "")
+        alias = str(row.get("tape_alias") or "")
+        if want in {normalize_instrument(ticker), normalize_instrument(key), normalize_instrument(alias)} or raw == ticker.upper():
+            return str(row.get("tier") or "monitor")
+    return "unset"
+
+
 def membership_for(instrument: str) -> str:
     inst = normalize_instrument(instrument)
     if inst in IN_UNIVERSE_CRYPTO or inst in IN_UNIVERSE_EQUITIES:
@@ -103,6 +129,7 @@ def fill_thesis_card(
     text = set_field(text, "Asset class", asset_class)
     text = set_field(text, "Time horizon", horizon)
     text = set_field(text, "Principal membership", membership)
+    text = set_field(text, "Watchlist tier", watchlist_tier_for(instrument))
     text = set_field(text, "Working Quant verdict", "unset")
     text = set_field(text, "Knowledge watermark (as_of_knowledge)", knowledge_watermark)
     text = set_field(text, "Independent Skeptic verdict", "pending (not claimed as pass)")

@@ -4,6 +4,7 @@
 - **Status / version:** draft
 - **Author role:** Research
 - **Instrument:**
+- **Watchlist tier:** unset
 - **Time horizon:**
 
 ## Hypothesis

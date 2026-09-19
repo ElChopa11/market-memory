@@ -37,6 +37,8 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Phase 6c-5 delivery expansion (IMP-021) is **DONE** (#53).
 - Phase 6d listings/IPO (IMP-017) is **DONE** (#54).
 - Phase 6e pack scorecards + queue hygiene (IMP-030) is **DONE** (#55).
-- Phase 6f decay-watch (IMP-031) is **IN_REVIEW** (this PR).
+- Phase 6f decay-watch (IMP-031) is **DONE** (#56).
+- Call-card vs Quant SoT (IMP-032) is **DONE** (#57).
+- Canonical watchlist monitor.yaml (IMP-033) is **IN_PROGRESS** (this PR).
 - Source evaluation 2026-09-18 (IMP-022–IMP-029) is **BACKLOG** docs recommendation. Do not implement adapters in that PR.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

@@ -1,0 +1,84 @@
+# Listings feed for Principal-locked NEW_LISTING names on the watchlist.
+# Intel EDGAR lockup confirm 2026-09-19. Screen-only. Not universe promotion.
+# Do NOT assume a flat 180-day lockup. Missing float / borrow / depth stay unavailable.
+
+version: "2026-09-19"
+kind: listings_calendar
+source: edgar_424b4
+owner: intel
+promote: false
+notes:
+  - "NEW_LISTING names routed from config/watchlist/monitor.yaml. Not general equities scan."
+  - "Lock-up is the EDGAR formula, not a flat 180d. Do not invent pricing, float, or bars."
+  - "UNTRADEABLE_AT_SIZE is observation only. Risk blocks by rule_id."
+  - "as_of_knowledge 2026-09-19 — prior fixture days stay invisible (PIT)."
+
+deals:
+  - instrument: CBRS
+    kind: ipo
+    as_of_knowledge: "2026-09-19T00:00:00Z"
+    ingested_at: "2026-09-19T00:00:00Z"
+    listing_date: "2026-05-14"
+    offer_price: 185
+    expected_pricing_date: "2026-05-14"
+    filing_type: "424B4"
+    filing_as_of: "2026-05-13T00:00:00Z"
+    lockup_expiry: null
+    lockup_terms: >
+      earlier of (i) 06:00 ET 2nd TD after QE 2026-09-30 earnings or
+      (ii) 180d post-prospectus ≈ 2026-11-09; staged early releases in 424B4
+    cik: "2021728"
+    qualified_id: NASDAQ:CBRS
+    legal_name: Cerebras Systems Inc
+    url: "https://www.sec.gov/Archives/edgar/data/2021728/000162828026035214/cerebras-424b4.htm"
+    new_listing: true
+    source: edgar
+    observation_id: edgar-CBRS-424b4-20260513
+    float_pct: null
+    borrow_available: null
+    spread_bps: null
+    depth_usd: null
+    adv_notional: null
+  - instrument: SPCX
+    kind: ipo
+    as_of_knowledge: "2026-09-19T00:00:00Z"
+    ingested_at: "2026-09-19T00:00:00Z"
+    listing_date: null
+    offer_price: null
+    expected_pricing_date: "2026-06-11"
+    filing_type: "424B4"
+    filing_as_of: "2026-06-11T00:00:00Z"
+    lockup_expiry: null
+    lockup_terms: >
+      staged releases; 180th day 2026-12-08; Musk extension through 2027-06-12
+      plus 2nd TD after QE 2027-06-30 earnings; not a flat 180d
+    cik: "1181412"
+    qualified_id: NASDAQ:SPCX
+    legal_name: Space Exploration Technologies Corp (SpaceX)
+    url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm"
+    new_listing: true
+    source: edgar
+    observation_id: edgar-SPCX-424b4-20260611
+    float_pct: null
+    borrow_available: null
+    spread_bps: null
+    depth_usd: null
+    adv_notional: null
+
+filings:
+  - instrument: CBRS
+    filing_type: "424B4"
+    as_of_knowledge: "2026-09-19T00:00:00Z"
+    ingested_at: "2026-09-19T00:00:00Z"
+    filed_at: "2026-05-13T00:00:00Z"
+    name: Cerebras Systems Inc 424B4 prospectus
+    source: edgar
+    observation_id: edgar-CBRS-424b4-20260513
+  - instrument: SPCX
+    filing_type: "424B4"
+    as_of_knowledge: "2026-09-19T00:00:00Z"
+    ingested_at: "2026-09-19T00:00:00Z"
+    filed_at: "2026-06-11T00:00:00Z"
+    name: Space Exploration Technologies Corp 424B4 prospectus
+    source: edgar
+    observation_id: edgar-SPCX-424b4-20260611

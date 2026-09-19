@@ -16,6 +16,9 @@ no_listing_day_is_complete: true
 promote: false
 llm: false
 send: false
+watchlist_new_listings: config/listings/watchlist_new_listings.yaml
+sma200_min_bars: 200
+assume_lockup_180d: false
 
 # Liquidity clips reused from flow YAML when present; these are research notionals.
 clip_sizes_usd: [10000, 50000, 100000, 250000]

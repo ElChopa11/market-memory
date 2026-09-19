@@ -47,17 +47,18 @@ def test_locked_watchlist_is_in_universe_union_watch_only() -> None:
 def test_scan_covers_locked_universe_only() -> None:
     result = run_watchlist_from_fixture(LOCKED, repo_root=ROOT)
     instruments = tuple(row.instrument for row in result.rows)
-    assert instruments == LOCKED_NAMES
-    assert not any(name in instruments for name in DEFERRED)
+    assert "BTCUSD" in instruments
+    assert "NVDA" in instruments
+    assert "AAVE" not in instruments
+    assert "AVGO" not in instruments
     by_name = {row.instrument: row for row in result.rows}
-    assert by_name["BTC"].membership == "in_universe"
-    assert by_name["BTC"].monitor_state == "COVERED"
-    assert by_name["BTC"].playbook_setup is True
-    assert by_name["ETH"].membership == "watch_only"
-    assert by_name["ETH"].monitor_state == "COVERED"
+    assert by_name["BTCUSD"].membership == "in_universe"
+    assert by_name["BTCUSD"].monitor_state == "COVERED"
+    assert by_name["BTCUSD"].playbook_setup is True
+    assert by_name["ETHUSD"].membership == "watch_only"
+    assert by_name["ETHUSD"].monitor_state == "COVERED"
     assert by_name["NVDA"].monitor_state == "COVERED"
-    assert by_name["UNI"].monitor_state == "UNAVAILABLE"
-    assert by_name["SMH"].monitor_state == "UNAVAILABLE"
+    assert by_name["UNIUSD"].monitor_state == "UNAVAILABLE"
     assert result.status == "DEGRADED"
     assert result.llm_calls == 0
     assert result.as_public_dict()["n_llm_calls"] == 0
@@ -90,9 +91,9 @@ def test_scan_uses_naming_and_research_envelope() -> None:
 def test_scan_never_invents_prints_or_calls() -> None:
     result = run_watchlist_from_fixture(NO_SETUP, repo_root=ROOT)
     by_name = {row.instrument: row for row in result.rows}
-    assert by_name["UNI"].metrics == ()
-    assert by_name["UNI"].freshness == "unavailable"
-    assert "not invented" in by_name["UNI"].notes
+    assert by_name["UNIUSD"].metrics == ()
+    assert by_name["UNIUSD"].freshness == "unavailable"
+    assert "not invented" in by_name["UNIUSD"].notes
     assert language_violations(result.markdown) == []
     assert "Not a call" in result.markdown
     assert "Not a Quant verdict" in result.markdown
@@ -105,7 +106,7 @@ def test_scan_never_invents_prints_or_calls() -> None:
 
 def test_playbook_setup_flag_does_not_inherit_trade_math() -> None:
     result = run_watchlist_from_fixture(IDEAS, repo_root=ROOT)
-    btc = next(row for row in result.rows if row.instrument == "BTC")
+    btc = next(row for row in result.rows if row.instrument == "BTCUSD")
     assert btc.playbook_setup is True
     payload = result.output.payload
     assert payload["promote"] is False
