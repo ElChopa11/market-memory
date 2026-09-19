@@ -97,9 +97,7 @@ monitor_by_archive:
   - NEARUSD
   - ARBUSD
 
-unresolved:
-  - SAMSUN
-  - KOSDA
+unresolved: []
 
 clusters:
   crypto_major: { max_sized: 1 }
@@ -189,7 +187,7 @@ lockup_watch:
 
 # Exchange-qualified resolution table (Intel-owned). Do not guess.
 # Unresolved names render UNRESOLVED on scan and are excluded from ideas.
-# Equities/index still unresolved: SAMSUN, KOSDA (not HL).
+# Principal 2026-09-19 resolutions: SAMSUN → KRX:005930; KOSDA → KRX:KQ11.
 resolution:
   BTCUSD: { status: resolved, qualified_id: "HL:BTC", venue: hyperliquid, kind: perp, quote: USD, note: "locked HL perp; membership_key BTC" }
   ETHUSD: { status: resolved, qualified_id: "HL:ETH", venue: hyperliquid, kind: perp, quote: USD, note: "locked HL perp; watch_only" }
@@ -242,7 +240,13 @@ resolution:
     cluster: idio
     cluster_note: pending corr check
   NVDA: { status: resolved, qualified_id: "NASDAQ:NVDA", venue: nasdaq }
-  SAMSUN: { status: unresolved, qualified_id: null, venue: null, note: "Ambiguous equities/index; not HL; do not invent" }
+  SAMSUN:
+    status: resolved
+    qualified_id: KRX:005930
+    venue: krx
+    legal_name: Samsung Electronics
+    currency: KRW
+    note: "Principal 2026-09-19: SAMSUN display → KRX:005930 (Samsung Electronics, KRW)."
   BB: { status: resolved, qualified_id: "NYSE:BB", venue: nyse }
   GLXY: { status: resolved, qualified_id: "NASDAQ:GLXY", venue: nasdaq }
   IBIT: { status: resolved, qualified_id: "NASDAQ:IBIT", venue: nasdaq }
@@ -257,7 +261,14 @@ resolution:
     note: "HL perp USD. Principal display PURR."
   MRNA: { status: resolved, qualified_id: "NASDAQ:MRNA", venue: nasdaq }
   BTC1!: { status: resolved, qualified_id: "CME:BTC1!", venue: cme }
-  KOSDA: { status: unresolved, qualified_id: null, venue: null, note: "Ambiguous equities/index; not HL; do not invent" }
+  KOSDA:
+    status: resolved
+    qualified_id: KRX:KQ11
+    venue: krx
+    legal_name: KOSDAQ Composite
+    currency: KRW
+    kind: index
+    note: "Principal 2026-09-19: KOSDA display → KRX:KQ11 (KOSDAQ Composite index, KRW)."
   GOOG: { status: resolved, qualified_id: "NASDAQ:GOOG", venue: nasdaq }
   HOOD: { status: resolved, qualified_id: "NASDAQ:HOOD", venue: nasdaq }
   NOW: { status: resolved, qualified_id: "NYSE:NOW", venue: nyse }
@@ -301,7 +312,7 @@ names:
   - { ticker: TSLA, membership_key: TSLA, tape_alias: TSLA, round: base, tier: monitor, cluster: idio }
   - { ticker: SPCX, membership_key: SPCX, tape_alias: SPCX, round: base, tier: monitor, cluster: idio, new_listing: true, cluster_note: pending corr check }
   - { ticker: NVDA, membership_key: NVDA, tape_alias: NVDA, round: base, tier: universe, cluster: semis_ai }
-  - { ticker: SAMSUN, membership_key: SAMSUN, tape_alias: SAMSUN, round: base, tier: monitor, cluster: unresolved }
+  - { ticker: SAMSUN, membership_key: SAMSUN, tape_alias: SAMSUN, round: base, tier: monitor, cluster: semis_ai }
   - { ticker: BB, membership_key: BB, tape_alias: BB, round: base, tier: monitor, cluster: idio }
   - { ticker: GLXY, membership_key: GLXY, tape_alias: GLXY, round: base, tier: monitor, cluster: crypto_beta_equity }
   - { ticker: IBIT, membership_key: IBIT, tape_alias: IBIT, round: base, tier: monitor, cluster: crypto_beta_equity }
@@ -309,7 +320,7 @@ names:
   - { ticker: PURR, membership_key: PURR, tape_alias: PURR, round: base, tier: monitor, cluster: meme_t3 }
   - { ticker: MRNA, membership_key: MRNA, tape_alias: MRNA, round: base, tier: monitor, cluster: idio }
   - { ticker: BTC1!, membership_key: BTC1!, tape_alias: BTC1!, round: base, tier: monitor, cluster: crypto_beta_equity }
-  - { ticker: KOSDA, membership_key: KOSDA, tape_alias: KOSDA, round: base, tier: monitor, cluster: unresolved }
+  - { ticker: KOSDA, membership_key: KOSDA, tape_alias: KOSDA, round: base, tier: monitor, cluster: index_futures }
   - { ticker: GOOG, membership_key: GOOG, tape_alias: GOOG, round: base, tier: monitor, cluster: idio }
   - { ticker: HOOD, membership_key: HOOD, tape_alias: HOOD, round: base, tier: monitor, cluster: idio }
   - { ticker: NOW, membership_key: NOW, tape_alias: NOW, round: base, tier: monitor, cluster: idio }

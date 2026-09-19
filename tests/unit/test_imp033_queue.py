@@ -1,4 +1,4 @@
-"""IMP-033 queue hygiene: IMP-032 DONE #57, IMP-033 single IN_PROGRESS, OPEN incidents stay OPEN."""
+"""IMP-033 queue hygiene: IMP-033 DONE #59 after merge; current thread is IMP-022."""
 
 from __future__ import annotations
 
@@ -14,9 +14,10 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
     assert any("IMP-032" in line and "DONE" in line for line in board_lines)
     assert any("#57" in line for line in board_lines if "IMP-032" in line)
-    assert any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-033" in line and "DONE" in line for line in board_lines)
+    assert any("#59" in line for line in board_lines if "IMP-033" in line)
     assert not any("IMP-032" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert not any("IMP-033" in line and "DONE" in line for line in board_lines)
+    assert not any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
     assert "`IN_PROGRESS` count: **1**" in queue
     for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
         assert item_id in queue
@@ -28,6 +29,6 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-033",)
+    assert report.in_progress == ("IMP-022",)
     assert report.auto_merge is False
     assert report.auto_waive is False

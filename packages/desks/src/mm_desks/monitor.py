@@ -1,4 +1,4 @@
-"""Principal-locked watchlist monitor.yaml (IMP-033).
+"""Principal-locked watchlist monitor.yaml (IMP-033 + IMP-034 ticker resolutions).
 
 Intel owns ticker resolution and lockup watch. Research scans the list and
 must state tier on every idea. Does not promote names into universe.yaml.
@@ -26,7 +26,7 @@ from mm_desks.universe import (
 
 MONITOR_CFG_REL = Path("config/watchlist/monitor.yaml")
 LISTINGS_FEED_REL = Path("config/listings/watchlist_new_listings.yaml")
-ENGINE_VERSION = "imp-033.1"
+ENGINE_VERSION = "imp-034.1"
 
 TIER_UNIVERSE = "universe"
 TIER_MONITOR = "monitor"
@@ -35,7 +35,7 @@ RESOLUTION_RESOLVED = "resolved"
 RESOLUTION_UNRESOLVED = "unresolved"
 UNSIZED_REASON = "not in locked universe — promotion requires Principal PR"
 SMA200_MIN_BARS = 200
-UNRESOLVED_TICKERS = ("SAMSUN", "KOSDA")
+UNRESOLVED_TICKERS: tuple[str, ...] = ()
 CLUSTERS = (
     "crypto_major",
     "crypto_alt",

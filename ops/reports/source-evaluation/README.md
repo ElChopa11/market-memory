@@ -1,6 +1,6 @@
 # Source evaluation reports
 
-Principal-facing vendor research. **Recommend only** — no adapters, keys, accounts, or new dependencies in these PRs.
+Principal-facing vendor research. 2026-09-18 is **recommend only**. Principal FREE SOURCE PRIORITY 2026-09-19 is queued as IMP-022 (IN_PROGRESS) → IMP-024 / IMP-035 / IMP-023 READY → IMP-036–038 BACKLOG. `licence_verdict` lives in `config/ingest.yaml`, not only here.
 
 Path: `ops/reports/source-evaluation/YYYY-MM-DD.md` (UTC date of the evaluation).
 

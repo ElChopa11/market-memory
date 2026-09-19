@@ -10,7 +10,9 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 **Phase 6c-5 (IMP-021 DONE #53):** Ops-owned Telegram delivery expansion. Channel matrix + presentation bound to `mm_common.naming`. Watchlist monitor artifacts from IMP-020 fan out `--no-send`. Coord is not the publisher.
 
-**IMP-033:** Principal-locked review list `config/watchlist/monitor.yaml` (2026-09-19, Operation Lunch Money). **Intel owns ticker resolution and EDGAR lockup watch.** Research scans the list and must state watchlist tier (`universe` / `monitor` / `blocked`) on every idea. Additions/removals = Principal PR only. Does **not** promote names into `in_universe`.
+**IMP-034:** Principal ticker resolutions on the review list (SAMSUN→`KRX:005930`, KOSDA→`KRX:KQ11`) plus `licence_verdict` next to each ingest adapter. Standing rule: terms that prohibit redistribution → internal compute only; never publish those values. Incident close: `open→eligible→closed(cite run_id)|retired`. `--no-db` = ELIGIBLE only.
+
+**IMP-033 DONE #59:** Principal-locked review list `config/watchlist/monitor.yaml` (2026-09-19, Operation Lunch Money). **Intel owns ticker resolution and EDGAR lockup watch.** Research scans the list and must state watchlist tier (`universe` / `monitor` / `blocked`) on every idea. Additions/removals = Principal PR only. Does **not** promote names into `in_universe`.
 
 **Phase 6c-4 (IMP-020 DONE #52):** Research watchlist monitor + daily scan. IMP-033 points that scan at `config/watchlist/monitor.yaml` while membership remains `config/universe.yaml`. Deterministic artifact with `as_of_knowledge` + `content_hash`. Naming via `mm_common.naming`.
 

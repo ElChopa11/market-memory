@@ -39,6 +39,8 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - Phase 6e pack scorecards + queue hygiene (IMP-030) is **DONE** (#55).
 - Phase 6f decay-watch (IMP-031) is **DONE** (#56).
 - Call-card vs Quant SoT (IMP-032) is **DONE** (#57).
-- Canonical watchlist monitor.yaml (IMP-033) is **IN_PROGRESS** (this PR).
-- Source evaluation 2026-09-18 (IMP-022–IMP-029) is **BACKLOG** docs recommendation. Do not implement adapters in that PR.
+- Canonical watchlist monitor.yaml (IMP-033) is **DONE** (#59).
+- Ticker resolutions + licence_verdict schema (IMP-034) are **DONE** (this PR).
+- FRED full-stack (IMP-022) is **IN_PROGRESS** (this PR). `--no-db` = ELIGIBLE only. SRC-STOOQ-404 stays OPEN.
+- Principal FREE SOURCE PRIORITY 2026-09-19: IMP-022 → IMP-024 READY → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

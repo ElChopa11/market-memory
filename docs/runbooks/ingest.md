@@ -14,6 +14,8 @@ This runbook does **not** enable live trading, wallets, or signing.
 
 Copy `.env.example` to `.env` for local DSN/MinIO overrides. **Never put Hyperliquid keys, Polygon keys, or FRED keys in `.env` committed to git.** Phase 1 does not need Hyperliquid keys. Phase 5b Polygon and FRED ingest need env keys only when you opt into live HTTP; fixtures dry-run without them.
 
+`config/ingest.yaml` records `licence_verdict` next to each adapter (IMP-034). Sources whose terms prohibit redistribution may be used for internal computation but values must never appear in published artifacts. FRED `--no-db` is **ELIGIBLE only** — `SRC-FRED-MISSING-ENV` closes only with a cited persist `run_id` (IMP-022).
+
 ## Raw object store (fail closed)
 
 Real ingest that stores raw payloads **requires a durable backend**. If MinIO/S3 env is incomplete, ingest **refuses to start** — it does not silently keep bytes in process memory while writing `raw_object` rows.

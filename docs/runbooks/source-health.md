@@ -34,7 +34,7 @@ Configured sources used by Market Memory and Pulse, always listed even when down
 | CoinGecko | optional | `/api/v3/ping` (no prices); bounded GET retry on timeout/5xx/429 |
 | Binance public | optional | `/api/v3/ping` (no prices) |
 | Stooq | optional | one canary CSV; `http_404` / `timeout` / `http_5xx` / `parse_error`; no Close values; **no scrape fallback** |
-| FRED | optional | missing `FRED_API_KEY` → `unavailable` + `missing_env`; else series `limit=1` without printing the yield |
+| FRED | optional | missing `FRED_API_KEY` → `unavailable` + `missing_env`; else series `limit=1` without printing the yield. `--no-db` is ELIGIBLE only (IMP-022); `licence_verdict: ok_gov` |
 | Polygon | optional | missing `POLYGON_API_KEY` → `unavailable` + `missing_env`; else reference tickers `limit=1` without OHLCV |
 | `config/briefing/calendar.yaml` | required | file present + YAML parse |
 | Postgres | optional for Pulse | `SELECT 1` + last `observation.ingested_at` |
