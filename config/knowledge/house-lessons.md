@@ -85,9 +85,9 @@ Seed rows below are Principal-listed. Some still lack a persist `run_id`; they s
 | **Date** | 2026-09-19 |
 | **run_id** | *(pending — process incident; bind if a rotation run_id is recorded)* |
 | **Desk** | Ops |
-| **What happened** | Grok Bot `secret-request` / Secrets-card secure-input wrote the Telegram bot token onto the **shared multi-agent Secrets card**. That path is a known leak vector on a shared box. A **second rotation** was required after the credential-handling path was used. |
-| **Lesson** | Never route delivery tokens through Grok secure-input or the shared Secrets card. Agents must not receive `TELEGRAM_BOT_TOKEN` via default env. The only safe path is Principal write to the delivery-only file `/home/box/agent-data/delivery/telegram.env` (mode 0600) or `MM_DELIVERY_ENV_FILE`. Rotate if the Secrets-card path was used. |
-| **Does not** | Authorise putting the token in git, yaml, Hive prompts, or CI Secrets for agents. Does not make the shared-box file-path a hard isolation boundary (that fix is queued). |
+| **What happened** | This is the **second** Telegram token rotation caused by a **credential-handling path**, not by an external breach. Grok Bot `secret-request` / Secrets-card “secure” input wrote the bot token onto the **shared multi-agent Secrets card**. |
+| **Lesson** | Any “secure” input that writes to a shared surface (Grok Bot Secrets card / `secret-request`) is **not** secure on a shared multi-agent box. Agents must not receive `TELEGRAM_BOT_TOKEN` via default env. The only safe path for a delivery secret is one where **no agent process handles it**: BotFather → Principal clipboard → `/home/box/agent-data/delivery/telegram.env` written by the Principal (mode 0600, or `MM_DELIVERY_ENV_FILE`). **No card, no widget secret field, no chat paste, no secret-request.** |
+| **Does not** | Authorise putting the token in git, yaml, Hive prompts, or CI Secrets for agents. Does not make the shared-box file-path a hard isolation boundary (that fix is queued as IMP-044). Does not authorise a real send. |
 | **Overrides prior** | No — process lesson. Not a literature prior. |
 
 ---
