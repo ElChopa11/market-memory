@@ -38,6 +38,10 @@ Closed Quant verdicts only (`RESEARCH_PRIORITY | MONITOR | DEFER | REJECT | INSU
 
 Index events are a separate stream from IPO deals. Post-IPO reclaim screen remains `lab equities reclaim-screen`.
 
+NEW_LISTING names on [`config/watchlist/monitor.yaml`](../../config/watchlist/monitor.yaml) (CBRS, SPCX as of 2026-09-19) route here, not through the general equities scan. Standing feed: [`config/listings/watchlist_new_listings.yaml`](../../config/listings/watchlist_new_listings.yaml). Ideas use the post-IPO framework (offer, day-1 VWAP, reclaim, listing base rates) — **not SMA200**. SMA200 renders `n/a (insufficient history: <n> bars)` when bars `<200`. Mandatory warning: days of history, float %, lockup proximity, borrow flag, spread/depth. `UNTRADEABLE_AT_SIZE` is observation only; Risk blocks by `rule_id`.
+
+EDGAR lockups are confirmed formulas, **not** a flat 180 days. Lockup inside horizon = Skeptic (gate 5) blackout.
+
 ## Not this phase
 
 Scorecards (6e) live on `lab scorecard compare`. Decay-watch (6f). Universe promotion. Live/signing. Redis. Paid data. Live LLM HTTP. Closing OPEN incidents.

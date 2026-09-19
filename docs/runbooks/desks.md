@@ -157,7 +157,7 @@ Principal-facing desk product copy uses [templates/output-contract.md](../../tem
 
 ## Watchlist monitor (Phase 6c-4) + Ops delivery (Phase 6c-5)
 
-`lab watchlist scan --fixture PATH --no-send` lists every locked `in_universe` ∪ `watch_only` name with membership, monitor_state, freshness, and provenance. `deferred_must_cut` stays archived. PLAYBOOK setups are flagged only — trade math stays on the ladder.
+`lab watchlist scan --fixture PATH --no-send` lists every name on the Principal review list (`config/watchlist/monitor.yaml`). Intel owns ticker resolution; Research must state watchlist tier on every idea. Membership still comes from `config/universe.yaml` and is not promoted. Unresolved tickers render unresolved. PLAYBOOK setups are flagged only — trade math stays on the ladder.
 
 `lab deliver watchlist --fixture PATH --no-send` is the Ops Telegram fan-out of that artifact (research route + Ops mirror, inherited `content_hash`). Coord is not the publisher. See [watchlist.md](watchlist.md) and [telegram.md](telegram.md).
 

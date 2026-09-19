@@ -14,10 +14,10 @@ from mm_delivery.payload import SEND_ENABLED, assert_no_send
 def add_watchlist_parser(sub) -> None:
     p = sub.add_parser(
         "watchlist",
-        help="run Research watchlist monitor over locked universe (default --no-send)",
+        help="run Research watchlist monitor over monitor.yaml review list (default --no-send)",
     )
     scan = p.add_subparsers(dest="watchlist_cmd")
-    sp = scan.add_parser("scan", help="daily scan of in_universe ∪ watch_only (not a call)")
+    sp = scan.add_parser("scan", help="daily scan of Principal monitor.yaml review list (not a call)")
     sp.add_argument("--fixture", type=Path, required=True, help="frozen-day JSON/YAML")
     sp.add_argument("--repo-root", type=Path, default=Path("."))
     sp.add_argument("--out", type=Path, help="write research/watchlist/YYYY-MM-DD/ here")

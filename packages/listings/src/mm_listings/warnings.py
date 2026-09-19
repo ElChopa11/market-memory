@@ -72,6 +72,11 @@ def warning_block(
         status = OK
     if liquidity_verdict == "UNTRADEABLE_AT_SIZE":
         notes.append("UNTRADEABLE_AT_SIZE — observation only; Risk blocks by rule_id")
+    if days is None:
+        notes.append("SMA200 = n/a (insufficient history: unavailable bars)")
+    elif days < 200:
+        notes.append(f"SMA200 = n/a (insufficient history: {days} bars)")
+    notes.append("listings ideas use post-IPO framework (offer, day-1 VWAP, reclaim, listing base rates) — not SMA200")
     return WarningBlock(
         float_size=float_size,
         days_of_price_history=days,

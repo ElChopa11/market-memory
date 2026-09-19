@@ -10,7 +10,9 @@ This file is the permission constitution for humans and LLM agents working in `m
 
 **Phase 6c-5 (IMP-021 DONE #53):** Ops-owned Telegram delivery expansion. Channel matrix + presentation bound to `mm_common.naming`. Watchlist monitor artifacts from IMP-020 fan out `--no-send`. Coord is not the publisher.
 
-**Phase 6c-4 (IMP-020 DONE #52):** Research watchlist monitor + daily scan of locked `in_universe` ∪ `watch_only`. Deterministic artifact with `as_of_knowledge` + `content_hash`. Naming via `mm_common.naming`.
+**IMP-033:** Principal-locked review list `config/watchlist/monitor.yaml` (2026-09-19, Operation Lunch Money). **Intel owns ticker resolution and EDGAR lockup watch.** Research scans the list and must state watchlist tier (`universe` / `monitor` / `blocked`) on every idea. Additions/removals = Principal PR only. Does **not** promote names into `in_universe`.
+
+**Phase 6c-4 (IMP-020 DONE #52):** Research watchlist monitor + daily scan. IMP-033 points that scan at `config/watchlist/monitor.yaml` while membership remains `config/universe.yaml`. Deterministic artifact with `as_of_knowledge` + `content_hash`. Naming via `mm_common.naming`.
 
 **Phase 6c-2 (IMP-019 DONE #51):** Canonical desk slugs + display names in `mm_common.naming` / `config/desks/naming.yaml`. PLAYBOOK artifact machine ids vs human labels. Unknown slug fails closed.
 

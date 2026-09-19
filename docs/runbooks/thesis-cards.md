@@ -29,6 +29,7 @@ Filesystem-only (no Postgres index): `--no-db` (same as the rest of Phase 4 rese
 ## Card contract
 
 - **Principal membership:** `in_universe` | `watch_only` | `deferred_must_cut` | `not_in_membership` (IMP-005). Membership is not a Quant verdict and not a recommendation.
+- **Watchlist tier:** `universe` | `monitor` | `blocked` | `unset` from [`config/watchlist/monitor.yaml`](../../config/watchlist/monitor.yaml). Research must state tier on every idea. Monitor-tier ideas publish UNSIZED. Intel owns ticker resolution.
 - **Working Quant verdict:** closed set only (IMP-001) `RESEARCH_PRIORITY` | `MONITOR` | `DEFER` | `REJECT` | `INSUFFICIENT_DATA` — or `unset` until a Quant Board review exists. Do not invent a verdict.
 - **Provenance:** source, timestamp, capture, evidence_confidence, observation id. Missing prints stay `unavailable`.
 - **Knowledge watermark:** `as_of_knowledge` (lockstep with `ingested_at`). Never `published_at` / `market_time`.

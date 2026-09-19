@@ -38,6 +38,7 @@ REQUIRED_CARD_FIELDS = (
     "Author role",
     "Instrument",
     "Principal membership",
+    "Watchlist tier",
     "Working Quant verdict",
     "Knowledge watermark (as_of_knowledge)",
     "Independent Skeptic review required",
@@ -127,6 +128,7 @@ def test_create_thesis_copies_crypto_card(tmp_path: Path) -> None:
     assert not (created.path / EQUITIES_CARD).is_file()
     text = card.read_text(encoding="utf-8")
     assert get_field(text, "Principal membership") == "in_universe"
+    assert get_field(text, "Watchlist tier") == "universe"
     assert get_field(text, "Desk") == "Research (Investment Research) / crypto sleeve"
     assert get_field(text, "Instrument") == "BTC"
     assert get_field(text, "Working Quant verdict") == "unset"

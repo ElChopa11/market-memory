@@ -756,7 +756,27 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Non-goals** | New calls; Quant Board rewrite; universe expansion; `live.yaml`; signing; Redis; paid data; closing OPEN incidents; reopening IMP-005 keys; execution. |
 | **Dependencies** | IMP-008 DONE (#38). IMP-031 DONE (#56). |
 | **Risk level** | Low (docs). Process risk if operators still read membership cards as calls. |
-| **Status** | IN_REVIEW |
+| **Status** | DONE |
+| **PR** | https://github.com/ElChopa11/market-memory/pull/57 |
+| **Lesson learned** | Merged to `main` (#57, 2026-09-18). Call-card field 1 matches Quant SoT. HL dayNtl/OI appendix-only / DO NOT SIZE. Canonical watchlist monitor.yaml is IMP-033. |
+
+### IMP-033 — Canonical watchlist monitor.yaml (Principal 2026-09-19)
+
+| Field | Value |
+|---|---|
+| **ID** | IMP-033 |
+| **Priority** | P1 |
+| **Type** | Config / desk product |
+| **Desk** | Intel / Ops |
+| **Owner** | Intel (resolution + lockup) / Ops (queue + scan wire) |
+| **Problem** | Principal locked the complete review list (Operation Lunch Money, 2026-09-19) and `config/watchlist/monitor.yaml` was missing on main. IMP-020 still scanned only `in_universe` ∪ `watch_only`. Ambiguous tickers and EDGAR lockups were not encoded. |
+| **Evidence** | Principal 2026-09-19 crypto 06:30 / base 23:00 lists; EDGAR 424B4 CBRS CIK 2021728 and SPCX CIK 1181412; IMP-020 #52; universe.yaml 2026-09-17 lock. |
+| **Proposed outcome** | Intel-owned `config/watchlist/monitor.yaml` is THE review list. `lab watchlist scan` walks it. Tiers / clusters / resolution / NEW_LISTING / lockup formulas encoded. No universe promotion. |
+| **Definition of done** | Queue: IMP-032 DONE (#57). This item the only implementation thread. Plan [plans/IMP-033-canonical-watchlist-monitor.md](plans/IMP-033-canonical-watchlist-monitor.md). `config/watchlist/monitor.yaml` Principal-locked; owner intel; additions/removals Principal PR only. Universe tier matches `in_universe` (BTCUSD, NVDA). Blocked CASHCAT/PONSUSD. Unresolved only SAMSUN/KOSDA (equities/index, not HL). HL perps: VVVUSD→HL:VVV, PURR→HL:PURR, CHIPIUSD display→HL:CHIP (no CHIPI listing invented). NASDAQ:SPCX, NASDAQ:CBRS (semis_ai). EDGAR lockups confirmed, not flat 180d. NEW_LISTING → listings sleeve; SMA200 n/a string; gate 5 blackout if lockup inside horizon. Research states tier on every idea. OPEN incidents untouched. No `live.yaml` / signing / Redis / paid deps / universe promotion. Tests + import-boundary green. |
+| **Non-goals** | Promoting monitor names into `in_universe`; guessing SAMSUN/KOSDA; live/signing; Redis; paid data; closing OPEN incidents; auto-merge; waiving Skeptic/Risk. |
+| **Dependencies** | IMP-020 DONE (#52). IMP-017 DONE (#54). IMP-032 DONE (#57). |
+| **Risk level** | Medium (operators may treat the review list as membership or invent unresolved ids). |
+| **Status** | IN_PROGRESS |
 | **PR** | *(this PR)* |
 | **Lesson learned** | *(fill at close)* |
 
@@ -799,9 +819,10 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-029 | Quant | Quant | BACKLOG | Trial EODHD or Polygon Starter for 5y/delisted — **Principal paid** |
 | IMP-030 | Quant + Ops | Quant / Ops | DONE | [#55](https://github.com/ElChopa11/market-memory/pull/55) Phase 6e scorecards + queue automation |
 | IMP-031 | Quant | Quant | DONE | [#56](https://github.com/ElChopa11/market-memory/pull/56) Phase 6f strategy decay-watch |
-| IMP-032 | Ops + Quant | Don/Ops+Quant | IN_REVIEW | Call-card language vs Quant SoT 2026-09-18 — this PR |
+| IMP-032 | Ops + Quant | Don/Ops+Quant | DONE | [#57](https://github.com/ElChopa11/market-memory/pull/57) call-card language vs Quant SoT |
+| IMP-033 | Intel / Ops | Intel / Ops | IN_PROGRESS | Canonical watchlist monitor.yaml Principal lock 2026-09-19 — this PR |
 
-`IN_PROGRESS` count: **0**. IMP-000–IMP-021 and IMP-030–IMP-031 are `DONE`. IMP-032 is `IN_REVIEW` (this PR). IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed). Single implementation thread.
+`IN_PROGRESS` count: **1** (IMP-033). IMP-000–IMP-021 and IMP-030–IMP-032 are `DONE`. IMP-022–IMP-029 are `BACKLOG` (source-evaluation 2026-09-18; no adapters). OPEN incidents: SCHED-001, BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (not closed). Single implementation thread.
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
@@ -843,7 +864,7 @@ These are identified so they are not silently treated as existing desks. They ar
 
 Pulse source hardening (Stooq timeout/ToS class; FRED key ops) was a Gap; it is now **IMP-004 DONE** (#34).
 
-Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032** (this PR).
+Historical “active calls” language debt (membership keys) was a Gap; it is now **IMP-005 DONE** (#35). Do not reopen the key rename. Residual call-card *priority* language vs Quant SoT is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033** (this PR).
 
 Post-IPO reclaim screen product was a Gap; it is now **IMP-006 DONE** (#36). Do not reopen.
 
@@ -851,7 +872,7 @@ Dedicated crypto / equity thesis-card templates were a Gap; they are now **IMP-0
 
 Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008 DONE** (#38). Screenshot/TV board remains IMP-001. Do not treat membership as a Quant verdict.
 
-Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 IN_REVIEW** (this PR).
+Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 IN_PROGRESS** (this PR).
 
 Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-09-18.md](reports/source-evaluation/2026-09-18.md)). Adopt/trial intake is **IMP-022–IMP-029 BACKLOG**. No adapters in the evaluation PR. Do not take those items `IN_PROGRESS` while 6c-1..6c-5 occupy the implementation thread.
 
@@ -881,5 +902,5 @@ Source evaluation 2026-09-18 is **docs only** ([reports/source-evaluation/2026-0
 - IMP-017 merged as #54 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-030.
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
 - IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
-- IMP-032 intakes call-card vs Quant SoT language alignment (Lunch Money Research L2). IMP-031 DONE (#56). OPEN incidents untouched. Locked universe unchanged. Paper only. Single-threaded: no item remains `IN_PROGRESS` (`IN_REVIEW` pending merge). Do not invent new calls.
+- IMP-032 merged as #57. IMP-033 intakes the Principal 2026-09-19 canonical watchlist (`config/watchlist/monitor.yaml`). OPEN incidents untouched. Locked universe unchanged. Paper only. Single-threaded: IMP-033 is the only `IN_PROGRESS`. Do not promote monitor names into `in_universe`. Do not guess SAMSUN/KOSDA.
 - Source evaluation 2026-09-18 (docs-only) intakes IMP-022–IMP-029 as `BACKLOG` adopt/trial recommendations. Does not modify IMP-018/6c-1 cutover, does not close OPEN incidents, does not add adapters or keys. Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) are Principal decision.

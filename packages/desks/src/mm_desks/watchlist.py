@@ -1,7 +1,9 @@
-"""Phase 6c-4 watchlist monitor + daily scan (IMP-020).
+"""Watchlist monitor + daily scan (IMP-020 + IMP-033 Principal lock).
 
-Research product over the Principal-locked universe (in_universe ∪ watch_only).
-Deterministic fixture scan. No Quant verdicts. No trade calls. No LLM. No send.
+Research product over the Intel-owned Principal review list
+(`config/watchlist/monitor.yaml`). Membership still comes from universe.yaml
+and is never promoted. Deterministic fixture scan. No Quant verdicts. No
+trade calls. No LLM. No send.
 # Boundary comment: packages here must not import mm_execution (statement form is gated).
 """
 
@@ -29,6 +31,19 @@ from mm_common.time import as_utc
 from mm_desks.envelope import DeskEnvelope, envelope_from_output, stamp_output
 from mm_desks.fixture import load_frozen_day
 from mm_desks.models import FrozenDay, TapeRow
+from mm_desks.monitor import (
+    ENGINE_VERSION as MONITOR_ENGINE,
+    TIER_BLOCKED,
+    UNSIZED_REASON,
+    MonitorName,
+    assert_monitor_invariants,
+    idea_eligible,
+    is_new_listing,
+    lockup_inside_horizon,
+    monitor_names,
+    scan_pod_for,
+    sma200_display,
+)
 from mm_desks.playbook import round_trip_envelopes
 from mm_desks.protocol import (
     DEGRADED,
@@ -39,24 +54,19 @@ from mm_desks.protocol import (
     DeskOutput,
     completeness_pct,
 )
-from mm_desks.universe import (
-    MEMBERSHIP_DEFERRED,
-    MEMBERSHIP_IN_UNIVERSE,
-    MEMBERSHIP_WATCH_ONLY,
-    MembershipName,
-    deferred_must_cut,
-    locked_watchlist,
-)
+from mm_desks.universe import MEMBERSHIP_DEFERRED, MEMBERSHIP_IN_UNIVERSE, MEMBERSHIP_WATCH_ONLY
 from mm_research_kit.quant_review.language import assert_language_clean
 
-ENGINE_VERSION = "imp-020.1"
+ENGINE_VERSION = MONITOR_ENGINE
 PRODUCT_SLUG = WATCHLIST
 WATCHLIST_CFG_REL = Path("config/desks/watchlist.yaml")
-MONITOR_STATES = ("COVERED", "PARTIAL", "UNAVAILABLE")
+MONITOR_STATES = ("COVERED", "PARTIAL", "UNAVAILABLE", "UNRESOLVED", "BLOCKED")
 FRESHNESS_VALUES = ("fresh", "stale", "partial", "unavailable")
 FOOTER = (
     "Not a call. Not a Quant verdict. Locked membership is not promotion. "
-    "deferred_must_cut names stay archived. Missing tape stays unavailable."
+    "monitor.yaml is the Principal review list (Intel-owned resolution). "
+    "Unresolved tickers stay unresolved. Missing tape stays unavailable. "
+    "NEW_LISTING routes to the listings sleeve. Additions/removals = Principal PR only."
 )
 
 _FRESHNESS_RANK = {"fresh": 0, "stale": 1, "partial": 2, "unavailable": 3}
@@ -75,6 +85,19 @@ class WatchlistRow:
     playbook_setup: bool
     notes: str
     provenance_ids: tuple[str, ...]
+    tier: str = "monitor"
+    cluster: str = ""
+    resolution_status: str = "resolved"
+    qualified_id: str | None = None
+    idea_eligible: bool = False
+    idea_reason: str = ""
+    new_listing: bool = False
+    days_of_history: int | None = None
+    sma200: str = "n/a (insufficient history: unavailable bars)"
+    scan_pod: str = "watchlist"
+    lockup_inside_horizon: bool = False
+    round: str = ""
+    archive: bool = False
 
     def canonical(self) -> dict[str, Any]:
         first = self.metrics[0] if self.metrics else {}
@@ -94,6 +117,19 @@ class WatchlistRow:
             "value": None if usable is None else usable.get("value"),
             "source": str((usable or first).get("source") or ""),
             "observation_id": None if usable is None else usable.get("observation_id"),
+            "tier": self.tier,
+            "cluster": self.cluster,
+            "resolution_status": self.resolution_status,
+            "qualified_id": self.qualified_id,
+            "idea_eligible": self.idea_eligible,
+            "idea_reason": self.idea_reason,
+            "new_listing": self.new_listing,
+            "days_of_history": self.days_of_history,
+            "sma200": self.sma200,
+            "scan_pod": self.scan_pod,
+            "lockup_inside_horizon": self.lockup_inside_horizon,
+            "round": self.round,
+            "archive": self.archive,
         }
 
 
@@ -150,6 +186,9 @@ class WatchlistRun:
             "n_covered": sum(1 for row in self.rows if row.monitor_state == "COVERED"),
             "n_partial": sum(1 for row in self.rows if row.monitor_state == "PARTIAL"),
             "n_unavailable": sum(1 for row in self.rows if row.monitor_state == "UNAVAILABLE"),
+            "n_unresolved": sum(1 for row in self.rows if row.monitor_state == "UNRESOLVED"),
+            "n_blocked": sum(1 for row in self.rows if row.monitor_state == "BLOCKED"),
+            "n_new_listing": sum(1 for row in self.rows if row.new_listing),
             "n_llm_calls": self.llm_calls,
             "gaps": list(self.gaps),
             "notes": list(self.notes),
@@ -200,10 +239,15 @@ def _worst_freshness(values: tuple[str, ...]) -> str:
     return max(values, key=lambda item: _FRESHNESS_RANK.get(item, 3))
 
 
-def _metrics_for(instrument: str, tape: tuple[TapeRow, ...]) -> tuple[dict[str, Any], ...]:
+def _tape_keys(name: MonitorName) -> set[str]:
+    return {name.ticker.upper(), name.membership_key.upper(), name.tape_alias.upper()}
+
+
+def _metrics_for(name: MonitorName, tape: tuple[TapeRow, ...]) -> tuple[dict[str, Any], ...]:
+    keys = _tape_keys(name)
     out: list[dict[str, Any]] = []
     for row in tape:
-        if row.instrument != instrument:
+        if str(row.instrument).upper() not in keys:
             continue
         out.append(
             {
@@ -217,52 +261,101 @@ def _metrics_for(instrument: str, tape: tuple[TapeRow, ...]) -> tuple[dict[str, 
     return tuple(out)
 
 
+def _bar_count(name: MonitorName, day: FrozenDay) -> int | None:
+    keys = _tape_keys(name)
+    bars = [bar for bar in day.panel.bars if str(bar.instrument).upper() in keys]
+    if not bars:
+        return None
+    return len(bars)
+
+
+def _sleeve_for(name: MonitorName) -> str:
+    return "crypto" if name.round == "crypto" else "equities"
+
+
 def _scan_name(
-    name: MembershipName,
+    name: MonitorName,
     *,
     tape: tuple[TapeRow, ...],
     playbook_names: set[str],
-    deferred: set[str],
+    as_of: datetime,
+    repo_root: Path,
+    day: FrozenDay,
 ) -> WatchlistRow:
-    if name.instrument in deferred:
-        raise ValueError(f"deferred_must_cut name {name.instrument} is not on the locked watchlist")
-    metrics = _metrics_for(name.instrument, tape)
-    usable = tuple(row for row in metrics if row.get("value") not in (None, "", "unavailable"))
-    freshness_vals = tuple(str(row.get("freshness") or "unavailable") for row in usable) or ("unavailable",)
-    freshness = _worst_freshness(freshness_vals)
-    if not metrics:
-        state = "UNAVAILABLE"
-        notes = f"{name.instrument}: tape unavailable; not invented"
+    n_bars = _bar_count(name, day)
+    sma = sma200_display(n_bars)
+    listing = is_new_listing(name, n_bars=n_bars)
+    pod = scan_pod_for(name, n_bars=n_bars)
+    eligible, reason = idea_eligible(name, as_of=as_of, repo_root=repo_root)
+    lockup = lockup_inside_horizon(name.ticker, as_of, repo_root)
+    sleeve = _sleeve_for(name)
+    notes_parts: list[str] = []
+    if name.resolution_status == "unresolved":
+        state = "UNRESOLVED"
         freshness = "unavailable"
-    elif not usable:
-        state = "UNAVAILABLE"
-        notes = f"{name.instrument}: tape listed without values; not invented"
+        metrics: tuple[dict[str, Any], ...] = ()
+        notes_parts.append(f"{name.ticker}: unresolved; not invented; excluded from ideas")
+    elif name.tier == TIER_BLOCKED:
+        metrics = _metrics_for(name, tape)
+        state = "BLOCKED"
         freshness = "unavailable"
-    elif len(usable) < len(metrics) or freshness in {"partial", "stale"}:
-        state = "PARTIAL" if len(usable) < len(metrics) or freshness == "partial" else "COVERED"
-        notes = ""
-        if freshness == "stale" and state == "COVERED":
-            notes = f"{name.instrument}: stale tape; still covered"
+        notes_parts.append(f"{name.ticker}: blocked; state only; never idea/size")
     else:
-        state = "COVERED"
-        notes = ""
-    playbook_setup = name.instrument in playbook_names
+        metrics = _metrics_for(name, tape)
+        usable = tuple(row for row in metrics if row.get("value") not in (None, "", "unavailable"))
+        freshness_vals = tuple(str(row.get("freshness") or "unavailable") for row in usable) or ("unavailable",)
+        freshness = _worst_freshness(freshness_vals)
+        if not metrics:
+            state = "UNAVAILABLE"
+            notes_parts.append(f"{name.ticker}: tape unavailable; not invented")
+            freshness = "unavailable"
+        elif not usable:
+            state = "UNAVAILABLE"
+            notes_parts.append(f"{name.ticker}: tape listed without values; not invented")
+            freshness = "unavailable"
+        elif len(usable) < len(metrics) or freshness in {"partial", "stale"}:
+            state = "PARTIAL" if len(usable) < len(metrics) or freshness == "partial" else "COVERED"
+            if freshness == "stale" and state == "COVERED":
+                notes_parts.append(f"{name.ticker}: stale tape; still covered")
+        else:
+            state = "COVERED"
+    if listing:
+        notes_parts.append(f"{name.ticker}: NEW_LISTING; SMA200={sma}; route=listings")
+    if lockup:
+        notes_parts.append(f"{name.ticker}: lockup inside horizon; gate 5 blackout")
+    if name.tier == "monitor" and name.resolution_status == "resolved" and name.tier != TIER_BLOCKED:
+        notes_parts.append(UNSIZED_REASON)
+    playbook_setup = bool(_tape_keys(name) & playbook_names) and name.resolution_status == "resolved"
     if playbook_setup:
-        extra = f"PLAYBOOK {artifact_display('EDGE_SCAN')} setup present (not a call; math stays on lab playbook run)"
-        notes = f"{notes}; {extra}".strip("; ")
+        notes_parts.append(
+            f"PLAYBOOK {artifact_display('EDGE_SCAN')} setup present (not a call; math stays on lab playbook run)"
+        )
     provenance = tuple(str(row["observation_id"]) for row in metrics if row.get("observation_id"))
     return WatchlistRow(
-        instrument=name.instrument,
+        instrument=name.ticker,
         membership=name.membership,
-        sleeve=name.sleeve,
-        sleeve_display=sleeve_display(name.sleeve),
-        asset_class=name.asset_class,
+        sleeve=sleeve,
+        sleeve_display=sleeve_display(sleeve),
+        asset_class="crypto_perp" if sleeve == "crypto" else "equity",
         monitor_state=state,
         freshness=freshness,
         metrics=metrics,
         playbook_setup=playbook_setup,
-        notes=notes,
+        notes="; ".join(notes_parts),
         provenance_ids=provenance,
+        tier=name.tier,
+        cluster=name.cluster,
+        resolution_status=name.resolution_status,
+        qualified_id=name.qualified_id,
+        idea_eligible=eligible,
+        idea_reason=reason,
+        new_listing=listing,
+        days_of_history=n_bars,
+        sma200=sma,
+        scan_pod=pod,
+        lockup_inside_horizon=lockup,
+        round=name.round,
+        archive=name.archive,
     )
 
 
@@ -274,39 +367,31 @@ def render_markdown(run_meta: dict[str, Any], rows: tuple[WatchlistRow, ...]) ->
         "",
         f"- **Desk / tier:** {desk} / {desk_tier(RESEARCH)}",
         f"- **Product:** {product} (`{WATCHLIST}`)",
+        f"- **Config owner:** Intel (Market Intelligence) — `{run_meta['monitor_version']}`",
         f"- **Knowledge watermark (as_of_knowledge):** {run_meta['as_of_knowledge']}",
-        f"- **Universe:** locked `in_universe` ∪ `watch_only` (config/universe.yaml {run_meta['universe_version']})",
+        f"- **Review list:** config/watchlist/monitor.yaml (Principal lock; not universe promotion)",
+        f"- **Universe file:** config/universe.yaml {run_meta['universe_version']} (membership only)",
         f"- **Engine:** {ENGINE_VERSION}",
         f"- **content_hash:** `{run_meta['content_hash']}`",
         f"- **Status:** {run_meta['status']}",
-        f"- **Completeness:** {run_meta['completeness']}% of locked names with tape",
+        f"- **Completeness:** {run_meta['completeness']}% of resolved scannable names with tape",
         "- **LLM:** none on this fixture path",
         "- **Send:** no",
         "",
         FOOTER,
         "",
-        "| instrument | membership | sleeve | monitor_state | freshness | metrics | observation_ids | playbook_setup |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| instrument | tier | cluster | resolution | monitor_state | membership | NEW_LISTING | days_of_history | SMA200 | scan_pod |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in rows:
-        metric_bits = []
-        for item in row.metrics:
-            value = item["value"] if item["value"] is not None else "unavailable"
-            metric_bits.append(f"{item['metric']}={value} ({item['freshness']})")
-        metrics = "; ".join(metric_bits) if metric_bits else "unavailable"
-        oids = ", ".join(row.provenance_ids) if row.provenance_ids else "—"
-        setup = "yes" if row.playbook_setup else "no"
+        days = "unavailable" if row.days_of_history is None else str(row.days_of_history)
+        listing = "yes" if row.new_listing else "no"
+        qid = row.qualified_id or "unresolved"
         lines.append(
-            f"| {row.instrument} | {row.membership} | {row.sleeve} | {row.monitor_state} | "
-            f"{row.freshness} | {metrics} | {oids} | {setup} |"
+            f"| {row.instrument} | {row.tier} | {row.cluster} | {qid} | {row.monitor_state} | "
+            f"{row.membership} | {listing} | {days} | {row.sma200} | {row.scan_pod} |"
         )
-    lines.extend(
-        [
-            "",
-            "## Gaps",
-            "",
-        ]
-    )
+    lines.extend(["", "## Gaps", ""])
     gaps = [row.notes for row in rows if row.notes] or ["none"]
     for gap in gaps:
         lines.append(f"- {gap}")
@@ -321,7 +406,7 @@ def _status_for(rows: tuple[WatchlistRow, ...], *, failed: bool) -> str:
         return FAILED
     if not rows:
         return FAILED
-    if all(row.monitor_state == "UNAVAILABLE" for row in rows):
+    if all(row.monitor_state in {"UNAVAILABLE", "UNRESOLVED", "BLOCKED"} for row in rows):
         return DEGRADED
     if any(row.monitor_state != "COVERED" for row in rows):
         return DEGRADED
@@ -339,45 +424,61 @@ def run_watchlist(
     spec = load_watchlist_spec(ctx.repo_root)
     frozen = day if day is not None else ctx.fixture
     as_of = as_utc(as_of)
-    names = locked_watchlist(ctx.repo_root)
-    deferred = set(deferred_must_cut(ctx.repo_root))
-    if any(row.instrument in deferred for row in names):
-        raise ValueError("locked watchlist leaked a deferred_must_cut name")
+    assert_monitor_invariants(ctx.repo_root)
+    names = monitor_names(ctx.repo_root)
     if spec.get("promote"):
         raise ValueError("watchlist config must not enable promotion")
     if spec.get("llm"):
         raise ValueError("watchlist config must not enable LLM")
     include = tuple(spec.get("include") or (MEMBERSHIP_IN_UNIVERSE, MEMBERSHIP_WATCH_ONLY))
-    if MEMBERSHIP_DEFERRED in include:
-        raise ValueError("watchlist must not include deferred_must_cut")
     playbook_names = _playbook_instruments(frozen)
     rows = tuple(
-        _scan_name(name, tape=frozen.tape, playbook_names=playbook_names, deferred=deferred) for name in names
+        _scan_name(
+            name,
+            tape=frozen.tape,
+            playbook_names=playbook_names,
+            as_of=as_of,
+            repo_root=ctx.repo_root,
+            day=frozen,
+        )
+        for name in names
     )
-    covered = sum(1 for row in rows if row.monitor_state in {"COVERED", "PARTIAL"})
-    completeness = completeness_pct(covered, len(rows))
+    scannable = tuple(
+        row for row in rows if row.resolution_status == "resolved" and row.monitor_state not in {"BLOCKED"}
+    )
+    covered = sum(1 for row in scannable if row.monitor_state in {"COVERED", "PARTIAL"})
+    completeness = completeness_pct(covered, len(scannable) or len(rows))
     notes = tuple(row.notes for row in rows if row.notes)
-    gaps = tuple(row.instrument for row in rows if row.monitor_state == "UNAVAILABLE")
+    gaps = tuple(row.instrument for row in rows if row.monitor_state in {"UNAVAILABLE", "UNRESOLVED"})
     status = _status_for(rows, failed=False)
     run_id = deterministic_run_id(as_of=as_of, fixture_id=frozen.fixture_id)
     universe_version = str((_load_universe_version(ctx.repo_root)))
+    monitor_version = str(_load_monitor_version(ctx.repo_root))
     payload = {
         "product": PRODUCT_SLUG,
         "product_display": sleeve_display(WATCHLIST),
         "desk": RESEARCH,
+        "config_owner": "intel",
         "include": list(include),
         "exclude": [MEMBERSHIP_DEFERRED],
         "promote": False,
         "llm": False,
         "universe_version": universe_version,
+        "monitor_version": monitor_version,
         "instruments": [row.instrument for row in rows],
         "membership": {row.instrument: row.membership for row in rows},
+        "tiers": {row.instrument: row.tier for row in rows},
         "rows": [row.canonical() for row in rows],
         "tape": [row.canonical() for row in rows],
-        "playbook_setups": sorted(name for name in playbook_names if name in {row.instrument for row in rows}),
+        "playbook_setups": sorted(
+            name
+            for name in playbook_names
+            if name in {row.instrument.upper() for row in rows} or name in {n.tape_alias for n in names}
+        ),
         "engine_version": ENGINE_VERSION,
         "footer": FOOTER,
         "n_llm_calls": 0,
+        "unsized_reason": UNSIZED_REASON,
     }
     body_for_hash = {
         "run_id": run_id,
@@ -394,6 +495,7 @@ def run_watchlist(
             "session_date": frozen.session_date,
             "as_of_knowledge": as_of.isoformat(),
             "universe_version": universe_version,
+            "monitor_version": monitor_version,
             "content_hash": digest,
             "status": status,
             "completeness": completeness,
@@ -449,6 +551,16 @@ def run_watchlist(
 
 def _load_universe_version(repo_root: Path) -> str:
     path = Path(repo_root) / "config" / "universe.yaml"
+    if not path.is_file():
+        return "unknown"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if isinstance(data, dict) and data.get("version"):
+        return str(data["version"])
+    return "unknown"
+
+
+def _load_monitor_version(repo_root: Path) -> str:
+    path = Path(repo_root) / "config" / "watchlist" / "monitor.yaml"
     if not path.is_file():
         return "unknown"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))

@@ -1,6 +1,6 @@
 # Watchlist monitor (Phase 6c-4 / IMP-020) + Ops delivery (Phase 6c-5 / IMP-021)
 
-Research (Investment Research) daily scan of the Principal-locked universe. **Not a call. Not a Quant verdict. Not promotion.** Ops publishes the Telegram cut. Coord orchestrates and is **not** the publisher.
+Research (Investment Research) daily scan of the Principal-locked **review list** in [`config/watchlist/monitor.yaml`](../../config/watchlist/monitor.yaml) (Intel-owned resolution; 2026-09-19 lock). Membership still comes from [`config/universe.yaml`](../../config/universe.yaml) and is **not** promoted. **Not a call. Not a Quant verdict. Not promotion.** Ops publishes the Telegram cut. Coord orchestrates and is **not** the publisher.
 
 Naming: [`config/desks/naming.yaml`](../../config/desks/naming.yaml) sleeve `watchlist`. Publishing desk is still `research`. Desks runbook: [desks.md](desks.md). Telegram: [telegram.md](telegram.md). PLAYBOOK: [../playbook.md](../playbook.md).
 
@@ -26,11 +26,19 @@ Writes under `--out` `research/watchlist/YYYY-MM-DD/`:
 
 `lab deliver watchlist --out` also writes `briefs/YYYY-MM-DD/telegram-payload.json` (env **names** only; no token).
 
-## Universe
+## Review list + membership
 
-Locked set is `in_universe` ∪ `watch_only` from [`config/universe.yaml`](../../config/universe.yaml). `deferred_must_cut` names stay archived learning records. This product does **not** add tickers and does **not** promote watch-only names.
+The complete review list is [`config/watchlist/monitor.yaml`](../../config/watchlist/monitor.yaml). Intel owns ticker resolution. Additions/removals are Principal PRs only. `lab watchlist scan` walks that list.
 
-Monitor states: `COVERED` | `PARTIAL` | `UNAVAILABLE`. Missing tape stays unavailable (never invented).
+Membership (`in_universe` / `watch_only` / `deferred_must_cut`) still comes from [`config/universe.yaml`](../../config/universe.yaml). Names on the monitor that are not in that file default to **monitor** tier. `universe` tier must match locked `in_universe` (today: BTCUSD → BTC, NVDA). Risk-blocked: CASHCAT, PONSUSD (state only). Monitor-by-archive: HYPEUSD, SOLUSD, NEARUSD, ARBUSD.
+
+Unresolved tickers (do not invent): **SAMSUN**, **KOSDA** (equities/index — not HL). Scan renders `UNRESOLVED` and excludes them from ideas. Crypto display CHIPIUSD is Principal-confirmed as `HL:CHIP` (perp, USD); do not invent a CHIPI listing.
+
+Monitor states: `COVERED` | `PARTIAL` | `UNAVAILABLE` | `UNRESOLVED` | `BLOCKED`. Missing tape stays unavailable (never invented).
+
+Tiers on every idea: `universe` (sizeable, cluster-capped) / `monitor` (UNSIZED — "not in locked universe — promotion requires Principal PR") / `blocked` (never idea).
+
+NEW_LISTING (`<200` daily bars): tag + `days_of_history`; SMA200 = `n/a (insufficient history: <n> bars)` — never `?` and never a shorter MA. Route to the listings sleeve. Lockup inside horizon = Skeptic (gate 5) blackout. EDGAR formulas for CBRS / SPCX — do **not** assume a flat 180 days.
 
 ## PLAYBOOK / mesh / delivery
 

@@ -200,7 +200,7 @@ def cmd_status() -> int:
     print("Mesh: lab mesh dry --fixture PATH --no-db (PG NOTIFY bus; --kill-desk leaves FAILED + error_class)")
     print("Deliver: lab deliver pack|fanout|watchlist|listings|scorecard|decay --fixture PATH --no-send (Ops publishes; Coord orchestrates)")
     print("Playbook: lab playbook run --fixture PATH --no-send (artifact ladder; LLM writer/critic only)")
-    print("Watchlist: lab watchlist scan --fixture PATH --no-send (locked in_universe ∪ watch_only; not a call)")
+    print("Watchlist: lab watchlist scan --fixture PATH --no-send (monitor.yaml review list; not a call)")
     print("Listings: lab listings scan --fixture PATH --no-send (IPO / index-event screen; not a sixth desk; not a call)")
     print("Scorecard: lab scorecard compare --fixture PATH --no-send (like-for-like packs; incomparable stay tagged; not a call)")
     print("Decay: lab decay watch --fixture PATH --no-send (prompt/config hashes; mismatch is a NOTIFY/queue signal; not a call)")

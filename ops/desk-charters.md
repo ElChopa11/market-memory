@@ -64,6 +64,7 @@ Hive roles in [AGENTS.md](../AGENTS.md) remain the permission constitution. This
 | Phase 6c-1 five-desk roster (IMP-018 DONE #49) | live path |
 | Phase 6c-2 naming layer (IMP-019 DONE #51) | live path |
 | Phase 6c-4 watchlist monitor (IMP-020 DONE #52) | live path |
+| Principal review list `config/watchlist/monitor.yaml` (IMP-033) | universe promotion; guessing unresolved tickers |
 | Phase 6c-5 Ops-owned delivery expansion (IMP-021 DONE #53) | live path |
 | Phase 6d listings / IPO screen (IMP-017 DONE #54) | live path; 6f decay-watch |
 | Phase 6e pack scorecards + queue hygiene (IMP-030 DONE #55) | live path; auto-merge |
@@ -201,6 +202,7 @@ As of Phase 6c-1 these are **Research** sleeves. Historical "Crypto Desk" / "Equ
 - Call a trade, allocate capital, or access account / wallet / execution endpoints.
 - Treat Quant `RESEARCH_PRIORITY` or universe `in_universe` membership as an order.
 - Author and Skeptic-approve the same thesis.
+- Publish an idea without stating watchlist tier (`universe` / `monitor` / `blocked`). Monitor-tier ideas are UNSIZED. Blocked / unresolved names are never ideas.
 
 **Artifacts.** Crypto thesis card (`templates/crypto-thesis-card.md`; IMP-007 DONE #37); crypto market-pulse contribution.
 
@@ -238,6 +240,24 @@ As of Phase 6c-1 these are **Research** sleeves. Historical "Crypto Desk" / "Equ
 ## Intel sleeves (flow / macro / Pulse) — not publishing desks
 
 As of Phase 6c-1 these are **Intel** sleeves. Historical "Macro & Cross-Asset Desk" as a publishing desk is retired.
+
+### Watchlist resolution + lockup watch (Intel-owned)
+
+**Mandate.** Own `config/watchlist/monitor.yaml` ticker resolution and the EDGAR lockup stub. The file is the Principal-locked complete review list (2026-09-19). Research runs `lab watchlist scan`; Intel does not author theses.
+
+**May**
+
+- Resolve exchange-qualified ids into the monitor table.
+- Record EDGAR-confirmed lockup formulas (do **not** assume a flat 180 days).
+- Mark Ambiguous names `unresolved` (today: SAMSUN, KOSDA — equities/index, not HL). Do not invent a CHIPI listing; CHIPIUSD display is Principal-confirmed as `HL:CHIP`.
+
+**Must not**
+
+- Guess an unresolved ticker.
+- Promote a monitor name into `config/universe.yaml` `in_universe`.
+- Author a thesis or Quant verdict.
+
+**Artifacts.** `config/watchlist/monitor.yaml`; `config/listings/watchlist_new_listings.yaml` (NEW_LISTING / lockup feed).
 
 ## Macro & Cross-Asset (Intel sleeve)
 
