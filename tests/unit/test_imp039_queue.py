@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_queue_imp040_single_thread_candidates_ready() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
-    assert any("IMP-042" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-043" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any("IMP-040" in line and "DONE" in line for line in board_lines)
     assert any("IMP-039" in line and "READY" in line for line in board_lines)
     assert any("IMP-034" in line and "DONE" in line for line in board_lines)
@@ -21,7 +21,7 @@ def test_queue_imp040_single_thread_candidates_ready() -> None:
     assert not any("IMP-039" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-034" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-042)" in queue
+    assert "`IN_PROGRESS` count: **1** (IMP-043)" in queue
     assert "INTAKE_ONLY" in queue
     assert "research/candidates/" in queue
     assert "PR #61" in queue or "#61" in queue
@@ -34,7 +34,7 @@ def test_queue_imp040_single_thread_candidates_ready() -> None:
     assert (ROOT / "ADR" / "0016-edgar-adapter.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-042",)
+    assert report.in_progress == ("IMP-043",)
     assert report.auto_merge is False
     assert report.auto_waive is False
     ok, reason = can_start("IMP-039", report)

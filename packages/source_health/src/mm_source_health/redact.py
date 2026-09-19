@@ -9,7 +9,8 @@ _AWS_KEY = re.compile(r"(AKIA[0-9A-Z]{16})")
 # Common env assignment leaks: NAME=value
 _ASSIGNED_SECRETS = re.compile(
     r"\b(FRED_API_KEY|POLYGON_API_KEY|MINIO_SECRET_KEY|MINIO_ACCESS_KEY|MINIO_ROOT_PASSWORD|"
-    r"AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|POSTGRES_DSN)\s*[:=]\s*\S+",
+    r"AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|POSTGRES_DSN|TELEGRAM_BOT_TOKEN|"
+    r"TELEGRAM_CHAT_ID|TELEGRAM_CHAT_ID_PRINCIPAL_DM)\s*[:=]\s*\S+",
     re.IGNORECASE,
 )
 # Query-string key leaks (FRED `api_key=` on observations URLs)

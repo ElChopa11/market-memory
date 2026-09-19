@@ -45,6 +45,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - SEC EDGAR wire (IMP-024) is **DONE** (#63). CBRS/SPCX lockup formulas persist as observations. `--no-db` = ELIGIBLE only.
 - Phase 1 unconditional base rates (IMP-040) is **DONE** (#66). Candidate strategy intake (IMP-039 / #61) stays **READY**; card status remains `INTAKE_ONLY`. Expand beyond fixture is L2 P1.
 - Desk knowledge base (IMP-041) is **DONE** (#67). Cached prompt prefix. A prior never triggers or sizes.
-- Scheduler miss detector (IMP-042) is **IN_PROGRESS** (this PR). Heartbeat-on-fire is a log. SCHED-001 stays OPEN.
+- Scheduler miss detector (IMP-042) is **DONE** (#68). Heartbeat-on-fire is a log. SCHED-001 stays OPEN.
+- Hybrid Step 2 delivery env-file + preflight (IMP-043) is **IN_PROGRESS** (this PR). `--no-send` only. Delivery isolation (IMP-044) and per-desk topics vs groups (IMP-045) are BACKLOG — do not build.
 - Principal FREE SOURCE PRIORITY 2026-09-19: IMP-022 DONE → IMP-024 DONE → IMP-035 READY → IMP-023 READY → IMP-036–038 BACKLOG.
 - Execution & Fund Ops is **future-only** until the Principal separately activates it.

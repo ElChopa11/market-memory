@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 import yaml
 
+from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
 from mm_common.http import DEFAULT_BACKOFF_S, DEFAULT_MAX_ATTEMPTS, DEFAULT_TIMEOUT
 from mm_common.naming import OPS
 
@@ -303,19 +304,28 @@ def bot_token_from_env(environ: dict[str, str] | None = None) -> str | None:
 
 
 def resolve_chat_id_env(slug: str, settings: TelegramSettings, environ: dict[str, str] | None = None) -> str:
-    """Return the env *name* used for this desk (for dry-run payloads)."""
+    """Return the env *name* used for this desk (for dry-run payloads).
+
+    Never resolves to ``TELEGRAM_CHAT_ID_PRINCIPAL_DM``. Desk publish uses the
+    group route ``TELEGRAM_CHAT_ID`` (or ``TELEGRAM_CHAT_ID_<DESK>``). Missing
+    group id is fail-closed — do not invent, do not silently DM the Principal.
+    """
     env = environ if environ is not None else os.environ
     upper = slug.upper().replace("-", "_")
     desk_override = f"{CHAT_ID_DESK_PREFIX}{upper}"
-    if (env.get(desk_override) or "").strip():
+    if desk_override != PRINCIPAL_DM_CHAT_ID_ENV and (env.get(desk_override) or "").strip():
         return desk_override
     route = settings.route(slug)
     configured = route.chat_id_env if route else CHAT_ID_ENV
-    if configured != CHAT_ID_ENV and (env.get(configured) or "").strip():
+    if (
+        configured
+        and configured not in {CHAT_ID_ENV, PRINCIPAL_DM_CHAT_ID_ENV}
+        and (env.get(configured) or "").strip()
+    ):
         return configured
     if (env.get(CHAT_ID_ENV) or "").strip():
         return CHAT_ID_ENV
-    if configured:
+    if configured and configured != PRINCIPAL_DM_CHAT_ID_ENV:
         return configured
     return CHAT_ID_ENV
 
@@ -323,6 +333,8 @@ def resolve_chat_id_env(slug: str, settings: TelegramSettings, environ: dict[str
 def chat_id_from_env(slug: str, settings: TelegramSettings, environ: dict[str, str] | None = None) -> str | None:
     env = environ if environ is not None else os.environ
     name = resolve_chat_id_env(slug, settings, env)
+    if name == PRINCIPAL_DM_CHAT_ID_ENV:
+        return None
     value = (env.get(name) or "").strip()
     if value:
         return value

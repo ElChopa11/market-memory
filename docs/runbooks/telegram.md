@@ -2,6 +2,27 @@
 
 **Ops-owned** delivery of desk packs over the **Telegram Bot API**, plus Phase 6c per-desk fan-out and Ops mirror. Coord/Don is orchestration only — **Coord is not the publisher**. Default is **dry-run** (`--no-send`). Live send is operator-gated. **No live trading. No signing. No execution.**
 
+## Hybrid clock (Principal 2026-09-19)
+
+Hive is a **clock** (routines / schedules). The `lab` CLI is the **sole Telegram publisher**. Real send is frozen until Principal step 5 (DM-only acceptance). This step is `--no-send` only.
+
+| Rule | Detail |
+|---|---|
+| Token location | Delivery-only file `/home/box/agent-data/delivery/telegram.env` (mode 0600) or `MM_DELIVERY_ENV_FILE`. Loaded into the CLI process only. |
+| Not on Secrets card | `TELEGRAM_BOT_TOKEN` must **not** live on the Grok Secrets card. `secret-request` / secure-input wrote it onto the shared multi-agent card (known leak). Rotate if that path was used. Agents must not get the token via default env. |
+| Group route | `TELEGRAM_CHAT_ID` = Hive **plain group** (not a supergroup). Required for desk publish. Preflight `getChat`s this id and fails loudly if it does not resolve or if the id drifted to a `-100...` form. |
+| Principal DM | `TELEGRAM_CHAT_ID_PRINCIPAL_DM` is optional (step 5). **Never** a silent fallback when the group id is missing. |
+| Per-desk routes | `TELEGRAM_CHAT_ID_<DESK>` / `message_thread_id` are **NOT CONFIGURED** (expected-absent). Hive has no forum topics. Preflight prints `NOT CONFIGURED` and does **not** fail. Principal will later choose forum topics (id change) or separate groups — not needed before step 5. |
+| Preflight | `lab env preflight` prints **full** FOUND / MISSING / NOT CONFIGURED / DOWN SERVICE / absent state for Telegram, FRED, Polygon, Postgres, and object store. `MISSING` (required absent) → exit non-zero. `NOT CONFIGURED` (per-desk routes today) does **not** fail. Group `TELEGRAM_CHAT_ID` is required. |
+| Shared box | File-path readability is a **soft** boundary. Hard fix (delivery binary under a separate user or own container) is queued — do not build it here. |
+
+```bash
+uv run lab env preflight
+uv run lab deliver test --desk ops --no-send --out /tmp/desk-run
+```
+
+`--no-send` writes the exact payload under `briefs/` for inspection. Pytest unsets `TELEGRAM_BOT_TOKEN` and refuses connections to `api.telegram.org`.
+
 Architecture: [ADR/0003-telegram-delivery.md](../../ADR/0003-telegram-delivery.md), [ADR/0006-phase6c-playbook-telegram.md](../../ADR/0006-phase6c-playbook-telegram.md), [ADR/0010-phase6c5-delivery.md](../../ADR/0010-phase6c5-delivery.md), [ADR/0011-phase6d-listings.md](../../ADR/0011-phase6d-listings.md). Desk packs: [desks.md](desks.md). Watchlist: [watchlist.md](watchlist.md). Listings: [listings.md](listings.md). PLAYBOOK: [../playbook.md](../playbook.md). Secrets: [security-model.md](../security-model.md). Naming: [`config/desks/naming.yaml`](../../config/desks/naming.yaml).
 
 ## What operators can do
@@ -25,20 +46,21 @@ uv run lab deliver watchlist --fixture tests/fixtures/phase6c4/locked_scan.json 
 # Listings / IPO screen → Ops Telegram cut (IMP-017 artifact; inherit content_hash)
 uv run lab deliver listings --fixture tests/fixtures/phase6d/listing_day.json --no-send --out /tmp/listings
 
-# Manual real send of a one-line ping (bot box only; never in pytest)
-# Requires TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID in the environment.
-uv run lab deliver test --desk ops --i-mean-it --ignore-quiet-hours
+# Manual real send of a one-line ping — frozen until Principal step 5 (DM-only).
+# This step: --no-send only.
+uv run lab deliver test --desk ops --no-send --out /tmp/desk-run
 ```
 
 `--no-send` is the default. Pytest unsets `TELEGRAM_BOT_TOKEN` and refuses connections to `api.telegram.org`.
 
-## Secrets (env only)
+## Secrets (delivery-only file, not the Secrets card)
 
 | Env | Required | Purpose |
 |---|---|---|
-| `TELEGRAM_BOT_TOKEN` | live send | Bot token. Never git. Never dry-run files. |
-| `TELEGRAM_CHAT_ID` | live send | Default chat (Ops). |
-| `TELEGRAM_CHAT_ID_<DESK>` | optional | Per-desk override (`INTEL`, `RESEARCH`, `QUANT`, `IC_RISK`, `ALERTS`). |
+| `TELEGRAM_BOT_TOKEN` | live send / getChat | Bot token. Never git. Never Grok Secrets card. Never dry-run files. |
+| `TELEGRAM_CHAT_ID` | desk publish | Hive **group** route. Missing → fail. Never default to Principal DM. |
+| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | optional | Private Principal DM (step 5). |
+| `TELEGRAM_CHAT_ID_<DESK>` | NOT CONFIGURED | Plain group; no forum topics. Report, do not fail. |
 
 `config/delivery/telegram.yaml` maps desk → **env var name** + optional forum `thread_id`. It must not contain token or chat id values. Copy `.env.example` placeholders only. `owner` / `publisher` are `ops`. Coordinator is `orchestration_only`.
 

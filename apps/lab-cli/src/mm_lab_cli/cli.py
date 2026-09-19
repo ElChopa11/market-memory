@@ -25,6 +25,7 @@ from mm_lab_cli.decay import add_decay_parser, dispatch_decay
 from mm_lab_cli.base_rates import add_base_rate_parser, dispatch_base_rate
 from mm_lab_cli.queue import add_queue_parser, dispatch_queue
 from mm_lab_cli.schedule import add_schedule_parser, dispatch_schedule
+from mm_lab_cli.env_preflight import add_env_parser, dispatch_env
 from mm_lab_cli.paper import dispatch_paper, add_paper_parser
 from mm_lab_cli.equities import add_equities_parser, dispatch_equities
 from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_review
@@ -121,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     add_decay_parser(sub)
     add_base_rate_parser(sub)
     add_queue_parser(sub)
+    add_env_parser(sub)
     add_schedule_parser(sub)
     add_backtest_parser(sub)
     add_paper_parser(sub)
@@ -163,6 +165,8 @@ def main(argv: list[str] | None = None) -> int:
         return dispatch_base_rate(args)
     if args.cmd == "queue":
         return dispatch_queue(args)
+    if args.cmd == "env":
+        return dispatch_env(args)
     if args.cmd == "schedule":
         return dispatch_schedule(args)
     if args.cmd == "backtest":
@@ -208,7 +212,8 @@ def cmd_status() -> int:
 
     print("Publishing desks: " + "; ".join(roster_lines()) + ". Coord is orchestration only.")
     print("Mesh: lab mesh dry --fixture PATH --no-db (PG NOTIFY bus; --kill-desk leaves FAILED + error_class)")
-    print("Deliver: lab deliver pack|fanout|watchlist|listings|scorecard|decay --fixture PATH --no-send (Ops publishes; Coord orchestrates)")
+    print("Env: lab env preflight (FOUND/MISSING/NOT CONFIGURED/DOWN SERVICE; delivery file /home/box/agent-data/delivery/telegram.env or MM_DELIVERY_ENV_FILE; never prints values)")
+    print("Deliver: lab deliver pack|fanout|watchlist|listings|scorecard|decay --fixture PATH --no-send (Ops publishes; Coord orchestrates; real send frozen until Principal step 5)")
     print("Playbook: lab playbook run --fixture PATH --no-send (artifact ladder; LLM writer/critic only)")
     print("Watchlist: lab watchlist scan --fixture PATH --no-send (monitor.yaml review list; not a call)")
     print("Listings: lab listings scan --fixture PATH --no-send (IPO / index-event screen; not a sixth desk; not a call)")

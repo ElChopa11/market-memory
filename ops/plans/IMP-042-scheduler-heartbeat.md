@@ -1,6 +1,6 @@
 # PLAN — IMP-042 Scheduler miss detector
 
-**Report status:** IN_PROGRESS (this PR).  
+**Report status:** DONE (#68).  
 **Owner:** Ops  
 **Scope:** MERGE-BLOCKING miss sweep. Closed window + no completion row → escalate. Heartbeat-on-fire is a secondary log. Paper only. No live trading.
 
@@ -10,7 +10,7 @@ SCHED-001: Sydney 08:00 digest had weekday windows and never fired while NY sibl
 
 ## Outcome
 
-- Queue: IMP-040 DONE (#66). This item is the only `IN_PROGRESS`. SCHED-001 stays OPEN (P0). Do not close on “no window yet”.
+- Queue: IMP-040 DONE (#66). This item is **DONE** (#68). SCHED-001 stays OPEN (P0). Do not close on “no window yet”. IMP-043 holds the implementation slot.
 - Principal L2 sprint intake: P0 this thread → P1 Phase-1 Memory rates (expand if #66 fixture-only) → P2 instance ledger → P3 truth-in-repo. P1/P2/P3 are **not** this PR.
 - `lab schedule miss-check` (alias `heartbeat-check`) is the control.
 - CI runs miss-check on `tests/fixtures/scheduler/ci_clock.yaml` with `--now 2026-09-19T09:49:00Z`.

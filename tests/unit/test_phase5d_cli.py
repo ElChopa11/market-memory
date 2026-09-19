@@ -53,10 +53,17 @@ def test_lab_desk_run_send_is_rejected(capsys) -> None:
             "--send",
         ]
     )
-    err = capsys.readouterr()
+    captured = capsys.readouterr()
+    blob = captured.out + captured.err
     assert rc == 2
-    blob = err.out + err.err
-    assert "missing_env" in blob or "TELEGRAM_BOT_TOKEN" in blob or '"sent": false' in blob.lower() or '"sent": false' in blob
+    assert (
+        "frozen" in blob.lower()
+        or "step 5" in blob.lower()
+        or "missing_env" in blob
+        or "TELEGRAM_BOT_TOKEN" in blob
+        or '"sent": false' in blob.lower()
+        or '"sent": false' in blob
+    )
 
 
 def test_lab_status_mentions_desk_run(capsys) -> None:

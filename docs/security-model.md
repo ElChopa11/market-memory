@@ -33,7 +33,7 @@ Research workers **must not** import the live trading module (`hl_trade` / `mm_e
 
 1. **No unrestricted private key for the treasury** in the lab.
 2. Execution is a **separate deploy unit** with its own identity. Research cannot import live signing code.
-3. Secrets via **env injection from a vault** (1Password / OS keychain / sealed files). `.env` is gitignored; `.env.example` has no credentials.
+3. Secrets via **env injection from a vault** (1Password / OS keychain / sealed files). `.env` is gitignored; `.env.example` has no credentials. **Telegram delivery token** lives only in `/home/box/agent-data/delivery/telegram.env` (or `MM_DELIVERY_ENV_FILE`), never on the Grok Secrets card.
 4. **Dual control for live:** Risk allow *and* a Principal promotion record for the thesis.
 5. **Kill switch:** a Principal halt file (`config/halt.flag`, gitignored) or a signed CLI command. Execution must check it before every order. Presence of the flag means **no new orders**.
 6. Logging: every signed action stores intent hash, risk decision id, request/response (redact secrets).

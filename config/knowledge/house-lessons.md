@@ -78,6 +78,76 @@ Seed rows below are Principal-listed. Some still lack a persist `run_id`; they s
 
 ---
 
+## 2026-09-19 — Grok Secrets card / secret-request leak
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — process incident; bind if a rotation run_id is recorded)* |
+| **Desk** | Ops |
+| **What happened** | This is the **second** Telegram token rotation caused by a **credential-handling path**, not by an external breach. Grok Bot `secret-request` / Secrets-card “secure” input wrote the bot token onto the **shared multi-agent Secrets card**. |
+| **Lesson** | Any “secure” input that writes to a shared surface (Grok Bot Secrets card / `secret-request`) is **not** secure on a shared multi-agent box. Agents must not receive `TELEGRAM_BOT_TOKEN` via default env. The only safe path for a delivery secret is one where **no agent process handles it**: BotFather → Principal clipboard → `/home/box/agent-data/delivery/telegram.env` written by the Principal (mode 0600, or `MM_DELIVERY_ENV_FILE`). **No card, no widget secret field, no chat paste, no secret-request.** |
+| **Does not** | Authorise putting the token in git, yaml, Hive prompts, or CI Secrets for agents. Does not make the shared-box file-path a hard isolation boundary (that fix is queued as IMP-044). Does not authorise a real send. |
+| **Overrides prior** | No — process lesson. Not a literature prior. |
+
+---
+
+## 2026-09-19 — Telegram getChat / supergroup id drift
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending)* |
+| **Desk** | Ops |
+| **What happened** | Hive is a **plain group** (not a supergroup). Converting it to a supergroup or enabling forum topics changes the chat id to a `-100...` form. Routing that still points at the old id would break **silently**. Per-desk `TELEGRAM_CHAT_ID_<DESK>` / `message_thread_id` are not configured. |
+| **Lesson** | Preflight must `getChat` the configured group id and **fail loudly** if it does not resolve or if the resolved id differs. Do not assume the id is stable across a supergroup conversion. Per-desk forum topics vs separate groups is a Principal decision — not needed before step 5; single group route is fine. `TELEGRAM_CHAT_ID` (group) must never silently fall back to `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. |
+| **Does not** | Authorise a real send. Does not enable forum topics. Does not invent per-desk chat ids. |
+| **Overrides prior** | No — process lesson. |
+
+---
+
+## 2026-09-19 — Controls on a path that never executes are not controls
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — SCHED-001 stays OPEN)* |
+| **Desk** | Ops |
+| **What happened** | Hive routines, send gates, and heartbeat-on-fire sat on a path that **never executed**. Config existed; the control never ran. Same class as a preflight nobody invokes. |
+| **Lesson** | **Controls on a path that never executes are not controls.** A check, gate, or heartbeat that is not on the executed path does not protect the box. Preflight, `getChat`, and miss-sweep only count when they actually run. |
+| **Does not** | Close SCHED-001. Does not authorise a real Telegram send. Does not treat a config file as a substitute for a run. |
+| **Overrides prior** | No — process lesson. |
+
+---
+
+## 2026-09-19 — Absence of output is not evidence of absence of windows
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — SCHED-001 stays OPEN)* |
+| **Desk** | Ops |
+| **What happened** | No Hive digest appeared. That silence was readable as “no window,” while weekday windows had already closed unfired. |
+| **Lesson** | **Absence of output is not evidence of absence of windows.** No Hive print ≠ no scheduled window. Do not close SCHED-001 on “no window yet.” |
+| **Does not** | Close SCHED-001. Does not treat a sibling NY-cron success as proof the Sydney job ran. |
+| **Overrides prior** | No — incident still OPEN. Process lesson. |
+
+---
+
+## 2026-09-19 — Instrumentation that records only successes cannot detect silence
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-19 |
+| **run_id** | *(pending — SCHED-001 stays OPEN)* |
+| **Desk** | Ops |
+| **What happened** | Heartbeat-on-fire writes a row only when a job fires. Jobs that never run leave **no row**, so success-only instrumentation reports a clean log. |
+| **Lesson** | **Instrumentation that records only successes cannot detect silence.** Heartbeat-on-fire is a log, not the control. Closed window + no completion row is the miss (IMP-042 `lab schedule miss-check`). |
+| **Does not** | Replace the miss detector with another write-on-fire. Does not auto-close OPEN incidents. |
+| **Overrides prior** | No — process lesson. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).
