@@ -31,6 +31,10 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert not any("IMP-032" in line and "IN_REVIEW" in line for line in board_lines)
     assert not any("IMP-032" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any(
+        "IMP-033" in line and "#59" in line and "cursor/canonical-watchlist-monitor-5515" in line
+        for line in board_lines
+    )
     assert any("IMP-020" in line and "DONE" in line for line in board_lines)
     assert any("#52" in line for line in board_lines if "IMP-020" in line)
     in_progress = re.findall(r"\| \*\*Status\*\* \| IN_PROGRESS \|", queue)
@@ -108,6 +112,9 @@ def test_imp033_required_fields_and_lock() -> None:
     assert "do not assume 180d" in block
     assert "gate 5 blackout" in block
     assert "bc-3c465873" in block
+    assert "https://github.com/ElChopa11/market-memory/pull/59" in block
+    assert "cursor/canonical-watchlist-monitor-5515" in block
+    assert "PR when linked" not in block
     for item_id in OPEN_INCIDENTS:
         assert item_id in block
     assert "SRC-FRED-MISSING-ENV" in block
@@ -135,6 +142,10 @@ def test_imp033_plan_points_at_imp020_and_sister() -> None:
     assert "config/watchlist/monitor.yaml" in plan
     assert "Canonical watchlist monitor.yaml Principal lock" in plan
     assert "bc-3c465873" in plan
+    assert "https://github.com/ElChopa11/market-memory/pull/59" in plan
+    assert "cursor/canonical-watchlist-monitor-5515" in plan
+    assert "Do not merge" in plan
+    assert "PR when linked" not in plan
     assert "live_trading_enabled: false" in plan
     assert "No send" in plan or "no send" in plan.lower() or "holds Telegram" in plan
     assert "OPEN incidents untouched" in plan
