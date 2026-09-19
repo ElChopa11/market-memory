@@ -32,6 +32,7 @@ A later study records `delta vs event_base_rate.params_hash` + `as_of_knowledge`
 - `tests/unit/test_imp039_cli.py`
 - `tests/unit/test_imp039_queue.py`
 - `tests/adversarial/test_imp039_point_in_time.py`
+- `tests/integration/test_imp039_event_base_rate.py`
 
 ## Gates kept
 

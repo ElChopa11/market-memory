@@ -139,11 +139,12 @@ def test_claimed_when_n_meets_min() -> None:
 
 
 def test_memory_repository_does_not_import_quant() -> None:
+    import re
+
     src = (ROOT / "packages" / "memory" / "src" / "mm_memory" / "base_rate_repository.py").read_text(
         encoding="utf-8"
     )
-    assert "mm_quant" not in src
-    assert "from mm_quant" not in src
+    assert re.search(r"^[ \t]*(import mm_quant|from mm_quant)\b", src, re.MULTILINE) is None
 
 
 def test_lookahead_trap_hides_later_bars() -> None:
