@@ -248,6 +248,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-20 — Chart is librarian, not renderer, not retriever (OPTION A)
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-20 |
+| **run_id** | *(none — Principal FINAL scope lock; no persist run. Do not invent one.)* |
+| **Desk** | Research (chart sleeve) / Ops |
+| **What happened** | Chart scope was still readable as retrieval (browse / log in / capture TV) or option B (server-side render such as mplfinance; automated TV). `render_png` still computes levels. Principal 2026-09-20 FINAL: **OPTION A**. |
+| **Lesson** | **Chart Desk is a librarian, not a renderer, not a retriever.** Principal marks in TradingView and snapshots to a hosted TV URL. Chart files `tv_snapshot_url` (as given, never constructed) + structured levels from **markup only**. Ambiguous → record `"ambiguous"` and ask — never estimate. Ops delivers via `lab deliver`. Chart never publishes. Watchlists = `config/watchlist/monitor.yaml` only. CASHCAT is tier BLOCKED: snapshot may be filed for reference but never carries an idea/size; Chart states the tier on every artifact. `render_png` retires after Monday 2026-09-21 unattended Sydney Morning (IMP-056 BACKLOG) — not in the docs PR that records this lesson. |
+| **Does not** | Authorise retiring `render_png` before that Monday fire. Does not authorise server-side render, automated/signed-in TV, browser automation, or screen capture. Does not authorise a Telegram credential, webhook, or direct publish. Does not authorise trade view, direction, sizing, or commentary. Does not make Chart a sixth publishing desk. Does not promote CASHCAT. Does not start C-00x. Does not occupy IN_PROGRESS. |
+| **Overrides prior** | Yes — retrieval framing and option B as Chart operating models. Process override of the IMP-016 PNG/render path, not a literature prior. No persist `run_id`. IMP-051 Chart/TV webhook ban still stands. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

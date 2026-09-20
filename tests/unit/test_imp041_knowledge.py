@@ -130,6 +130,13 @@ def test_knowledge_files_exist_and_parse_as_markdown() -> None:
         "sustained 20/20",
         "FLAG only, never VOID",
         "adjusted equity bars",
+        "2026-09-20",
+        "Chart is librarian, not renderer, not retriever",
+        "OPTION A",
+        "tv_snapshot_url",
+        "markup only",
+        "render_png",
+        "Monday 2026-09-21 unattended Sydney Morning",
         "compounds from post-mortems",
     ):
         assert token in lesson_text, token

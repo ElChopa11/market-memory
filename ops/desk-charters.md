@@ -7,7 +7,7 @@ Market Memory is a **private research lab**, not a managed fund and not an auton
 | Desk | Slug | Notes |
 |---|---|---|
 | Intel (Market Intelligence) | `intel` | Ingest + flow + macro + Pulse sleeves |
-| Research (Investment Research) | `research` | Crypto + equities + chart sleeves (retired 3a/3b desks) |
+| Research (Investment Research) | `research` | Crypto + equities + chart sleeves (retired 3a/3b desks). Chart sleeve is librarian, not renderer, not retriever. |
 | Quant | `quant` | Closed verdict set; not a call |
 | IC/Risk (Investment Committee & Risk) | `ic_risk` | Two **gates** (Skeptic + Risk), not two desks |
 | Ops | `ops` | Queue, pack assemble, delivery. Don/Coord orchestrates — not a sixth desk |
@@ -80,7 +80,7 @@ No skipped gates. A Quant `RESEARCH_PRIORITY` verdict is triage, not permission 
 Intel → Research → Quant → IC/Risk (Skeptic gate then Risk gate) → Ops pack
 ```
 
-Research desk owns crypto / equities / chart sleeves. Intel owns flow / macro / Pulse sleeves. No skipped gates. After Principal: paper trading only when authorised; constrained Execution & Fund Ops only when separately authorised (future-only).
+Research desk owns crypto / equities / chart sleeves. Chart files TV snapshot references + structured levels from markup; it does not render, retrieve, or publish. Intel owns flow / macro / Pulse sleeves. No skipped gates. After Principal: paper trading only when authorised; constrained Execution & Fund Ops only when separately authorised (future-only).
 
 | Gate | Question the gate answers | What it is not |
 |---|---|---|
@@ -234,6 +234,42 @@ As of Phase 6c-1 these are **Research** sleeves. Historical "Crypto Desk" / "Equ
 **Exists today.** Equity names on `config/universe.yaml` as Phase 3 briefing / future equity-feed watchlist (not Hyperliquid); queue cards (UNIVERSE call cards, WATCHLIST-DD, EXPECTATIONS scorecard); generic thesis template plus dedicated `templates/equities-thesis-card.md`; screen-only Post-IPO / reclaim universe `config/equities/post_ipo_reclaim.yaml` (not membership).
 
 **Gap.** No equity-feed ingest into Market Memory; no filings/earnings pipeline. Dedicated equity thesis-card template is IMP-007 (**DONE** #37). Post-IPO reclaim screen product is IMP-006 (**DONE** #36). Do not confuse yfinance/TV one-off queue scrapes with durable Market Memory.
+
+---
+
+### Chart sleeve (librarian — not renderer, not retriever)
+
+**Mandate.** File Principal TradingView snapshot references and structured levels. Chart is a **librarian**, not a renderer, not a retriever. Not a sixth publishing desk. Principal 2026-09-20 FINAL is **OPTION A** (IMP-056 BACKLOG behind Monday 2026-09-21 unattended Sydney Morning). `render_png` retires in that later PR; this charter is the scope now.
+
+**Who does what**
+
+- **Principal** marks the chart in TradingView (entry/SL/TP via position tool; levels; measured moves) and snapshots (camera/Alt+S) → hosted TV URL.
+- **Chart** receives the snapshot reference + structured levels and files them. Chart does **not** retrieve, browse, log in, or capture.
+- **Ops** delivers via `lab deliver`. Chart never publishes.
+
+**May**
+
+- File a `CHART_ARTIFACT` under `briefs/` with: `tv_snapshot_url` (as given, never constructed); `instrument` (exchange-qualified: `HL:ZEC`, `HL:XMR`, `HL:ETH`…); `timeframe` (as in the chart header); `as_of` (snapshot timestamp from the header); levels as **structured fields not pixels** (entry, stop, target(s), horizontals); `linked_thesis_id` (if Quant marked; else null); `content_hash`.
+- Transcribe levels **from markup only** — what the snapshot shows.
+- Record `"ambiguous"` and ask when markup is unclear.
+- File a BLOCKED-tier snapshot (e.g. CASHCAT) for **reference only**.
+- State watchlist tier (`universe` / `monitor` / `blocked`) on **every** artifact. Watchlists = `config/watchlist/monitor.yaml` only.
+
+**Must not**
+
+- Retrieve, browse, log in to, or capture TradingView. No automated / signed-in TV. No browser automation. No screen capture.
+- Render (no `render_png` replacement, no mplfinance, no server-side PNG). Implementation of the retirement stays IMP-056 after Monday fire — do not start it while that item is BACKLOG.
+- Read price action, infer, add, or adjust levels. Never estimate. Ambiguous → `"ambiguous"` and ask.
+- Hold Telegram credentials, webhooks, or publish (direct or otherwise). Hand to Ops.
+- Carry a trade view, direction, sizing, or commentary.
+- Carry an idea or size on a BLOCKED name (CASHCAT is tier BLOCKED: snapshot may be filed for reference but never carries an idea/size).
+- Construct `tv_snapshot_url`. Widen the watchlist. Promote membership. Occupy `IN_PROGRESS`.
+
+**Artifacts.** `CHART_ARTIFACT` under `briefs/` (snapshot URL + structured levels + `content_hash`). Ops-owned delivery.
+
+**Exists today.** PLAYBOOK `CHART_ARTIFACT` + `render_png` on main via IMP-016 (#47) — **historical path**. OPTION A supersedes retrieval framing and option B. Retirement of `render_png` is IMP-056 BACKLOG (not this charter PR's code).
+
+**Gap.** Bind `CHART_ARTIFACT` to OPTION A fields and retire `render_png` after Monday 2026-09-21 unattended Sydney Morning (IMP-056). Paper only. No Telegram. No C-00x.
 
 ---
 
@@ -453,6 +489,7 @@ Submit only Risk-allowed, Principal-enabled `OrderIntent`s. Maintain order-state
 | `packages/execution`, `apps/execution-service` | Execution & Fund Ops (Execution) | **Dormant stub — future only** |
 | `packages/risk`, `apps/risk-service` | Risk (future service) | **Stub — do not treat as live gate** |
 | Fund ledger / tax / investor reporting | Execution & Fund Ops (Fund Ops) | **Absent — future only** |
+| `CHART_ARTIFACT` (TV snapshot URL + structured levels) | Research chart sleeve (librarian, not renderer, not retriever) | Scope locked IMP-056 BACKLOG; `render_png` retirement not until after Monday 2026-09-21 unattended Sydney Morning |
 | `packages/desks` (`mm_desks` runners) | Crypto / Equities / Intel assemble / Skeptic / Risk / Coord | **5d runners** — fixture `--no-send`; Coord pack |
 | `packages/quant` | Quant & Market Structure Desk | **IMP-011 factor library**; 5d Quant desk calls it |
 | `packages/delivery` | Delivery (5e) | **Telegram Bot API** — dry-run default; live send operator-gated |
