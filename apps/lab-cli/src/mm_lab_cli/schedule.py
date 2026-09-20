@@ -24,6 +24,7 @@ from mm_desks.scheduler import (
     resolve_baseline_path,
     write_incident_artifact,
     write_known_missed_baseline,
+    WrongAnchorError,
 )
 
 
@@ -225,8 +226,12 @@ def _cmd_record_fire(args: Namespace) -> int:
             dsn=getattr(args, "dsn", None),
             completions_dir=getattr(args, "completions_dir", None),
         )
+    except WrongAnchorError as exc:
+        payload = exc.as_public_dict()
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 2
     except ValueError as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
+        print(json.dumps({"error": str(exc), "wrote": False}), file=sys.stderr)
         return 2
     dest = resolve_completions_dir(root, getattr(args, "completions_dir", None))
     payload = record.canonical()

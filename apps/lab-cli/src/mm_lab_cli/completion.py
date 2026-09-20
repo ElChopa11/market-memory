@@ -14,6 +14,7 @@ from pathlib import Path
 
 from mm_common.time import parse_utc, utcnow
 from mm_desks.completions import infer_routine_id, record_cli_completion
+from mm_desks.scheduler import WrongAnchorError
 
 
 def add_completion_args(parser) -> None:
@@ -74,5 +75,9 @@ def stamp_cli_fire(
             dsn=getattr(args, "dsn", None),
             completions_dir=getattr(args, "completions_dir", None),
         )
+    except WrongAnchorError as exc:
+        payload = exc.as_public_dict()
+        payload["warn"] = "completion row skipped: wrong_anchor"
+        print(json.dumps(payload), file=sys.stderr)
     except Exception as exc:  # pragma: no cover - must not mask the fire's exit
-        print(json.dumps({"warn": f"completion row skipped: {exc.__class__.__name__}"}), file=sys.stderr)
+        print(json.dumps({"warn": f"completion row skipped: {exc.__class__.__name__}", "wrote": False}), file=sys.stderr)

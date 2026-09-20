@@ -43,9 +43,9 @@ Hive clock → `lab brief` / `lab deliver` / `lab schedule heartbeat` writes a J
 
 `ops/reports/scheduler/completions/{routine_id}__{anchor}.json`
 
-Fields: `run_id`, `routine_id` (configured trigger), `fired_at_ts` (actual time), `delta_seconds` (offset vs catalog anchor), `status` (timing `ok`/`late`/`wrong_anchor`), `exit_status` (CLI process; failed is still a fire), `payload_path` if a briefs/ artifact exists.
+Fields: `run_id`, `routine_id` (configured trigger), `fired_at_ts` (actual time), `delta_seconds` (offset vs catalog anchor), `status` (timing `ok`/`late`), `exit_status` (CLI process; failed is still a fire), `payload_path` if a briefs/ artifact exists.
 
-Anchor is catalog `local_time` on the fire's **local calendar date** in the routine timezone (Hive clocks: Australia/Sydney). If that weekday is not in the catalog, status is `wrong_anchor` — not `late` from walking back to the previous scheduled day.
+Anchor is catalog `local_time` on the fire's **local calendar date** in the routine timezone (Hive clocks: Australia/Sydney). If that weekday is not in the catalog, **write no completion row** (`lab schedule heartbeat` exits 2, `wrote: false`). Do not classify as `late`. Silence (no CLI) and a failed CLI that still stamped a scheduled-day fire stay distinct from a successful fire with a bad stamp.
 
 How miss-sweep reads it:
 

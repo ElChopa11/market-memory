@@ -21,6 +21,7 @@ from mm_common.time import as_utc, utcnow
 from mm_desks.scheduler import (
     Completion,
     Catalog,
+    FIRE_STATUSES,
     STATUS_RANK,
     load_catalog,
     stamp_fire,
@@ -66,7 +67,12 @@ def completion_filename(record: Completion) -> str:
 
 
 def write_completion(record: Completion, *, dest_dir: Path) -> Path:
-    """Idempotent on (routine_id, scheduled_anchor_ts). Higher-rank status wins."""
+    """Idempotent on (routine_id, scheduled_anchor_ts). Higher-rank status wins.
+
+    Refuses ``wrong_anchor`` — that is a stamp refusal, not a row.
+    """
+    if record.status not in FIRE_STATUSES and record.status != "missed":
+        raise ValueError(f"refusing to write completion status {record.status!r}")
     dest_dir.mkdir(parents=True, exist_ok=True)
     path = dest_dir / completion_filename(record)
     if path.is_file():
@@ -94,7 +100,7 @@ def load_disk_completions(dest_dir: Path, *, catalog: Catalog | None = None) -> 
             continue
         try:
             rows.append(completion_from_mapping(raw, catalog=catalog))
-        except (KeyError, ValueError, TypeError):
+        except (OSError, json.JSONDecodeError, KeyError, ValueError, TypeError):
             continue
     return rows
 
@@ -133,6 +139,7 @@ def record_cli_completion(
     """Write a completion row the miss sweep can load. DB persist is optional.
 
     A failed CLI run is still a fire (exit_status != 0). Silence (no row) is the miss.
+    Wrong-anchor (unscheduled weekday) raises WrongAnchorError and writes nothing.
     """
     cat = catalog if catalog is not None else load_catalog(root)
     routine = cat.by_id().get(str(routine_id))

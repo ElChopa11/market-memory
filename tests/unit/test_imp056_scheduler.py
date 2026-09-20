@@ -1,6 +1,6 @@
 """IMP-056: heartbeat table, Sydney slot/anchor, known-missed baseline.
 
-Paper only. No Telegram. No C-00x compute.
+Wrong-anchor writes NO completion row. Paper only. No Telegram. No C-00x compute.
 """
 
 from __future__ import annotations
@@ -9,9 +9,12 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from mm_desks.completions import completion_filename
+import pytest
+
+from mm_desks.completions import load_disk_completions
 from mm_desks.scheduler import (
     WRONG_ANCHOR_REASON,
+    WrongAnchorError,
     load_catalog,
     load_known_missed_baseline,
     miss_sweep,
@@ -27,25 +30,26 @@ UTC = timezone.utc
 MISS_CLOCK = ROOT / "tests" / "fixtures" / "scheduler" / "miss_clock.yaml"
 
 
-def test_sunday_sydney_morning_is_wrong_anchor_not_late() -> None:
+def test_sunday_sydney_morning_refuses_stamp_no_row() -> None:
     catalog = load_catalog(ROOT)
     routine = catalog.by_id()["grok.sydney_morning"]
     # Sun 2026-09-20 06:30 AEST == 2026-09-19T20:30:00Z
     fired = datetime(2026, 9, 19, 20, 30, tzinfo=UTC)
-    record = stamp_fire(routine, fired_at=fired, run_id="sunday-dry-run")
-    assert record.scheduled_anchor_ts == datetime(2026, 9, 19, 20, 30, tzinfo=UTC)
-    assert record.delta_seconds == 0
-    assert record.status == "wrong_anchor"
-    assert record.status != "late"
-    assert record.reason == WRONG_ANCHOR_REASON
-    assert completion_filename(record) == "grok.sydney_morning__20260919T203000Z.json"
     weekday_ok = scheduled_slot(routine, fired)[1]
     assert weekday_ok is False
-    # Must not reuse Friday 18 Sep 06:30 AEST (2026-09-17T20:30:00Z).
-    assert not record.scheduled_anchor_ts.isoformat().startswith("2026-09-17T20:30:00")
+    with pytest.raises(WrongAnchorError) as exc:
+        stamp_fire(routine, fired_at=fired, run_id="sunday-dry-run")
+    payload = exc.value.as_public_dict()
+    assert payload["error"] == "wrong_anchor"
+    assert payload["wrote"] is False
+    assert payload["reason"] == WRONG_ANCHOR_REASON
+    assert payload["local_weekday"] == "Sun"
+    assert "late" not in payload["error"]
+    # Must not walk back to Friday 18 Sep 06:30 AEST.
+    assert not str(payload.get("would_be_anchor_ts") or "").startswith("2026-09-17T20:30:00")
 
 
-def test_cli_sunday_heartbeat_does_not_write_friday_filename(tmp_path: Path, capsys) -> None:
+def test_cli_sunday_heartbeat_writes_no_completion_row(tmp_path: Path, capsys) -> None:
     dest = tmp_path / "completions"
     rc = main(
         [
@@ -66,24 +70,38 @@ def test_cli_sunday_heartbeat_does_not_write_friday_filename(tmp_path: Path, cap
             "--no-db",
         ]
     )
-    assert rc == 0
-    payload = json.loads(capsys.readouterr().out)
-    assert payload["status"] == "wrong_anchor"
-    assert payload["scheduled_anchor_ts"].startswith("2026-09-19T20:30:00")
-    assert payload["delta_seconds"] == 0
-    names = sorted(p.name for p in dest.glob("*.json"))
-    assert names == ["grok.sydney_morning__20260919T203000Z.json"]
-    assert "grok.sydney_morning__20260917T203000Z.json" not in names
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert rc == 2
+    assert payload["error"] == "wrong_anchor"
+    assert payload["wrote"] is False
+    assert payload["status"] != "late" if "status" in payload else True
+    assert list(dest.glob("*.json")) == []
 
 
-def test_wrong_anchor_does_not_cover_friday_slot() -> None:
-    catalog = load_catalog(ROOT)
-    routine = catalog.by_id()["grok.sydney_morning"]
-    sunday = stamp_fire(
-        routine,
-        fired_at=datetime(2026, 9, 19, 20, 30, tzinfo=UTC),
-        run_id="sunday-dry-run",
+def test_old_friday_keyed_sunday_stamp_is_skipped_and_friday_stays_miss(tmp_path: Path) -> None:
+    dest = tmp_path / "completions"
+    dest.mkdir()
+    (dest / "grok.sydney_morning__20260917T203000Z.json").write_text(
+        json.dumps(
+            {
+                "routine_id": "grok.sydney_morning",
+                "run_id": "sunday-dry-run",
+                "scheduled_anchor_ts": "2026-09-17T20:30:00+00:00",
+                "fired_at_ts": "2026-09-19T20:30:00+00:00",
+                "delta_seconds": 172800,
+                "status": "late",
+                "as_of_knowledge": "2026-09-19T20:30:00+00:00",
+                "source": "lab.cli",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
     )
+    catalog = load_catalog(ROOT)
+    disk = load_disk_completions(dest, catalog=catalog)
+    assert disk == []
+    routine = catalog.by_id()["grok.sydney_morning"]
     slim = catalog.__class__(
         routines=(routine,),
         late_after_seconds=300,
@@ -91,14 +109,12 @@ def test_wrong_anchor_does_not_cover_friday_slot() -> None:
         lookback_days=7,
         lab_timezone="Australia/Sydney",
     )
-    now = datetime(2026, 9, 20, 1, 0, tzinfo=UTC)  # Sun 11:00 AEST; Friday 06:30 closed
-    result = miss_sweep(slim, (sunday,), now, lookback_days=7)
+    now = datetime(2026, 9, 20, 1, 0, tzinfo=UTC)
+    result = miss_sweep(slim, disk, now, lookback_days=7)
     friday = datetime(2026, 9, 17, 20, 30, tzinfo=UTC)
     assert any(
         row.routine_id == "grok.sydney_morning" and row.scheduled_anchor_ts == friday for row in result.misses
     )
-    assert result.wrong_anchor
-    assert result.wrong_anchor[0]["status"] == "wrong_anchor"
 
 
 def test_weekday_on_anchor_still_ok() -> None:
@@ -111,9 +127,35 @@ def test_weekday_on_anchor_still_ok() -> None:
     assert record.scheduled_anchor_ts.isoformat().startswith("2026-09-17T20:30:00")
 
 
+def test_failed_cli_on_scheduled_day_still_writes_a_fire(tmp_path: Path, capsys) -> None:
+    dest = tmp_path / "completions"
+    rc = main(
+        [
+            "schedule",
+            "heartbeat",
+            "--routine-id",
+            "grok.sydney_morning",
+            "--fired-at",
+            "2026-09-17T20:32:00Z",
+            "--exit-status",
+            "2",
+            "--repo-root",
+            str(ROOT),
+            "--completions-dir",
+            str(dest),
+            "--no-db",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert payload["exit_status"] == 2
+    assert payload["status"] == "ok"
+    assert payload.get("wrote") is not False
+    assert list(dest.glob("*.json"))
+
+
 def test_baseline_before_today_labels_history_and_leaves_monday_visible(tmp_path: Path, capsys) -> None:
     dest = tmp_path / "baseline.yaml"
-    # Monday 21 Sep 2026 09:00 AEST — Monday 06:30 is closed; pre-Mon windows exist.
     now = "2026-09-20T23:00:00Z"
     rc = main(
         [
@@ -153,7 +195,7 @@ def test_baseline_before_today_labels_history_and_leaves_monday_visible(tmp_path
     assert rc == 1
     text = dest.read_text(encoding="utf-8")
     assert "known-missed" in text
-    assert "labeled, not deleted" in text.lower() or "labeled, not deleted" in payload.get("notes", "").lower() or "History is labeled" in text
+    assert "History is labeled" in text
 
     capsys.readouterr()
     rc2 = main(

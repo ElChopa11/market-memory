@@ -39,6 +39,21 @@ STATUS_RANK = {"ok": 4, "late": 3, "skipped": 2, "wrong_anchor": 1, "missed": 0}
 FIRE_STATUSES = frozenset({"ok", "late", "skipped"})
 
 
+class WrongAnchorError(ValueError):
+    """Anchor cannot be derived for this fire. Must not write a completion row.
+
+    Distinguishes stamp-refused from silence (no CLI) and from a failed CLI that
+    still wrote a fire (exit_status != 0 on a scheduled day).
+    """
+
+    def __init__(self, payload: Mapping[str, Any]) -> None:
+        self.payload = dict(payload)
+        super().__init__(str(self.payload.get("reason") or WRONG_ANCHOR_REASON))
+
+    def as_public_dict(self) -> dict[str, Any]:
+        return dict(self.payload)
+
+
 def repo_root(start: Path | None = None) -> Path:
     here = (start or Path.cwd()).resolve()
     for candidate in [here, *here.parents]:
@@ -474,7 +489,7 @@ def completion_from_mapping(row: Mapping[str, Any], *, catalog: Catalog | None =
     if catalog is not None and fired is not None:
         routine = catalog.by_id().get(routine_id)
         if routine is not None:
-            recomputed = stamp_fire(
+            return stamp_fire(
                 routine,
                 fired_at=fired,
                 run_id=run_id or f"{routine_id}-{fired.strftime('%Y%m%dT%H%M%SZ')}",
@@ -484,7 +499,15 @@ def completion_from_mapping(row: Mapping[str, Any], *, catalog: Catalog | None =
                 payload_path=None if not payload_path else str(payload_path),
                 cli=None if not cli else str(cli),
             )
-            return recomputed
+    if str(row.get("status") or "") == "wrong_anchor":
+        raise WrongAnchorError(
+            {
+                "error": "wrong_anchor",
+                "reason": reason_raw or WRONG_ANCHOR_REASON,
+                "wrote": False,
+                "routine_id": routine_id,
+            }
+        )
     anchor = parse_utc(str(row["scheduled_anchor_ts"]))
     status = str(row.get("status") or "")
     delta = row.get("delta_seconds")
@@ -664,7 +687,7 @@ def miss_sweep(
 
     Does not auto-close SCHED-001. Does not treat 'no window yet' as a close.
     created_at is not used to suppress a closed window (Hive timestamps unverified).
-    wrong_anchor fires do not cover a scheduled weekday slot.
+    A refused stamp (wrong weekday) writes no row — silence to the sweep.
     known-missed / baselined windows are labeled, not deleted, and do not escalate.
     """
     now_u = as_utc(now)
@@ -901,18 +924,27 @@ def stamp_fire(
 
     Anchor is catalog ``local_time`` on the fire's local calendar date in the
     routine timezone (Australia/Sydney for Hive clocks). If that weekday is not
-    in the catalog, status is ``wrong_anchor`` — never mere ``late`` from walking
-    back to the previous scheduled day.
+    in the catalog, raise ``WrongAnchorError`` and write **no** completion row —
+    never mere ``late`` from walking back to the previous scheduled day.
     """
     fired = as_utc(fired_at)
-    anchor, weekday_ok, _weekday = scheduled_slot(routine, fired)
+    anchor, weekday_ok, weekday = scheduled_slot(routine, fired)
+    if not weekday_ok:
+        raise WrongAnchorError(
+            {
+                "error": "wrong_anchor",
+                "reason": WRONG_ANCHOR_REASON,
+                "wrote": False,
+                "routine_id": routine.routine_id,
+                "fired_at_ts": fired.isoformat(),
+                "local_weekday": weekday,
+                "scheduled_weekdays": list(routine.weekdays),
+                "would_be_anchor_ts": as_utc(anchor).isoformat(),
+                "note": "no completion row; stamp refused. Silence (no CLI) and failed-CLI fires stay distinct from a successful fire with a bad stamp.",
+            }
+        )
     delta = delta_seconds(anchor, fired)
-    if weekday_ok:
-        status = classify_delta(delta, routine.late_after_seconds)
-        reason = None
-    else:
-        status = "wrong_anchor"
-        reason = WRONG_ANCHOR_REASON
+    status = classify_delta(delta, routine.late_after_seconds)
     as_of = as_utc(as_of_knowledge or fired)
     return Completion(
         routine_id=routine.routine_id,
@@ -926,5 +958,5 @@ def stamp_fire(
         exit_status=exit_status,
         payload_path=payload_path,
         cli=cli,
-        reason=reason,
+        reason=None,
     )

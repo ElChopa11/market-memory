@@ -15,7 +15,7 @@ Sunday dry-run (2026-09-20) showed:
 ## Outcome
 
 - Idempotent Alembic `0012_schedule_heartbeat_idempotent` (plus 0011 `IF NOT EXISTS`) so `schedule_heartbeat` exists after `lab migrate`. Disk completions stay the primary log.
-- Slot/anchor = catalog `local_time` on the fire's local calendar date in the routine timezone. Unscheduled weekday → `wrong_anchor`, never mere `late` from walking back to Friday.
+- Slot/anchor = catalog `local_time` on the fire's local calendar date in the routine timezone. Unscheduled weekday → **no completion row** (stamp refused, never mere `late`).
 - `lab schedule miss-check --baseline-before today` labels pre-today (Australia/Sydney date) closed windows as **known-missed**. History is labeled, not deleted. File: `ops/reports/scheduler/known-missed-baseline.yaml`.
 - Pack path markdown-only envelope/provenance/gaps is queued as IMP-057 — does not block Monday.
 
@@ -24,7 +24,7 @@ Sunday dry-run (2026-09-20) showed:
 - `tests/unit/test_imp056_scheduler.py`
 - `tests/unit/test_imp056_queue.py`
 - existing IMP-042 / IMP-046 clocks still green
-- integration: table present at Alembic head; `wrong_anchor` persists
+- integration: table present at Alembic head; persist still works for scheduled-day fires
 
 ## Gates kept
 
