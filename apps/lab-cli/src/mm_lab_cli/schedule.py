@@ -17,9 +17,14 @@ from mm_desks.scheduler import (
     completion_from_mapping,
     load_catalog,
     load_fixture,
+    load_known_missed_baseline,
     miss_sweep,
+    parse_baseline_before,
     render_backfill_markdown,
+    resolve_baseline_path,
     write_incident_artifact,
+    write_known_missed_baseline,
+    WrongAnchorError,
 )
 
 
@@ -88,6 +93,16 @@ def _add_sweep_args(parser) -> None:
     parser.add_argument("--dsn")
     parser.add_argument("--no-db", action="store_true")
     parser.add_argument("--lookback-days", type=int, default=None)
+    parser.add_argument(
+        "--baseline-before",
+        help="label closed windows before this Australia/Sydney date as known-missed "
+        "(pass 'today' or YYYY-MM-DD). Writes ops/reports/scheduler/known-missed-baseline.yaml",
+    )
+    parser.add_argument(
+        "--baseline-file",
+        type=Path,
+        help="known-missed baseline path (default: ops/reports/scheduler/known-missed-baseline.yaml)",
+    )
 
 
 def dispatch_schedule(args: Namespace) -> int:
@@ -131,9 +146,12 @@ def _load_state(args: Namespace):
             from mm_memory.heartbeat_repository import load_completions
 
             with session_scope(args.dsn or dsn_from_env()) as session:
-                completions = [
-                    completion_from_mapping(row, catalog=catalog) for row in load_completions(session)
-                ]
+                completions = []
+                for row in load_completions(session):
+                    try:
+                        completions.append(completion_from_mapping(row, catalog=catalog))
+                    except (WrongAnchorError, ValueError, KeyError, TypeError):
+                        continue
         except Exception as exc:  # pragma: no cover - optional db
             print(json.dumps({"warn": f"heartbeat load skipped: {exc.__class__.__name__}"}), file=sys.stderr)
     completions = _merge_disk(args, root, catalog, completions)
@@ -142,7 +160,45 @@ def _load_state(args: Namespace):
 
 def _cmd_miss_check(args: Namespace) -> int:
     root, catalog, completions, now = _load_state(args)
-    result = miss_sweep(catalog, completions, now, lookback_days=getattr(args, "lookback_days", None))
+    cutoff = None
+    if getattr(args, "baseline_before", None):
+        cutoff = parse_baseline_before(str(args.baseline_before), now)
+    baseline_override = getattr(args, "baseline_file", None)
+    known = {}
+    baseline_path = None
+    if getattr(args, "fixture", None) and baseline_override is None and cutoff is None:
+        known = {}
+    else:
+        baseline_path = resolve_baseline_path(root, baseline_override)
+        known = load_known_missed_baseline(baseline_path)
+    result = miss_sweep(
+        catalog,
+        completions,
+        now,
+        lookback_days=getattr(args, "lookback_days", None),
+        known_missed=known,
+        baseline_before=cutoff,
+        baseline_path=baseline_path,
+    )
+    if cutoff is not None:
+        dest = baseline_path or resolve_baseline_path(root, baseline_override)
+        write_known_missed_baseline(
+            dest,
+            now=now,
+            cutoff=cutoff,
+            windows=result.known_missed,
+            existing=known,
+        )
+        result = miss_sweep(
+            catalog,
+            completions,
+            now,
+            lookback_days=getattr(args, "lookback_days", None),
+            known_missed=load_known_missed_baseline(dest),
+            baseline_before=cutoff,
+            baseline_path=dest,
+        )
+        baseline_path = dest
     artifact = None
     if result.escalated:
         out_dir = Path(args.out).resolve() if getattr(args, "out", None) else (root / "ops" / "reports" / "scheduler" / "incidents")
@@ -150,6 +206,8 @@ def _cmd_miss_check(args: Namespace) -> int:
         result = result.with_artifact(str(artifact))
     payload = result.canonical()
     payload["completions_dir"] = str(resolve_completions_dir(root, getattr(args, "completions_dir", None)))
+    if baseline_path is not None:
+        payload["baseline_path"] = str(baseline_path)
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 1 if result.escalated else 0
 
@@ -171,8 +229,12 @@ def _cmd_record_fire(args: Namespace) -> int:
             dsn=getattr(args, "dsn", None),
             completions_dir=getattr(args, "completions_dir", None),
         )
+    except WrongAnchorError as exc:
+        payload = exc.as_public_dict()
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 2
     except ValueError as exc:
-        print(json.dumps({"error": str(exc)}), file=sys.stderr)
+        print(json.dumps({"error": str(exc), "wrote": False}), file=sys.stderr)
         return 2
     dest = resolve_completions_dir(root, getattr(args, "completions_dir", None))
     payload = record.canonical()

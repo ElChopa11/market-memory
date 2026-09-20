@@ -9,7 +9,7 @@ Desk operating model for Market Memory as a **private research lab**. This tree 
 | [improvement-queue.md](improvement-queue.md) | Single continuous-improvement queue; every item has a desk and one accountable owner |
 | [plans/](plans/) | IMP implementation plans |
 | [reports/source-health/](reports/source-health/) | Standing DQ / source-health reports (`lab data source-health`) |
-| [reports/scheduler/](reports/scheduler/) | SCHED-001 root cause + miss-sweep backfill (`lab schedule miss-check`) |
+| [reports/scheduler/](reports/scheduler/) | SCHED-001 root cause + miss-sweep backfill (`lab schedule miss-check`). known-missed baseline: `--baseline-before today` |
 
 Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 

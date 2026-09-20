@@ -25,6 +25,8 @@ def _isolate_schedule_completions(tmp_path_factory, monkeypatch):
     """Hive completion JSON is a runtime log. Tests must not write into the git tree."""
     dest = tmp_path_factory.mktemp("schedule-completions")
     monkeypatch.setenv("MM_SCHEDULE_COMPLETIONS_DIR", str(dest))
+    baseline = tmp_path_factory.mktemp("schedule-baseline")
+    monkeypatch.setenv("MM_SCHEDULE_BASELINE_FILE", str(baseline / "known-missed-baseline.yaml"))
 
 
 @pytest.fixture(autouse=True)

@@ -509,7 +509,7 @@ class ScheduleHeartbeat(Base):
     __tablename__ = "schedule_heartbeat"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('ok','late','missed','skipped')",
+            "status IN ('ok','late','missed','skipped','wrong_anchor')",
             name="schedule_heartbeat_status_check",
         ),
         UniqueConstraint(

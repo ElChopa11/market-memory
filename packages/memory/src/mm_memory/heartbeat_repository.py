@@ -12,7 +12,7 @@ from mm_common.ids import new_ulid
 from mm_common.time import as_utc, parse_utc
 from mm_memory.models import ScheduleHeartbeat
 
-RANK = {"ok": 3, "late": 2, "skipped": 1, "missed": 0}
+RANK = {"ok": 4, "late": 3, "skipped": 2, "wrong_anchor": 1, "missed": 0}
 
 
 def _ts(value: datetime | str) -> datetime:
@@ -42,6 +42,8 @@ def persist_heartbeat(session: Session, row: Mapping[str, Any]) -> str:
         nested["payload_path"] = str(row["payload_path"])
     if row.get("cli"):
         nested["cli"] = str(row["cli"])
+    if row.get("reason"):
+        nested["reason"] = str(row["reason"])
     payload = {
         "run_id": str(row.get("run_id") or new_ulid()),
         "fired_at_ts": fired,
@@ -101,6 +103,8 @@ def load_completions(session: Session) -> list[dict[str, Any]]:
             item["payload_path"] = nested["payload_path"]
         if nested.get("cli"):
             item["cli"] = nested["cli"]
+        if nested.get("reason"):
+            item["reason"] = nested["reason"]
         out.append(item)
     return out
 

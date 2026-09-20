@@ -45,6 +45,7 @@ def add_deliver_parser(sub) -> None:
         action="store_true",
         help="route this test ping to TELEGRAM_CHAT_ID_PRINCIPAL_DM only (never TELEGRAM_CHAT_ID group)",
     )
+    test_p.add_argument("--as-of", help="UTC fire time for the completion stamp (catalog local_time + weekday)")
     add_completion_args(test_p)
 
     inbound_p = deliver_sub.add_parser("inbound", help="read-only inbound stub (/status /brief /desk /idea /gaps /halt)")

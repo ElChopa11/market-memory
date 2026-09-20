@@ -29,6 +29,6 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-047",)
+    assert report.in_progress == ("IMP-056",)
     assert report.auto_merge is False
     assert report.auto_waive is False

@@ -9,6 +9,7 @@ Canaries are out of scope and are never loaded from this catalog.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -17,11 +18,11 @@ from zoneinfo import ZoneInfo
 
 import yaml
 
-from mm_common.time import as_utc, parse_utc
+from mm_common.time import OPS_TZ, as_utc, in_ops_tz, parse_utc
 
 UTC = timezone.utc
 WEEKDAY_NAMES = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-STATUSES = ("ok", "late", "missed", "skipped")
+STATUSES = ("ok", "late", "missed", "skipped", "wrong_anchor")
 FAMILIES = ("lab", "grok_bot")
 CANARY_MARKERS = ("canary",)
 DEFAULT_LATE_AFTER = 300
@@ -30,6 +31,27 @@ DEFAULT_LOOKBACK_DAYS = 14
 ROUTINES_REL = Path("config") / "schedules" / "routines.yaml"
 PULSE_REL = Path("config") / "schedules" / "market-pulse.yaml"
 TELEGRAM_REL = Path("config") / "delivery" / "telegram.yaml"
+BASELINE_REL = Path("ops") / "reports" / "scheduler" / "known-missed-baseline.yaml"
+BASELINE_ENV = "MM_SCHEDULE_BASELINE_FILE"
+KNOWN_MISSED_LABEL = "known-missed"
+WRONG_ANCHOR_REASON = "fired_on_unscheduled_weekday"
+STATUS_RANK = {"ok": 4, "late": 3, "skipped": 2, "wrong_anchor": 1, "missed": 0}
+FIRE_STATUSES = frozenset({"ok", "late", "skipped"})
+
+
+class WrongAnchorError(ValueError):
+    """Anchor cannot be derived for this fire. Must not write a completion row.
+
+    Distinguishes stamp-refused from silence (no CLI) and from a failed CLI that
+    still wrote a fire (exit_status != 0 on a scheduled day).
+    """
+
+    def __init__(self, payload: Mapping[str, Any]) -> None:
+        self.payload = dict(payload)
+        super().__init__(str(self.payload.get("reason") or WRONG_ANCHOR_REASON))
+
+    def as_public_dict(self) -> dict[str, Any]:
+        return dict(self.payload)
 
 
 def repo_root(start: Path | None = None) -> Path:
@@ -96,6 +118,7 @@ class Completion:
     exit_status: int | None = None
     payload_path: str | None = None
     cli: str | None = None
+    reason: str | None = None
 
     def canonical(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -118,6 +141,9 @@ class Completion:
         if self.cli:
             payload["cli"] = self.cli
             extra["cli"] = self.cli
+        if self.reason:
+            payload["reason"] = self.reason
+            extra["reason"] = self.reason
         if extra:
             payload["payload_json"] = extra
         return payload
@@ -146,9 +172,10 @@ class Miss:
     window_closed_at: datetime
     incident: str | None
     reason: str
+    label: str | None = None
 
     def canonical(self) -> dict[str, Any]:
-        return {
+        payload = {
             "routine_id": self.routine_id,
             "family": self.family,
             "scheduled_anchor_ts": as_utc(self.scheduled_anchor_ts).isoformat(),
@@ -157,6 +184,9 @@ class Miss:
             "reason": self.reason,
             "status": "missed",
         }
+        if self.label:
+            payload["label"] = self.label
+        return payload
 
 
 @dataclass(frozen=True)
@@ -171,6 +201,10 @@ class SweepResult:
     routines_checked: tuple[str, ...]
     artifact_path: str | None = None
     control: str = "miss_sweep"
+    known_missed: tuple[Miss, ...] = ()
+    wrong_anchor: tuple[dict[str, Any], ...] = ()
+    baseline_path: str | None = None
+    baseline_before: str | None = None
 
     def with_artifact(self, path: str) -> SweepResult:
         return SweepResult(
@@ -184,6 +218,10 @@ class SweepResult:
             routines_checked=self.routines_checked,
             artifact_path=path,
             control=self.control,
+            known_missed=self.known_missed,
+            wrong_anchor=self.wrong_anchor,
+            baseline_path=self.baseline_path,
+            baseline_before=self.baseline_before,
         )
 
     @property
@@ -197,17 +235,23 @@ class SweepResult:
             "as_of_knowledge": as_utc(self.as_of_knowledge).isoformat(),
             "escalated": self.escalated,
             "n_missed": len(self.misses),
+            "n_known_missed": len(self.known_missed),
             "n_ok": len(self.ok),
             "n_late": len(self.late),
             "n_pending": len(self.pending),
             "n_skipped": len(self.skipped),
+            "n_wrong_anchor": len(self.wrong_anchor),
             "routines_checked": list(self.routines_checked),
             "misses": [row.canonical() for row in self.misses],
+            "known_missed": [row.canonical() for row in self.known_missed],
             "ok": list(self.ok),
             "late": list(self.late),
             "pending": list(self.pending),
             "skipped": list(self.skipped),
+            "wrong_anchor": list(self.wrong_anchor),
             "artifact_path": self.artifact_path,
+            "baseline_path": self.baseline_path,
+            "baseline_before": self.baseline_before,
             "heartbeat_is_not_the_check": True,
         }
 
@@ -218,7 +262,10 @@ def delta_seconds(anchor: datetime, fired: datetime) -> int:
 
 
 def classify_delta(delta: int, late_after_seconds: int) -> str:
-    """ok if |delta| within grace; late if a fire exists but off-anchor."""
+    """ok if |delta| within grace; late if a fire exists on a scheduled day but off-anchor.
+
+    Wrong-day / unscheduled weekday is *not* late — use scheduled_slot + stamp_fire.
+    """
     if abs(int(delta)) <= int(late_after_seconds):
         return "ok"
     return "late"
@@ -244,6 +291,25 @@ def local_anchor(routine: Routine, day: date) -> datetime:
         tzinfo=routine.tz(),
     )
     return local.astimezone(UTC)
+
+
+def sydney_calendar_date(value: datetime) -> date:
+    """Australia/Sydney calendar date of a timestamptz (ops timezone)."""
+    return in_ops_tz(value).date()
+
+
+def scheduled_slot(routine: Routine, fired_at: datetime) -> tuple[datetime, bool, str]:
+    """Catalog local_time on the fire's local calendar date in the routine timezone.
+
+    Returns (anchor_utc, weekday_ok, local_weekday). Does *not* walk back to the
+    previous scheduled weekday — that mis-keyed Sunday 06:30 AEST onto Friday
+    and classified a ~2d offset as mere ``late``.
+    """
+    fired = as_utc(fired_at)
+    local = fired.astimezone(routine.tz())
+    day = local.date()
+    weekday = WEEKDAY_NAMES[day.weekday()]
+    return local_anchor(routine, day), weekday in routine.weekdays, weekday
 
 
 def anchors_between(routine: Routine, start: datetime, end: datetime) -> tuple[datetime, ...]:
@@ -410,9 +476,39 @@ def load_catalog(root: Path | None = None) -> Catalog:
 
 def completion_from_mapping(row: Mapping[str, Any], *, catalog: Catalog | None = None) -> Completion:
     routine_id = str(row["routine_id"])
-    anchor = parse_utc(str(row["scheduled_anchor_ts"]))
     fired_raw = row.get("fired_at_ts")
     fired = None if fired_raw in (None, "") else parse_utc(str(fired_raw))
+    nested = row.get("payload_json") if isinstance(row.get("payload_json"), dict) else {}
+    exit_raw = row.get("exit_status", nested.get("exit_status") if nested else None)
+    payload_path = row.get("payload_path") or (nested.get("payload_path") if nested else None)
+    cli = row.get("cli") or (nested.get("cli") if nested else None)
+    reason_raw = row.get("reason") or (nested.get("reason") if nested else None)
+    run_id = str(row.get("run_id") or "")
+    source = str(row.get("source") or "fixture")
+    as_of_raw = row.get("as_of_knowledge") or row.get("fired_at_ts") or row.get("scheduled_anchor_ts")
+    if catalog is not None and fired is not None:
+        routine = catalog.by_id().get(routine_id)
+        if routine is not None:
+            return stamp_fire(
+                routine,
+                fired_at=fired,
+                run_id=run_id or f"{routine_id}-{fired.strftime('%Y%m%dT%H%M%SZ')}",
+                as_of_knowledge=parse_utc(str(as_of_raw)) if as_of_raw else fired,
+                source=source,
+                exit_status=None if exit_raw in (None, "") else int(exit_raw),
+                payload_path=None if not payload_path else str(payload_path),
+                cli=None if not cli else str(cli),
+            )
+    if str(row.get("status") or "") == "wrong_anchor":
+        raise WrongAnchorError(
+            {
+                "error": "wrong_anchor",
+                "reason": reason_raw or WRONG_ANCHOR_REASON,
+                "wrote": False,
+                "routine_id": routine_id,
+            }
+        )
+    anchor = parse_utc(str(row["scheduled_anchor_ts"]))
     status = str(row.get("status") or "")
     delta = row.get("delta_seconds")
     late_after = DEFAULT_LATE_AFTER
@@ -430,23 +526,20 @@ def completion_from_mapping(row: Mapping[str, Any], *, catalog: Catalog | None =
         status = "missed"
     if status not in STATUSES:
         raise ValueError(f"unknown heartbeat status {status!r}")
-    as_of = parse_utc(str(row.get("as_of_knowledge") or row.get("fired_at_ts") or row["scheduled_anchor_ts"]))
-    nested = row.get("payload_json") if isinstance(row.get("payload_json"), dict) else {}
-    exit_raw = row.get("exit_status", nested.get("exit_status") if nested else None)
-    payload_path = row.get("payload_path") or (nested.get("payload_path") if nested else None)
-    cli = row.get("cli") or (nested.get("cli") if nested else None)
+    as_of = parse_utc(str(as_of_raw or row["scheduled_anchor_ts"]))
     return Completion(
         routine_id=routine_id,
-        run_id=str(row.get("run_id") or f"{routine_id}-{as_utc(anchor).strftime('%Y%m%dT%H%M%SZ')}"),
+        run_id=run_id or f"{routine_id}-{as_utc(anchor).strftime('%Y%m%dT%H%M%SZ')}",
         scheduled_anchor_ts=anchor,
         fired_at_ts=fired,
         delta_seconds=None if delta is None else int(delta),
         status=status,
         as_of_knowledge=as_of,
-        source=str(row.get("source") or "fixture"),
+        source=source,
         exit_status=None if exit_raw in (None, "") else int(exit_raw),
         payload_path=None if not payload_path else str(payload_path),
         cli=None if not cli else str(cli),
+        reason=None if not reason_raw else str(reason_raw),
     )
 
 
@@ -483,14 +576,101 @@ def load_fixture(path: Path, *, root: Path | None = None) -> tuple[Catalog, tupl
 
 def _index_completions(rows: Iterable[Completion]) -> dict[tuple[str, datetime], Completion]:
     """Best status wins: ok/late/skipped beat missed for the same anchor."""
-    rank = {"ok": 3, "late": 2, "skipped": 1, "missed": 0}
     out: dict[tuple[str, datetime], Completion] = {}
     for row in rows:
         key = (row.routine_id, as_utc(row.scheduled_anchor_ts))
         prev = out.get(key)
-        if prev is None or rank.get(row.status, 0) >= rank.get(prev.status, 0):
+        if prev is None or STATUS_RANK.get(row.status, 0) >= STATUS_RANK.get(prev.status, 0):
             out[key] = row
     return out
+
+
+def parse_baseline_before(raw: str, now: datetime) -> date:
+    """`--baseline-before today` is the Australia/Sydney calendar date of *now*."""
+    text = str(raw).strip()
+    if not text:
+        raise ValueError("baseline-before is empty")
+    if text.lower() == "today":
+        return sydney_calendar_date(now)
+    return date.fromisoformat(text)
+
+
+def resolve_baseline_path(
+    root: Path,
+    override: Path | str | None = None,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> Path:
+    if override:
+        return Path(override)
+    env = environ if environ is not None else os.environ
+    raw = str(env.get(BASELINE_ENV) or "").strip()
+    if raw:
+        return Path(raw)
+    return Path(root) / BASELINE_REL
+
+
+def load_known_missed_baseline(path: Path) -> dict[tuple[str, datetime], dict[str, Any]]:
+    """History is labeled, never deleted. Missing file → empty."""
+    if not path.is_file():
+        return {}
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return {}
+    out: dict[tuple[str, datetime], dict[str, Any]] = {}
+    for raw in data.get("windows") or []:
+        if not isinstance(raw, dict) or not raw.get("routine_id") or not raw.get("scheduled_anchor_ts"):
+            continue
+        routine_id = str(raw["routine_id"])
+        anchor = as_utc(parse_utc(str(raw["scheduled_anchor_ts"])))
+        out[(routine_id, anchor)] = {
+            "routine_id": routine_id,
+            "scheduled_anchor_ts": as_utc(anchor).isoformat(),
+            "window_closed_at": raw.get("window_closed_at"),
+            "incident": raw.get("incident"),
+            "reason": raw.get("reason") or "closed_window_no_completion",
+            "label": raw.get("label") or KNOWN_MISSED_LABEL,
+        }
+    return out
+
+
+def write_known_missed_baseline(
+    path: Path,
+    *,
+    now: datetime,
+    cutoff: date,
+    windows: Iterable[Miss],
+    existing: Mapping[tuple[str, datetime], Mapping[str, Any]] | None = None,
+) -> Path:
+    """Union write. Does not delete prior labeled windows."""
+    merged: dict[tuple[str, datetime], dict[str, Any]] = dict(existing or {})
+    for miss in windows:
+        key = (miss.routine_id, as_utc(miss.scheduled_anchor_ts))
+        merged[key] = {
+            "routine_id": miss.routine_id,
+            "scheduled_anchor_ts": as_utc(miss.scheduled_anchor_ts).isoformat(),
+            "window_closed_at": as_utc(miss.window_closed_at).isoformat(),
+            "incident": miss.incident,
+            "reason": miss.reason,
+            "label": KNOWN_MISSED_LABEL,
+        }
+    rows = [merged[key] for key in sorted(merged, key=lambda item: (item[0], item[1].isoformat()))]
+    payload = {
+        "schema": "mm.scheduler.known_missed_baseline.v1",
+        "as_of_knowledge": as_utc(now).isoformat(),
+        "timezone": str(OPS_TZ),
+        "sydney_date_cutoff": cutoff.isoformat(),
+        "label": KNOWN_MISSED_LABEL,
+        "n_windows": len(rows),
+        "notes": (
+            "Pre-cutoff closed windows labeled known-missed so Monday's miss-check "
+            "is visible. History is labeled, not deleted. SCHED-001 stays OPEN."
+        ),
+        "windows": rows,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    return path
 
 
 def miss_sweep(
@@ -499,20 +679,33 @@ def miss_sweep(
     now: datetime,
     *,
     lookback_days: int | None = None,
+    known_missed: Mapping[tuple[str, datetime], Any] | Iterable[tuple[str, datetime]] | None = None,
+    baseline_before: date | None = None,
+    baseline_path: str | Path | None = None,
 ) -> SweepResult:
     """MERGE-BLOCKING control. Closed window + no completion → miss.
 
     Does not auto-close SCHED-001. Does not treat 'no window yet' as a close.
     created_at is not used to suppress a closed window (Hive timestamps unverified).
+    A refused stamp (wrong weekday) writes no row — silence to the sweep.
+    known-missed / baselined windows are labeled, not deleted, and do not escalate.
     """
     now_u = as_utc(now)
     lookback = int(lookback_days if lookback_days is not None else catalog.lookback_days)
-    indexed = _index_completions(completions)
+    completion_rows = tuple(completions)
+    indexed = _index_completions(completion_rows)
+    known_keys: set[tuple[str, datetime]] = set()
+    if isinstance(known_missed, Mapping):
+        known_keys = {(rid, as_utc(ts)) for rid, ts in known_missed.keys()}
+    elif known_missed is not None:
+        known_keys = {(rid, as_utc(ts)) for rid, ts in known_missed}
     misses: list[Miss] = []
+    labeled: list[Miss] = []
     pending: list[dict[str, Any]] = []
     ok: list[dict[str, Any]] = []
     late: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
+    wrong: list[dict[str, Any]] = []
     checked: list[str] = []
     for routine in catalog.enabled():
         checked.append(routine.routine_id)
@@ -538,32 +731,57 @@ def miss_sweep(
             )
         for anchor in closed:
             hit = indexed.get((routine.routine_id, as_utc(anchor)))
-            if hit is None or hit.status == "missed":
-                closed_at = as_utc(anchor) + timedelta(seconds=routine.miss_after_seconds)
-                misses.append(
-                    Miss(
-                        routine_id=routine.routine_id,
-                        family=routine.family,
-                        scheduled_anchor_ts=anchor,
-                        window_closed_at=closed_at,
-                        incident=routine.incident,
-                        reason="closed_window_no_completion",
-                    )
-                )
+            if hit is not None and hit.status in FIRE_STATUSES:
+                payload = {
+                    "routine_id": routine.routine_id,
+                    "scheduled_anchor_ts": as_utc(anchor).isoformat(),
+                    "status": hit.status,
+                    "delta_seconds": hit.delta_seconds,
+                    "run_id": hit.run_id,
+                }
+                if hit.status == "ok":
+                    ok.append(payload)
+                elif hit.status == "late":
+                    late.append(payload)
+                elif hit.status == "skipped":
+                    skipped.append(payload)
                 continue
-            payload = {
-                "routine_id": routine.routine_id,
-                "scheduled_anchor_ts": as_utc(anchor).isoformat(),
-                "status": hit.status,
+            closed_at = as_utc(anchor) + timedelta(seconds=routine.miss_after_seconds)
+            key = (routine.routine_id, as_utc(anchor))
+            sydney_day = sydney_calendar_date(anchor)
+            is_known = key in known_keys or (baseline_before is not None and sydney_day < baseline_before)
+            row = Miss(
+                routine_id=routine.routine_id,
+                family=routine.family,
+                scheduled_anchor_ts=anchor,
+                window_closed_at=closed_at,
+                incident=routine.incident,
+                reason="closed_window_no_completion",
+                label=KNOWN_MISSED_LABEL if is_known else None,
+            )
+            if is_known:
+                labeled.append(row)
+            else:
+                misses.append(row)
+    seen_wrong: set[tuple[str, datetime]] = set()
+    for hit in completion_rows:
+        if hit.status != "wrong_anchor":
+            continue
+        key = (hit.routine_id, as_utc(hit.scheduled_anchor_ts))
+        if key in seen_wrong:
+            continue
+        seen_wrong.add(key)
+        wrong.append(
+            {
+                "routine_id": hit.routine_id,
+                "scheduled_anchor_ts": as_utc(hit.scheduled_anchor_ts).isoformat(),
+                "fired_at_ts": None if hit.fired_at_ts is None else as_utc(hit.fired_at_ts).isoformat(),
                 "delta_seconds": hit.delta_seconds,
+                "status": hit.status,
+                "reason": hit.reason or WRONG_ANCHOR_REASON,
                 "run_id": hit.run_id,
             }
-            if hit.status == "ok":
-                ok.append(payload)
-            elif hit.status == "late":
-                late.append(payload)
-            elif hit.status == "skipped":
-                skipped.append(payload)
+        )
     return SweepResult(
         now=now_u,
         as_of_knowledge=now_u,
@@ -573,6 +791,10 @@ def miss_sweep(
         late=tuple(late),
         skipped=tuple(skipped),
         routines_checked=tuple(checked),
+        known_missed=tuple(labeled),
+        wrong_anchor=tuple(wrong),
+        baseline_path=None if baseline_path is None else str(baseline_path),
+        baseline_before=None if baseline_before is None else baseline_before.isoformat(),
     )
 
 
@@ -585,9 +807,12 @@ def render_incident_markdown(result: SweepResult) -> str:
         "heartbeat_on_fire: secondary log; this artifact is the check",
         f"escalated: {str(result.escalated).lower()}",
         f"n_missed: {len(result.misses)}",
+        f"n_known_missed: {len(result.known_missed)}",
+        f"n_wrong_anchor: {len(result.wrong_anchor)}",
         "",
         "SCHED-001 stays OPEN until a verified on-anchor fire. This file does not close it.",
         "Do not interpret pending/'no window yet' as a close.",
+        "known-missed windows are labeled (not deleted) and do not occupy n_missed.",
         "",
         "| routine_id | family | scheduled_anchor_ts | window_closed_at | incident | reason |",
         "|---|---|---|---|---|---|",
@@ -600,6 +825,36 @@ def render_incident_markdown(result: SweepResult) -> str:
         )
     if not result.misses:
         lines.append("| — | — | — | — | — | none |")
+    if result.known_missed:
+        lines.extend(
+            [
+                "",
+                "## known-missed (baselined; not escalated)",
+                "",
+                "| routine_id | family | scheduled_anchor_ts | window_closed_at | label |",
+                "|---|---|---|---|---|",
+            ]
+        )
+        for miss in result.known_missed:
+            lines.append(
+                f"| `{miss.routine_id}` | {miss.family} | {as_utc(miss.scheduled_anchor_ts).isoformat()} | "
+                f"{as_utc(miss.window_closed_at).isoformat()} | {miss.label or KNOWN_MISSED_LABEL} |"
+            )
+    if result.wrong_anchor:
+        lines.extend(
+            [
+                "",
+                "## wrong_anchor (not classified as late)",
+                "",
+                "| routine_id | scheduled_anchor_ts | fired_at_ts | delta_seconds | reason |",
+                "|---|---|---|---|---|",
+            ]
+        )
+        for row in result.wrong_anchor:
+            lines.append(
+                f"| `{row['routine_id']}` | {row['scheduled_anchor_ts']} | "
+                f"{row.get('fired_at_ts') or '—'} | {row.get('delta_seconds')} | {row.get('reason')} |"
+            )
     lines.append("")
     return "\n".join(lines) + "\n"
 
@@ -665,19 +920,31 @@ def stamp_fire(
     payload_path: str | None = None,
     cli: str | None = None,
 ) -> Completion:
-    """Secondary log. Not the scheduler check. A failed CLI run is still a fire."""
+    """Secondary log. Not the scheduler check. A failed CLI run is still a fire.
+
+    Anchor is catalog ``local_time`` on the fire's local calendar date in the
+    routine timezone (Australia/Sydney for Hive clocks). If that weekday is not
+    in the catalog, raise ``WrongAnchorError`` and write **no** completion row —
+    never mere ``late`` from walking back to the previous scheduled day.
+    """
     fired = as_utc(fired_at)
-    day = fired.astimezone(routine.tz()).date()
-    weekday = WEEKDAY_NAMES[day.weekday()]
-    if weekday in routine.weekdays:
-        anchor = local_anchor(routine, day)
-    else:
-        # Fall back to most recent weekday anchor at or before fired.
-        cursor = day
-        while WEEKDAY_NAMES[cursor.weekday()] not in routine.weekdays:
-            cursor = cursor - timedelta(days=1)
-        anchor = local_anchor(routine, cursor)
-    delta, status = classify_fire(anchor, fired, routine.late_after_seconds)
+    anchor, weekday_ok, weekday = scheduled_slot(routine, fired)
+    if not weekday_ok:
+        raise WrongAnchorError(
+            {
+                "error": "wrong_anchor",
+                "reason": WRONG_ANCHOR_REASON,
+                "wrote": False,
+                "routine_id": routine.routine_id,
+                "fired_at_ts": fired.isoformat(),
+                "local_weekday": weekday,
+                "scheduled_weekdays": list(routine.weekdays),
+                "would_be_anchor_ts": as_utc(anchor).isoformat(),
+                "note": "no completion row; stamp refused. Silence (no CLI) and failed-CLI fires stay distinct from a successful fire with a bad stamp.",
+            }
+        )
+    delta = delta_seconds(anchor, fired)
+    status = classify_delta(delta, routine.late_after_seconds)
     as_of = as_utc(as_of_knowledge or fired)
     return Completion(
         routine_id=routine.routine_id,
@@ -691,4 +958,5 @@ def stamp_fire(
         exit_status=exit_status,
         payload_path=payload_path,
         cli=cli,
+        reason=None,
     )

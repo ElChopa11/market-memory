@@ -59,6 +59,10 @@ ops/reports/scheduler/incidents/**
 ops/reports/scheduler/completions/**
 !ops/reports/scheduler/completions/README.md
 
+# known-missed baseline (IMP-056). History labeled, not deleted. Do not commit generated YAML.
+ops/reports/scheduler/known-missed-baseline.yaml
+ops/reports/scheduler/known-missed-baseline.yml
+
 # Standalone Phase-1 base-rate bar cache (raw vendor series; not a desk artifact)
 research/base-rates/cache/
 

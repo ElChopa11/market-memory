@@ -54,9 +54,9 @@ def test_queue_ic_attacks_backlog_not_in_progress() -> None:
     for item_id in ("IMP-052", "IMP-053", "IMP-054", "IMP-055"):
         assert any(item_id in line and "BACKLOG" in line for line in board_lines), item_id
         assert not any(item_id in line and "IN_PROGRESS" in line for line in board_lines), item_id
-    assert "`IN_PROGRESS` count: **1** (IMP-047)" in queue
+    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
     assert "Intel depth" in queue
     assert "research sprint" in queue
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-047",)
+    assert report.in_progress == ("IMP-056",)

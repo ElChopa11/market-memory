@@ -21,7 +21,7 @@ Do not commit generated JSON. Postgres table `schedule_heartbeat` is the optiona
 | `fired_at_ts` | Actual fire time (UTC) |
 | `scheduled_anchor_ts` | Catalog anchor |
 | `delta_seconds` | Offset vs anchor (negative = early) |
-| `status` | Timing class: `ok` / `late` (a fire). Not process exit. |
+| `status` | Timing class: `ok` / `late` (a fire). Not process exit. Unscheduled weekday writes **no row** (stamp refused), never `late`. |
 | `exit_status` | CLI process exit (0 or nonzero). Failed is still a fire. |
 | `payload_path` | briefs/ payload if any |
 | `cli` | Invoked command |
@@ -30,7 +30,8 @@ Do not commit generated JSON. Postgres table `schedule_heartbeat` is the optiona
 
 1. CI / fixture clock: `--fixture tests/fixtures/scheduler/ci_clock.yaml` does **not** load this directory (isolated). Pass `--completions-dir` to merge disk rows into a fixture catalog (tests).
 2. Operator / Hive box: `lab schedule miss-check --no-db` loads this directory (and DB unless `--no-db`).
-3. Same `(routine_id, scheduled_anchor_ts)` key as the table. Higher-rank timing status wins (`ok` > `late` > `skipped` > `missed`).
+3. Same `(routine_id, scheduled_anchor_ts)` key as the table. Higher-rank timing status wins (`ok` > `late` > `skipped` > `missed`). A refused wrong-anchor stamp is not a row.
+4. `lab schedule miss-check --baseline-before today` writes `ops/reports/scheduler/known-missed-baseline.yaml` (pre-today Australia/Sydney windows labeled, not deleted).
 
 Hive clocks (catalog in `config/schedules/routines.yaml`):
 
