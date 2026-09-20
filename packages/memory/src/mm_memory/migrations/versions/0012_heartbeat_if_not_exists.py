@@ -1,6 +1,6 @@
-"""Ensure schedule_heartbeat exists + allow wrong_anchor status.
+"""Ensure schedule_heartbeat exists after lab migrate.
 
-Revision ID: 0012_schedule_heartbeat_idempotent
+Revision ID: 0012_heartbeat_if_not_exists
 Revises: 0011_schedule_heartbeat
 Create Date: 2026-09-20
 
@@ -8,6 +8,8 @@ Live boxes reported ProgrammingError: relation "schedule_heartbeat" does not
 exist even after 0011 landed in git (migrate not applied, or revision stamped
 without the table). This revision is safe to re-run: IF NOT EXISTS for table
 and indexes; DROP/ADD for the status check.
+
+Alembic version_num is varchar(32). Revision ids must stay within that.
 """
 
 from __future__ import annotations
@@ -17,13 +19,14 @@ from typing import Sequence, Union
 from alembic import op
 from sqlalchemy import inspect, text
 
-revision: str = "0012_schedule_heartbeat_idempotent"
+revision: str = "0012_heartbeat_if_not_exists"
 down_revision: Union[str, None] = "0011_schedule_heartbeat"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 TABLE = "schedule_heartbeat"
 STATUS_CHECK = "schedule_heartbeat_status_check"
+# CHECK still allows leftover wrong_anchor values; product path does not write them.
 NEW_STATUSES = "('ok','late','missed','skipped','wrong_anchor')"
 OLD_STATUSES = "('ok','late','missed','skipped')"
 

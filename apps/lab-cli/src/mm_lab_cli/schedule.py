@@ -146,9 +146,12 @@ def _load_state(args: Namespace):
             from mm_memory.heartbeat_repository import load_completions
 
             with session_scope(args.dsn or dsn_from_env()) as session:
-                completions = [
-                    completion_from_mapping(row, catalog=catalog) for row in load_completions(session)
-                ]
+                completions = []
+                for row in load_completions(session):
+                    try:
+                        completions.append(completion_from_mapping(row, catalog=catalog))
+                    except (WrongAnchorError, ValueError, KeyError, TypeError):
+                        continue
         except Exception as exc:  # pragma: no cover - optional db
             print(json.dumps({"warn": f"heartbeat load skipped: {exc.__class__.__name__}"}), file=sys.stderr)
     completions = _merge_disk(args, root, catalog, completions)

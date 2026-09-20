@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from mm_desks.completions import load_disk_completions
+from mm_memory.migrate import alembic_head
 from mm_desks.scheduler import (
     WRONG_ANCHOR_REASON,
     WrongAnchorError,
@@ -243,3 +244,19 @@ def test_fixture_clock_stays_isolated_from_baseline(capsys) -> None:
     assert rc == 1
     assert payload["n_known_missed"] == 0
     assert payload["n_missed"] >= 1
+
+
+def test_alembic_revision_ids_fit_version_num_varchar32() -> None:
+    """Alembic version_num is varchar(32). The 0012 long id broke `lab migrate` in CI."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from mm_memory.migrate import MIGRATIONS_DIR
+
+    cfg = Config()
+    cfg.set_main_option("script_location", str(MIGRATIONS_DIR))
+    script = ScriptDirectory.from_config(cfg)
+    for rev in script.walk_revisions():
+        assert len(rev.revision) <= 32, rev.revision
+    head = alembic_head()
+    assert head == "0012_heartbeat_if_not_exists"
+    assert len(head) <= 32
