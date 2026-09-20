@@ -8,5 +8,13 @@ Miss sweep artifacts. Heartbeat-on-fire is a log; these files are the control tr
 | [backfill-2026-09-19.md](backfill-2026-09-19.md) | Configured vs completions since lookback. |
 | `incidents/YYYY-MM-DD-miss.md` | OPEN escalation from `lab schedule miss-check` (generated). |
 | [completions/](completions/) | Hive → lab CLI completion JSON. Miss-check reads these. |
+| `known-missed-baseline.yaml` | Generated. Pre-today (Australia/Sydney) closed windows labeled known-missed. Not deleted. |
 
 SCHED-001 stays OPEN until a verified on-anchor fire. Do not close on “no window yet”.
+
+Operator once (Monday visible, history labeled):
+
+```bash
+uv run lab migrate   # creates schedule_heartbeat if missing
+uv run lab schedule miss-check --baseline-before today --no-db
+```

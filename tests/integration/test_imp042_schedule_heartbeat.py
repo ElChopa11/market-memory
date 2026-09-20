@@ -19,7 +19,7 @@ def test_schedule_heartbeat_migrated(postgres_dsn: str) -> None:
     tables = set(inspect(engine).get_table_names())
     assert "schedule_heartbeat" in tables
     assert current_revision(postgres_dsn) == alembic_head()
-    assert alembic_head() == "0011_schedule_heartbeat"
+    assert alembic_head() == "0012_schedule_heartbeat_idempotent"
     columns = {col["name"] for col in inspect(engine).get_columns("schedule_heartbeat")}
     assert {
         "routine_id",
@@ -65,3 +65,23 @@ def test_persist_idempotent_and_fire_outranks_miss(db_session) -> None:
     assert rows[0]["status"] == "ok"
     assert rows[0]["delta_seconds"] == 120
     assert rows[0]["as_of_knowledge"].startswith("2026-09-18")
+
+
+def test_wrong_anchor_status_persists(db_session) -> None:
+    row = {
+        "routine_id": "grok.sydney_morning",
+        "run_id": "sunday-dry-run",
+        "scheduled_anchor_ts": "2026-09-19T20:30:00+00:00",
+        "fired_at_ts": "2026-09-19T20:30:00+00:00",
+        "delta_seconds": 0,
+        "status": "wrong_anchor",
+        "as_of_knowledge": "2026-09-19T20:30:00+00:00",
+        "source": "lab.cli",
+        "reason": "fired_on_unscheduled_weekday",
+    }
+    persist_heartbeat(db_session, row)
+    db_session.flush()
+    rows = load_completions(db_session)
+    assert len(rows) == 1
+    assert rows[0]["status"] == "wrong_anchor"
+    assert rows[0]["reason"] == "fired_on_unscheduled_weekday"

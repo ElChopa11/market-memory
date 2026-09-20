@@ -28,4 +28,6 @@ uv run lab mesh dry --fixture tests/fixtures/phase5d/frozen_day.json --no-db
 uv run lab mesh channels
 uv run lab base-rate compute --fixture tests/fixtures/phase1_base_rates/panel.json --no-db
 uv run lab schedule miss-check --fixture tests/fixtures/scheduler/ci_clock.yaml --now 2026-09-19T09:49:00Z --no-db
+uv run lab schedule miss-check --baseline-before today --no-db
+uv run lab migrate
 ```

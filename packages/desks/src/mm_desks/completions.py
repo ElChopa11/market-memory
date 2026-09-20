@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Mapping
@@ -20,6 +21,7 @@ from mm_common.time import as_utc, utcnow
 from mm_desks.scheduler import (
     Completion,
     Catalog,
+    STATUS_RANK,
     load_catalog,
     stamp_fire,
     completion_from_mapping,
@@ -72,7 +74,7 @@ def write_completion(record: Completion, *, dest_dir: Path) -> Path:
             existing = completion_from_mapping(json.loads(path.read_text(encoding="utf-8")))
         except (OSError, json.JSONDecodeError, KeyError, ValueError, TypeError):
             existing = None
-        rank = {"ok": 3, "late": 2, "skipped": 1, "missed": 0}
+        rank = STATUS_RANK
         if existing is not None and rank.get(record.status, 0) < rank.get(existing.status, 0):
             return path
     path.write_text(json.dumps(record.canonical(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -151,9 +153,21 @@ def record_cli_completion(
     dest = resolve_completions_dir(root, completions_dir)
     write_completion(record, dest_dir=dest)
     if persist_db:
-        from mm_memory.db import dsn_from_env, session_scope
-        from mm_memory.heartbeat_repository import persist_heartbeat
+        try:
+            from mm_memory.db import dsn_from_env, session_scope
+            from mm_memory.heartbeat_repository import persist_heartbeat
 
-        with session_scope(dsn or dsn_from_env()) as session:
-            persist_heartbeat(session, record.canonical())
+            with session_scope(dsn or dsn_from_env()) as session:
+                persist_heartbeat(session, record.canonical())
+        except Exception as exc:  # disk is the primary log; missing table must not hide the fire
+            print(
+                json.dumps(
+                    {
+                        "warn": "schedule_heartbeat persist skipped; disk completion kept",
+                        "error_class": exc.__class__.__name__,
+                        "hint": "run `lab migrate` so relation schedule_heartbeat exists",
+                    }
+                ),
+                file=sys.stderr,
+            )
     return record

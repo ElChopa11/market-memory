@@ -1,4 +1,4 @@
-"""IMP-047 occupies the single IN_PROGRESS slot; IMP-046 DONE; IMP-048/049/050 BACKLOG."""
+"""IMP-047 is DONE (#73); IMP-056 holds the single IN_PROGRESS slot."""
 
 from __future__ import annotations
 
@@ -9,16 +9,19 @@ from mm_desks.queue import can_start, load_queue
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_queue_imp047_single_thread_046_done_048_049_050_backlog() -> None:
+def test_queue_imp047_done_imp056_slot_048_049_050_backlog() -> None:
     queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
     board_lines = [line for line in queue.splitlines() if line.startswith("| IMP-")]
-    assert any("IMP-047" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-047" in line and "DONE" in line for line in board_lines)
+    assert any("#73" in line for line in board_lines if "IMP-047" in line)
     assert any("IMP-046" in line and "DONE" in line for line in board_lines)
     assert any("#72" in line for line in board_lines if "IMP-046" in line)
+    assert any("IMP-056" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any("IMP-048" in line and "BACKLOG" in line for line in board_lines)
     assert any("IMP-049" in line and "BACKLOG" in line for line in board_lines)
     assert any("IMP-050" in line and "BACKLOG" in line for line in board_lines)
     assert any("IMP-051" in line and "BACKLOG" in line for line in board_lines)
+    assert any("IMP-057" in line and "BACKLOG" in line for line in board_lines)
     assert "TG-BTCUSDC-FALSE-POSITIVE" in queue
     assert "FALSE POSITIVE" in queue
     assert "| **Status** | RETIRED |" in queue
@@ -34,6 +37,7 @@ def test_queue_imp047_single_thread_046_done_048_049_050_backlog() -> None:
     assert "send_enabled" in queue
     assert "per channel" in queue.lower() or "per-channel" in queue.lower()
     assert not any("IMP-046" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-047" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-048" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-049" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-050" in line and "IN_PROGRESS" in line for line in board_lines)
@@ -42,12 +46,13 @@ def test_queue_imp047_single_thread_046_done_048_049_050_backlog() -> None:
     assert not any("IMP-053" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-054" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-055" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert not any("IMP-057" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-044" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-047)" in queue
+    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
     assert (ROOT / "ops" / "plans" / "IMP-047-hybrid-dm-only-send.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-047",)
+    assert report.in_progress == ("IMP-056",)
     assert report.auto_merge is False
     assert report.auto_waive is False
     ok_048, reason_048 = can_start("IMP-048", report)
@@ -62,6 +67,12 @@ def test_queue_imp047_single_thread_046_done_048_049_050_backlog() -> None:
     ok_051, reason_051 = can_start("IMP-051", report)
     assert ok_051 is False
     assert "BACKLOG" in reason_051 or "slot occupied" in reason_051
+    ok_057, reason_057 = can_start("IMP-057", report)
+    assert ok_057 is False
+    assert "BACKLOG" in reason_057 or "slot occupied" in reason_057
     ok_046, reason_046 = can_start("IMP-046", report)
     assert ok_046 is False
     assert "DONE" in reason_046
+    ok_047, reason_047 = can_start("IMP-047", report)
+    assert ok_047 is False
+    assert "DONE" in reason_047
