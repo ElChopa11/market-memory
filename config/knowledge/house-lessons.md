@@ -248,6 +248,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-20 — 160×90 polyline is a thumbnail, not a chart
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-20 |
+| **run_id** | *(none — Principal Option 1; queue-only. Do not invent one.)* |
+| **Desk** | Research (chart sleeve) / Ops |
+| **What happened** | PLAYBOOK `CHART_ARTIFACT` encodes a 160×90 closes-only polyline (`render_png`) with no axes or labels. That image cannot inform a decision; every playbook run still produces one, and the desk then explains it. |
+| **Lesson** | **A 160×90 closes-only polyline with no axes/labels is a thumbnail, not a chart.** Do not treat it as decision evidence. Retirement of stdlib `render_png` is IMP-058 BACKLOG (after Monday 2026-09-21 unattended fire). Later `CHART_ARTIFACT` is TradingView ref + structured levels, not pixels. |
+| **Does not** | Authorise implementing the retirement now. Does not authorise Telegram from Chart. Does not make Chart a publishing desk. Does not occupy IN_PROGRESS. Does not start C-00x. Does not lift the IMP-051 Chart/TV webhook ban. |
+| **Overrides prior** | No — process lesson. Not a literature prior. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).
