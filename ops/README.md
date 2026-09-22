@@ -45,7 +45,7 @@ Hard constraints (same as [AGENTS.md](../AGENTS.md)):
 - SEC EDGAR wire (IMP-024) is **DONE** (#63). CBRS/SPCX lockup formulas persist as observations. `--no-db` = ELIGIBLE only.
 - Phase 1 unconditional base rates (IMP-040) is **DONE** (#66). Candidate strategy intake (IMP-039 / #61) stays **READY**; card status remains `INTAKE_ONLY`. Expand beyond fixture is L2 P1.
 - Desk knowledge base (IMP-041) is **DONE** (#67). Cached prompt prefix. A prior never triggers or sizes.
-- Scheduler miss detector (IMP-042) is **DONE** (#68). Heartbeat-on-fire is a log. **SCHED-001 CLOSED** (run_id `actions-b1-35727756341`). Two clocks: Actions commit-back and Grok Bot app routines (run_id `box-us-pre-20260922T133710Z`). Panel SCHEDULE cron and panel WEBHOOK are dead.
+- Scheduler miss detector (IMP-042) is **DONE** (#68). Heartbeat-on-fire is a log. **SCHED-001 CLOSED** (run_id `actions-b1-35727756341`). Principal 2026-09-22: Grok is a pure clock plus agent wake (run_id `box-us-pre-20260922T133710Z`); Actions is execution; the box is interactive desk work, not a production host. Panel SCHEDULE cron and panel WEBHOOK are dead.
 - Hybrid Step 2 delivery env-file + preflight (IMP-043) is **DONE** (#71). `--no-send` only.
 - Hybrid Step 4 Hive CLI completion rows (IMP-046) is **DONE** (#72).
 - Hybrid Step 5a DM-only live send (IMP-047) is **IN_PROGRESS** (this PR). Hive group / desk pack `--send` stays SEND_FROZEN. `--i-mean-it` alone does not lift the group freeze. Weekly review CLI (IMP-048), Hybrid clock prompt read-back (IMP-049), and per-channel `send_enabled` (IMP-050) are BACKLOG — do not build. Delivery isolation (IMP-044) and per-desk topics vs groups (IMP-045) are BACKLOG — do not build.

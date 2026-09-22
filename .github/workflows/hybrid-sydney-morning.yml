@@ -1,7 +1,10 @@
-# B1 Stage 1 — GitHub Actions clock for grok.sydney_morning.
-# One of two clocks (docs/runbooks/scheduler.md):
-#   Actions = durable stamp commit-back (completions/ only).
-#   Grok Bot app routines = agent-shaped clock + local stamp.
+# B1 Stage 1 — GitHub Actions execution path, stamp only (docs/runbooks/scheduler.md).
+# Principal 2026-09-22: Actions = execution (fetch, brief, deliver; runner runs CLI
+# and commits output). This file is still the Stage 1 stamp. Stage 2 (Principal DM
+# pack) is the next build and is not implemented here.
+# Grok Bot app routines = pure clock + agent wake. Stamp + wake only.
+# No live fetch. No delivery. Degrade-to-dry is permanent.
+# The box is interactive desk work, not a production host.
 # Panel SCHEDULE cron is dead (7 routines, 0 fires).
 # Panel WEBHOOK path is dead (C1 silent).
 # Runs lab CLI on the GitHub runner with --no-db (no Telegram). Stamps a
@@ -13,8 +16,8 @@
 # Off-season dual-cron companion: reason outside_anchor_window, exit 0, no stamp.
 # workflow_dispatch force bypasses that guard.
 #
-# Stage 2 DM send is OUT OF SCOPE. No TELEGRAM_* secrets. GROUP SEND_FROZEN.
-# Paper only. Do not auto-merge.
+# Stage 2 DM send is the right next build and is not implemented in this file.
+# No TELEGRAM_* secrets. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
 
 name: hybrid-sydney-morning
 
