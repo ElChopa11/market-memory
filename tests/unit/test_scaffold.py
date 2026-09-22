@@ -122,6 +122,7 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-043-hybrid-delivery-env.md",
         "ops/plans/IMP-046-hybrid-cli-completions.md",
         "ops/plans/IMP-056-scheduler-chain-defects.md",
+        "ops/plans/IMP-059-c00x-instance-autotrack-detectors.md",
         "docs/runbooks/scheduler.md",
         "ADR/0018-schedule-heartbeat.md",
         "config/schedules/routines.yaml",

@@ -1,4 +1,4 @@
-"""IMP-042 queue hygiene: miss detector DONE #68; SCHED-001 stays OPEN; IMP-047 holds the slot."""
+"""IMP-042 queue hygiene: miss detector DONE #68; SCHED-001 stays OPEN; zero IN_PROGRESS."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def test_queue_imp042_single_thread_sched001_open_imp040_done() -> None:
     assert any("IMP-039" in line and "READY" in line for line in board_lines)
     assert not any("IMP-040" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-039" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     assert "Principal L2 sprint" in queue
     assert "P0 clock" in queue or "P0 clock/heartbeat" in queue or "P0" in queue
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
@@ -29,14 +29,14 @@ def test_queue_imp042_single_thread_sched001_open_imp040_done() -> None:
     assert (ROOT / "ops" / "reports" / "scheduler" / "2026-09-19-sched-001-root-cause.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False
     public = report.as_public_dict()
     assert "SCHED-001" in public["open_incidents"]
     ok, reason = can_start("IMP-039", report)
-    assert ok is False
-    assert "slot occupied" in reason
+    assert ok is True
+    assert "does not write" in reason
 
 
 def test_sched001_is_p0_and_stays_open() -> None:

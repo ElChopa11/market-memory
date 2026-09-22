@@ -149,13 +149,13 @@ def test_queue_imp041_done_does_not_take_implementation_slot() -> None:
     assert not any("IMP-041" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any("IMP-047" in line and "DONE" in line for line in board_lines)
     assert any("IMP-040" in line and "DONE" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
     assert (ROOT / "ops" / "plans" / "IMP-041-desk-knowledge-base.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False
     ok, reason = can_start("IMP-041", report)
