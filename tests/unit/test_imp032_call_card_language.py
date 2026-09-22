@@ -189,8 +189,8 @@ def test_queue_imp031_done_imp032_single_thread_open_incidents() -> None:
     assert not any("IMP-031" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-032" in line and "IN_PROGRESS" in line for line in board_lines)
     in_progress = re.findall(r"\| \*\*Status\*\* \| IN_PROGRESS \|", queue)
-    assert in_progress == ["| **Status** | IN_PROGRESS |"]
-    assert "`IN_PROGRESS` count: **1**" in queue
+    assert in_progress == []
+    assert "`IN_PROGRESS` count: **0**" in queue
     for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
         assert item_id in queue
     assert queue.count("| **Status** | OPEN |") >= 3
