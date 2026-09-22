@@ -204,28 +204,80 @@ jobs:
           BRANCH: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          # Guard: only the stamp JSON under completions/ — never secrets / env files.
+          COMPLETIONS_DIR="ops/reports/scheduler/completions"
+
+          # HARD SCOPE: path must live under completions/ only.
           case "${COMPLETION_PATH}" in
-            ops/reports/scheduler/completions/grok.sydney_morning__*.json) ;;
+            "${COMPLETIONS_DIR}"/grok.sydney_morning__*.json) ;;
             *)
-              echo "::error::refusing to commit unexpected path: ${COMPLETION_PATH}"
+              echo "::error::SCOPE VIOLATION: refusing path outside ${COMPLETIONS_DIR}: ${COMPLETION_PATH}"
               exit 1
               ;;
           esac
           test -f "${COMPLETION_PATH}"
-          # Refuse accidental secret material in the stamp payload.
-          if grep -Eiq 'TELEGRAM_BOT_TOKEN|PRIVATE_KEY|BEGIN (RSA |OPENSSH )?PRIVATE' "${COMPLETION_PATH}"; then
-            echo "::error::completion JSON looks like it contains secrets; refusing commit"
-            exit 1
-          fi
+
+          # Non-secret fields only (routine id, run_id, anchors, delta, exit, source, …).
+          uv run python - <<'PY'
+          import json, os, sys
+          path = os.environ["COMPLETION_PATH"]
+          allowed = {
+              "routine_id", "run_id", "scheduled_anchor_ts", "fired_at_ts",
+              "delta_seconds", "status", "exit_status", "source", "cli",
+              "as_of_knowledge", "payload_path", "payload_json", "reason",
+          }
+          secretish = ("token", "secret", "password", "private_key", "api_key", "telegram")
+          raw = json.loads(open(path, encoding="utf-8").read())
+          if not isinstance(raw, dict):
+              print("::error::completion JSON must be an object", file=sys.stderr)
+              sys.exit(1)
+          bad_keys = [k for k in raw if k not in allowed]
+          if bad_keys:
+              print(f"::error::unexpected completion keys (refuse commit): {bad_keys}", file=sys.stderr)
+              sys.exit(1)
+          for k in raw:
+              if any(s in k.lower() for s in secretish):
+                  print(f"::error::secret-like key in completion JSON: {k}", file=sys.stderr)
+                  sys.exit(1)
+          blob = json.dumps(raw).lower()
+          for needle in ("telegram_bot_token", "begin rsa private", "begin openssh private", "private_key"):
+              if needle in blob:
+                  print(f"::error::secret-like material in completion JSON ({needle})", file=sys.stderr)
+                  sys.exit(1)
+          print("completion JSON field check OK (non-secret only)")
+          PY
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -- "${COMPLETION_PATH}"
-          if git diff --cached --quiet; then
-            echo "No new completion bytes to commit (idempotent re-run)."
+          # HARD SCOPE: git add path-filtered to completions/ ONLY — never the rest of the tree.
+          git add -- "${COMPLETIONS_DIR}/$(basename -- "${COMPLETION_PATH}")"
+          mapfile -t STAGED_ALL < <(git diff --cached --name-only)
+          mapfile -t STAGED_OK < <(git diff --cached --name-only -- "${COMPLETIONS_DIR}/")
+          if [[ "${#STAGED_ALL[@]}" -eq 0 ]]; then
+            echo "No new completion bytes to commit (idempotent re-run; stamp already on branch)."
             exit 0
+          fi
+          if [[ "${#STAGED_ALL[@]}" -ne "${#STAGED_OK[@]}" ]]; then
+            echo "::error::SCOPE VIOLATION: staged files outside ${COMPLETIONS_DIR}:"
+            printf '%s\n' "${STAGED_ALL[@]}"
+            git reset HEAD -- . || true
+            exit 1
+          fi
+          for staged in "${STAGED_ALL[@]}"; do
+            case "${staged}" in
+              "${COMPLETIONS_DIR}/"*.json) ;;
+              *)
+                echo "::error::SCOPE VIOLATION: staged non-JSON or path escape: ${staged}"
+                git reset HEAD -- . || true
+                exit 1
+                ;;
+            esac
+          done
+          if [[ "${#STAGED_ALL[@]}" -ne 1 || "${STAGED_ALL[0]}" != "${COMPLETION_PATH}" ]]; then
+            echo "::error::SCOPE VIOLATION: expected sole staged path ${COMPLETION_PATH}, got:"
+            printf '%s\n' "${STAGED_ALL[@]}"
+            git reset HEAD -- . || true
+            exit 1
           fi
 
           MSG="scheduler(completion): ${ROUTINE_ID} run_id=${RUN_ID} scheduled_for=${SCHEDULED_FOR} actual=${ACTUAL} delta_seconds=${DELTA_SECONDS} status=${STATUS}"
@@ -233,20 +285,20 @@ jobs:
           echo "Commit message: ${MSG}"
           echo "Push target branch: ${BRANCH} (github.ref_name — select PR branch for draft canary)"
 
-          # Retry on non-fast-forward (dual-cron / concurrent canary).
+          # HARD RETRY: non-fast-forward → git pull --rebase → retry. Exhausted → FAIL LOUDLY.
+          # Never exit 0 if the stamp commit did not land on origin (silent drop is the failure class).
           for attempt in 1 2 3 4 5; do
             if git push origin "HEAD:${BRANCH}"; then
-              echo "Pushed completion to origin/${BRANCH}"
+              echo "Pushed completion to origin/${BRANCH} (attempt ${attempt})"
               exit 0
             fi
-            echo "Push failed (attempt ${attempt}); fetch + rebase and retry"
-            git fetch origin "${BRANCH}"
-            if ! git rebase "origin/${BRANCH}"; then
-              git rebase --abort || true
-              sleep $((attempt * 4))
-              continue
+            echo "::warning::push rejected / non-fast-forward (attempt ${attempt}/5); git pull --rebase origin ${BRANCH}"
+            if ! git pull --rebase origin "${BRANCH}"; then
+              echo "::error::git pull --rebase origin ${BRANCH} FAILED on attempt ${attempt}"
+              git rebase --abort 2>/dev/null || true
             fi
-            sleep $((attempt * 2))
+            sleep $((attempt * 3))
           done
-          echo "::error::failed to push completion JSON to ${BRANCH} after retries"
+          echo "::error::STAMP COMMIT-BACK FAILED: completion JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. This is the silent-drop failure class — job FAILS; do not treat the fire as durable."
+          echo "::error::local stamp path: ${COMPLETION_PATH} run_id=${RUN_ID}"
           exit 1

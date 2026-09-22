@@ -26,7 +26,12 @@ def test_hybrid_sydney_morning_workflow_contract() -> None:
     assert "git push" in text
     assert "scheduled_for=" in text
     assert "delta_seconds=" in text
-    assert "non-fast-forward" in text or "rebase" in text
+    assert "git pull --rebase" in text
+    assert "STAMP COMMIT-BACK FAILED" in text
+    assert "SCOPE VIOLATION" in text
+    assert 'git add -- "${COMPLETIONS_DIR}/$(basename -- "${COMPLETION_PATH}")"' in text or (
+        "COMPLETIONS_DIR" in text and "git add --" in text
+    )
     # Artifact is secondary
     assert "actions/upload-artifact" in text
     assert "secondary" in text.lower()
