@@ -262,6 +262,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-22 — Bot box is a container; compose is not deployment
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-22 |
+| **run_id** | *(none — Principal process lesson from consecutive box probes. Do not invent a persist run_id.)* |
+| **Desk** | Ops |
+| **What happened** | Two consecutive Grok Bot boxes were **themselves containers**: PID1=`tini` → `pod-daemon`, overlay filesystem, no systemd, no docker/podman binary, no `docker.sock`. Infrastructure that assumes a local Docker host has **not been available once** on this path. |
+| **Lesson** | Treat the bot box / pod as a container without a nested Docker executor. `docker-compose.yml` is a **local-dev artifact** for a machine that can run Docker — **not** a deployment path for the bot box. Real Memory deployment direction is **managed Postgres + S3-compatible object store** (Neon + Cloudflare R2 decided). Do not treat compose as production. |
+| **Does not** | Wire Neon/R2 in this lesson. Does not invent a persist `run_id`. Does not authorise editing `live.yaml` or committing secrets. Does not invent `config/reference/listings.yaml`. |
+| **Overrides prior** | No — process lesson. Not a literature prior. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).
