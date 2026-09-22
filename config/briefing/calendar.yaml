@@ -1,4 +1,6 @@
-# Macro calendar. v1 is a fixture file; swap source: to a pluggable fetcher later.
+# Frozen pulse fixture (March 2026). Not a live Skeptic gate-5 source.
+# Gate 5 event blackout loads config/macro/event_calendar.yaml only.
+# v1 is a fixture file; swap source: to a pluggable fetcher later.
 source: fixture
 events:
   - when: "2026-03-10T12:30:00+00:00"

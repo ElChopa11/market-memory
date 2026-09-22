@@ -40,6 +40,8 @@ Tiers on every idea: `universe` (sizeable, cluster-capped) / `monitor` (UNSIZED 
 
 NEW_LISTING (`<200` daily bars): tag + `days_of_history`; SMA200 = `n/a (insufficient history: <n> bars)` — never `?` and never a shorter MA. Route to the listings sleeve. Lockup inside horizon = Skeptic (gate 5) blackout. EDGAR formulas for CBRS / SPCX — do **not** assume a flat 180 days. IMP-024 persists those formulas as Memory observations (`as_of_knowledge` + 424B4 provenance; `--no-db` = ELIGIBLE only).
 
+Verified earnings and other `gate5_relevant` events use the same gate. `mm_desks.event_calendar.load_event_calendar` reads [`config/macro/event_calendar.yaml`](../../config/macro/event_calendar.yaml), and `idea_eligible` blocks a candidate when its horizon crosses the event date (`default_horizon_days` when the candidate states none). That file is the only live event calendar the gate reads. `config/briefing/calendar.yaml` stays the frozen pulse fixture. Lockup blackouts stay on `fail_closed_blackout_until` in the monitor file.
+
 ## PLAYBOOK / mesh / delivery
 
 If the frozen-day fixture already lists a PLAYBOOK idea for a name, the row flags `playbook_setup=yes`. Trade math stays on `lab playbook run`. The scan publishes a Research mesh envelope on `desk.research.output` (existing 6a channel).

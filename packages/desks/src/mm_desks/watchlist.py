@@ -31,6 +31,7 @@ from mm_common.time import as_utc
 from mm_desks.envelope import DeskEnvelope, envelope_from_output, stamp_output
 from mm_desks.fixture import load_frozen_day
 from mm_desks.models import FrozenDay, TapeRow
+from mm_desks.event_calendar import event_blackout_reason
 from mm_desks.monitor import (
     ENGINE_VERSION as MONITOR_ENGINE,
     TIER_BLOCKED,
@@ -288,6 +289,7 @@ def _scan_name(
     pod = scan_pod_for(name, n_bars=n_bars)
     eligible, reason = idea_eligible(name, as_of=as_of, repo_root=repo_root)
     lockup = lockup_inside_horizon(name.ticker, as_of, repo_root)
+    event_blackout = event_blackout_reason(name, as_of=as_of, repo_root=repo_root)
     sleeve = _sleeve_for(name)
     notes_parts: list[str] = []
     if name.resolution_status == "unresolved":
@@ -323,6 +325,8 @@ def _scan_name(
         notes_parts.append(f"{name.ticker}: NEW_LISTING; SMA200={sma}; route=listings")
     if lockup:
         notes_parts.append(f"{name.ticker}: lockup inside horizon; gate 5 blackout")
+    if event_blackout:
+        notes_parts.append(f"{name.ticker}: {event_blackout}")
     if name.tier == "monitor" and name.resolution_status == "resolved" and name.tier != TIER_BLOCKED:
         notes_parts.append(UNSIZED_REASON)
     playbook_setup = bool(_tape_keys(name) & playbook_names) and name.resolution_status == "resolved"
