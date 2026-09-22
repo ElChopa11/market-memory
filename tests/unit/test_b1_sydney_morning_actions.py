@@ -42,6 +42,11 @@ def test_hybrid_sydney_morning_workflow_contract() -> None:
     assert "--send" not in text
     assert "--i-mean-it" not in text
     assert "to-principal-dm" not in text
+    # ±900s guard is the module, not inline workflow Python.
+    assert "decide_sydney_morning_anchor" in text
+    assert "mm_desks.sydney_anchor" in text
+    assert "ZoneInfo" not in text
+    assert "MISS_AFTER = 900" not in text
 
 
 def test_completions_are_not_gitignored() -> None:

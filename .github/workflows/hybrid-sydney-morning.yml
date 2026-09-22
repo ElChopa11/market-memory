@@ -1,8 +1,17 @@
-# B1 Stage 1 — permanent invoker after Grok Bot panel schedule proved dead.
+# B1 Stage 1 — GitHub Actions clock for grok.sydney_morning.
+# One of two clocks (docs/runbooks/scheduler.md):
+#   Actions = durable stamp commit-back (completions/ only).
+#   Grok Bot app routines = agent-shaped clock + local stamp.
+# Panel SCHEDULE cron is dead (7 routines, 0 fires).
+# Panel WEBHOOK path is dead (C1 silent).
 # Runs lab CLI on the GitHub runner with --no-db (no Telegram). Stamps a
 # scheduler completion row under ops/reports/scheduler/completions/, commits
 # that JSON back to the branch the workflow ran on (durable for box miss-check),
 # and also upload-artifact as a secondary copy.
+#
+# ±900s Sydney-anchor skip is mm_desks.sydney_anchor (not inline).
+# Off-season dual-cron companion: reason outside_anchor_window, exit 0, no stamp.
+# workflow_dispatch force bypasses that guard.
 #
 # Stage 2 DM send is OUT OF SCOPE. No TELEGRAM_* secrets. GROUP SEND_FROZEN.
 # Paper only. Do not auto-merge.
@@ -63,7 +72,7 @@ jobs:
         run: |
           set -euo pipefail
           uv run python - <<'PY'
-          """Skip off-season dual-cron companion; stamp when within ±900s (or force)."""
+          """Stamp when mm_desks.sydney_anchor says so; skip exits 0 (no stamp)."""
           from __future__ import annotations
 
           import json
@@ -72,15 +81,15 @@ jobs:
           import sys
           from datetime import datetime, timezone
           from pathlib import Path
-          from zoneinfo import ZoneInfo
+
+          from mm_desks.sydney_anchor import decide_sydney_morning_anchor, force_requested
 
           ROOT = Path(".").resolve()
           ROUTINE = "grok.sydney_morning"
-          MISS_AFTER = 900  # catalog miss_after_seconds; Stage-1 tolerance
-          SYD = ZoneInfo("Australia/Sydney")
           now = datetime.now(timezone.utc)
-          local = now.astimezone(SYD)
-          force = os.environ.get("FORCE_STAMP", "false").lower() in {"1", "true", "yes"}
+          force = force_requested(os.environ.get("FORCE_STAMP"))
+          decision = decide_sydney_morning_anchor(now, force=force)
+          print(json.dumps(decision.as_public_dict(), indent=2, sort_keys=True))
           out = Path(os.environ["GITHUB_OUTPUT"])
 
           def write_out(**kwargs: str) -> None:
@@ -88,34 +97,13 @@ jobs:
                   for key, value in kwargs.items():
                       fh.write(f"{key}={value}\n")
 
-          # Weekday Mon–Fri in Sydney matching catalog weekdays.
-          if local.weekday() >= 5 and not force:
-              print(json.dumps({"skip": True, "reason": "weekend_sydney", "local": local.isoformat()}))
+          # outside_anchor_window / weekend_sydney: exit 0, no stamp.
+          # workflow_dispatch force (reason=force) falls through and stamps.
+          if decision.skip:
               write_out(skipped="true")
               sys.exit(0)
 
-          anchor_local = local.replace(hour=6, minute=30, second=0, microsecond=0)
-          anchor = anchor_local.astimezone(timezone.utc)
-          delta = int((now - anchor).total_seconds())
-          within = abs(delta) <= MISS_AFTER
-          if not within and not force:
-              print(
-                  json.dumps(
-                      {
-                          "skip": True,
-                          "reason": "outside_anchor_window",
-                          "delta_seconds": delta,
-                          "miss_after_seconds": MISS_AFTER,
-                          "anchor_utc": anchor.isoformat(),
-                          "now_utc": now.isoformat(),
-                          "note": "dual-cron off-season companion; counterpart cron owns this DST period",
-                      },
-                      indent=2,
-                      sort_keys=True,
-                  )
-              )
-              write_out(skipped="true")
-              sys.exit(0)
+          delta = decision.delta_seconds
 
           run_id = f"actions-b1-{os.environ['GITHUB_RUN_ID']}"
           dest = ROOT / "ops" / "reports" / "scheduler" / "completions"

@@ -276,17 +276,33 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
-## 2026-09-22 — Panel scheduler dead; Actions is the invoker (SCHED-001 CLOSED)
+## 2026-09-22 — Panel SCHEDULE and WEBHOOK dead; SCHED-001 CLOSED on the Actions clock
 
 | Field | Value |
 |---|---|
 | **Date** | 2026-09-22 |
 | **run_id** | `actions-b1-35727756341` |
 | **Desk** | Ops |
-| **What happened** | **SCHED-001 CLOSED** citing GitHub Actions run_id `actions-b1-35727756341`. Job: hybrid-sydney-morning #1 Success ~21s, `stage1-stamp` green. Stamp: commit `857f55c` on `main` by `github-actions[bot]`, path scoped to `ops/reports/scheduler/completions/` only. Routine `grok.sydney_morning`; `scheduled_for` `2026-09-21T20:30:00Z`; actual `2026-09-22T12:32:21Z`; delta `57741s`; status `late` (correct for forced dispatch vs yesterday's anchor). Panel was never a viable invoker: seven routines, two boxes, zero fires, including a webhook path (C1 silent). Fix was not configuration — move execution somewhere that provably runs. Controls belong on the path that executes. B1 Stage 1 (PR #90 merged): Actions cron + durable completion commit-back is the invoker. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action. |
-| **Lesson** | **Panel was never a viable invoker.** Do not keep retuning a dead panel schedule. Fix is not configuration — move execution somewhere that **provably runs**. **Controls belong on the path that executes.** GitHub Actions cron + durable completion commit-back (`ops/reports/scheduler/completions/`) is the invoker for `grok.sydney_morning`. Sibling to the bot-box-as-container lesson (PR #88 — compose is local-dev only). |
-| **Does not** | Authorise Telegram / Hive group send. Does not lift `SEND_FROZEN`. Does not treat forced-dispatch `late` as on-anchor acceptance (next on-anchor is 06:30 Australia/Sydney). Does not reopen Grok/Hive panel as the clock. Does not occupy `IN_PROGRESS` with feature work. |
+| **What happened** | **SCHED-001 CLOSED** citing GitHub Actions run_id `actions-b1-35727756341`. Job: hybrid-sydney-morning #1 Success ~21s, `stage1-stamp` green. Stamp: commit `857f55c` on `main` by `github-actions[bot]`, path scoped to `ops/reports/scheduler/completions/` only. Routine `grok.sydney_morning`; `scheduled_for` `2026-09-21T20:30:00Z`; actual `2026-09-22T12:32:21Z`; delta `57741s`; status `late` (correct for forced dispatch vs yesterday's anchor). Panel SCHEDULE cron is dead (7 routines, 0 fires). Panel WEBHOOK path is dead (C1 silent). Do not retune those two panel paths. Controls belong on a path that provably runs. B1 Stage 1 (PR #90 merged) is the Actions clock: cron + durable completion commit-back for Sydney Morning Stage 1. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action. The same-night sentence that treated Actions as the only working invoker was too broad — the following lesson is the invoker record. |
+| **Lesson** | **Panel SCHEDULE cron and panel WEBHOOK are dead.** Do not keep retuning them. **Controls belong on a path that provably runs.** Actions cron + durable completion commit-back (`ops/reports/scheduler/completions/`) is the durable clock for `grok.sydney_morning`. It is one of two clocks; it is not the only working invoker. Sibling to the bot-box-as-container lesson (PR #88 — compose is local-dev only). |
+| **Does not** | Authorise Telegram / Hive group send. Does not lift `SEND_FROZEN`. Does not treat forced-dispatch `late` as on-anchor acceptance (next on-anchor is 06:30 Australia/Sydney). Does not reopen panel SCHEDULE cron or panel WEBHOOK. Does not occupy `IN_PROGRESS` with feature work. Does not make Actions the only clock (see the two-clock lesson). |
 | **Overrides prior** | Closes incident **SCHED-001** with this `run_id`. Process lessons “Configured is not executed,” “Controls on a path that never executes are not controls,” and “Instrumentation that records only successes cannot detect silence” **still stand** — they are how we got here; they do not keep the incident OPEN. |
+
+---
+
+## 2026-09-22 — Two clocks: Actions commit-back and Grok Bot app routines
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-22 |
+| **run_id** | `box-us-pre-20260922T133710Z` |
+| **Desk** | Ops |
+| **What happened** | The same-night close of SCHED-001 proved the Actions clock (`actions-b1-35727756341`) and then over-generalised it to “panel dead, Actions only.” Precise record, same date: panel SCHEDULE cron is dead (7 routines, 0 fires); panel WEBHOOK path is dead (C1 silent); Grok Bot app routine works — it wakes an agent, the agent runs the CLI, and the stamp lands, proven by run_id `box-us-pre-20260922T133710Z` at `ops/reports/scheduler/completions/grok.us_pre_market__20260922T130000Z.json`; GitHub Actions B1 (`hybrid-sydney-morning`) is the durable commit-back path for Sydney Morning Stage 1 (run_id `actions-b1-*`). Two clocks: (1) Actions = durable stamp commit-back to `main` (`completions/` only); (2) Grok Bot app routines = an agent-shaped clock that can drive the box CLI and a local stamp. Honest limitation on the Grok path: it depends on an agent being awake and on Auto-review allowing the Shell call. On 2026-09-22 US Pre-Market, Auto-review blocked `--live`, so the fire correctly degraded to dry `--no-db` with DQ unavailable. |
+| **Lesson** | **There are two clocks.** Actions is the durable commit-back clock for Sydney Morning Stage 1. Grok Bot app routines are an agent-shaped clock that can run the box CLI and write a local completion stamp. Panel SCHEDULE cron and panel WEBHOOK stay dead. When Auto-review blocks `--live` on a routine-woken agent, the correct behaviour is degrade-to-dry with DQ unavailable (observed). |
+| **Does not** | Authorise Telegram or lift `SEND_FROZEN`. Does not start Stage 2. Does not treat a dry `--no-db` degrade as a live data-quality pass. Does not reopen panel SCHEDULE or panel WEBHOOK. Does not reopen SCHED-001 (the Actions close citing `actions-b1-35727756341` stands). Does not decide the Auto-review question below. |
+| **Overrides prior** | Narrows the same-day lesson “Panel SCHEDULE and WEBHOOK dead; SCHED-001 CLOSED on the Actions clock.” SCHED-001 stays CLOSED on `actions-b1-35727756341`. “Actions is the invoker” does not mean Actions is the only working clock. |
+
+**Auto-review — known constraint, open question for the Principal.** Live fetches from a routine-woken agent can be blocked. Correct behaviour is degrade-to-dry with DQ unavailable (observed 2026-09-22 US Pre-Market, run_id `box-us-pre-20260922T133710Z`). Open question: is Auto-review configurable for this path, or is the path permanently dry-only? If it is permanently dry-only, the Grok path is a clock and nothing more.
 
 ---
 

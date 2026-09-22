@@ -121,7 +121,14 @@ That is the MERGE-BLOCKING control. Heartbeat-on-fire is the log that fills the 
 | delta | `57741s` |
 | status | `late` (correct for forced dispatch vs yesterday's anchor) |
 
-**Invoker finding:** Panel was never a viable invoker: seven routines, two boxes, zero fires, including a webhook path (C1 silent). Fix was not configuration — move execution somewhere that provably runs. Controls belong on the path that executes. B1 Stage 1 (PR #90): Actions cron + durable completion commit-back is the invoker. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action.
+**Invoker record (corrected the same day):** the first close text treated Actions as the only working invoker. That was too broad.
+
+- Panel SCHEDULE cron — dead (7 routines, 0 fires).
+- Panel WEBHOOK path — dead (C1 silent).
+- Grok Bot app routine — works. Wakes an agent; the agent runs the CLI; the stamp lands. Proven 2026-09-22 by run_id `box-us-pre-20260922T133710Z` (`ops/reports/scheduler/completions/grok.us_pre_market__20260922T130000Z.json`). Auto-review blocked `--live` on that US Pre-Market fire, so it correctly degraded to dry `--no-db` with DQ unavailable. Whether Auto-review is configurable for this path is an open Principal question.
+- GitHub Actions B1 (`hybrid-sydney-morning`) — durable commit-back path for Sydney Morning Stage 1 (run_id `actions-b1-*`, this close `actions-b1-35727756341`).
+
+Two clocks: (1) Actions = durable stamp commit-back to `main` (`completions/` only); (2) Grok Bot app routines = agent-shaped clock that can drive the box CLI and a local stamp. Controls belong on a path that provably runs. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action. SCHED-001 stays CLOSED on the Actions run_id.
 
 Close pack: [../incident-closures/20260922-sched-001-actions-invoker-close.md](../incident-closures/20260922-sched-001-actions-invoker-close.md). House lesson: `config/knowledge/house-lessons.md` (2026-09-22).
 
