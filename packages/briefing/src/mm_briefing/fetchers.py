@@ -7,7 +7,7 @@ import io
 import os
 import time
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Protocol
 from urllib.parse import urlencode
 
@@ -20,27 +20,30 @@ from mm_common.http import (
     http_get,
     missing_env_notes,
 )
-from mm_common.time import as_utc, parse_utc
+from mm_common.time import as_utc, from_unix_ms, parse_utc
+from mm_ingest.sources import POLYGON_BASE_URL
 from mm_briefing.models import ASSET_ORDER, AssetPrint, MacroSnapshot, worst_quality
 
+# Pulse slot → preferred live source. Stooq is not primary (SRC-STOOQ-404).
 SLOT_SOURCE = {
-    "ES": "stooq",
-    "NQ": "stooq",
+    "ES": "polygon",
+    "NQ": "polygon",
     "US10Y": "fred",
-    "DXY": "stooq",
-    "CL": "stooq",
-    "VIX": "stooq",
+    "DXY": "polygon",
+    "CL": "polygon",
+    "VIX": "polygon",
     "BTC": "coingecko",
     "ETH": "coingecko",
 }
 
+# Default display names. Live polygon rows override with config labels (ETF proxies).
 ASSET_NAMES = {
-    "ES": "S&P 500 futures",
-    "NQ": "Nasdaq 100 futures",
+    "ES": "SPY ETF (proxy for S&P 500; not ES futures)",
+    "NQ": "QQQ ETF (proxy for Nasdaq-100; not NQ futures)",
     "US10Y": "US 10Y yield",
-    "DXY": "US Dollar Index",
-    "CL": "WTI crude",
-    "VIX": "CBOE Volatility Index",
+    "DXY": "UUP ETF (USD proxy; not DX futures / DXY)",
+    "CL": "USO ETF (WTI oil proxy; not CL futures)",
+    "VIX": "CBOE VIX (structurally unavailable without Cboe entitlement)",
     "BTC": "Bitcoin",
     "ETH": "Ether",
 }
@@ -182,6 +185,10 @@ def live_macro_spec(macro: dict[str, Any]) -> dict[str, Any]:
     if stooq.get("symbols"):
         stooq["enabled"] = True
     live["stooq"] = stooq
+    polygon = dict(live.get("polygon") or {})
+    if polygon.get("symbols") or polygon.get("structural_unavailable"):
+        polygon["enabled"] = True
+    live["polygon"] = polygon
     gecko = dict(live.get("coingecko") or {})
     if gecko.get("ids"):
         gecko["enabled"] = True
@@ -252,9 +259,17 @@ class LiveMacroFetcher:
         owns = self._client is None
         client = self._client or httpx.Client(timeout=timeout)
         try:
+            # Stooq optional canary only (SRC-STOOQ-404). Polygon ETF proxies overwrite
+            # the same slot symbols when both are enabled so Pulse is never stooq-only.
             stooq = live.get("stooq") or {}
             if stooq.get("enabled"):
                 rows, note = self._fetch_stooq(client, stooq, captured=captured)
+                assets.extend(rows)
+                if note:
+                    notes.append(note)
+            polygon = live.get("polygon") or {}
+            if polygon.get("enabled"):
+                rows, note = self._fetch_polygon(client, polygon, captured=captured)
                 assets.extend(rows)
                 if note:
                     notes.append(note)
@@ -358,9 +373,156 @@ class LiveMacroFetcher:
                 f"stooq unavailable (error_class={class_txt}) for {errors} symbol(s): "
                 f"{', '.join(missing)}; no scrape fallback (ToS); "
                 f"attempts<={max_attempts_seen} (retry only timeout/5xx/429). "
-                "See docs/runbooks/market-pulse.md and lab data source-health."
+                "See docs/runbooks/market-pulse.md and lab data source-health. "
+                "SRC-STOOQ-404; prefer polygon ETF proxies."
             )
         return out, note
+
+    def _fetch_polygon(
+        self, client: httpx.Client, spec: dict[str, Any], *, captured: datetime
+    ) -> tuple[list[AssetPrint], str | None]:
+        """Stocks-plan ETF proxies for Pulse slots. Never invent CME futures prints."""
+        env_name = str(spec.get("api_key_env") or "POLYGON_API_KEY")
+        key = self._getenv(env_name)
+        symbols = spec.get("symbols") or {}
+        structural = spec.get("structural_unavailable") or {}
+        base = str(spec.get("base_url") or POLYGON_BASE_URL).rstrip("/")
+        lookback = int(spec.get("lookback_calendar_days") or 10)
+        out: list[AssetPrint] = []
+        note_parts: list[str] = []
+
+        for symbol, meta in structural.items():
+            reason = _polygon_structural_reason(meta)
+            slot = str(symbol).upper()
+            out.append(
+                AssetPrint(
+                    symbol=slot,
+                    name=ASSET_NAMES.get(slot, slot),
+                    last=None,
+                    prior_close=None,
+                    unit="idx",
+                    data_quality="unavailable",
+                    source="polygon",
+                    as_of=captured,
+                    source_url=base,
+                )
+            )
+            note_parts.append(f"polygon structural unavailable for {slot}: {reason}")
+
+        if not symbols:
+            return out, "; ".join(note_parts) if note_parts else None
+
+        if not key:
+            for symbol, meta in symbols.items():
+                slot = str(symbol).upper()
+                label = _polygon_label(slot, meta)
+                out.append(
+                    AssetPrint(
+                        symbol=slot,
+                        name=label,
+                        last=None,
+                        prior_close=None,
+                        unit="usd",
+                        data_quality="unavailable",
+                        source="polygon",
+                        as_of=captured,
+                        source_url=base,
+                    )
+                )
+            note_parts.extend(missing_env_notes(env_name, source="Polygon"))
+            return out, " ".join(note_parts)
+
+        end = captured.date()
+        start = end - timedelta(days=max(lookback, 2))
+        errors = 0
+        missing: list[str] = []
+        classes: list[str] = []
+        for symbol, meta in symbols.items():
+            slot = str(symbol).upper()
+            ticker = _polygon_ticker(meta)
+            label = _polygon_label(slot, meta)
+            if not ticker:
+                errors += 1
+                missing.append(slot)
+                classes.append(ERROR_PARSE)
+                out.append(
+                    AssetPrint(
+                        symbol=slot,
+                        name=label,
+                        last=None,
+                        prior_close=None,
+                        unit="usd",
+                        data_quality="unavailable",
+                        source="polygon",
+                        as_of=captured,
+                        source_url=base,
+                    )
+                )
+                continue
+            path = f"/v2/aggs/ticker/{ticker}/range/1/day/{start.isoformat()}/{end.isoformat()}"
+            url = f"{base}{path}"
+            result = http_get(
+                client,
+                url,
+                params={"adjusted": "true", "sort": "asc", "limit": 15, "apiKey": key},
+                max_attempts=self._max_attempts,
+                sleep=self._sleep,
+                parse_json=True,
+            )
+            if not result.ok:
+                errors += 1
+                missing.append(slot)
+                classes.append(result.error_class)
+                out.append(
+                    AssetPrint(
+                        symbol=slot,
+                        name=label,
+                        last=None,
+                        prior_close=None,
+                        unit="usd",
+                        data_quality="unavailable",
+                        source="polygon",
+                        as_of=captured,
+                        source_url=url,
+                    )
+                )
+                continue
+            payload = result.json_payload if isinstance(result.json_payload, dict) else {}
+            parsed = _parse_polygon_aggs(
+                payload,
+                symbol=slot,
+                label=label,
+                ticker=ticker,
+                captured=captured,
+                source_url=url,
+            )
+            if parsed is None:
+                errors += 1
+                missing.append(slot)
+                classes.append(ERROR_PARSE)
+                out.append(
+                    AssetPrint(
+                        symbol=slot,
+                        name=label,
+                        last=None,
+                        prior_close=None,
+                        unit="usd",
+                        data_quality="unavailable",
+                        source="polygon",
+                        as_of=captured,
+                        source_url=url,
+                    )
+                )
+                continue
+            out.append(parsed)
+        if errors:
+            class_txt = ", ".join(dict.fromkeys(classes)) or "error"
+            note_parts.append(
+                f"polygon unavailable (error_class={class_txt}) for {errors} slot(s): "
+                f"{', '.join(missing)}; ETF proxy only — not CME futures; no invent. "
+                "See docs/runbooks/market-pulse.md (SRC-STOOQ-404)."
+            )
+        return out, "; ".join(note_parts) if note_parts else None
 
     def _fetch_fred(
         self, client: httpx.Client, spec: dict[str, Any], *, captured: datetime
@@ -514,6 +676,81 @@ def _parse_stooq_csv(
         as_of=quote_as_of,
         source_url=source_url,
     )
+
+
+def _parse_polygon_aggs(
+    payload: dict[str, Any],
+    *,
+    symbol: str,
+    label: str,
+    ticker: str,
+    captured: datetime,
+    source_url: str | None = None,
+) -> AssetPrint | None:
+    results = payload.get("results") or []
+    if not isinstance(results, list) or not results:
+        return None
+    bars: list[tuple[datetime, float, float | None]] = []
+    for row in results:
+        if not isinstance(row, dict):
+            continue
+        close = _maybe_float(row.get("c"))
+        if close is None:
+            continue
+        ts = row.get("t")
+        if ts is None:
+            continue
+        try:
+            market_time = from_unix_ms(int(ts))
+        except (TypeError, ValueError):
+            continue
+        opened = _maybe_float(row.get("o"))
+        bars.append((market_time, close, opened))
+    if not bars:
+        return None
+    bars.sort(key=lambda item: item[0])
+    last_time, last, last_open = bars[-1]
+    prior = bars[-2][1] if len(bars) >= 2 else last_open
+    quality = "ok"
+    if (captured.date() - last_time.date()).days > 3:
+        quality = "stale"
+    return AssetPrint(
+        symbol=symbol,
+        name=label,
+        last=last,
+        prior_close=prior,
+        unit="usd",
+        data_quality=quality,
+        source="polygon",
+        open=last_open,
+        as_of=last_time,
+        source_url=source_url,
+    )
+
+
+def _polygon_ticker(meta: Any) -> str:
+    if isinstance(meta, dict):
+        return str(meta.get("ticker") or "").upper().strip()
+    return str(meta or "").upper().strip()
+
+
+def _polygon_label(symbol: str, meta: Any) -> str:
+    if isinstance(meta, dict):
+        label = str(meta.get("label") or "").strip()
+        if label:
+            return label
+        ticker = _polygon_ticker(meta)
+        if ticker:
+            return f"{ticker} ETF (proxy; not {symbol} futures)"
+    return ASSET_NAMES.get(symbol, symbol)
+
+
+def _polygon_structural_reason(meta: Any) -> str:
+    if isinstance(meta, dict):
+        reason = str(meta.get("reason") or "").strip()
+        if reason:
+            return " ".join(reason.split())
+    return "structurally unavailable on configured Polygon plan"
 
 
 def _stooq_quote_time(date_raw: Any, time_raw: Any) -> datetime | None:

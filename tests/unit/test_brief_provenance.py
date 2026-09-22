@@ -32,7 +32,8 @@ def test_missing_cross_asset_slots_are_unavailable_not_omitted() -> None:
     assert {row.slot for row in snap.assets} >= set(REQUIRED_SLOTS)
     assert all(row.data_quality == "unavailable" for row in snap.assets)
     assert snap.by_symbol()["US10Y"].source == "fred"
-    assert snap.by_symbol()["ES"].source == "stooq"
+    assert snap.by_symbol()["ES"].source == "polygon"
+    assert snap.by_symbol()["VIX"].source == "polygon"
 
 
 def test_stale_and_unavailable_appear_in_markdown() -> None:
