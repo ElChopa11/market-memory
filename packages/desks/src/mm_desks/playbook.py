@@ -207,7 +207,12 @@ def run_playbook(
             if row is None:
                 kept.append(idea)
                 continue
-            ok, reason = idea_eligible(row, as_of=as_of, repo_root=repo_root)
+            ok, reason = idea_eligible(
+                row,
+                as_of=as_of,
+                repo_root=repo_root,
+                horizon=idea.get("horizon") or idea.get("horizon_end"),
+            )
             if not ok:
                 notes.append(f"{row.ticker}: idea excluded ({reason})")
                 continue

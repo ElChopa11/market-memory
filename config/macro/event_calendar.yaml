@@ -1,0 +1,32 @@
+# Sole live source for Skeptic gate 5 event blackout (scan + idea eligibility).
+# Lockup blackouts stay on config/watchlist/monitor.yaml (fail_closed_blackout_until).
+# config/briefing/calendar.yaml is the frozen March pulse fixture and is not read here.
+#
+# Provenance: Intel populated this calendar box-local (BB earnings 2026-09-24, Verified).
+# The file was not on main (no Python loaded event_calendar). Principal day order
+# 2026-09-23 P2 brings that Verified row into the repo. No source URL is invented.
+# Paper only. This file must not enable send, promotion, or an LLM.
+version: "2026-09-23"
+owner: intel
+kind: gate5_event_calendar
+paper_only: true
+sole_live_source: true
+send: false
+promote: false
+llm: false
+# Used only when a candidate does not state a horizon. End date is as_of + N calendar days.
+# An event blocks when as_of.date() <= event_date <= end.
+default_horizon_days: 10
+events:
+  - event_id: bb-earnings-2026-09-24
+    ticker: BB
+    qualified_id: NYSE:BB
+    kind: earnings
+    event_date: "2026-09-24"
+    verification: Verified
+    gate5_relevant: true
+    name: BB earnings
+    provenance: >
+      Intel Verified BB (NYSE:BB) earnings date 2026-09-24. Box-local
+      config/macro/event_calendar.yaml was absent from main; this row is that
+      calendar. Principal day order 2026-09-23 P2. Paper only.

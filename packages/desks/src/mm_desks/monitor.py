@@ -2,6 +2,9 @@
 
 Intel owns ticker resolution and lockup watch. Research scans the list and
 must state tier on every idea. Does not promote names into universe.yaml.
+Gate 5 event blackout (earnings and other verified gate5_relevant rows) loads
+config/macro/event_calendar.yaml via mm_desks.event_calendar. Lockup blackout
+still reads fail_closed_blackout_until from this monitor file.
 # Boundary comment: packages here must not import mm_execution (statement form is gated).
 """
 
@@ -16,6 +19,7 @@ from typing import Any
 import yaml
 
 from mm_common.time import as_utc
+from mm_desks.event_calendar import event_blackout_reason
 from mm_desks.universe import (
     MEMBERSHIP_DEFERRED,
     MEMBERSHIP_IN_UNIVERSE,
@@ -279,14 +283,29 @@ def lockup_inside_horizon(ticker: str, as_of: datetime, repo_root: Path) -> bool
     return False
 
 
-def idea_eligible(row: MonitorName, *, as_of: datetime | None, repo_root: Path) -> tuple[bool, str]:
-    """Whether a general (non-listings) idea may be published for this name."""
+def idea_eligible(
+    row: MonitorName,
+    *,
+    as_of: datetime | None,
+    repo_root: Path,
+    horizon: Any = None,
+) -> tuple[bool, str]:
+    """Whether a general (non-listings) idea may be published for this name.
+
+    ``horizon`` is the candidate window (days, ``5d``, or an end date). When it
+    is omitted, the event calendar's ``default_horizon_days`` is the window.
+    A verified gate-5 event blocks when that window crosses the event date.
+    """
     if row.resolution_status == RESOLUTION_UNRESOLVED:
         return False, "unresolved ticker; excluded from ideas"
     if row.tier == TIER_BLOCKED:
         return False, "blocked; state only; never idea/size"
     if as_of is not None and lockup_inside_horizon(row.ticker, as_of, repo_root):
         return False, "lockup inside horizon; gate 5 (Skeptic) blackout"
+    if as_of is not None:
+        event_reason = event_blackout_reason(row, as_of=as_of, repo_root=repo_root, horizon=horizon)
+        if event_reason:
+            return False, event_reason
     if row.new_listing:
         return False, "NEW_LISTING; route to listings sleeve, not general equities scan"
     if row.tier == TIER_MONITOR:
@@ -332,7 +351,12 @@ def net_sized_ideas(
             item["size_policy"] = "none"
             item["reason"] = "not on locked monitor"
             continue
-        ok, reason = idea_eligible(row, as_of=as_of, repo_root=repo_root)
+        ok, reason = idea_eligible(
+            row,
+            as_of=as_of,
+            repo_root=repo_root,
+            horizon=raw.get("horizon") or raw.get("horizon_end"),
+        )
         item["ticker"] = row.ticker
         item["tier"] = row.tier
         item["cluster"] = row.cluster
