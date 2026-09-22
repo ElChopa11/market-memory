@@ -8,6 +8,10 @@ Age is measured in calendar days between the observation date
 (``AssetPrint.as_of`` / FRED observation ``date``) and the brief knowledge
 clock (``as_of_knowledge`` / capture ``as_of``). Never use ``published_at``
 alone as the knowledge clock.
+
+FRED lag is **per-series with a default**: daily series inherit
+``max_calendar_lag_days`` (default 2); monthly / low-cadence series set an
+override so a legitimate 30–45d CPI/NFP print is not falsely stale.
 """
 
 from __future__ import annotations
@@ -19,33 +23,59 @@ from typing import Any, Mapping
 from mm_common.time import as_utc
 from mm_briefing.models import AssetPrint, MacroSnapshot, pulse_quality, worst_quality
 
-# Principal-reasonable default for FRED daily series (e.g. US10Y / DGS10):
+# Principal-reasonable default for FRED *daily* series (e.g. US10Y / DGS10):
 # stale when calendar age exceeds this many days (age > N → stale).
-# T+0 / T+1 / T+2 remain eligible for fresh; T+3+ (weekend+Monday lag) and
-# the US Close 2026-09-22 / as-of 2026-09-18 incident (4d) cannot be fresh.
+# Monthly series must override — a global daily lag would false-stale CPI/NFP.
 DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS = 2
+DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS = 45
 
 # Source keys gated in this PR (Fix 1). Stooq / CoinGecko left unchanged.
 _GATED_SOURCES = frozenset({"fred"})
 
 
 @dataclass(frozen=True)
+class SeriesFreshnessOverride:
+    """Per-series cadence override (Pulse symbol and/or FRED series id)."""
+
+    symbol: str
+    cadence: str
+    max_calendar_lag_days: int
+    fred_series_id: str | None = None
+
+    def matches(self, *, symbol: str | None = None, series_id: str | None = None) -> bool:
+        sym = (symbol or "").strip().upper()
+        sid = (series_id or "").strip().upper()
+        if sym and sym == self.symbol.strip().upper():
+            return True
+        if sid and self.fred_series_id and sid == self.fred_series_id.strip().upper():
+            return True
+        return False
+
+
+@dataclass(frozen=True)
 class SourceFreshnessRule:
-    """Per-source (or per-series) cadence threshold for Pulse quality."""
+    """Per-source default cadence + optional per-series overrides."""
 
     source: str
     cadence: str
     max_calendar_lag_days: int
-    series: tuple[str, ...] = ()
+    series_overrides: tuple[SeriesFreshnessOverride, ...] = ()
 
-    def applies_to(self, *, source: str, symbol: str | None = None) -> bool:
-        if source.strip().lower() != self.source.strip().lower():
-            return False
-        if not self.series:
-            return True
-        if symbol is None:
-            return False
-        return symbol.strip().upper() in {s.upper() for s in self.series}
+    def applies_to(self, *, source: str) -> bool:
+        return source.strip().lower() == self.source.strip().lower()
+
+    def resolve(
+        self, *, symbol: str | None = None, series_id: str | None = None
+    ) -> tuple[str, int]:
+        """Return ``(cadence, max_calendar_lag_days)`` for a series.
+
+        Explicit per-series override wins; otherwise the source default
+        (daily lag for FRED) applies.
+        """
+        for override in self.series_overrides:
+            if override.matches(symbol=symbol, series_id=series_id):
+                return override.cadence, override.max_calendar_lag_days
+        return self.cadence, self.max_calendar_lag_days
 
 
 @dataclass(frozen=True)
@@ -54,11 +84,42 @@ class FreshnessConfig:
 
     rules: tuple[SourceFreshnessRule, ...] = ()
 
-    def rule_for(self, *, source: str, symbol: str | None = None) -> SourceFreshnessRule | None:
+    def rule_for(self, *, source: str) -> SourceFreshnessRule | None:
         for rule in self.rules:
-            if rule.applies_to(source=source, symbol=symbol):
+            if rule.applies_to(source=source):
                 return rule
         return None
+
+    def lag_for(
+        self,
+        *,
+        source: str,
+        symbol: str | None = None,
+        series_id: str | None = None,
+    ) -> tuple[str, int] | None:
+        """Resolved ``(cadence, max_lag)`` or None when source is not gated."""
+        rule = self.rule_for(source=source)
+        if rule is None:
+            return None
+        return rule.resolve(symbol=symbol, series_id=series_id)
+
+
+def default_fred_monthly_overrides() -> tuple[SeriesFreshnessOverride, ...]:
+    """Standing monthly / low-cadence FRED overrides (Pulse symbol keys)."""
+    return (
+        SeriesFreshnessOverride(
+            symbol="CPI",
+            cadence="monthly",
+            max_calendar_lag_days=DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS,
+            fred_series_id="CPIAUCSL",
+        ),
+        SeriesFreshnessOverride(
+            symbol="NFP",
+            cadence="monthly",
+            max_calendar_lag_days=DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS,
+            fred_series_id="PAYEMS",
+        ),
+    )
 
 
 def default_freshness_config() -> FreshnessConfig:
@@ -68,29 +129,78 @@ def default_freshness_config() -> FreshnessConfig:
                 source="fred",
                 cadence="daily",
                 max_calendar_lag_days=DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS,
+                series_overrides=default_fred_monthly_overrides(),
             ),
         )
     )
 
 
+def _parse_series_overrides(
+    raw: Any, *, default_cadence: str, default_lag: int
+) -> tuple[SeriesFreshnessOverride, ...]:
+    if not isinstance(raw, dict) or not raw:
+        return ()
+    out: list[SeriesFreshnessOverride] = []
+    for key, spec in raw.items():
+        symbol = str(key).strip().upper()
+        if not symbol:
+            continue
+        if spec is None or spec is True:
+            # Explicit listing with no override → inherits source default at resolve time.
+            # Still record so operators can see the symbol is acknowledged; lag = default.
+            out.append(
+                SeriesFreshnessOverride(
+                    symbol=symbol,
+                    cadence=default_cadence,
+                    max_calendar_lag_days=default_lag,
+                )
+            )
+            continue
+        if not isinstance(spec, dict):
+            continue
+        # Empty mapping ``US10Y: {}`` → inherit source default.
+        lag_raw = spec.get("max_calendar_lag_days")
+        cadence = str(spec.get("cadence") or default_cadence)
+        lag = int(lag_raw) if lag_raw is not None else default_lag
+        fred_id = spec.get("fred_series_id") or spec.get("series_id")
+        out.append(
+            SeriesFreshnessOverride(
+                symbol=symbol,
+                cadence=cadence,
+                max_calendar_lag_days=lag,
+                fred_series_id=str(fred_id).upper() if fred_id else None,
+            )
+        )
+    return tuple(out)
+
+
 def load_freshness_config(macro: Mapping[str, Any] | None) -> FreshnessConfig:
-    """Parse ``freshness`` from macro.yaml. Missing block → FRED daily default."""
+    """Parse ``freshness`` from macro.yaml. Missing block → FRED daily default + monthly overrides."""
     if not macro:
         return default_freshness_config()
     raw = macro.get("freshness")
     if not isinstance(raw, dict) or not raw:
-        # Prefer nested under live.fred when top-level freshness absent.
         live = macro.get("live") if isinstance(macro.get("live"), dict) else {}
         fred = live.get("fred") if isinstance(live, dict) and isinstance(live.get("fred"), dict) else {}
-        if isinstance(fred, dict) and "max_calendar_lag_days" in fred:
-            lag = int(fred["max_calendar_lag_days"])
+        if isinstance(fred, dict) and (
+            "max_calendar_lag_days" in fred or isinstance(fred.get("freshness_series"), dict)
+        ):
+            lag = int(fred.get("max_calendar_lag_days") or DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS)
+            cadence = str(fred.get("cadence") or "daily")
+            overrides = _parse_series_overrides(
+                fred.get("freshness_series") or fred.get("series_freshness"),
+                default_cadence=cadence,
+                default_lag=lag,
+            )
+            if not overrides:
+                overrides = default_fred_monthly_overrides()
             return FreshnessConfig(
                 rules=(
                     SourceFreshnessRule(
                         source="fred",
-                        cadence=str(fred.get("cadence") or "daily"),
+                        cadence=cadence,
                         max_calendar_lag_days=lag,
-                        series=tuple(str(s) for s in (fred.get("series") or {}).keys()),
+                        series_overrides=overrides,
                     ),
                 )
             )
@@ -109,19 +219,20 @@ def load_freshness_config(macro: Mapping[str, Any] | None) -> FreshnessConfig:
                 lag = DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS
             else:
                 continue
-        series_raw = spec.get("series") or ()
-        if isinstance(series_raw, dict):
-            series = tuple(str(k) for k in series_raw.keys())
-        elif isinstance(series_raw, (list, tuple)):
-            series = tuple(str(s) for s in series_raw)
-        else:
-            series = ()
+        cadence = str(spec.get("cadence") or "daily")
+        overrides = _parse_series_overrides(
+            spec.get("series"),
+            default_cadence=cadence,
+            default_lag=int(lag),
+        )
+        if source_key == "fred" and not overrides:
+            overrides = default_fred_monthly_overrides()
         rules.append(
             SourceFreshnessRule(
                 source=source_key,
-                cadence=str(spec.get("cadence") or "daily"),
+                cadence=cadence,
                 max_calendar_lag_days=int(lag),
-                series=series,
+                series_overrides=overrides,
             )
         )
     if not rules:
@@ -172,17 +283,19 @@ def apply_print_freshness(
     *,
     reference_as_of: datetime,
     config: FreshnessConfig | None = None,
+    series_id: str | None = None,
 ) -> AssetPrint:
     """Recompute ``data_quality`` from age when a gated source rule applies."""
     cfg = config or default_freshness_config()
-    rule = cfg.rule_for(source=row.source, symbol=row.symbol)
-    if rule is None:
+    resolved = cfg.lag_for(source=row.source, symbol=row.symbol, series_id=series_id)
+    if resolved is None:
         return row
+    _cadence, max_lag = resolved
     new_quality = quality_from_observation_age(
         row.data_quality,
         observation_as_of=row.as_of,
         reference_as_of=reference_as_of,
-        max_calendar_lag_days=rule.max_calendar_lag_days,
+        max_calendar_lag_days=max_lag,
     )
     if new_quality == row.data_quality:
         return row

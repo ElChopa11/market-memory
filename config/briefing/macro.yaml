@@ -6,13 +6,35 @@ fixture_path: tests/fixtures/briefing/frozen_day.json
 # Pulse quality vs observation age (not fetch success).
 # Age = calendar days between observation date (FRED `date` / AssetPrint.as_of)
 # and brief as_of_knowledge (capture / session as_of). Never published_at alone.
-# Beyond max_calendar_lag_days → stale (never fresh). See docs/runbooks/market-pulse.md.
+# Beyond the resolved max_calendar_lag_days → stale (never fresh).
+# See docs/runbooks/market-pulse.md.
+#
+# FRED lag is per-series with a default:
+#   - max_calendar_lag_days at the fred: level is the *daily default*
+#   - freshness.fred.series.<SYMBOL> overrides for monthly / low-cadence prints
+#     so CPI/NFP at 30–45d are not falsely stale under the daily rule.
 freshness:
   fred:
     cadence: daily
-    # Principal-reasonable for FRED daily series (US10Y / DGS10): stale when age > 2.
+    # Default for daily FRED (US10Y / DGS10 and any series without an override).
     # Incident 2026-09-22 brief with as-of 2026-09-18 (4d) must not be fresh.
     max_calendar_lag_days: 2
+    series:
+      # Daily — omit lag to inherit the default above (documented explicitly).
+      US10Y:
+        cadence: daily
+        # inherits max_calendar_lag_days: 2
+        fred_series_id: DGS10
+      # Monthly / low-cadence — FRED stamps are often month-start; BLS lag is weeks.
+      # Age ~30–45d must remain eligible for fresh; only past this threshold → stale.
+      CPI:
+        cadence: monthly
+        max_calendar_lag_days: 45
+        fred_series_id: CPIAUCSL
+      NFP:
+        cadence: monthly
+        max_calendar_lag_days: 45
+        fred_series_id: PAYEMS
 
 live:
   enabled: false

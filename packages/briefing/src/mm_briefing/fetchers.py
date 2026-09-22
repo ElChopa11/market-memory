@@ -424,8 +424,13 @@ class LiveMacroFetcher:
             obs_date = values[0].get("date")
             quote_as_of = _date_as_utc(str(obs_date)) if obs_date else captured
             # Quality from observation age vs brief as_of_knowledge — not fetch success.
-            rule = self._freshness.rule_for(source="fred", symbol=str(symbol).upper())
-            max_lag = rule.max_calendar_lag_days if rule else DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS
+            # Per-series lag with daily default (monthly CPI/NFP override in freshness config).
+            resolved = self._freshness.lag_for(
+                source="fred",
+                symbol=str(symbol).upper(),
+                series_id=str(series_id),
+            )
+            max_lag = resolved[1] if resolved else DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS
             quality = "ok" if last is not None else "unavailable"
             quality = quality_from_observation_age(
                 quality,
