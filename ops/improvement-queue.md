@@ -19,7 +19,7 @@ Order of work. This PR is **P0 only**. Do not start P1/P2/P3 here.
 
 | Priority | Work | Status this PR |
 |---|---|---|
-| **P0** | Scheduler chain defects before Monday 06:30 AEST. Hive group stays frozen. SCHED-001 stays OPEN. | IMP-056 this thread (IMP-047 DONE #73; IMP-046 DONE #72; IMP-042 DONE #68). Pack envelope/provenance on `--from-markdown` is IMP-057 BACKLOG — do not block Monday. Retire `render_png` / CHART_ARTIFACT = TV ref + structured levels is IMP-058 BACKLOG — after Monday 2026-09-21 unattended fire; not Monday-critical. IMP-049/050/051 stay BACKLOG. |
+| **P0** | Scheduler chain defects before Monday 06:30 AEST. Hive group stays frozen. SCHED-001 CLOSED (`actions-b1-35727756341`). | IMP-056 this thread (IMP-047 DONE #73; IMP-046 DONE #72; IMP-042 DONE #68). Pack envelope/provenance on `--from-markdown` is IMP-057 BACKLOG — do not block Monday. Retire `render_png` / CHART_ARTIFACT = TV ref + structured levels is IMP-058 BACKLOG — after Monday 2026-09-21 unattended fire; not Monday-critical. IMP-049/050/051 stay BACKLOG. |
 | **P1** | Phase-1 Memory rates — expand if #66 is fixture-only | IMP-040 DONE (#66). Expansion is later. |
 | **P2** | Instance ledger | not this PR |
 | **P3** | Truth-in-repo (source-health regen / desk naming / Telegram inventory). `SRC-object_store` is a named OPEN **DOWN SERVICE** on the services/infrastructure list — not a missing-env credential item. | not this PR |
@@ -34,7 +34,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 
 ## Active / seeded items
 
-### SCHED-001 — Sydney 08:00 digest never fired
+### SCHED-001 — Sydney 08:00 digest never fired → CLOSED (Actions invoker)
 
 | Field | Value |
 |---|---|
@@ -43,16 +43,16 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Scheduler reliability |
 | **Desk** | Ops |
 | **Owner** | Ops |
-| **Problem** | Sydney 08:00 digest was configured and never fired. Weekday windows existed. NY-cron sibling briefs completed. Root cause still unexplained. |
-| **Evidence** | Routine `sydney-morning-digest-8am` NEVER RUN. Report: [reports/scheduler/2026-09-19-sched-001-root-cause.md](reports/scheduler/2026-09-19-sched-001-root-cause.md). Lab yaml never contained a Sydney 08:00 job; no GitHub cron; no compose worker. Grok Bot is the only cited executor. Do **not** close on “no window yet”. Do not treat 06:30 / Fri 17:00 calendar hypothesis as this ticket. |
-| **Proposed outcome** | Miss detector escalates closed-window-without-completion (the check that would have caught this). Verified on-anchor fire still required to close. |
-| **Definition of done** | Root cause recorded (unexplained is an allowed cause). Miss sweep shipped. Job either fires on a verified Sydney 08:00 (or successor) window or the miss stays OPEN with a standing control. Still OPEN until a verified on-anchor fire. |
-| **Non-goals** | Closing on config-exists-therefore-done; closing on pending/next-window; live trading; P1 base-rate expansion; canaries. |
-| **Dependencies** | IMP-042 (miss detector). |
-| **Risk level** | High (missed Principal digest; clock is not true). |
-| **Status** | OPEN |
-| **PR** | *(IMP-042 this PR — evidence only; does not close)* |
-| **Lesson learned** | *(open — do not close)* |
+| **Problem** | Sydney 08:00 digest (successor: `grok.sydney_morning` 06:30 Australia/Sydney) was configured and never fired. Weekday windows existed. NY-cron sibling briefs completed. Grok Bot panel was never a viable invoker. |
+| **Evidence** | **CLOSED** citing run_id `actions-b1-35727756341`. Job hybrid-sydney-morning #1 Success ~21s, `stage1-stamp` green. Stamp commit `857f55c` on `main` by `github-actions[bot]` (path scoped to `ops/reports/scheduler/completions/` only). Routine `grok.sydney_morning`; `scheduled_for` `2026-09-21T20:30:00Z`; actual `2026-09-22T12:32:21Z`; delta `57741s`; status `late` (correct for forced dispatch vs yesterday's anchor). Completion: [reports/scheduler/completions/grok.sydney_morning__20260921T203000Z.json](reports/scheduler/completions/grok.sydney_morning__20260921T203000Z.json). Historical root cause: [reports/scheduler/2026-09-19-sched-001-root-cause.md](reports/scheduler/2026-09-19-sched-001-root-cause.md). Close pack: [reports/incident-closures/20260922-sched-001-actions-invoker-close.md](reports/incident-closures/20260922-sched-001-actions-invoker-close.md). House lesson: [config/knowledge/house-lessons.md](../config/knowledge/house-lessons.md) (2026-09-22 panel scheduler dead). |
+| **Proposed outcome** | Miss detector remains the standing control. Invoker is GitHub Actions cron + durable completion commit-back (B1 Stage 1, PR #90). Panel is not the clock. |
+| **Definition of done** | Met: observed fire with readable in-repo completion row citing `actions-b1-35727756341`. Next on-anchor test is 06:30 Australia/Sydney without Principal action (forced-dispatch `late` is not that test). |
+| **Non-goals** | Closing on config-exists-therefore-done; treating panel retune as the fix; live trading / Telegram send; lifting `SEND_FROZEN`; P1 base-rate expansion. |
+| **Dependencies** | IMP-042 DONE (#68); IMP-046 DONE (#72); B1 Stage 1 DONE (#90). |
+| **Risk level** | High (historical). Closed with durable Actions path. |
+| **Status** | CLOSED |
+| **PR** | Close: this docs PR. Invoker: [#90](https://github.com/ElChopa11/market-memory/pull/90). Miss detector: [#68](https://github.com/ElChopa11/market-memory/pull/68). |
+| **Lesson learned** | Panel was never a viable invoker (seven routines, two boxes, zero fires, including webhook C1 silent). Fix was not configuration — move execution somewhere that provably runs. Controls belong on the path that executes. Actions cron + durable completion commit-back is that path. |
 
 ### BRIEF-TAG-20260918 — Fri 18 Sep pre-market fired ~90m pre-open
 
@@ -1403,7 +1403,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-039 | Quant | QUANT | READY | [#61](https://github.com/ElChopa11/market-memory/pull/61) Candidate strategy intake C-001/C-002/C-003; studies parked (INTAKE_ONLY); IMP-040 pack exists (#66) |
 | IMP-040 | Quant | Quant | DONE | [#66](https://github.com/ElChopa11/market-memory/pull/66) Phase 1 unconditional event-class base rates (fixture). Expand is P1. |
 | IMP-041 | Ops | Ops / Principal | DONE | [#67](https://github.com/ElChopa11/market-memory/pull/67) Desk knowledge base `config/knowledge/` |
-| IMP-042 | Ops | Ops | DONE | [#68](https://github.com/ElChopa11/market-memory/pull/68) Miss detector (clock control). SCHED-001 stays OPEN. |
+| IMP-042 | Ops | Ops | DONE | [#68](https://github.com/ElChopa11/market-memory/pull/68) Miss detector (clock control). SCHED-001 later CLOSED on `actions-b1-35727756341` (#90 invoker). |
 | IMP-043 | Ops | Ops | DONE | [#71](https://github.com/ElChopa11/market-memory/pull/71) Hybrid Step 2: delivery env-file + full-state preflight. `--no-send` only. |
 | IMP-044 | Ops | Ops | BACKLOG | Delivery binary under separate user or own container (hard isolation). Do not build now. |
 | IMP-045 | Ops | Principal / Ops | BACKLOG | Per-desk via forum topics vs separate groups. Not before step 5. |
@@ -1421,16 +1421,21 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-057 | Ops | Ops | BACKLOG | Pack `--from-markdown` lacks 6c-3 structured envelope/provenance/gaps. Queue, do not block Monday. |
 | IMP-058 | Research (chart sleeve) | Research / Ops | BACKLOG | Retire stdlib `render_png`. CHART_ARTIFACT = TV ref + structured levels. After Monday 2026-09-21 unattended fire. Not Monday-critical. Do not build now. |
 
-`IN_PROGRESS` count: **1** (IMP-056). IMP-047 is `DONE` (#73). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043, IMP-046–IMP-047 are `DONE`. IMP-044/045/048/049/050/051/052/053/054/055/057/058 stay BACKLOG. OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Scheduler chain defects this PR; Hive group stays frozen. Prompt-body drift watch, per-channel `send_enabled`, and publisher inventory are queued, not built. Pack envelope/provenance (IMP-057) is queued, not blocking Monday. Retire `render_png` (IMP-058) is queued, after Monday 2026-09-21 unattended fire. IC Attack 5+A8 FIX ORDER is docs/report-only and does not occupy the slot.
+`IN_PROGRESS` count: **1** (IMP-056). IMP-047 is `DONE` (#73). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043, IMP-046–IMP-047 are `DONE`. IMP-044/045/048/049/050/051/052/053/054/055/057/058 stay BACKLOG. OPEN incidents: BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). **CLOSED:** SCHED-001 (run_id `actions-b1-35727756341`). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). Single implementation thread. Scheduler chain defects this PR; Hive group stays frozen. Prompt-body drift watch, per-channel `send_enabled`, and publisher inventory are queued, not built. Pack envelope/provenance (IMP-057) is queued, not blocking Monday. Retire `render_png` (IMP-058) is queued, after Monday 2026-09-21 unattended fire. IC Attack 5+A8 FIX ORDER is docs/report-only and does not occupy the slot.
 
 **OPEN incidents — sources / clock / scorecard** (not a missing-env credentials close list)
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
-| SCHED-001 | Ops | Ops | OPEN | P0. Sydney 08:00 digest never fired. Do not close on "no window yet". |
 | BRIEF-TAG-20260918 | Ops / Quant scorecard | Ops/Quant | OPEN | 18 Sep pack ~90m pre-open vs 30m anchor |
 | SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive; evaluation 2026-09-18 rejects scrape — lawful proxy is not ES/NQ futures |
 | SRC-FRED-MISSING-ENV | Ops | Ops | OPEN | **environment-propagation** (config present, run env absent). 2026-09-19 Don audit: `FRED_API_KEY` on card+process env. Prior CLOSED persist pack retained: run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only. Do not close as key-absent. |
+
+**CLOSED — clock / invoker** (not OPEN; durable Actions path)
+
+| ID | Desk | Owner | Status | Notes |
+|---|---|---|---|---|
+| SCHED-001 | Ops | Ops | CLOSED | run_id `actions-b1-35727756341`. hybrid-sydney-morning #1 Success ~21s; stamp `857f55c` on `main` (completions/ only). Panel never viable; Actions cron + commit-back is the invoker (#90). |
 
 **OPEN incidents — services / infrastructure** (not a missing-env credentials list)
 
@@ -1494,7 +1499,7 @@ Quant RESEARCH_PRIORITY pass on locked membership was a Gap; it is now **IMP-008
 
 Phase 5 desk/delivery architecture is **IMP-009 DONE** (#40). Polygon equities + HL structure is **IMP-010 DONE** (#41). Quant factor library is **IMP-011 DONE** (#42). Desk runners are **IMP-012 DONE** (#43). Telegram delivery is **IMP-013 DONE** (#44). Phase 6a PG NOTIFY mesh is **IMP-014 DONE** (#45). Phase 6b flow+macro+regime is **IMP-015 DONE** (#46). Phase 6c PLAYBOOK + fan-out is **IMP-016 DONE** (#47). Phase 6c-1 five-desk roster is **IMP-018 DONE** (#49). Phase 6c-2 naming layer is **IMP-019 DONE** (#51). Phase 6c-4 watchlist monitor is **IMP-020 DONE** (#52). Phase 6c-5 delivery expansion is **IMP-021 DONE** (#53). Phase 6d listings/IPO is **IMP-017 DONE** (#54). Phase 6e scorecards + queue automation is **IMP-030 DONE** (#55). Phase 6f decay-watch is **IMP-031 DONE** (#56). Call-card vs Quant SoT language alignment is **IMP-032 DONE** (#57). Canonical watchlist monitor.yaml is **IMP-033 DONE** (#59). Ticker resolutions + `licence_verdict` schema are **IMP-034 DONE** (#60). FRED full-stack is **IMP-022 DONE** (run_id `fred-fullstack-20260919-101938-aest`). SEC EDGAR wire is **IMP-024 DONE** (#63). Candidate strategy intake + Quant validation studies is **IMP-039 READY** (#61). Phase 1 unconditional base rates are **IMP-040 DONE** (#66). Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 DONE** (#72). Hybrid Step 5a DM-only send is **IMP-047 DONE** (#73). Scheduler chain defects are **IMP-056 IN_PROGRESS**. Pack `--from-markdown` envelope/provenance/gaps is **IMP-057 BACKLOG**. Retire stdlib `render_png` / CHART_ARTIFACT = TV ref + structured levels is **IMP-058 BACKLOG** (after Monday 2026-09-21 unattended fire; not Monday-critical). Weekly review CLI is **IMP-048 BACKLOG**. Hybrid clock prompt canonical copies + server read-back is **IMP-049 BACKLOG**. Per-channel `send_enabled` config gate is **IMP-050 BACKLOG**. Publisher inventory / desk-bot removal / Chart–TradingView webhook ban / panel reconcile is **IMP-051 BACKLOG**.
 
-Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-stack DONE → **IMP-024** EDGAR DONE (#63) → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036**–**038** BACKLOG. Phase 1 base rates are **IMP-040 DONE** (#66). Candidate intake is **IMP-039 READY** (#61); cards stay INTAKE_ONLY. Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 DONE** (#72). Hybrid Step 5a DM-only send is **IMP-047 DONE** (#73). Scheduler chain defects are **IMP-056 IN_PROGRESS**. Pack `--from-markdown` envelope/provenance/gaps is **IMP-057 BACKLOG**. Retire stdlib `render_png` / CHART_ARTIFACT = TV ref + structured levels is **IMP-058 BACKLOG** (after Monday 2026-09-21 unattended fire; not Monday-critical). Weekly review CLI is **IMP-048 BACKLOG**. Hybrid clock prompt canonical copies + server read-back is **IMP-049 BACKLOG**. Per-channel `send_enabled` config gate is **IMP-050 BACKLOG**. Publisher inventory / desk-bot removal / Chart–TradingView webhook ban / panel reconcile is **IMP-051 BACKLOG**. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is OPEN (environment-propagation; prior CLOSED pack cited). SRC-OBJECT-STORE is OPEN (DOWN SERVICE). TG-UNGATED-PRE-HYBRID is OPEN (pre-Hybrid Telegram **ungated**). SCHED-001 stays OPEN.
+Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-stack DONE → **IMP-024** EDGAR DONE (#63) → **IMP-035** treasury.gov READY → **IMP-023** Binance vision AU READY → **IMP-036**–**038** BACKLOG. Phase 1 base rates are **IMP-040 DONE** (#66). Candidate intake is **IMP-039 READY** (#61); cards stay INTAKE_ONLY. Desk knowledge base is **IMP-041 DONE** (#67). Scheduler miss detector is **IMP-042 DONE** (#68). Hybrid Step 2 is **IMP-043 DONE** (#71). Hybrid Step 4 is **IMP-046 DONE** (#72). Hybrid Step 5a DM-only send is **IMP-047 DONE** (#73). Scheduler chain defects are **IMP-056 IN_PROGRESS**. Pack `--from-markdown` envelope/provenance/gaps is **IMP-057 BACKLOG**. Retire stdlib `render_png` / CHART_ARTIFACT = TV ref + structured levels is **IMP-058 BACKLOG** (after Monday 2026-09-21 unattended fire; not Monday-critical). Weekly review CLI is **IMP-048 BACKLOG**. Hybrid clock prompt canonical copies + server read-back is **IMP-049 BACKLOG**. Per-channel `send_enabled` config gate is **IMP-050 BACKLOG**. Publisher inventory / desk-bot removal / Chart–TradingView webhook ban / panel reconcile is **IMP-051 BACKLOG**. Paid items IMP-027–029 stay BACKLOG / Principal-gated. OPEN Stooq stays OPEN. SRC-FRED-MISSING-ENV is OPEN (environment-propagation; prior CLOSED pack cited). SRC-OBJECT-STORE is OPEN (DOWN SERVICE). TG-UNGATED-PRE-HYBRID is OPEN (pre-Hybrid Telegram **ungated**). **SCHED-001 is CLOSED** (run_id `actions-b1-35727756341`).
 
 ## Reconciliation notes
 
@@ -1529,4 +1534,5 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - Principal 2026-09-20 Option 1: retire stdlib `render_png` is **IMP-058 BACKLOG**. 160×90 closes-only polyline is a thumbnail, not a chart. Land behind Monday 2026-09-21 unattended fire. Not Monday-critical. Queue-only this PR. No Telegram. No C-00x.
 - Principal FIX ORDER after IC #79: Attack 5 + A8 landed as report/process (instrument-own hurdle; median headlines). Attack A9 **CLOSED stale** vs #81. Queued, not built: IMP-052 (Attack 3, after Sunday dry run), IMP-053 (Attack 2, after dry run; PIT = Intel), IMP-054 (Attack 6 DEFER — Intel depth), IMP-055 (Attack 1 DEFER — research sprint). Does not occupy the IMP-047 slot. IC FAIL intact.
 - BTCUSDC.P GrokBot sighting is **TG-BTCUSDC-FALSE-POSITIVE RETIRED** (FALSE POSITIVE). Working-thread, not Telegram. Hive No Results. Membership: Principal + one human + delivery bot only. Freeze was never incomplete. Prior control-boundary lesson kept (repo-invocation inventory is structurally incomplete).
+- **SCHED-001 CLOSED** 2026-09-22 citing run_id `actions-b1-35727756341` (hybrid-sydney-morning #1 Success ~21s; stamp commit `857f55c` on `main`, completions/ only). Panel never a viable invoker; Actions cron + durable commit-back is the invoker (#90). House lesson appended. Forced-dispatch `late` is correct; next on-anchor is 06:30 Australia/Sydney. Docs/status close only — do not merge unless asked.
 - Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 DONE / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.
