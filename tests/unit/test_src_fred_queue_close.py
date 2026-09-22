@@ -63,7 +63,7 @@ def test_src_fred_reopened_env_propagation_imp022_done() -> None:
         assert item_id in queue
     assert "DOWN SERVICE" in queue
     assert "**ungated**" in queue
-    assert queue.count("| **Status** | OPEN |") == 6
+    assert queue.count("| **Status** | OPEN |") == 5
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
@@ -73,11 +73,14 @@ def test_src_fred_reopened_env_propagation_imp022_done() -> None:
     assert report.auto_waive is False
     public = report.as_public_dict()
     assert "SRC-STOOQ-404" in public["open_incidents"]
-    assert "SCHED-001" in public["open_incidents"]
+    assert "SCHED-001" not in public["open_incidents"]
     assert "BRIEF-TAG-20260918" in public["open_incidents"]
     assert "SRC-FRED-MISSING-ENV" in public["open_incidents"]
     assert "SRC-OBJECT-STORE" in public["open_incidents"]
     assert "TG-UNGATED-PRE-HYBRID" in public["open_incidents"]
+    sched = next(item for item in report.items if item.item_id == "SCHED-001")
+    assert sched.status == "CLOSED"
+    assert "actions-b1-35727756341" in " ".join(sched.fields.values())
     fred = next(item for item in report.items if item.item_id == "SRC-FRED-MISSING-ENV")
     assert fred.status == "OPEN"
     assert "environment-propagation" in " ".join(fred.fields.values()).lower()

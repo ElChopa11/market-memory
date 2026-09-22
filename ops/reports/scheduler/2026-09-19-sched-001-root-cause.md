@@ -104,3 +104,24 @@ Miss sweep still treats a *closed* 06:30 or Friday 17:00 window without a comple
 `lab schedule miss-check` on a clock after Friday 08:00 AEST + 900s, with no completion row for `grok.sydney_morning_digest_8am` → exit 1 + `ops/reports/scheduler/incidents/YYYY-MM-DD-miss.md`.
 
 That is the MERGE-BLOCKING control. Heartbeat-on-fire is the log that fills the completion row when something actually runs.
+
+---
+
+## Closure (2026-09-22) — do not rewrite the history above
+
+**SCHED-001 CLOSED** citing run_id `actions-b1-35727756341`.
+
+| Fact | Value |
+|---|---|
+| Job | hybrid-sydney-morning #1 Success ~21s, `stage1-stamp` green |
+| Stamp | commit `857f55c` on `main` by `github-actions[bot]`; path scoped to `ops/reports/scheduler/completions/` only |
+| Routine | `grok.sydney_morning` |
+| scheduled_for | `2026-09-21T20:30:00Z` |
+| actual | `2026-09-22T12:32:21Z` |
+| delta | `57741s` |
+| status | `late` (correct for forced dispatch vs yesterday's anchor) |
+
+**Invoker finding:** Panel was never a viable invoker: seven routines, two boxes, zero fires, including a webhook path (C1 silent). Fix was not configuration — move execution somewhere that provably runs. Controls belong on the path that executes. B1 Stage 1 (PR #90): Actions cron + durable completion commit-back is the invoker. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action.
+
+Close pack: [../incident-closures/20260922-sched-001-actions-invoker-close.md](../incident-closures/20260922-sched-001-actions-invoker-close.md). House lesson: `config/knowledge/house-lessons.md` (2026-09-22).
+

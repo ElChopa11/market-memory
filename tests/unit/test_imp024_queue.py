@@ -32,7 +32,7 @@ def test_queue_imp022_done_edgar_single_thread_stooq_open() -> None:
         "TG-UNGATED-PRE-HYBRID",
     ):
         assert item_id in queue
-    assert queue.count("| **Status** | OPEN |") == 6
+    assert queue.count("| **Status** | OPEN |") == 5
     assert "http_404" in queue
     assert "SRC-STOOQ-404" in queue
     assert RUN_ID in queue

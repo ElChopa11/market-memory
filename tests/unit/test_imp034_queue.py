@@ -39,7 +39,7 @@ def test_queue_imp033_done_fred_single_thread_open_incidents() -> None:
         "TG-UNGATED-PRE-HYBRID",
     ):
         assert item_id in queue
-    assert queue.count("| **Status** | OPEN |") == 6
+    assert queue.count("| **Status** | OPEN |") == 5
     assert "http_404" in queue
     assert "--no-db" in queue
     assert "ELIGIBLE" in queue
