@@ -84,3 +84,41 @@ Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hyb
 | After merge | `schedule` on default branch | `main` |
 
 Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft → leave `force` true.
+
+## B1 Stage 2 PREP — Actions Principal DM pack (DRAFT — do not run)
+
+**Do not run until Principal approves** this diff and the Actions secret names below. Do not `workflow_dispatch` with `i_mean_it_stage2=true` until then. Paper only. GROUP SEND_FROZEN stays.
+
+Stage 2 is a **separate job** (`stage2-principal-dm-pack`) on the same workflow file. Stage 1 heartbeat path is unchanged. Stage 2 never runs on `schedule` — only `workflow_dispatch` when input `i_mean_it_stage2` is explicitly `true` (default **false** so accidental Run workflow cannot send).
+
+### Secret names (NAMES ONLY — never invent values)
+
+| Actions secret name | Purpose | Notes |
+|---|---|---|
+| `TELEGRAM_BOT_TOKEN` | Actions-only **second** bot token | Separate blast radius from box `/home/box/agent-data/delivery/telegram.env`. Not the Grok Secrets card. |
+| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | Principal private DM chat id | Required for `--to-principal-dm`. |
+| `TELEGRAM_CHAT_ID` | **Must remain UNSET** in Actions | Hive group. Never wire this secret into Stage 2. GROUP SEND_FROZEN — never `--send` to group. |
+
+### Operator prerequisites (before any first send)
+
+1. Principal creates / owns a **second** BotFather bot used only by GitHub Actions.
+2. Principal opens a DM with that second bot and sends `/start` (required before first send).
+3. Principal adds the two secret **names** above under repo Actions secrets (values never in git / PR body).
+4. Principal reviews this workflow diff, then (only if approved) may set `i_mean_it_stage2=true` on a manual Run workflow.
+
+### CLI the Stage 2 job would run
+
+```bash
+uv run lab deliver pack \
+  --from-markdown tests/fixtures/phase5e/desk-pack.md \
+  --as-of <UTC-now> \
+  --desk ops \
+  --to-principal-dm \
+  --i-mean-it \
+  --ignore-quiet-hours \
+  --no-db \
+  --repo-root . \
+  --out /tmp/stage2-principal-dm-<run_id>
+```
+
+`--no-db` until Neon. Fixture markdown is the PREP canary; later may brief then `--from-markdown` a live artifact. Never group `--send`.
