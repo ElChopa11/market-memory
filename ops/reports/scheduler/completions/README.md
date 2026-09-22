@@ -10,7 +10,9 @@ Canonical: `ops/reports/scheduler/completions/{routine_id}__{YYYYMMDDTHHMMSSZ}.j
 
 Override: `--completions-dir` or `MM_SCHEDULE_COMPLETIONS_DIR`.
 
-Do not commit generated JSON. Postgres table `schedule_heartbeat` is the optional DB copy (skipped with `--no-db`).
+**Policy (B1 Stage 1 / Principal 2026-09-22):** Actions-produced stamps **ARE committed** under this directory so the box can `git pull` and `lab schedule miss-check --no-db` can read them. Artifact upload alone is not durable. Prefer the Actions commit path (auditable message with routine id, run_id, scheduled_for, actual, delta_seconds, status). Do not commit secrets — only `*.json` completion rows. Postgres table `schedule_heartbeat` remains the optional DB copy (skipped with `--no-db`).
+
+SCHED-001 closes only on an **observed fire with a readable completion row** (in-repo / on-box path), not on artifact upload alone.
 
 ## Row fields
 

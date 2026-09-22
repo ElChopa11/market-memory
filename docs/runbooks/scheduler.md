@@ -72,6 +72,15 @@ Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hyb
 - `on.schedule` dual cron for weekday 06:30 Australia/Sydney (AEST `30 20 * * 0-4` UTC; AEDT `30 19 * * 0-4` UTC). Off-season companion is skipped unless within ±900s of the local anchor.
 - `on.workflow_dispatch` for Principal canary (default force stamp).
 - Job runs `uv run lab schedule heartbeat --routine-id grok.sydney_morning --no-db --source github.actions` (no Telegram; never `--send`).
-- Completion JSON is **upload-artifact** only. Completions stay gitignored (`ops/reports/scheduler/completions/**`). Miss-check on the box does **not** see Actions artifacts unless Principal decides to sync/commit them later — that gap is Unverified / Principal judgement; Stage 1 does not auto-push to main.
+- **Durable path:** the job commits the completion JSON to the branch the workflow ran on (`github.ref_name`) with an auditable message (`routine_id`, `run_id`, `scheduled_for`, `actual`, `delta_seconds`, `status`), using `permissions: contents: write` and rebase-retry on non-fast-forward. Completions are **not** gitignored.
+- **Secondary:** `actions/upload-artifact` (expires; box cannot read).
+- After `git pull` on the box, `lab schedule miss-check --no-db` can load the row. **SCHED-001 closes only on an observed fire with a readable completion row** — not artifact-only.
 
-Manual fire: Actions → **hybrid-sydney-morning** → Run workflow → leave `force` true.
+### Push target
+
+| When | Select / runs on | Commit lands on |
+|---|---|---|
+| Draft PR canary (before merge) | Actions → Run workflow → branch **`cursor/b1-sydney-morning-actions-ae81`** (or current PR head) | That PR branch |
+| After merge | `schedule` on default branch | `main` |
+
+Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft → leave `force` true.

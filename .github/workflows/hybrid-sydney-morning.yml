@@ -1,10 +1,11 @@
 # B1 Stage 1 — permanent invoker after Grok Bot panel schedule proved dead.
 # Runs lab CLI on the GitHub runner with --no-db (no Telegram). Stamps a
-# scheduler completion row under ops/reports/scheduler/completions/ and uploads
-# it as an Actions artifact. Completions are gitignored; do not auto-push to main.
+# scheduler completion row under ops/reports/scheduler/completions/, commits
+# that JSON back to the branch the workflow ran on (durable for box miss-check),
+# and also upload-artifact as a secondary copy.
 #
 # Stage 2 DM send is OUT OF SCOPE. No TELEGRAM_* secrets. GROUP SEND_FROZEN.
-# Paper only.
+# Paper only. Do not auto-merge.
 
 name: hybrid-sydney-morning
 
@@ -28,14 +29,23 @@ on:
         type: boolean
         default: true
 
+# Push completion JSON back to the run branch (GITHUB_TOKEN). No Telegram secrets.
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: hybrid-sydney-morning
+  cancel-in-progress: false
 
 jobs:
   stage1-stamp:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Need history for rebase-retry on non-fast-forward push.
+          fetch-depth: 0
+          persist-credentials: true
 
       - uses: astral-sh/setup-uv@v6
         with:
@@ -71,11 +81,17 @@ jobs:
           now = datetime.now(timezone.utc)
           local = now.astimezone(SYD)
           force = os.environ.get("FORCE_STAMP", "false").lower() in {"1", "true", "yes"}
+          out = Path(os.environ["GITHUB_OUTPUT"])
+
+          def write_out(**kwargs: str) -> None:
+              with out.open("a", encoding="utf-8") as fh:
+                  for key, value in kwargs.items():
+                      fh.write(f"{key}={value}\n")
 
           # Weekday Mon–Fri in Sydney matching catalog weekdays.
           if local.weekday() >= 5 and not force:
               print(json.dumps({"skip": True, "reason": "weekend_sydney", "local": local.isoformat()}))
-              Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8").write("skipped=true\n")
+              write_out(skipped="true")
               sys.exit(0)
 
           anchor_local = local.replace(hour=6, minute=30, second=0, microsecond=0)
@@ -98,7 +114,7 @@ jobs:
                       sort_keys=True,
                   )
               )
-              Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8").write("skipped=true\n")
+              write_out(skipped="true")
               sys.exit(0)
 
           run_id = f"actions-b1-{os.environ['GITHUB_RUN_ID']}"
@@ -134,20 +150,103 @@ jobs:
           if not rows:
               print("::error::heartbeat exited 0 but wrote no completion JSON", file=sys.stderr)
               sys.exit(1)
-          latest = rows[-1]
-          print(latest.read_text(encoding="utf-8"))
-          out = Path(os.environ["GITHUB_OUTPUT"])
-          with out.open("a", encoding="utf-8") as fh:
-              fh.write("skipped=false\n")
-              fh.write(f"completion_path={latest}\n")
-              fh.write(f"run_id={run_id}\n")
+          # Prefer the row for this run_id (idempotent re-runs may leave older files).
+          latest = None
+          for path in reversed(rows):
+              try:
+                  payload = json.loads(path.read_text(encoding="utf-8"))
+              except (OSError, json.JSONDecodeError):
+                  continue
+              if payload.get("run_id") == run_id:
+                  latest = path
+                  break
+          if latest is None:
+              latest = rows[-1]
+              payload = json.loads(latest.read_text(encoding="utf-8"))
+          else:
+              payload = json.loads(latest.read_text(encoding="utf-8"))
+          print(json.dumps(payload, indent=2, sort_keys=True))
+          rel = latest.resolve().relative_to(ROOT).as_posix()
+          if not rel.startswith("ops/reports/scheduler/completions/") or not rel.endswith(".json"):
+              print(f"::error::refusing unexpected completion path {rel}", file=sys.stderr)
+              sys.exit(1)
+          write_out(
+              skipped="false",
+              completion_path=rel,
+              run_id=str(payload.get("run_id") or run_id),
+              scheduled_for=str(payload.get("scheduled_anchor_ts") or ""),
+              actual=str(payload.get("fired_at_ts") or ""),
+              delta_seconds=str(payload.get("delta_seconds") if payload.get("delta_seconds") is not None else ""),
+              status=str(payload.get("status") or ""),
+              routine_id=str(payload.get("routine_id") or ROUTINE),
+          )
           PY
 
-      - name: Upload completion artifact
+      - name: Upload completion artifact (secondary)
         if: steps.stamp.outputs.skipped != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: sydney-morning-completion-${{ github.run_id }}
-          path: ops/reports/scheduler/completions/grok.sydney_morning__*.json
+          path: ${{ steps.stamp.outputs.completion_path }}
           if-no-files-found: error
           retention-days: 30
+
+      - name: Commit + push completion JSON (durable for box miss-check)
+        if: steps.stamp.outputs.skipped != 'true'
+        env:
+          COMPLETION_PATH: ${{ steps.stamp.outputs.completion_path }}
+          ROUTINE_ID: ${{ steps.stamp.outputs.routine_id }}
+          RUN_ID: ${{ steps.stamp.outputs.run_id }}
+          SCHEDULED_FOR: ${{ steps.stamp.outputs.scheduled_for }}
+          ACTUAL: ${{ steps.stamp.outputs.actual }}
+          DELTA_SECONDS: ${{ steps.stamp.outputs.delta_seconds }}
+          STATUS: ${{ steps.stamp.outputs.status }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Guard: only the stamp JSON under completions/ — never secrets / env files.
+          case "${COMPLETION_PATH}" in
+            ops/reports/scheduler/completions/grok.sydney_morning__*.json) ;;
+            *)
+              echo "::error::refusing to commit unexpected path: ${COMPLETION_PATH}"
+              exit 1
+              ;;
+          esac
+          test -f "${COMPLETION_PATH}"
+          # Refuse accidental secret material in the stamp payload.
+          if grep -Eiq 'TELEGRAM_BOT_TOKEN|PRIVATE_KEY|BEGIN (RSA |OPENSSH )?PRIVATE' "${COMPLETION_PATH}"; then
+            echo "::error::completion JSON looks like it contains secrets; refusing commit"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -- "${COMPLETION_PATH}"
+          if git diff --cached --quiet; then
+            echo "No new completion bytes to commit (idempotent re-run)."
+            exit 0
+          fi
+
+          MSG="scheduler(completion): ${ROUTINE_ID} run_id=${RUN_ID} scheduled_for=${SCHEDULED_FOR} actual=${ACTUAL} delta_seconds=${DELTA_SECONDS} status=${STATUS}"
+          git commit -m "${MSG}"
+          echo "Commit message: ${MSG}"
+          echo "Push target branch: ${BRANCH} (github.ref_name — select PR branch for draft canary)"
+
+          # Retry on non-fast-forward (dual-cron / concurrent canary).
+          for attempt in 1 2 3 4 5; do
+            if git push origin "HEAD:${BRANCH}"; then
+              echo "Pushed completion to origin/${BRANCH}"
+              exit 0
+            fi
+            echo "Push failed (attempt ${attempt}); fetch + rebase and retry"
+            git fetch origin "${BRANCH}"
+            if ! git rebase "origin/${BRANCH}"; then
+              git rebase --abort || true
+              sleep $((attempt * 4))
+              continue
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "::error::failed to push completion JSON to ${BRANCH} after retries"
+          exit 1
