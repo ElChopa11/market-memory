@@ -469,6 +469,8 @@ def _infer_source_statuses(
                 attached = item
             elif name == "stooq" and "stooq" in lowered:
                 attached = item
+            elif name == "polygon" and "polygon" in lowered:
+                attached = item
             elif name == "coingecko" and "coingecko" in lowered:
                 attached = item
             elif name in {"off", "none", "live"} and not attached:
