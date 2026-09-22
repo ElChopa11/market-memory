@@ -29,9 +29,10 @@ from mm_briefing.freshness import (
     load_freshness_config,
     quality_from_observation_age,
 )
-from mm_briefing.models import ASSET_ORDER, AssetPrint, MacroSnapshot, worst_quality
+from mm_briefing.models import ASSET_ORDER, AssetPrint, HLInstrumentState, MacroSnapshot, worst_quality
 
 # Pulse slot → preferred live source. Stooq is not primary (SRC-STOOQ-404).
+# Crypto What-moved slots use HL mid (see crypto_pulse).
 SLOT_SOURCE = {
     "ES": "polygon",
     "NQ": "polygon",
@@ -39,8 +40,8 @@ SLOT_SOURCE = {
     "DXY": "polygon",
     "CL": "polygon",
     "VIX": "polygon",
-    "BTC": "coingecko",
-    "ETH": "coingecko",
+    "BTC": "hyperliquid",
+    "ETH": "hyperliquid",
 }
 
 # Default display names. Live polygon rows override with config labels (ETF proxies).
@@ -51,9 +52,22 @@ ASSET_NAMES = {
     "DXY": "UUP ETF (USD proxy; not DX futures / DXY)",
     "CL": "USO ETF (WTI oil proxy; not CL futures)",
     "VIX": "CBOE VIX (structurally unavailable without Cboe entitlement)",
-    "BTC": "Bitcoin",
-    "ETH": "Ether",
+    "BTC": "HL BTC-USDC perp mid (not CoinGecko spot)",
+    "ETH": "HL ETH-USDC perp mid (not CoinGecko spot)",
 }
+
+CRYPTO_PULSE_SYMBOLS = ("BTC", "ETH")
+DEFAULT_CRYPTO_PULSE_SOR = "hyperliquid"
+DEFAULT_CRYPTO_DIVERGENCE_MAX_BPS = 100.0
+DEFAULT_CRYPTO_DIVERGENCE_MAX_BPS_RAW_MID = 300.0
+CRYPTO_PULSE_SOR_NOTE = (
+    "crypto pulse SoR=hyperliquid (mid_px for BTC/ETH What-moved slots); "
+    "CoinGecko always fetched on --live as secondary DQ — both values kept in notes"
+)
+_FIXTURE_PROTECTED_SOURCES = frozenset({"fixture"})
+SOURCE_DIVERGENCE_CLASS = "source_divergence"
+METRIC_CG_VS_HL_ORACLE = "cg_vs_hl_oracle"
+METRIC_RAW_MID_VS_SPOT = "raw_mid_vs_spot"
 
 
 class MacroFetcher(Protocol):
@@ -77,6 +91,7 @@ def parse_asset_row(
         quality = "unavailable"
     as_of_raw = row.get("as_of")
     parsed_as_of = parse_utc(str(as_of_raw)) if as_of_raw else as_of
+    row_source = str(row.get("source") or source or "none")
     return AssetPrint(
         symbol=str(row.get("symbol") or "").upper(),
         name=str(row.get("name") or ASSET_NAMES.get(str(row.get("symbol") or "").upper(), str(row.get("symbol") or ""))),
@@ -84,7 +99,7 @@ def parse_asset_row(
         prior_close=prior,
         unit=str(row.get("unit") or "px"),
         data_quality=quality,
-        source=source,
+        source=row_source,
         open=opened,
         as_of=parsed_as_of,
         observation_id=str(row["observation_id"]) if row.get("observation_id") else None,
@@ -190,6 +205,272 @@ def complete_cross_asset(
         notes=snapshot.notes,
     )
     return gate_snapshot_freshness(completed, config=freshness)
+
+
+def apply_crypto_pulse_from_hl(
+    snapshot: MacroSnapshot,
+    hl: tuple[HLInstrumentState, ...],
+    *,
+    source_of_record: str = DEFAULT_CRYPTO_PULSE_SOR,
+    macro_config: dict[str, Any] | None = None,
+) -> MacroSnapshot:
+    """Route BTC/ETH What-moved slots to HL mid when Hyperliquid is the SoR.
+
+    Honest rules (Principal Fix 3 fold a+c):
+    - Table last = mid_px when present; never invent a prior_close from mid alone
+    - CoinGecko is always fetched on --live; CG values + unavailable notes are retained
+    - Normal: note CG vs HL (oracle-preferred) with both source tags and as_of stamps
+    - Escalation: |divergence| > path threshold → error_class=source_divergence + degrade
+    - Fixture rows stay untouched so frozen hashes remain pinned
+    """
+    sor = (source_of_record or DEFAULT_CRYPTO_PULSE_SOR).strip().lower()
+    if sor not in {"hyperliquid", "hl"}:
+        return snapshot
+
+    by_hl = {state.instrument.upper(): state for state in hl}
+    by_symbol = snapshot.by_symbol()
+    replaced: list[AssetPrint] = []
+    extra_notes: list[str] = []
+    changed = False
+
+    for symbol in CRYPTO_PULSE_SYMBOLS:
+        existing = by_symbol.get(symbol)
+        if existing is not None and existing.source in _FIXTURE_PROTECTED_SOURCES:
+            replaced.append(existing)
+            continue
+
+        cg_print = existing if existing is not None and existing.source == "coingecko" else None
+        state = by_hl.get(symbol)
+        mid = state.metric("mid_px") if state is not None else None
+        oracle = state.metric("oracle_px") if state is not None else None
+        mid_value = _maybe_float(mid.value) if mid is not None else None
+        oracle_value = _maybe_float(oracle.value) if oracle is not None else None
+        source_label = (
+            state.source
+            if state is not None and state.source
+            else SLOT_SOURCE.get(symbol, "hyperliquid")
+        )
+        hl_as_of = None
+        if mid is not None:
+            hl_as_of = mid.as_of_knowledge or (state.as_of_knowledge if state else None)
+        if hl_as_of is None and state is not None:
+            hl_as_of = state.as_of_knowledge
+
+        if mid_value is not None and mid is not None:
+            quality = mid.data_quality or (state.data_quality if state else "ok")
+            if quality in {"unavailable", "none"}:
+                quality = "ok"
+            compare_note, escalated = _crypto_compare_note(
+                symbol,
+                cg_print=cg_print,
+                hl_mid=mid_value,
+                hl_oracle=oracle_value,
+                hl_source=source_label,
+                hl_as_of=hl_as_of or snapshot.as_of,
+                macro_config=macro_config,
+            )
+            if compare_note:
+                extra_notes.append(compare_note)
+            if escalated:
+                quality = worst_quality(quality, "partial")
+            replaced.append(
+                AssetPrint(
+                    symbol=symbol,
+                    name=ASSET_NAMES.get(symbol, symbol),
+                    last=mid_value,
+                    prior_close=None,
+                    unit="usd",
+                    data_quality=quality,
+                    source=source_label,
+                    as_of=hl_as_of or snapshot.as_of,
+                    observation_id=mid.observation_id,
+                    source_url=mid.source_url,
+                )
+            )
+            changed = True
+            continue
+
+        if cg_print is not None and cg_print.last is not None:
+            extra_notes.append(
+                f"{symbol}: SoR hyperliquid mid unavailable; retained CoinGecko spot="
+                f"{_fmt_px(cg_print.last)} "
+                f"[source=coingecko; as_of={_fmt_as_of(cg_print.as_of)}; quality={cg_print.data_quality}]"
+            )
+        replaced.append(
+            AssetPrint(
+                symbol=symbol,
+                name=ASSET_NAMES.get(symbol, symbol),
+                last=None,
+                prior_close=None,
+                unit="usd",
+                data_quality="unavailable",
+                source=source_label if state is not None else SLOT_SOURCE.get(symbol, "hyperliquid"),
+                as_of=snapshot.as_of,
+            )
+        )
+        if existing is None or existing.last is not None or existing.source == "coingecko":
+            changed = True
+
+    if not changed and all(
+        (by_symbol.get(sym) is not None and by_symbol[sym].source in _FIXTURE_PROTECTED_SOURCES)
+        for sym in CRYPTO_PULSE_SYMBOLS
+        if sym in by_symbol
+    ):
+        return snapshot
+
+    merged: list[AssetPrint] = []
+    crypto_map = {row.symbol: row for row in replaced}
+    seen_crypto: set[str] = set()
+    for row in snapshot.assets:
+        if row.symbol in crypto_map:
+            merged.append(crypto_map[row.symbol])
+            seen_crypto.add(row.symbol)
+        else:
+            merged.append(row)
+    for symbol in CRYPTO_PULSE_SYMBOLS:
+        if symbol not in seen_crypto and symbol in crypto_map:
+            merged.append(crypto_map[symbol])
+
+    ordered = tuple(sorted(merged, key=lambda row: _order_key(row.symbol)))
+    quality = snapshot.data_quality
+    for row in ordered:
+        quality = worst_quality(quality, row.data_quality)
+    notes = list(snapshot.notes)
+    if CRYPTO_PULSE_SOR_NOTE not in notes:
+        notes.append(CRYPTO_PULSE_SOR_NOTE)
+    for note in extra_notes:
+        if note not in notes:
+            notes.append(note)
+    return MacroSnapshot(
+        as_of=snapshot.as_of,
+        prior_us_close=snapshot.prior_us_close,
+        assets=ordered,
+        data_quality=quality,
+        source=snapshot.source,
+        notes=tuple(notes),
+    )
+
+
+def crypto_pulse_source_of_record(macro: dict[str, Any] | None) -> str:
+    """Preferred source for BTC/ETH What-moved slots (default: Hyperliquid mid)."""
+    body = (macro or {}).get("crypto_pulse") if isinstance(macro, dict) else None
+    if not isinstance(body, dict):
+        return DEFAULT_CRYPTO_PULSE_SOR
+    raw = str(body.get("source_of_record") or DEFAULT_CRYPTO_PULSE_SOR).strip().lower()
+    return raw or DEFAULT_CRYPTO_PULSE_SOR
+
+
+def crypto_pulse_max_bps(macro: dict[str, Any] | None, symbol: str, *, path: str = "oracle") -> float:
+    """Escalation threshold in bps. Oracle path uses max_bps; raw mid uses max_bps_raw_mid_vs_spot."""
+    body = (macro or {}).get("crypto_pulse") if isinstance(macro, dict) else None
+    if not isinstance(body, dict):
+        return (
+            DEFAULT_CRYPTO_DIVERGENCE_MAX_BPS_RAW_MID
+            if path == "raw"
+            else DEFAULT_CRYPTO_DIVERGENCE_MAX_BPS
+        )
+    div = body.get("divergence") if isinstance(body.get("divergence"), dict) else {}
+    key = "max_bps_raw_mid_vs_spot" if path == "raw" else "max_bps"
+    default_fallback = (
+        DEFAULT_CRYPTO_DIVERGENCE_MAX_BPS_RAW_MID if path == "raw" else DEFAULT_CRYPTO_DIVERGENCE_MAX_BPS
+    )
+    default = _maybe_float(div.get(key))
+    if default is None:
+        default = default_fallback
+    overrides = div.get("symbols") if isinstance(div.get("symbols"), dict) else {}
+    raw = overrides.get(symbol) or overrides.get(symbol.upper())
+    if isinstance(raw, dict):
+        override = _maybe_float(raw.get(key))
+        if override is not None:
+            return override
+    elif path != "raw":
+        override = _maybe_float(raw)
+        if override is not None:
+            return override
+    return float(default)
+
+
+def _crypto_compare_note(
+    symbol: str,
+    *,
+    cg_print: AssetPrint | None,
+    hl_mid: float,
+    hl_oracle: float | None,
+    hl_source: str,
+    hl_as_of: datetime,
+    macro_config: dict[str, Any] | None,
+) -> tuple[str | None, bool]:
+    """Build (a) dual-source compare note; (c) escalate when |div| > path threshold."""
+    if cg_print is None or cg_print.last is None:
+        return None, False
+    cg_spot = float(cg_print.last)
+    abs_bps, mode, _ref = _crypto_divergence_bps(cg_spot, hl_mid=hl_mid, hl_oracle=hl_oracle)
+    if abs_bps is None:
+        return None, False
+    if mode == "oracle_adjusted":
+        metric = METRIC_CG_VS_HL_ORACLE
+        max_bps = crypto_pulse_max_bps(macro_config, symbol, path="oracle")
+        confidence = "normal"
+        basis_note = ""
+    else:
+        metric = METRIC_RAW_MID_VS_SPOT
+        max_bps = crypto_pulse_max_bps(macro_config, symbol, path="raw")
+        confidence = "low"
+        basis_note = "; basis not subtracted"
+    oracle_txt = _fmt_px(hl_oracle) if hl_oracle is not None else "n/a"
+    note = (
+        f"{symbol} compare: SoR {hl_source} mid={_fmt_px(hl_mid)} "
+        f"[source={hl_source}; as_of={_fmt_as_of(hl_as_of)}]; "
+        f"CoinGecko spot={_fmt_px(cg_spot)} "
+        f"[source=coingecko; as_of={_fmt_as_of(cg_print.as_of)}; "
+        f"quality={cg_print.data_quality}]; "
+        f"HL oracle={oracle_txt}; divergence={abs_bps:.1f}bps "
+        f"(metric={metric}; confidence={confidence}{basis_note}); "
+        f"threshold={max_bps:.0f}bps"
+    )
+    escalated = abs_bps > max_bps
+    if escalated:
+        note = (
+            f"{symbol} DQ event error_class={SOURCE_DIVERGENCE_CLASS}: "
+            f"|divergence|={abs_bps:.1f}bps > max_bps={max_bps:.0f}; "
+            f"metric={metric}; confidence={confidence}"
+            f"{basis_note}; "
+            f"CoinGecko spot={_fmt_px(cg_spot)} [source=coingecko; as_of={_fmt_as_of(cg_print.as_of)}]; "
+            f"hyperliquid mid={_fmt_px(hl_mid)} [source={hl_source}; as_of={_fmt_as_of(hl_as_of)}]; "
+            f"hyperliquid oracle={oracle_txt} — SoR mid still printed; slot quality degraded"
+        )
+    return note, escalated
+
+
+def _crypto_divergence_bps(
+    cg_spot: float,
+    *,
+    hl_mid: float | None,
+    hl_oracle: float | None,
+) -> tuple[float | None, str, float | None]:
+    """Preferred: |CG − HL oracle| / oracle. Fallback: |CG − mid| / mid (labeled)."""
+    if hl_oracle is not None and hl_oracle != 0:
+        return abs(cg_spot - hl_oracle) / abs(hl_oracle) * 10_000.0, "oracle_adjusted", hl_oracle
+    if hl_mid is not None and hl_mid != 0:
+        return (
+            abs(cg_spot - hl_mid) / abs(hl_mid) * 10_000.0,
+            "raw_mid_vs_spot",
+            hl_mid,
+        )
+    return None, "unavailable", None
+
+
+def _fmt_as_of(value: datetime | None) -> str:
+    if value is None:
+        return "n/a"
+    return as_utc(value).isoformat()
+
+
+def _fmt_px(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    text = f"{value:.6f}".rstrip("0").rstrip(".")
+    return text if text else "0"
 
 
 def live_macro_spec(macro: dict[str, Any]) -> dict[str, Any]:

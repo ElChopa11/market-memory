@@ -36,6 +36,21 @@ freshness:
         max_calendar_lag_days: 45
         fred_series_id: PAYEMS
 
+# Source of record for BTC/ETH What-moved / cross-asset table slots.
+# Table prints HL mid_px (SoR). CoinGecko is ALWAYS fetched on --live as secondary DQ;
+# both values + as_of stamps survive in notes. Escalation when |divergence| > path threshold.
+crypto_pulse:
+  source_of_record: hyperliquid  # mid_px in the table; not CoinGecko spot
+  divergence:
+    # Preferred: |CG_spot − HL_oracle| / HL_oracle (metric=cg_vs_hl_oracle).
+    # 100 bps sits above normal mark−oracle basis (~5–50 bps) but catches splice/wrong ticker.
+    max_bps: 100
+    # Fallback when oracle missing: |CG − HL_mid| / HL_mid (metric=raw_mid_vs_spot).
+    # Wider because mid embeds perp basis; escalate with confidence=low + basis-not-subtracted.
+    max_bps_raw_mid_vs_spot: 300
+    # symbols:
+    #   BTC: { max_bps: 100, max_bps_raw_mid_vs_spot: 300 }
+
 live:
   enabled: false
   # Stooq is not the Pulse primary path (SRC-STOOQ-404 http_404). Optional canary only;
@@ -78,8 +93,8 @@ live:
     series:
       US10Y: DGS10
   coingecko:
+    # Always enabled by live_macro_spec when ids are present (--live always fetches).
     enabled: false
-    # Public market snapshot; no key required for this endpoint.
     base_url: https://api.coingecko.com/api/v3/simple/price
     ids:
       BTC: bitcoin

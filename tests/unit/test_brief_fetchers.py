@@ -226,7 +226,8 @@ def test_slot_source_prefers_polygon_not_stooq() -> None:
     for symbol in ("ES", "NQ", "DXY", "CL", "VIX"):
         assert SLOT_SOURCE[symbol] == "polygon"
     assert SLOT_SOURCE["US10Y"] == "fred"
-    assert SLOT_SOURCE["BTC"] == "coingecko"
+    assert SLOT_SOURCE["BTC"] == "hyperliquid"
+    assert SLOT_SOURCE["ETH"] == "hyperliquid"
 
 
 def test_macro_yaml_routes_proxies_to_polygon() -> None:
