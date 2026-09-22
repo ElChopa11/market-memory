@@ -41,7 +41,7 @@ Missing `POLYGON_API_KEY` or `FRED_API_KEY` **never invents** prints. Live adapt
 | Corporate actions | Dividends + splits (`/v3/reference/...`) when the plan returns rows |
 | Earnings | Documented ticker-events path. Free/starter often 403 → `tos_or_blocked`; **not invented** |
 | Rate limit | `config/ingest.yaml` → `rate_limits.polygon` (free-tier default 5 req/min) |
-| Retry | Shared `mm_common.http` GET: one retry on timeout/429/5xx; 404/401/403 terminal |
+| Retry | Shared `mm_common.http`: exponential backoff + jitter, honour Retry-After, ceiling several seconds, max_attempts 5 on timeout/429/5xx; 404/401/403 terminal |
 
 Live (optional, needs env key + durable object store unless `--no-objects`):
 

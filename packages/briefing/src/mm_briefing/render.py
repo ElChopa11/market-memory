@@ -473,6 +473,8 @@ def _infer_source_statuses(
                 attached = item
             elif name == "coingecko" and "coingecko" in lowered:
                 attached = item
+            elif "hyperliquid" in name and ("hyperliquid" in lowered or "crypto pulse" in lowered):
+                attached = item
             elif name in {"off", "none", "live"} and not attached:
                 attached = item
         rows.append(

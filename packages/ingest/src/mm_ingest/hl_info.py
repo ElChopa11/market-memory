@@ -13,11 +13,14 @@ from typing import Any
 import httpx
 
 from mm_common.http import (
+    DEFAULT_BACKOFF_CEILING_S,
     DEFAULT_BACKOFF_S,
     DEFAULT_MAX_ATTEMPTS,
     classify_exception,
     classify_http_status,
+    compute_backoff_s,
     is_retryable,
+    parse_retry_after,
 )
 
 DEFAULT_INFO_URL = "https://api.hyperliquid.xyz/info"
@@ -73,6 +76,7 @@ class HyperliquidInfoClient:
         client: httpx.Client | None = None,
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
         backoff_s: float = DEFAULT_BACKOFF_S,
+        backoff_ceiling_s: float = DEFAULT_BACKOFF_CEILING_S,
         sleep: Callable[[float], None] | None = None,
     ) -> None:
         self.url = url
@@ -80,6 +84,7 @@ class HyperliquidInfoClient:
         self._client = client or httpx.Client(timeout=timeout, transport=transport)
         self._max_attempts = max(1, int(max_attempts))
         self._backoff_s = backoff_s
+        self._backoff_ceiling_s = backoff_ceiling_s
         self._sleep = sleep or time.sleep
 
     def close(self) -> None:
@@ -107,7 +112,14 @@ class HyperliquidInfoClient:
                 last_error = exc
                 error_class = classify_exception(exc)
                 if is_retryable(error_class) and attempt < self._max_attempts:
-                    self._sleep(self._backoff_s * attempt)
+                    self._sleep(
+                        compute_backoff_s(
+                            attempt,
+                            backoff_s=self._backoff_s,
+                            ceiling_s=self._backoff_ceiling_s,
+                            retry_after=None,
+                        )
+                    )
                     continue
                 raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed: {error_class}") from exc
             last_status = response.status_code
@@ -115,7 +127,14 @@ class HyperliquidInfoClient:
                 return response.json()
             error_class = classify_http_status(response.status_code)
             if is_retryable(error_class) and attempt < self._max_attempts:
-                self._sleep(self._backoff_s * attempt)
+                self._sleep(
+                    compute_backoff_s(
+                        attempt,
+                        backoff_s=self._backoff_s,
+                        ceiling_s=self._backoff_ceiling_s,
+                        retry_after=parse_retry_after(response),
+                    )
+                )
                 continue
             raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed: {response.status_code}")
         if last_error is not None:

@@ -305,16 +305,18 @@ def cmd_ingest(args: argparse.Namespace) -> int:
         else:
             start = parse_utc(args.start) if args.start else None
             end = parse_utc(args.end) if args.end else None
-            attempts, backoff = 2, 0.25
+            attempts, backoff, ceiling = 5, 0.25, 8.0
             limits = settings.get("rate_limits") if isinstance(settings.get("rate_limits"), dict) else {}
             hl_lim = limits.get("hyperliquid") if isinstance(limits, dict) else {}
             if isinstance(hl_lim, dict):
                 attempts = int(hl_lim.get("max_attempts") or attempts)
                 backoff = float(hl_lim.get("backoff_s") or backoff)
+                ceiling = float(hl_lim.get("backoff_ceiling_s") or ceiling)
             with HyperliquidInfoClient(
                 url=str(settings.get("info_url")),
                 max_attempts=attempts,
                 backoff_s=backoff,
+                backoff_ceiling_s=ceiling,
             ) as client:
                 stats = ingest_from_client(
                     session,
