@@ -21,6 +21,7 @@ from mm_briefing.fetchers import (
     live_macro_spec,
     snapshot_from_payload,
 )
+from mm_briefing.freshness import load_freshness_config
 from mm_briefing.hl import (
     LIVE_INFO_SOURCE,
     ensure_hl_instruments,
@@ -137,7 +138,7 @@ def generate_preopen(
     calendar_source: str | None = None,
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
-    filled = complete_cross_asset(macro)
+    filled = complete_cross_asset(macro, freshness=load_freshness_config(settings.macro))
     hl_filled = ensure_hl_instruments(hl, as_of=as_utc(as_of))
     cal_source = calendar_source or getattr(settings, "calendar_source", None) or DEFAULT_CALENDAR_SOURCE
     calendar = relevant_events(events_from_rows(settings.calendar_events, source=cal_source), as_of=as_of)
@@ -177,15 +178,22 @@ def generate_close(
     generated_at: datetime | None = None,
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
+    freshness = load_freshness_config(settings.macro)
+    overnight_gated = complete_cross_asset(overnight, freshness=freshness)
+    session_gated = complete_cross_asset(session, freshness=freshness)
     calendar = relevant_events(events_from_rows(settings.calendar_events), as_of=as_of, lookback_hours=0, horizon_hours=24)
-    unexpected = unexpected_moves(session, overnight)
-    assumptions = assumption_changes(session, overnight)
-    quality = worst_quality(overnight.data_quality, session.data_quality, *(row.data_quality for row in hl))
+    unexpected = unexpected_moves(session_gated, overnight_gated)
+    assumptions = assumption_changes(session_gated, overnight_gated)
+    quality = worst_quality(
+        overnight_gated.data_quality,
+        session_gated.data_quality,
+        *(row.data_quality for row in hl),
+    )
     return render_close(
         generated_at=generated,
         as_of=as_utc(as_of),
-        overnight=overnight,
-        session=session,
+        overnight=overnight_gated,
+        session=session_gated,
         calendar=calendar,
         unexpected=unexpected,
         theses=theses,
@@ -305,7 +313,10 @@ def generate_from_sources(
     fetcher = macro_fetcher
     if live:
         fetcher = fetcher_for_mode("live", macro_spec=live_macro_spec(settings.macro))
-    overnight = complete_cross_asset(fetcher.fetch(as_of, prior_us_close=prior))
+    overnight = complete_cross_asset(
+        fetcher.fetch(as_of, prior_us_close=prior),
+        freshness=load_freshness_config(settings.macro),
+    )
     session_snap = overnight
     hl: tuple[HLInstrumentState, ...] = ()
     theses: tuple[ThesisHook, ...] = ()

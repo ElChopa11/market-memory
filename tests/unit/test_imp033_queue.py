@@ -18,7 +18,7 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert any("#59" in line for line in board_lines if "IMP-033" in line)
     assert not any("IMP-032" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-033" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1**" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     for item_id in ("SCHED-001", "BRIEF-TAG-20260918", "SRC-STOOQ-404", "SRC-FRED-MISSING-ENV"):
         assert item_id in queue
     assert queue.count("| **Status** | OPEN |") >= 3
@@ -29,6 +29,6 @@ def test_queue_imp032_done_imp033_single_thread_open_incidents() -> None:
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False

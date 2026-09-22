@@ -1,8 +1,8 @@
 # PLAN — IMP-056 Scheduler chain defects (heartbeat table, slot/anchor, miss baseline)
 
-**Report status:** IN_PROGRESS (this PR).  
+**Report status:** DONE (#85).  
 **Owner:** Ops  
-**Scope:** Three Principal-ordered defects before Monday 06:30 AEST Sydney Morning. Paper only. No Telegram send. No group. No C-00x compute.
+**Scope:** Three Principal-ordered defects before Monday 06:30 AEST Sydney Morning. Paper only. No Telegram send. No group. No C-00x compute. Merged as [#85](https://github.com/ElChopa11/market-memory/pull/85).
 
 ## Why
 

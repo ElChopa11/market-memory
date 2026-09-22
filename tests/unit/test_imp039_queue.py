@@ -1,4 +1,4 @@
-"""IMP-040 DONE #66; IMP-042 miss detector is the single IN_PROGRESS; IMP-039 READY."""
+"""IMP-040 DONE #66; IMP-056 DONE #85; zero IN_PROGRESS; IMP-039 READY."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def test_queue_imp040_single_thread_candidates_ready() -> None:
     assert not any("IMP-039" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-034" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     assert "INTAKE_ONLY" in queue
     assert "research/candidates/" in queue
     assert "PR #61" in queue or "#61" in queue
@@ -34,12 +34,12 @@ def test_queue_imp040_single_thread_candidates_ready() -> None:
     assert (ROOT / "ADR" / "0016-edgar-adapter.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False
     ok, reason = can_start("IMP-039", report)
-    assert ok is False
-    assert "slot occupied" in reason
+    assert ok is True
+    assert "does not write" in reason
 
 
 def test_imp034_on_main_is_ticker_not_candidates() -> None:

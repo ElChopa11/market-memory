@@ -36,7 +36,7 @@ def test_src_fred_reopened_env_propagation_imp022_done() -> None:
     assert not any("IMP-024" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any("IMP-047" in line and "DONE" in line for line in board_lines)
     assert any("IMP-040" in line and "DONE" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     for item_id in ("IMP-023", "IMP-035"):
         assert any(item_id in line and "READY" in line for line in board_lines), item_id
         assert not any(item_id in line and "IN_PROGRESS" in line for line in board_lines)
@@ -63,21 +63,24 @@ def test_src_fred_reopened_env_propagation_imp022_done() -> None:
         assert item_id in queue
     assert "DOWN SERVICE" in queue
     assert "**ungated**" in queue
-    assert queue.count("| **Status** | OPEN |") == 6
+    assert queue.count("| **Status** | OPEN |") == 5
     live = (ROOT / "config" / "risk" / "environments" / "live.yaml").read_text(encoding="utf-8")
     assert "live_trading_enabled: false" in live
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False
     public = report.as_public_dict()
     assert "SRC-STOOQ-404" in public["open_incidents"]
-    assert "SCHED-001" in public["open_incidents"]
+    assert "SCHED-001" not in public["open_incidents"]
     assert "BRIEF-TAG-20260918" in public["open_incidents"]
     assert "SRC-FRED-MISSING-ENV" in public["open_incidents"]
     assert "SRC-OBJECT-STORE" in public["open_incidents"]
     assert "TG-UNGATED-PRE-HYBRID" in public["open_incidents"]
+    sched = next(item for item in report.items if item.item_id == "SCHED-001")
+    assert sched.status == "CLOSED"
+    assert "actions-b1-35727756341" in " ".join(sched.fields.values())
     fred = next(item for item in report.items if item.item_id == "SRC-FRED-MISSING-ENV")
     assert fred.status == "OPEN"
     assert "environment-propagation" in " ".join(fred.fields.values()).lower()

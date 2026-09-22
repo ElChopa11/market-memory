@@ -6,6 +6,7 @@ from datetime import datetime
 
 from mm_common.hashing import sha256_hex
 from mm_briefing.divergences import fmt_pct, fmt_px
+from mm_briefing.freshness import format_quality_with_age
 from mm_briefing.hl import basis_mark_oracle, funding_value, liquidation_size_sum, oi_change_pct
 from mm_briefing.models import (
     AlertEvent,
@@ -105,7 +106,7 @@ def render_preopen(
             "",
         ]
     )
-    lines.extend(_asset_table(macro.assets, vs="Name"))
+    lines.extend(_asset_table(macro.assets, vs="Name", knowledge_as_of=as_of))
     if macro.notes:
         lines.append("")
         lines.append("Notes:")
@@ -121,7 +122,7 @@ def render_preopen(
             "",
         ]
     )
-    lines.extend(_since_close_bullets(macro.assets))
+    lines.extend(_since_close_bullets(macro.assets, knowledge_as_of=as_of))
     lines.extend(_hl_since_close(hl, prior_close=macro.prior_us_close))
     lines.extend(
         [
@@ -225,9 +226,9 @@ def render_close(
         "## What moved",
         "",
     ]
-    lines.extend(_asset_table(session.assets, vs="prior US close (session)"))
+    lines.extend(_asset_table(session.assets, vs="prior US close (session)", knowledge_as_of=as_of))
     lines.extend(["", "Overnight reference:", ""])
-    lines.extend(_since_close_bullets(overnight.assets))
+    lines.extend(_since_close_bullets(overnight.assets, knowledge_as_of=as_of))
     lines.extend(["", "## What was unexpected", ""])
     if unexpected:
         for note in unexpected:
@@ -320,7 +321,12 @@ def render_alerts(
     )
 
 
-def _asset_table(assets: tuple[AssetPrint, ...], *, vs: str) -> list[str]:
+def _asset_table(
+    assets: tuple[AssetPrint, ...],
+    *,
+    vs: str,
+    knowledge_as_of: datetime | None = None,
+) -> list[str]:
     if not assets:
         return ["- No prints (macro snapshot empty or degraded)."]
     lines = [
@@ -333,14 +339,27 @@ def _asset_table(assets: tuple[AssetPrint, ...], *, vs: str) -> list[str]:
         else:
             change = fmt_pct(row.change_pct)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
+        quality = (
+            format_quality_with_age(
+                row.data_quality,
+                observation_as_of=row.as_of,
+                reference_as_of=knowledge_as_of,
+            )
+            if knowledge_as_of is not None
+            else pulse_quality(row.data_quality)
+        )
         lines.append(
             f"| {slot_label(row.symbol)} | {row.symbol} | {fmt_px(row.last)} | {fmt_px(row.prior_close)} | {change} "
-            f"| {row.name} | {row.source} | {as_of} | {pulse_quality(row.data_quality)} |"
+            f"| {row.name} | {row.source} | {as_of} | {quality} |"
         )
     return lines
 
 
-def _since_close_bullets(assets: tuple[AssetPrint, ...]) -> list[str]:
+def _since_close_bullets(
+    assets: tuple[AssetPrint, ...],
+    *,
+    knowledge_as_of: datetime | None = None,
+) -> list[str]:
     if not assets:
         return ["- No overnight prints available."]
     lines: list[str] = []
@@ -351,9 +370,18 @@ def _since_close_bullets(assets: tuple[AssetPrint, ...]) -> list[str]:
             delta = fmt_pct(row.change_pct)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
         obs = row.observation_id or "none"
+        quality = (
+            format_quality_with_age(
+                row.data_quality,
+                observation_as_of=row.as_of,
+                reference_as_of=knowledge_as_of,
+            )
+            if knowledge_as_of is not None
+            else pulse_quality(row.data_quality)
+        )
         lines.append(
             f"- {row.symbol} [{slot_label(row.symbol)}] ({row.name}): last {fmt_px(row.last)} / {delta} "
-            f"[quality={pulse_quality(row.data_quality)}; source={row.source}; as-of={as_of}; obs {obs}]"
+            f"[quality={quality}; source={row.source}; as-of={as_of}; obs {obs}]"
         )
     return lines
 
@@ -440,6 +468,8 @@ def _infer_source_statuses(
             if name == "fred" and "fred" in lowered:
                 attached = item
             elif name == "stooq" and "stooq" in lowered:
+                attached = item
+            elif name == "polygon" and "polygon" in lowered:
                 attached = item
             elif name == "coingecko" and "coingecko" in lowered:
                 attached = item

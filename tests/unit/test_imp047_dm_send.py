@@ -32,6 +32,8 @@ def test_group_send_stays_frozen() -> None:
     assert "SEND_FROZEN" in SEND_FROZEN_MSG
     assert "Hive group stays frozen" in SEND_FROZEN_MSG
     assert "--to-principal-dm" in SEND_FROZEN_MSG
+    assert "pack" in SEND_FROZEN_MSG
+    assert "test" in SEND_FROZEN_MSG
 
 
 def test_lab_deliver_group_send_is_frozen(capsys) -> None:

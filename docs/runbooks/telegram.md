@@ -4,15 +4,16 @@
 
 ## Hybrid clock (Principal 2026-09-19)
 
-Hive is a **clock** (routines / schedules). The `lab` CLI is the **sole Telegram publisher**. Hive group / desk pack `--send` is **SEND_FROZEN**. `--i-mean-it` **does not lift that freeze**. Without `--to-principal-dm`, any `--send` / `--i-mean-it` still prints `SEND_FROZEN` and does not POST. The freeze is a **code constant/path** (`GROUP_SEND_FROZEN` / `group_live and not to_dm`), not YAML yet — per-channel `send_enabled` is IMP-050 BACKLOG. `--i-mean-it` is acceptable **only** for the one-shot DM test in Step 5a.
+Hive is a **clock** (routines / schedules). The `lab` CLI is the **sole Telegram publisher**. Hive group / desk pack `--send` without `--to-principal-dm` is **SEND_FROZEN**. `--i-mean-it` **does not lift that freeze**. Without `--to-principal-dm`, any `--send` / `--i-mean-it` still prints `SEND_FROZEN` and does not POST. The freeze is a **code constant/path** (`GROUP_SEND_FROZEN` / `group_live and not to_dm`), not YAML yet — per-channel `send_enabled` is IMP-050 BACKLOG.
 
-The only live POST in this step is DM-only:
+Live POST is DM-only (test ping or pack / `--from-markdown`):
 
 ```bash
 uv run lab deliver test --to-principal-dm --i-mean-it --ignore-quiet-hours
+uv run lab deliver pack --from-markdown PATH --as-of UTC --to-principal-dm --i-mean-it --ignore-quiet-hours
 ```
 
-That command POSTs only to env `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. Missing that env → refuse. It never sends to `TELEGRAM_CHAT_ID` (group). Preflight still runs. `--routine-id` still stamps a completion row. **Live acceptance is on-box only** (cloud VM has no delivery token). Pytest mocks Telegram HTTP and is not acceptance.
+Those commands POST only to env `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. Missing that env → refuse. Never silently fall back to `TELEGRAM_CHAT_ID` (group). Preflight still runs. `--routine-id` still stamps a completion row. **Live acceptance is on-box only** (cloud VM has no delivery token). Pytest mocks Telegram HTTP and is not acceptance.
 
 Every Hive fire must stamp a completion row (`lab brief` / `lab deliver` / `lab schedule heartbeat`) under `ops/reports/scheduler/completions/` so `lab schedule miss-check` can see the executed path. See [scheduler.md](scheduler.md). Do not change the miss detector.
 
@@ -21,7 +22,7 @@ Every Hive fire must stamp a completion row (`lab brief` / `lab deliver` / `lab 
 | Token location | Delivery-only file `/home/box/agent-data/delivery/telegram.env` (mode 0600) or `MM_DELIVERY_ENV_FILE`. Loaded into the CLI process only. |
 | Not on Secrets card | `TELEGRAM_BOT_TOKEN` must **not** live on the Grok Secrets card. `secret-request` / secure-input wrote it onto the shared multi-agent card (known leak). Rotate if that path was used. Agents must not get the token via default env. |
 | Group route | `TELEGRAM_CHAT_ID` = Hive **plain group** (not a supergroup). Required for desk publish. Preflight `getChat`s this id and fails loudly if it does not resolve or if the id drifted to a `-100...` form. |
-| Principal DM | `TELEGRAM_CHAT_ID_PRINCIPAL_DM` required for `lab deliver test --to-principal-dm --i-mean-it`. **Never** a silent fallback when the group id is missing. |
+| Principal DM | `TELEGRAM_CHAT_ID_PRINCIPAL_DM` required for `lab deliver pack|test --to-principal-dm --i-mean-it`. **Never** a silent fallback when the group id is missing. |
 | Per-desk routes | `TELEGRAM_CHAT_ID_<DESK>` / `message_thread_id` are **NOT CONFIGURED** (expected-absent). Hive has no forum topics. Preflight prints `NOT CONFIGURED` and does **not** fail. Principal will later choose forum topics (id change) or separate groups — not needed before step 5. |
 | Preflight | `lab env preflight` prints **full** FOUND / MISSING / NOT CONFIGURED / DOWN SERVICE / absent state for Telegram, FRED, Polygon, Postgres, and object store. `MISSING` (required absent) → exit non-zero. `NOT CONFIGURED` (per-desk routes today) does **not** fail. Group `TELEGRAM_CHAT_ID` is required. |
 | Shared box | File-path readability is a **soft** boundary. Hard fix (delivery binary under a separate user or own container) is queued — do not build it here. |
@@ -60,6 +61,11 @@ uv run lab deliver listings --fixture tests/fixtures/phase6d/listing_day.json --
 # On-box only. Requires TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID_PRINCIPAL_DM.
 # Never posts to TELEGRAM_CHAT_ID (Hive group).
 uv run lab deliver test --to-principal-dm --i-mean-it --ignore-quiet-hours --out /tmp/desk-run
+
+# Pack / brief to Principal DM (same DM route + gates; group stays SEND_FROZEN).
+uv run lab deliver pack --from-markdown tests/fixtures/phase5e/desk-pack.md \
+  --as-of 2026-09-18T00:00:00Z --desk ops --to-principal-dm --no-send --out /tmp/desk-run
+# Live (on-box only): add --i-mean-it (and omit --no-send, or pass --send --i-mean-it).
 ```
 
 `--no-send` is the default. Pytest unsets `TELEGRAM_BOT_TOKEN` and refuses connections to `api.telegram.org`.
@@ -70,7 +76,7 @@ uv run lab deliver test --to-principal-dm --i-mean-it --ignore-quiet-hours --out
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | live send / getChat | Bot token. Never git. Never Grok Secrets card. Never dry-run files. |
 | `TELEGRAM_CHAT_ID` | desk publish | Hive **group** route. Missing → fail. Never default to Principal DM. |
-| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | DM-only live test | Private Principal DM. Required for `--to-principal-dm`. |
+| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | DM-only live pack/test | Private Principal DM. Required for `--to-principal-dm`. |
 | `TELEGRAM_CHAT_ID_<DESK>` | NOT CONFIGURED | Plain group; no forum topics. Report, do not fail. |
 
 `config/delivery/telegram.yaml` maps desk → **env var name** + optional forum `thread_id`. It must not contain token or chat id values. Copy `.env.example` placeholders only. `owner` / `publisher` are `ops`. Coordinator is `orchestration_only`.

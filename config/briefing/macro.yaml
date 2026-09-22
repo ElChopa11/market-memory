@@ -2,18 +2,74 @@
 # Never put API keys in this file; inject via env (see .env.example).
 mode: off
 fixture_path: tests/fixtures/briefing/frozen_day.json
+
+# Pulse quality vs observation age (not fetch success).
+# Age = calendar days between observation date (FRED `date` / AssetPrint.as_of)
+# and brief as_of_knowledge (capture / session as_of). Never published_at alone.
+# Beyond the resolved max_calendar_lag_days → stale (never fresh).
+# See docs/runbooks/market-pulse.md.
+#
+# FRED lag is per-series with a default:
+#   - max_calendar_lag_days at the fred: level is the *daily default*
+#   - freshness.fred.series.<SYMBOL> overrides for monthly / low-cadence prints
+#     so CPI/NFP at 30–45d are not falsely stale under the daily rule.
+freshness:
+  fred:
+    cadence: daily
+    # Default for daily FRED (US10Y / DGS10 and any series without an override).
+    # Incident 2026-09-22 brief with as-of 2026-09-18 (4d) must not be fresh.
+    max_calendar_lag_days: 2
+    series:
+      # Daily — omit lag to inherit the default above (documented explicitly).
+      US10Y:
+        cadence: daily
+        # inherits max_calendar_lag_days: 2
+        fred_series_id: DGS10
+      # Monthly / low-cadence — FRED stamps are often month-start; BLS lag is weeks.
+      # Age ~30–45d must remain eligible for fresh; only past this threshold → stale.
+      CPI:
+        cadence: monthly
+        max_calendar_lag_days: 45
+        fred_series_id: CPIAUCSL
+      NFP:
+        cadence: monthly
+        max_calendar_lag_days: 45
+        fred_series_id: PAYEMS
+
 live:
   enabled: false
+  # Stooq is not the Pulse primary path (SRC-STOOQ-404 http_404). Optional canary only;
+  # no scrape fallback. Prefer polygon ETF proxies below.
   stooq:
     enabled: false
-    # Public CSV quotes (no key). https://stooq.com
     base_url: https://stooq.com/q/l/
+    symbols: {}
+  # Stocks-plan US ETFs via Polygon (POLYGON_API_KEY). True CME ES/NQ/CL futures
+  # need a futures subscription we do not have — these are proxies, not futures.
+  polygon:
+    enabled: false
+    api_key_env: POLYGON_API_KEY
+    base_url: https://api.polygon.io
+    lookback_calendar_days: 10
     symbols:
-      ES: es.f
-      NQ: nq.f
-      DXY: dx.f
-      CL: cl.f
-      VIX: ^vix
+      ES:
+        ticker: SPY
+        label: "SPY ETF (proxy for S&P 500; not ES futures)"
+      NQ:
+        ticker: QQQ
+        label: "QQQ ETF (proxy for Nasdaq-100; not NQ futures)"
+      DXY:
+        ticker: UUP
+        label: "UUP ETF (USD proxy; not DX futures / DXY)"
+      CL:
+        ticker: USO
+        label: "USO ETF (WTI oil proxy; not CL futures)"
+    # True VIX / VX needs Cboe entitlement; not on Polygon stocks plan.
+    structural_unavailable:
+      VIX:
+        reason: >-
+          true VIX/VX needs Cboe entitlement not on Polygon stocks plan;
+          no CME/CFE licence; VIXY ETF is not VIX (SRC-STOOQ-404)
   fred:
     enabled: false
     # https://fred.stlouisfed.org — key from FRED_API_KEY

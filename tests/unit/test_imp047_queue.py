@@ -1,4 +1,4 @@
-"""IMP-047 is DONE (#73); IMP-056 holds the single IN_PROGRESS slot."""
+"""IMP-047 is DONE (#73); IMP-056 DONE (#85); zero IN_PROGRESS."""
 
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ def test_queue_imp047_done_imp056_slot_048_049_050_backlog() -> None:
     assert any("#73" in line for line in board_lines if "IMP-047" in line)
     assert any("IMP-046" in line and "DONE" in line for line in board_lines)
     assert any("#72" in line for line in board_lines if "IMP-046" in line)
-    assert any("IMP-056" in line and "IN_PROGRESS" in line for line in board_lines)
+    assert any("IMP-056" in line and "DONE" in line for line in board_lines)
+    assert not any("IMP-056" in line and "IN_PROGRESS" in line for line in board_lines)
     assert any("IMP-048" in line and "BACKLOG" in line for line in board_lines)
     assert any("IMP-049" in line and "BACKLOG" in line for line in board_lines)
     assert any("IMP-050" in line and "BACKLOG" in line for line in board_lines)
@@ -48,11 +49,11 @@ def test_queue_imp047_done_imp056_slot_048_049_050_backlog() -> None:
     assert not any("IMP-055" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-057" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-044" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     assert (ROOT / "ops" / "plans" / "IMP-047-hybrid-dm-only-send.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False
     ok_048, reason_048 = can_start("IMP-048", report)

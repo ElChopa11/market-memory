@@ -49,7 +49,8 @@ uv run lab ingest --fixture tests/fixtures/hl_window.json --no-objects
 uv run lab brief preopen --as-of 2026-03-10T12:00:00Z --fixture tests/fixtures/briefing/frozen_day.json --no-db
 
 # 3. Live public slice (Principal Phase 2). Missing keys → unavailable/partial; never invented.
-#    Uses Stooq + CoinGecko (no key), FRED if FRED_API_KEY is set, HL public /info allowlist.
+#    Polygon ETF proxies (SPY/QQQ/UUP/USO) + CoinGecko (no key) + FRED if FRED_API_KEY;
+#    Stooq is not primary (SRC-STOOQ-404). HL public /info allowlist.
 uv run lab brief preopen --live --no-db
 ```
 
@@ -73,21 +74,64 @@ Those instants shift by one UTC hour across US DST. Tests cover the 2026-03-08 s
 ## Macro / calendar sources
 
 - **Fixture** (tests + default deterministic path): JSON/YAML, no network.
-- **Live** (`--live` or `config/briefing/macro.yaml` mode: live): Stooq public CSV, FRED (key from `FRED_API_KEY`), CoinGecko public price. Missing keys or HTTP errors set `unavailable`/`partial` and keep going. **Never invent missing prints. Never commit secrets.**
+- **Live** (`--live` or `config/briefing/macro.yaml` mode: live): **Polygon** stocks-plan ETF proxies for equity/USD/oil Pulse slots (`POLYGON_API_KEY`), FRED (key from `FRED_API_KEY`), CoinGecko public price. Stooq CSV is **not** the primary path (`SRC-STOOQ-404`). Missing keys or HTTP errors set `unavailable`/`partial` and keep going. **Never invent missing prints. Never commit secrets.**
 - Calendar is `config/briefing/calendar.yaml` (the approved attributable source). There is no live calendar API; an empty window is printed honestly.
 
 Shared GET helper (`mm_common.http`, also used by `lab data source-health`): default timeout **8s**; **one** retry only on `timeout` / `unreachable` / `429` / `5xx`. HTTP **404 is terminal** (no retry, no scrape fallback).
 
 Every market-data section has an as-of timestamp. Pulse display quality is `fresh | stale | partial | unavailable` (`ok` maps to `fresh` in markdown). Snapshot HL fields label capture/`ingested_at`; they do not disguise capture time as exchange `market_time`.
 
+### Observation age → quality (FRED; per-series lag)
+
+**Fetch success is not freshness.** Quality for cadence-gated sources is computed from observation age vs the brief knowledge clock:
+
+| Clock | Meaning |
+|---|---|
+| Observation date | FRED series observation `date` (stored on `AssetPrint.as_of`) |
+| Knowledge clock | Brief `as_of_knowledge` / live capture `as_of` (never `published_at` alone) |
+| Age | Calendar days: `knowledge_date − observation_date` |
+
+Config: `config/briefing/macro.yaml` → `freshness.fred`:
+
+| Field | Default | Effect |
+|---|---|---|
+| `cadence` | `daily` | Source-level default cadence label |
+| `max_calendar_lag_days` | `2` | **Daily default.** If age **>** this value → `stale` (display may show `stale (Nd)`). Never `fresh`. Applies to any FRED series **without** a per-series override (e.g. US10Y / DGS10). |
+| `series.<SYMBOL>` | — | Per-series override. Set `cadence` + `max_calendar_lag_days` for monthly / low-cadence prints. Optional `fred_series_id` for matching by FRED id. |
+
+**Why per-series:** A global daily lag of 2 would falsely mark monthly FRED (CPI, NFP/payrolls) stale every time — those prints are legitimately 30+ days old relative to a month-start observation stamp. Monthly overrides (default **45** calendar days for CPI / NFP in repo config) keep a ~30–45d print eligible for fresh; only past that series' own threshold → stale.
+
+Principal-reasonable daily default: FRED daily series older than **2 calendar days** behind `as_of_knowledge` cannot be labelled fresh. The 2026-09-22 US Close Brief incident (US10Y as-of 2026-09-18, four days old, shown as fresh / +7.0bp) is the motivating case — a 4-day-old *daily* print must render as stale with age visible, not fresh.
+
+Layer: `mm_briefing.freshness` (shared helper; `lag_for(source, symbol, series_id)`) + live FRED fetcher + `complete_cross_asset` gate so all Pulse consumers see the same rule. Stooq / CoinGecko cadence thresholds are out of scope for this fix (separate routing work).
+
+Memory ingest of FRED remains `historical=True` (facts about the past are not snapshot-stale in Market Memory). Pulse live display is a separate product surface and applies the calendar lag gate above.
+
 ### Hardened failure modes (live)
 
 | Source | Typical class | What operators see | What not to do |
 |---|---|---|---|
-| Stooq CSV `https://stooq.com/q/l/` | `http_404`, `timeout`, `http_5xx`, `parse_error`, `tos_or_blocked` | Slot stays **unavailable**; note includes `error_class=…`; no Close invented | Do **not** add HTML scrapers, country mirrors, or Yahoo/investing.com fallbacks (ToS). Treat cloud-IP 404 as unavailability. |
+| Polygon stocks ETF proxies (`SPY`/`QQQ`/`UUP`/`USO`) | `missing_env` if `POLYGON_API_KEY` unset; else `timeout` / `http_5xx` / `rate_limited` / `parse_error` | Slot listed with **proxy** label + source=`polygon`; n/a when fetch fails | Do **not** present ETF last as ES/NQ/CL/DX futures. Do not invent. Key never committed. |
+| Polygon / CME futures (true ES, NQ, CL) | structural (not on stocks plan) | Not fetched; ETF proxies used instead | Do not buy/scrape a CME pass-through in this path. |
+| Polygon / Cboe VIX | structural (not on stocks plan) | VIX slot **unavailable** with reason (VIXY is not VIX) | Do not scrape Cboe JSON; do not label VIXY as VIX. |
+| Stooq CSV `https://stooq.com/q/l/` | `http_404` (`SRC-STOOQ-404`), `timeout`, `http_5xx`, `parse_error` | Optional canary only; Pulse primary is Polygon proxies | Do **not** add HTML scrapers, country mirrors, or Yahoo/investing.com fallbacks (ToS). |
 | FRED | `missing_env` if `FRED_API_KEY` unset; else `timeout` / `http_5xx` / `tos_or_blocked` / `parse_error` | Rates slot **unavailable**; note names the env, never the value | Do **not** commit the key. Do not paste it into git, briefs, or tickets. |
 | CoinGecko | `timeout` / `http_5xx` / `rate_limited` | Crypto slot unavailable if the public price call fails | Do not invent last/prior. |
 | Hyperliquid `/info` | allowlist only | Memory first; `--live` fallback still refuses wallet/user types | No `hl_trade` / signing. |
+
+### Polygon ETF proxies (Fix 2 / SRC-STOOQ-404)
+
+Stooq futures/index CSV (`es.f`, `nq.f`, `dx.f`, `cl.f`, `^vix`) has returned `http_404` since 2026-09-17 (`SRC-STOOQ-404` stays **OPEN**). Pulse live routing prefers Polygon stocks-plan ETFs where the keyed plan covers them:
+
+| Pulse slot | Polygon ticker | Honesty |
+|---|---|---|
+| ES | SPY | ETF proxy for S&P 500 — **not** ES futures |
+| NQ | QQQ | ETF proxy for Nasdaq-100 — **not** NQ futures |
+| DXY | UUP | USD ETF proxy — **not** DX futures / DXY |
+| CL | USO | WTI oil ETF proxy — **not** CL futures |
+| VIX | — | **Structurally unavailable** without Cboe entitlement; VIXY is not VIX |
+
+True CME futures prints need a futures subscription / CME Information License the lab does not have. Config: `config/briefing/macro.yaml` → `live.polygon`. Incident: [ops/improvement-queue.md](../../ops/improvement-queue.md) `SRC-STOOQ-404`.
 
 Live pre-market footer points at `lab data source-health` → `ops/reports/source-health/` (pointer only; the brief does not embed a health report). Fixture briefs omit that line so frozen hashes stay pinned.
 
