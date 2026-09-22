@@ -2,6 +2,18 @@
 # Never put API keys in this file; inject via env (see .env.example).
 mode: off
 fixture_path: tests/fixtures/briefing/frozen_day.json
+
+# Pulse quality vs observation age (not fetch success).
+# Age = calendar days between observation date (FRED `date` / AssetPrint.as_of)
+# and brief as_of_knowledge (capture / session as_of). Never published_at alone.
+# Beyond max_calendar_lag_days → stale (never fresh). See docs/runbooks/market-pulse.md.
+freshness:
+  fred:
+    cadence: daily
+    # Principal-reasonable for FRED daily series (US10Y / DGS10): stale when age > 2.
+    # Incident 2026-09-22 brief with as-of 2026-09-18 (4d) must not be fresh.
+    max_calendar_lag_days: 2
+
 live:
   enabled: false
   stooq:
