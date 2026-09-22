@@ -69,8 +69,8 @@ Hive group / desk pack `--send` stays SEND_FROZEN. DM-only live path is `lab del
 
 Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hybrid-sydney-morning.yml`:
 
-- `on.schedule` dual cron for weekday 06:30 Australia/Sydney (AEST `30 20 * * 0-4` UTC; AEDT `30 19 * * 0-4` UTC). Off-season companion is skipped unless within ±900s of the local anchor.
-- `on.workflow_dispatch` for Principal canary (default force stamp).
+- `on.schedule` one cron while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps.
+- `on.workflow_dispatch` for a Principal canary. Manual dispatch stamps the same way as the cron (no skip).
 - Job runs `uv run lab schedule heartbeat --routine-id grok.sydney_morning --no-db --source github.actions` (no Telegram; never `--send`).
 - **Durable path:** the job commits the completion JSON to the branch the workflow ran on (`github.ref_name`) with an auditable message (`routine_id`, `run_id`, `scheduled_for`, `actual`, `delta_seconds`, `status`), using `permissions: contents: write` and rebase-retry on non-fast-forward. Completions are **not** gitignored.
 - **Secondary:** `actions/upload-artifact` (expires; box cannot read).
@@ -85,4 +85,4 @@ Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hyb
 | Draft PR canary (before merge) | Actions → Run workflow → branch **`cursor/b1-sydney-morning-actions-ae81`** (or current PR head) | That PR branch |
 | After merge | `schedule` on default branch | `main` |
 
-Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft → leave `force` true.
+Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft. The job stamps; there is no force flag and no ±900s skip.
