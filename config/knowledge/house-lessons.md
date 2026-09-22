@@ -276,6 +276,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-22 — Panel scheduler dead; Actions is the invoker (SCHED-001 CLOSED)
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-22 |
+| **run_id** | `actions-b1-35727756341` |
+| **Desk** | Ops |
+| **What happened** | **SCHED-001 CLOSED** citing GitHub Actions run_id `actions-b1-35727756341`. Job: hybrid-sydney-morning #1 Success ~21s, `stage1-stamp` green. Stamp: commit `857f55c` on `main` by `github-actions[bot]`, path scoped to `ops/reports/scheduler/completions/` only. Routine `grok.sydney_morning`; `scheduled_for` `2026-09-21T20:30:00Z`; actual `2026-09-22T12:32:21Z`; delta `57741s`; status `late` (correct for forced dispatch vs yesterday's anchor). Panel was never a viable invoker: seven routines, two boxes, zero fires, including a webhook path (C1 silent). Fix was not configuration — move execution somewhere that provably runs. Controls belong on the path that executes. B1 Stage 1 (PR #90 merged): Actions cron + durable completion commit-back is the invoker. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action. |
+| **Lesson** | **Panel was never a viable invoker.** Do not keep retuning a dead panel schedule. Fix is not configuration — move execution somewhere that **provably runs**. **Controls belong on the path that executes.** GitHub Actions cron + durable completion commit-back (`ops/reports/scheduler/completions/`) is the invoker for `grok.sydney_morning`. Sibling to the bot-box-as-container lesson (PR #88 — compose is local-dev only). |
+| **Does not** | Authorise Telegram / Hive group send. Does not lift `SEND_FROZEN`. Does not treat forced-dispatch `late` as on-anchor acceptance (next on-anchor is 06:30 Australia/Sydney). Does not reopen Grok/Hive panel as the clock. Does not occupy `IN_PROGRESS` with feature work. |
+| **Overrides prior** | Closes incident **SCHED-001** with this `run_id`. Process lessons “Configured is not executed,” “Controls on a path that never executes are not controls,” and “Instrumentation that records only successes cannot detect silence” **still stand** — they are how we got here; they do not keep the incident OPEN. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

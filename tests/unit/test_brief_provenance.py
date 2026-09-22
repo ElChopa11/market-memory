@@ -34,6 +34,8 @@ def test_missing_cross_asset_slots_are_unavailable_not_omitted() -> None:
     assert snap.by_symbol()["US10Y"].source == "fred"
     assert snap.by_symbol()["ES"].source == "polygon"
     assert snap.by_symbol()["VIX"].source == "polygon"
+    assert snap.by_symbol()["BTC"].source == "hyperliquid"
+    assert snap.by_symbol()["ETH"].source == "hyperliquid"
 
 
 def test_stale_and_unavailable_appear_in_markdown() -> None:

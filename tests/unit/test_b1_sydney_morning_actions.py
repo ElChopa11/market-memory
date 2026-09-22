@@ -16,7 +16,9 @@ def test_hybrid_sydney_morning_workflow_contract() -> None:
     assert "workflow_dispatch:" in text
     assert "schedule:" in text
     assert 'cron: "30 20 * * 0-4"' in text  # AEST 06:30 → prior-day 20:30 UTC
-    assert 'cron: "30 19 * * 0-4"' in text  # AEDT 06:30 → prior-day 19:30 UTC
+    assert 'cron: "30 19 * * 0-4"' not in text  # AEDT companion cron removed
+    assert "outside_anchor_window" not in text
+    assert "FORCE_STAMP" not in text
     assert "lab" in text and "schedule" in text and "heartbeat" in text
     assert "grok.sydney_morning" in text
     assert "--no-db" in text

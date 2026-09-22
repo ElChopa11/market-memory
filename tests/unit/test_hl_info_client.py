@@ -52,3 +52,23 @@ def test_all_mids_uses_public_info_body() -> None:
     assert mids["BTC"] == "1.0"
     assert seen["body"] == {"type": "allMids"}
     assert "/info" in str(seen["url"])
+
+
+def test_hl_info_429_honours_retry_after_with_shared_backoff() -> None:
+    calls = {"n": 0}
+    sleeps: list[float] = []
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(429, json={"error": "rate"}, headers={"Retry-After": "2.5"})
+        return httpx.Response(200, json={"BTC": "1"})
+
+    client = HyperliquidInfoClient(
+        transport=httpx.MockTransport(handler),
+        sleep=sleeps.append,
+        max_attempts=5,
+    )
+    assert client.all_mids()["BTC"] == "1"
+    assert calls["n"] == 3
+    assert sleeps[0] >= 2.5

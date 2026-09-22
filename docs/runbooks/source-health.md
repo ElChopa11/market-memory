@@ -45,7 +45,7 @@ Status: `ok | degraded | unavailable`. Overall is `unavailable` if any **Pulse-r
 
 ## Hardened failure modes
 
-Same GET helper as Pulse (`mm_common.http`): default **8s** timeout; **one** retry on `timeout` / `unreachable` / `429` / `http_5xx` only.
+Same GET helper as Pulse (`mm_common.http`): default **8s** timeout; **up to 5 attempts** with exponential backoff + jitter (honour `Retry-After`; ceiling several seconds) on `timeout` / `unreachable` / `429` / `http_5xx` only.
 
 | Class | Typical cause | Retry | Operator action |
 |---|---|---|---|

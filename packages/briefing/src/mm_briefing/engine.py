@@ -16,7 +16,9 @@ from mm_briefing.config import AlertSettings, BriefingSettings, load_briefing_se
 from mm_briefing.divergences import assumption_changes, evaluate_divergences, unexpected_moves
 from mm_briefing.fetchers import (
     MacroFetcher,
+    apply_crypto_pulse_from_hl,
     complete_cross_asset,
+    crypto_pulse_source_of_record,
     fetcher_for_mode,
     live_macro_spec,
     snapshot_from_payload,
@@ -140,6 +142,12 @@ def generate_preopen(
     generated = as_utc(generated_at or as_of)
     filled = complete_cross_asset(macro, freshness=load_freshness_config(settings.macro))
     hl_filled = ensure_hl_instruments(hl, as_of=as_utc(as_of))
+    filled = apply_crypto_pulse_from_hl(
+        filled,
+        hl_filled,
+        source_of_record=crypto_pulse_source_of_record(settings.macro),
+        macro_config=settings.macro,
+    )
     cal_source = calendar_source or getattr(settings, "calendar_source", None) or DEFAULT_CALENDAR_SOURCE
     calendar = relevant_events(events_from_rows(settings.calendar_events, source=cal_source), as_of=as_of)
     divergences = evaluate_divergences(filled, settings.divergence_rules)
@@ -179,8 +187,19 @@ def generate_close(
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
     freshness = load_freshness_config(settings.macro)
-    overnight_gated = complete_cross_asset(overnight, freshness=freshness)
-    session_gated = complete_cross_asset(session, freshness=freshness)
+    sor = crypto_pulse_source_of_record(settings.macro)
+    overnight_gated = apply_crypto_pulse_from_hl(
+        complete_cross_asset(overnight, freshness=freshness),
+        hl,
+        source_of_record=sor,
+        macro_config=settings.macro,
+    )
+    session_gated = apply_crypto_pulse_from_hl(
+        complete_cross_asset(session, freshness=freshness),
+        hl,
+        source_of_record=sor,
+        macro_config=settings.macro,
+    )
     calendar = relevant_events(events_from_rows(settings.calendar_events), as_of=as_of, lookback_hours=0, horizon_hours=24)
     unexpected = unexpected_moves(session_gated, overnight_gated)
     assumptions = assumption_changes(session_gated, overnight_gated)

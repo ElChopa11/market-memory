@@ -61,20 +61,22 @@ Sunday dry-run lookback produced ~99 historical misses. Label them once so Monda
 uv run lab schedule miss-check --baseline-before today --no-db
 ```
 
-`--baseline-before today` is the Australia/Sydney calendar date of `--now` (or now). Writes `ops/reports/scheduler/known-missed-baseline.yaml` (gitignored). Subsequent miss-check loads that file. Windows are **labeled**, not deleted. SCHED-001 stays OPEN.
+`--baseline-before today` is the Australia/Sydney calendar date of `--now` (or now). Writes `ops/reports/scheduler/known-missed-baseline.yaml` (gitignored). Subsequent miss-check loads that file. Windows are **labeled**, not deleted.
 
-Hive group / desk pack `--send` stays SEND_FROZEN. DM-only live path is `lab deliver test --to-principal-dm --i-mean-it` (does not change miss-check). SCHED-001 stays OPEN. Root cause: [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md).
+Hive group / desk pack `--send` stays SEND_FROZEN. DM-only live path is `lab deliver test --to-principal-dm --i-mean-it` (does not change miss-check). Root cause (historical): [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md). **SCHED-001 CLOSED** citing run_id `actions-b1-35727756341` — [ops/reports/incident-closures/20260922-sched-001-actions-invoker-close.md](../../ops/reports/incident-closures/20260922-sched-001-actions-invoker-close.md).
 
 ## B1 Stage 1 — GitHub Actions invoker (permanent clock)
 
 Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hybrid-sydney-morning.yml`:
 
-- `on.schedule` dual cron for weekday 06:30 Australia/Sydney (AEST `30 20 * * 0-4` UTC; AEDT `30 19 * * 0-4` UTC). Off-season companion is skipped unless within ±900s of the local anchor.
-- `on.workflow_dispatch` for Principal canary (default force stamp).
+- `on.schedule` one cron while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps.
+- `on.workflow_dispatch` for a Principal canary. Manual dispatch stamps the same way as the cron (no skip).
 - Job runs `uv run lab schedule heartbeat --routine-id grok.sydney_morning --no-db --source github.actions` (no Telegram; never `--send`).
 - **Durable path:** the job commits the completion JSON to the branch the workflow ran on (`github.ref_name`) with an auditable message (`routine_id`, `run_id`, `scheduled_for`, `actual`, `delta_seconds`, `status`), using `permissions: contents: write` and rebase-retry on non-fast-forward. Completions are **not** gitignored.
 - **Secondary:** `actions/upload-artifact` (expires; box cannot read).
-- After `git pull` on the box, `lab schedule miss-check --no-db` can load the row. **SCHED-001 closes only on an observed fire with a readable completion row** — not artifact-only.
+- After `git pull` on the box, `lab schedule miss-check --no-db` can load the row.
+
+**SCHED-001 CLOSED** on observed fire with readable completion row: run_id `actions-b1-35727756341` (job hybrid-sydney-morning #1 Success ~21s; stamp commit `857f55c` on `main`, path scoped to `ops/reports/scheduler/completions/` only). Forced-dispatch status `late` (delta 57741s vs yesterday's anchor) is correct; next on-anchor test is 06:30 Australia/Sydney without Principal action.
 
 ### Push target
 
@@ -83,4 +85,4 @@ Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hyb
 | Draft PR canary (before merge) | Actions → Run workflow → branch **`cursor/b1-sydney-morning-actions-ae81`** (or current PR head) | That PR branch |
 | After merge | `schedule` on default branch | `main` |
 
-Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft → leave `force` true.
+Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft. The job stamps; there is no force flag and no ±900s skip.

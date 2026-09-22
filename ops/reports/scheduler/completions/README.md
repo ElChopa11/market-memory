@@ -12,7 +12,7 @@ Override: `--completions-dir` or `MM_SCHEDULE_COMPLETIONS_DIR`.
 
 **Policy (B1 Stage 1 / Principal 2026-09-22):** Actions-produced stamps **ARE committed** under this directory so the box can `git pull` and `lab schedule miss-check --no-db` can read them. Artifact upload alone is not durable. Prefer the Actions commit path (auditable message with routine id, run_id, scheduled_for, actual, delta_seconds, status). Do not commit secrets — only `*.json` completion rows. Postgres table `schedule_heartbeat` remains the optional DB copy (skipped with `--no-db`).
 
-SCHED-001 closes only on an **observed fire with a readable completion row** (in-repo / on-box path), not on artifact upload alone.
+**SCHED-001 CLOSED** citing run_id `actions-b1-35727756341` (observable row: `grok.sydney_morning__20260921T203000Z.json`; stamp commit `857f55c` on `main`). Panel was never a viable invoker; Actions cron + commit-back is the invoker. Close pack: [../../incident-closures/20260922-sched-001-actions-invoker-close.md](../../incident-closures/20260922-sched-001-actions-invoker-close.md).
 
 ## Row fields
 

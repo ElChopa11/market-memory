@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from mm_desks.queue import can_start, check_queue, refuse_forbidden
@@ -133,10 +134,15 @@ def test_lab_queue_check_on_repo(capsys) -> None:
     rc = main(["queue", "check", "--repo-root", str(ROOT)])
     payload = capsys.readouterr().out
     assert rc == 0
-    assert "SCHED-001" in payload
-    assert "BRIEF-TAG-20260918" in payload
-    assert '"auto_merge": false' in payload
-    assert '"auto_waive": false' in payload
+    public = json.loads(payload)
+    assert "BRIEF-TAG-20260918" in public["open_incidents"]
+    assert "SCHED-001" not in public["open_incidents"]
+    assert public["auto_merge"] is False
+    assert public["auto_waive"] is False
+    # Incident remains on the queue as CLOSED (docs still cite it).
+    queue = (ROOT / "ops" / "improvement-queue.md").read_text(encoding="utf-8")
+    assert "| **ID** | SCHED-001 |" in queue
+    assert "actions-b1-35727756341" in queue
 
 
 def test_lab_queue_refuses_merge(capsys) -> None:
