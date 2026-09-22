@@ -332,6 +332,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-23 — Sydney 06:30 anchor bugs (extract only; tolerance later)
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-23 |
+| **run_id** | `actions-b1-35727756341` (bug a); actions run `35791891126` (bug b skip); `actions-b1-35795814246` (later unguarded drift) |
+| **Desk** | Ops |
+| **What happened** | Two defects in the Sydney-morning anchor / ±900s rule, recorded for future tolerance work. The decision now lives in `mm_desks.sydney_anchor` with frozen AEST and AEDT tests. `.github/workflows/hybrid-sydney-morning.yml` does not call it. **(a)** Anchor derivation computed the Tuesday anchor for a Wednesday run. Completion `ops/reports/scheduler/completions/grok.sydney_morning__20260921T203000Z.json`, run `actions-b1-35727756341`, `scheduled_for=2026-09-21T20:30:00Z` (Tuesday 06:30 Australia/Sydney), `fired_at_ts=2026-09-22T12:32:21Z`, `delta_seconds=57741`, status `late`. The Wednesday 06:30 Australia/Sydney slot is `2026-09-22T20:30:00Z`. The rule used 06:30 on the Sydney calendar date of the fire (Tuesday 22:32 AEST). `scheduled_slot` on the live stamp path uses that same rule; this extract does not change it. **(b)** ±900s is far too tight versus observed Actions drift of about 1h51m. Schedule run created `2026-09-22T22:21:07Z` (actions run `35791891126`) against the `20:30Z` cron. Skip log: `delta_seconds=6682`, `now_utc=2026-09-22T22:21:22Z`, `anchor_utc=2026-09-22T20:30:00Z`, reason `outside_anchor_window`. That skip wrote no completion. After the guard left the workflow, run `actions-b1-35795814246` stamped the Wednesday slot at `fired_at_ts=2026-09-22T23:07:08Z`, `delta_seconds=9428`, status `late` (~2h37m). Under ±900s that fire would have been skipped too. |
+| **Lesson** | Keep the ±900s decision in `mm_desks.sydney_anchor` until tolerance work widens it past the observed drift (6682s and 9428s) and fixes the Tuesday-anchor derivation on the Wednesday run. In-window frozen clocks (AEST UTC+10 and AEDT UTC+11, including the April and October transitions) decide stamp. The live workflow stays one AEST cron (`30 20 * * 0-4`): every fire stamps. #98 stays unmerged because it restores the guard into the workflow. |
+| **Does not** | Wire `mm_desks.sydney_anchor` into `.github/workflows/hybrid-sydney-morning.yml`. Does not restore a ±900s skip, a force flag, or the AEDT companion cron `30 19 * * 0-4`. Does not treat 900s as an acceptable Actions drift budget. Does not change `scheduled_slot` in this lesson (tomorrow's baseline fire keeps the current stamp path). Does not reopen SCHED-001. Does not authorise a Telegram send or lift `SEND_FROZEN`. Does not merge this record. |
+| **Overrides prior** | Narrows the same-week sentence that called delta 57741 versus `2026-09-21T20:30:00Z` “correct for forced dispatch vs yesterday's anchor.” The late status is what that derivation produced. The derivation itself is bug (a). “Minutes of cron drift are accepted as drift, not as a skip” still stands: the skip at 6682s is the defect, and the unguarded 9428s stamp is the path that must keep running until tolerance work lands. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

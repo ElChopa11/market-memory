@@ -98,13 +98,14 @@ This section does not change `.github/workflows/hybrid-sydney-morning.yml`. That
 Actions is the execution path. This workflow is still the Stage 1 stamp for `grok.sydney_morning`, via `.github/workflows/hybrid-sydney-morning.yml`. Fetch, brief, and Principal-DM delivery are Stage 2 (next build; not this file).
 
 - `on.schedule` one cron while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps.
+- The ±900s decision is extracted in `mm_desks.sydney_anchor` for tests (frozen AEST and AEDT; in-window decides stamp). This workflow does not import it. House lesson 2026-09-23 records the two tolerance bugs: (a) run `actions-b1-35727756341` stamped Tuesday 06:30 (`scheduled_for=2026-09-21T20:30:00Z`) on the Wednesday run; (b) ±900s versus observed drift `delta_seconds=6682` (~1h51m; schedule run created `2026-09-22T22:21:07Z` against the `20:30Z` cron). Do not wire the module back until that tolerance work lands.
 - `on.workflow_dispatch` for a Principal canary. Manual dispatch stamps the same way as the cron (no skip).
 - Job runs `uv run lab schedule heartbeat --routine-id grok.sydney_morning --no-db --source github.actions` (no Telegram; never `--send`).
 - **Durable path:** the job commits the completion JSON to the branch the workflow ran on (`github.ref_name`) with an auditable message (`routine_id`, `run_id`, `scheduled_for`, `actual`, `delta_seconds`, `status`), using `permissions: contents: write` and rebase-retry on non-fast-forward. Completions are **not** gitignored.
 - **Secondary:** `actions/upload-artifact` (expires; box cannot read).
 - After `git pull` on the box, `lab schedule miss-check --no-db` can load the row.
 
-**SCHED-001 CLOSED** on observed fire with readable completion row: run_id `actions-b1-35727756341` (job hybrid-sydney-morning #1 Success ~21s; stamp commit `857f55c` on `main`, path scoped to `ops/reports/scheduler/completions/` only). Forced-dispatch status `late` (delta 57741s vs yesterday's anchor) is correct; next on-anchor test is 06:30 Australia/Sydney without Principal action.
+**SCHED-001 CLOSED** on observed fire with readable completion row: run_id `actions-b1-35727756341` (job hybrid-sydney-morning #1 Success ~21s; stamp commit `857f55c` on `main`, path scoped to `ops/reports/scheduler/completions/` only). That forced dispatch recorded `scheduled_for=2026-09-21T20:30:00Z`, delta 57741s, status `late`. The anchor is known bug (a) in the 2026-09-23 house lesson: Tuesday 06:30 Australia/Sydney on the Wednesday run. Wednesday 06:30 Australia/Sydney is `2026-09-22T20:30:00Z`. Next on-anchor test is 06:30 Australia/Sydney without Principal action. The extract does not change this workflow.
 
 ### Push target
 
