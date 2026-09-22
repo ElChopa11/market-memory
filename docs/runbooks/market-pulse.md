@@ -95,7 +95,7 @@ Those instants shift by one UTC hour across US DST. Tests cover the 2026-03-08 s
 | HL `oracle_px` available | `|CG_spot − HL_oracle| / HL_oracle` | `metric=cg_vs_hl_oracle` | `crypto_pulse.divergence.max_bps` **100** |
 | Oracle missing | `|CG − HL_mid| / HL_mid` | `metric=raw_mid_vs_spot`, `confidence=low`, basis not subtracted | `max_bps_raw_mid_vs_spot` **300** (wider — mid embeds perp basis) |
 
-Default oracle threshold **100 bps** sits above normal BTC mark−oracle basis (~5–50 bps, e.g. ~49.4 on ~86k ≈ 5–6 bps) but catches wrong ticker / stale feed / splice. Raw-mid fallback uses a **separate wider** 300 bps threshold because comparing spot to perp mid without subtracting basis is noisier (`confidence=low`).
+Default oracle threshold **100 bps** sits above normal BTC mark−oracle basis (~5–50 bps, e.g. ~49.4 on ~86k ≈ 5–6 bps) but catches wrong ticker / stale feed / splice. Raw-mid fallback **must not share 100 bps**: under stress perp basis can widen well past tonight's ~5–6 bps and would false-fire `source_divergence` precisely when confusing. Separate **300 bps** still catches gross wrong-ticker/stale/splice without treating stress basis as a feed failure; escalations tag `confidence=low` and say basis was not subtracted.
 
 Hypothesis (non-binding): CoinGecko public endpoints may be rate-limited or blocked on some operator boxes while HL `/info` works. Always-fetch keeps the failure visible in notes; do not invent figures either way.
 

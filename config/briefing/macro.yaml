@@ -46,7 +46,9 @@ crypto_pulse:
     # 100 bps sits above normal mark−oracle basis (~5–50 bps) but catches splice/wrong ticker.
     max_bps: 100
     # Fallback when oracle missing: |CG − HL_mid| / HL_mid (metric=raw_mid_vs_spot).
-    # Wider because mid embeds perp basis; escalate with confidence=low + basis-not-subtracted.
+    # MUST NOT share 100bps — under stress perp basis can widen well past ~5–6bps and would
+    # false-fire source_divergence. 300bps still catches gross wrong-ticker/stale/splice.
+    # Escalations tag confidence=low + "basis not subtracted".
     max_bps_raw_mid_vs_spot: 300
     # symbols:
     #   BTC: { max_bps: 100, max_bps_raw_mid_vs_spot: 300 }
