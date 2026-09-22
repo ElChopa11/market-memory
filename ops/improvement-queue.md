@@ -11,7 +11,7 @@ This queue is the operating system, not an investment book. It does not authoris
 3. **No duplicate research.** If an artifact already answers the question, close or merge the item with a lesson.
 4. **Reusable artifacts.** Prefer templates, schema records, and desk products over one-off commentary.
 5. Status vocabulary: `OPEN` (ops incident, not closed) → `BACKLOG` → `READY` → `IN_PROGRESS` → `IN_REVIEW` → `DONE` | `PARKED` | `REJECTED` | `INTAKE_ONLY`. `OPEN` items are logged incidents; they are **not** closed and do not occupy the single `IN_PROGRESS` implementation slot. `INTAKE_ONLY` is a blocked shelf (specs only) and does not occupy the slot.
-6. **Incident closure (Principal-locked 2026-09-19):** `OPEN` → `ELIGIBLE` → `CLOSED` (must cite `run_id`) | `RETIRED`. `--no-db` is **ELIGIBLE only**. A helper must not auto-close. SRC-STOOQ-404 stays `OPEN` (`http_404`).
+6. **Incident closure (Principal-locked 2026-09-19):** `OPEN` → `ELIGIBLE` → `CLOSED` (must cite `run_id`) | `RETIRED`. `--no-db` is **ELIGIBLE only**. A helper must not auto-close. SRC-STOOQ-404 stays `OPEN` (`http_404`; optional Stooq canary / monitoring after #93 merge `b4db6e8` — Pulse no longer sole-depends on Stooq).
 
 ## Principal L2 sprint (intake 2026-09-19)
 
@@ -74,7 +74,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | — |
 | **Lesson learned** | *(open — do not close)* |
 
-### SRC-STOOQ-404 — stooq http_404, 2 consecutive
+### SRC-STOOQ-404 — stooq http_404, 2 consecutive (optional canary)
 
 | Field | Value |
 |---|---|
@@ -83,16 +83,16 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Source health |
 | **Desk** | Intel |
 | **Owner** | Intel |
-| **Problem** | Stooq HTTP 404, two consecutive observations. Pulse/source-health already classify `http_404` as terminal (IMP-004). Still OPEN. |
-| **Evidence** | [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) Stooq canary HTTP 404; IMP-002/IMP-003/IMP-004 lessons. Two consecutive. |
-| **Proposed outcome** | Intel owns the source: confirm whether 404 is IP/ToS/path; keep honest unavailable; no scrape fallback. |
-| **Definition of done** | Consecutive-404 record in this queue; Intel note on next source-health run; not closed by IMP-004 (hardening already shipped). |
-| **Non-goals** | ToS-violating scrape URLs; paid data; inventing prints. |
-| **Dependencies** | IMP-004 DONE (#34) — classification exists; this is the open consecutive-404 incident. |
-| **Risk level** | Low–medium (optional Pulse slot stays unavailable). |
+| **Problem** | Stooq HTTP 404, two consecutive observations (since 2026-09-17). Pulse/source-health classify `http_404` as terminal (IMP-004). **#93 removed Stooq as the sole Pulse path** (Polygon ETF proxies for ES/NQ/DXY/CL; VIX structural unavailable). Stooq remains an **optional canary / monitoring** path only (`live.stooq.symbols: {}` by default). Still OPEN — do not close merely because Pulse dependency moved. |
+| **Evidence** | [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) Stooq canary HTTP 404; IMP-002/IMP-003/IMP-004 lessons. Two consecutive. Fix 2 / [#93](https://github.com/ElChopa11/market-memory/pull/93) merge `b4db6e8`: `config/briefing/macro.yaml` → `live.polygon` ETF proxies; [docs/runbooks/market-pulse.md](../docs/runbooks/market-pulse.md) keeps `SRC-STOOQ-404` **OPEN** (Stooq optional canary; Pulse primary = Polygon proxies; VIX structural); no scrape fallback. |
+| **Proposed outcome** | Keep `OPEN` while Stooq canary still returns `http_404` (or until Principal **RETIRE**s the canary). Intel owns whether 404 is IP/ToS/path. Pulse primary stays Polygon proxies. No scrape fallback. |
+| **Definition of done** | Consecutive-404 record retained; not closed by IMP-004 or by #93 (Pulse re-route ≠ incident close). Close/RETIRE only with Principal note + either recovered Stooq canary `run_id` or explicit canary abandonment. |
+| **Non-goals** | ToS-violating scrape URLs; paid data; inventing prints; closing because Polygon proxies landed; labelling ETF last as ES/NQ/CL/DX futures. |
+| **Dependencies** | IMP-004 DONE (#34); Pulse re-route DONE (#93). This remains the open consecutive-404 / optional-canary incident. |
+| **Risk level** | Low (Pulse no longer sole-depends on Stooq; optional canary / source-health honesty). |
 | **Status** | OPEN |
-| **PR** | — |
-| **Lesson learned** | *(open — do not close)* |
+| **PR** | Left OPEN in [#93](https://github.com/ElChopa11/market-memory/pull/93) (`b4db6e8`) PR text + market-pulse runbook; queue note this hygiene PR. |
+| **Lesson learned** | *(open — keep OPEN: optional Stooq canary / monitoring; Pulse sole-path dependency removed by #93 `b4db6e8`)* |
 
 ### SRC-FRED-MISSING-ENV — environment-propagation (not a key-absent close)
 
@@ -114,7 +114,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **PR** | Reopened 2026-09-19 (Principal record correction). Prior close [#62](https://github.com/ElChopa11/market-memory/pull/62) / pack kept as history; ELIGIBLE path [#60](https://github.com/ElChopa11/market-memory/pull/60). |
 | **Lesson learned** | Closed on full-stack persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) — **that close is retained as persist history, then reopened under environment-propagation.** postgres_attached=true, created_rows=5, Pulse US10Y=4.94 via FRED, source-health fred=ok on that run. `--no-db` remains ELIGIBLE only. |
 
-### SRC-OBJECT-STORE — object_store DOWN SERVICE (MinIO :9000)
+### SRC-OBJECT-STORE — object_store DOWN SERVICE (MinIO missing; Neon/R2 parked)
 
 | Field | Value |
 |---|---|
@@ -123,16 +123,16 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Type** | Services / infrastructure (DOWN SERVICE) |
 | **Desk** | Ops |
 | **Owner** | Ops |
-| **Problem** | Object store is a **DOWN SERVICE**: MinIO `:9000` connection refused, no container. This is **not** a missing credential. `MINIO_*` keys may still be present as local defaults while the service is down. Source-health 2026-09-17 `missing_env` / credentials_present=no misreads a down daemon. Alias: `SRC-object_store` / source id `object_store`. |
-| **Evidence** | Compose `minio` publishes `:9000` (`market-memory-minio`); no container → connection refused. 2026-09-19 environment audit (Don) + [ops/reports/incident-closures/20260919-environment-audit-record-correction.md](reports/incident-closures/20260919-environment-audit-record-correction.md). Last committed health [`ops/reports/source-health/2026-09-17.md`](reports/source-health/2026-09-17.md) labelled missing_env — corrected here. |
-| **Proposed outcome** | Stay on the **services / infrastructure OPEN** list (not a missing-env credentials list). Bring MinIO up or document an explicit filesystem/none backend. Do not close by setting `MINIO_*`. |
-| **Definition of done** | `:9000` reachable (or an operator-chosen durable backend) and a down daemon is not filed as missing credentials. Stays OPEN until then. |
-| **Non-goals** | Treating compose/`.env.example` defaults as a credential incident; changing ingest; scheduler code; equity work. |
-| **Dependencies** | None (infra). P3 named `SRC-object_store`; this is the logged OPEN incident, not an implementation thread. |
-| **Risk level** | Medium (raw-object persist / charts fail closed). |
+| **Problem** | Object store is a **DOWN SERVICE**. On the bot box, MinIO `:9000` is missing / connection refused — **expected**: `docker-compose.yml` is local-dev only (#88 house lesson); bot boxes are containers without a nested Docker host. This is **not** a missing credential. Deploy direction is **managed Postgres + S3-compatible store (Neon + Cloudflare R2 decided)** but **Neon/R2 wiring is parked** (not started). `MINIO_*` defaults may still be present as local-dev leftovers. Alias: `SRC-object_store` / source id `object_store`. |
+| **Evidence** | 2026-09-19 environment audit (Don) + [ops/reports/incident-closures/20260919-environment-audit-record-correction.md](reports/incident-closures/20260919-environment-audit-record-correction.md) (DOWN SERVICE, not missing_env). House lesson [config/knowledge/house-lessons.md](../config/knowledge/house-lessons.md) 2026-09-22 + [#88](https://github.com/ElChopa11/market-memory/pull/88): compose is not bot-box deploy; Neon+R2 decided, not wired. Source-health samples still show object_store unavailable / fail-closed. |
+| **Proposed outcome** | Stay on the **services / infrastructure OPEN** list. Do **not** “fix” by starting MinIO on the bot box or by setting `MINIO_*`. Close only when a durable backend (Neon/R2 or Principal-chosen equivalent) is reachable for raw-object persist. |
+| **Definition of done** | Durable object store reachable on the Memory deploy path (not compose-on-box) and a down/parked backend is not filed as missing credentials. Stays OPEN while Neon/R2 remain parked / unwired. |
+| **Non-goals** | Wiring Neon/R2 in a queue-hygiene PR; treating compose/`.env.example` defaults as a credential incident; changing ingest; scheduler code; equity work. |
+| **Dependencies** | None (infra). P3 named `SRC-object_store`; logged OPEN incident, not an implementation thread. Neon/R2 wiring is Principal-gated / parked. |
+| **Risk level** | Medium (raw-object persist / charts fail closed until durable backend exists). |
 | **Status** | OPEN |
-| **PR** | — |
-| **Lesson learned** | *(open — DOWN SERVICE, not missing_env)* |
+| **PR** | Status note refreshed vs [#88](https://github.com/ElChopa11/market-memory/pull/88) (this hygiene PR). |
+| **Lesson learned** | *(open — DOWN SERVICE; MinIO missing on bot box expected; Neon/R2 parked — not missing_env)* |
 
 ### TG-UNGATED-PRE-HYBRID — pre-Hybrid Telegram is ungated
 
@@ -1443,7 +1443,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | IMP-058 | Research (chart sleeve) | Research / Ops | BACKLOG | Retire stdlib `render_png`. CHART_ARTIFACT = TV ref + structured levels. After Monday 2026-09-21 unattended fire. Not Monday-critical. Do not build now. |
 | IMP-059 | Quant | Quant | PARKED | C-00x instance auto-track + detectors. Fixture/`--no-db`; per-instrument nulls; `n < n_min` → INSUFFICIENT SAMPLE. IC Gate 1 FAIL stands. No sizing. Do not build. |
 
-`IN_PROGRESS` count: **0**. IMP-056 is `DONE` (#85). IMP-047 is `DONE` (#73). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043, IMP-046–IMP-047, IMP-056 are `DONE`. IMP-044/045/048/049/050/051/052/053/054/055/057/058 stay BACKLOG. IMP-059 is `PARKED` (C-00x instance auto-track + detectors; do not build). OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE, MinIO :9000). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). No implementation thread (Principal has not named the next). Hive group stays frozen. Prompt-body drift watch, per-channel `send_enabled`, and publisher inventory are queued, not built. Pack envelope/provenance (IMP-057) is queued. Retire `render_png` (IMP-058) is queued. IC Attack 5+A8 FIX ORDER is docs/report-only and does not occupy the slot.
+`IN_PROGRESS` count: **0**. IMP-056 is `DONE` (#85). IMP-047 is `DONE` (#73). IMP-046 is `DONE` (#72). IMP-043 is `DONE` (#71). IMP-042 is `DONE` (#68). IMP-041 is `DONE` (#67). IMP-040 is `DONE` (#66). IMP-039 candidate intake (#61) is `READY`; cards stay `INTAKE_ONLY`. IMP-000–IMP-022, IMP-024, IMP-030–IMP-034, and IMP-040–IMP-043, IMP-046–IMP-047, IMP-056 are `DONE`. IMP-044/045/048/049/050/051/052/053/054/055/057/058 stay BACKLOG. IMP-059 is `PARKED` (C-00x instance auto-track + detectors; do not build). OPEN incidents: SCHED-001 (P0), BRIEF-TAG-20260918, SRC-STOOQ-404, SRC-FRED-MISSING-ENV (environment-propagation; prior CLOSED pack cited, not a key-absent close). Services/infrastructure OPEN: SRC-OBJECT-STORE (DOWN SERVICE; MinIO missing on bot box expected; Neon/R2 parked). Delivery OPEN: TG-UNGATED-PRE-HYBRID (pre-Hybrid Telegram **ungated**). No implementation thread (Principal has not named the next). Hive group stays frozen. Prompt-body drift watch, per-channel `send_enabled`, and publisher inventory are queued, not built. Pack envelope/provenance (IMP-057) is queued. Retire `render_png` (IMP-058) is queued. IC Attack 5+A8 FIX ORDER is docs/report-only and does not occupy the slot.
 
 **OPEN incidents — sources / clock / scorecard** (not a missing-env credentials close list)
 
@@ -1451,14 +1451,14 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 |---|---|---|---|---|
 | SCHED-001 | Ops | Ops | OPEN | P0. Sydney 08:00 digest never fired. Do not close on "no window yet". |
 | BRIEF-TAG-20260918 | Ops / Quant scorecard | Ops/Quant | OPEN | 18 Sep pack ~90m pre-open vs 30m anchor |
-| SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404, 2 consecutive; evaluation 2026-09-18 rejects scrape — lawful proxy is not ES/NQ futures |
+| SRC-STOOQ-404 | Intel | Intel | OPEN | stooq http_404 canary still OPEN after #93 (`b4db6e8`); Pulse primary = Polygon ETF proxies (ES/NQ/DXY/CL); VIX structural; Stooq optional canary only — do not close on re-route (market-pulse runbook) |
 | SRC-FRED-MISSING-ENV | Ops | Ops | OPEN | **environment-propagation** (config present, run env absent). 2026-09-19 Don audit: `FRED_API_KEY` on card+process env. Prior CLOSED persist pack retained: run_id `fred-fullstack-20260919-101938-aest`; `--no-db` remains ELIGIBLE only. Do not close as key-absent. |
 
 **OPEN incidents — services / infrastructure** (not a missing-env credentials list)
 
 | ID | Desk | Owner | Status | Notes |
 |---|---|---|---|---|
-| SRC-OBJECT-STORE | Ops | Ops | OPEN | **DOWN SERVICE**: MinIO `:9000` connection refused, no container. Alias `SRC-object_store` / `object_store`. `MINIO_*` defaults may still be present. Do not close by setting keys. |
+| SRC-OBJECT-STORE | Ops | Ops | OPEN | **DOWN SERVICE**: MinIO missing on bot box (compose local-dev only, #88); Neon+R2 decided but **parked**/unwired. Alias `SRC-object_store`. Do not close by setting `MINIO_*` or starting MinIO on-box. |
 
 **OPEN incidents — delivery / pipeline honesty** (not a working-pipeline proof)
 
@@ -1544,7 +1544,7 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - IMP-017 merged as #54 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-030.
 - IMP-030 merged as #55 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-031.
 - IMP-031 merged as #56 while the queue still said `IN_REVIEW` — hygiene fixed on IMP-032.
-- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. Principal record correction 2026-09-19: that close pack is retained; the incident is **OPEN** again under **environment-propagation** (Don audit: key present on card+process env; earlier missing_env = runs that did not inherit box env). #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. #66 landed IMP-040 Phase 1 fixture base rates. #67 landed IMP-041 desk knowledge base. #68 landed IMP-042 miss detector. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. SRC-OBJECT-STORE is OPEN as a **DOWN SERVICE** (MinIO :9000; not missing_env). TG-UNGATED-PRE-HYBRID is OPEN: pre-Hybrid Telegram (18 Sep ~22:02 pre-market, 19 Sep 00:03 cash-open, Coord publisher-audit lines) is **ungated** and is not pipeline proof. SCHED-001 is P0; do not close on “no window yet”. Locked universe unchanged. Paper only. #71 landed IMP-043 Hybrid Step 2. #72 landed IMP-046 Hybrid Step 4. #73 landed IMP-047 Hybrid Step 5a (DM-only send). #85 landed IMP-056 DONE (heartbeat table, wrong-anchor no row, miss-check baseline). Hygiene PR clears the phantom IN_PROGRESS slot (`IN_PROGRESS` count **0**). IMP-059 C-00x instance auto-track + detectors is PARKED (plan file present; do not build). Hive group stays frozen. Pack `--from-markdown` envelope is IMP-057 BACKLOG. Retire `render_png` / CHART_ARTIFACT = TV ref + structured levels is IMP-058 BACKLOG. IMP-048 weekly authoring CLI is BACKLOG.
+- IMP-032 merged as #57. IMP-033 merged as #59. IMP-034 + IMP-022 ELIGIBLE path merged as #60 (SAMSUN→KRX:005930, KOSDA→KRX:KQ11, `licence_verdict` next to each adapter). #62 closed `SRC-FRED-MISSING-ENV` on persist run_id `fred-fullstack-20260919-101938-aest` (not `--no-db`) and marked IMP-022 DONE. Principal record correction 2026-09-19: that close pack is retained; the incident is **OPEN** again under **environment-propagation** (Don audit: key present on card+process env; earlier missing_env = runs that did not inherit box env). #63 wired SEC EDGAR and persists CBRS/SPCX lockup observations (IMP-024 DONE). #61 landed candidate strategy intake as IMP-039 READY. #66 landed IMP-040 Phase 1 fixture base rates. #67 landed IMP-041 desk knowledge base. #68 landed IMP-042 miss detector. SRC-STOOQ-404, SCHED-001, BRIEF-TAG-20260918 stay OPEN. SRC-OBJECT-STORE is OPEN as a **DOWN SERVICE** (MinIO missing on bot box expected per #88; Neon+R2 parked / unwired; not missing_env). TG-UNGATED-PRE-HYBRID is OPEN: pre-Hybrid Telegram (18 Sep ~22:02 pre-market, 19 Sep 00:03 cash-open, Coord publisher-audit lines) is **ungated** and is not pipeline proof. SCHED-001 is P0; do not close on “no window yet”. Locked universe unchanged. Paper only. #71 landed IMP-043 Hybrid Step 2. #72 landed IMP-046 Hybrid Step 4. #73 landed IMP-047 Hybrid Step 5a (DM-only send). #85 landed IMP-056 DONE (heartbeat table, wrong-anchor no row, miss-check baseline). Hygiene PR clears the phantom IN_PROGRESS slot (`IN_PROGRESS` count **0**). IMP-059 C-00x instance auto-track + detectors is PARKED (plan file present; do not build). Hive group stays frozen. Pack `--from-markdown` envelope is IMP-057 BACKLOG. Retire `render_png` / CHART_ARTIFACT = TV ref + structured levels is IMP-058 BACKLOG. IMP-048 weekly authoring CLI is BACKLOG.
 - Candidate strategy intake (C-001/C-002/C-003) is **IMP-039 READY** (#61). IMP-034 on main is ticker/licence (#60), not that shelf. Studies stay parked (Quant-owned; no sizing; no scan-gate). IMP-040 pack exists (#66); expansion is L2 P1. Retail provenance = `n=unknown` hypothesis weight.
 - Desk knowledge base is **IMP-041 DONE** (#67). Does not take the IMP-047 slot. OPEN incidents untouched.
 - Publisher inventory is **IMP-051 BACKLOG**. Telegram membership IS the inventory; Principal member-list read required; admin-only Bot API insufficient; re-verify when any bot/integration is added. Chart/TradingView webhook ban and panel reconcile remain on that item. **No tooling.** IMP-050 `send_enabled` per channel stays BACKLOG. No Telegram send.
@@ -1553,3 +1553,4 @@ Principal FREE SOURCE PRIORITY 2026-09-19 source work: **IMP-022** FRED full-sta
 - BTCUSDC.P GrokBot sighting is **TG-BTCUSDC-FALSE-POSITIVE RETIRED** (FALSE POSITIVE). Working-thread, not Telegram. Hive No Results. Membership: Principal + one human + delivery bot only. Freeze was never incomplete. Prior control-boundary lesson kept (repo-invocation inventory is structurally incomplete).
 - Principal 2026-09-22 docs/queue hygiene: IMP-056 DONE cite #85; IMP-059 PARKED with plan [plans/IMP-059-c00x-instance-autotrack-detectors.md](plans/IMP-059-c00x-instance-autotrack-detectors.md). Zero IN_PROGRESS. Do not start detectors. Cards stay INTAKE_ONLY. Paper only.
 - Principal FREE SOURCE PRIORITY 2026-09-19 reorders source work (IMP-022 DONE / 024 DONE / 035 READY / 023 READY / 036 / 037 / 038). Paid items (IMP-027 CoinGlass Standard, IMP-028 paid Polygon SKUs, IMP-029 EODHD/Starter) stay Principal decision.
+- Don queue hygiene 2026-09-22 (AEST): after batch #89/#91/#92/#93/#88 on `main` — **keep SRC-STOOQ-404 OPEN** (optional Stooq canary / monitoring; Pulse sole-path removed by #93 merge `b4db6e8` Polygon ETF proxies; VIX structural; cite [docs/runbooks/market-pulse.md](../docs/runbooks/market-pulse.md)). **SRC-OBJECT-STORE** status note refreshed: MinIO missing on bot box expected (compose local-dev; house lesson [#88](https://github.com/ElChopa11/market-memory/pull/88)); Neon+R2 decided but parked. IMP-056 DONE / IMP-059 PARKED / `IN_PROGRESS`=0 unchanged. SCHED-001 left alone (closed separately in #95 — do not conflict). Do not merge this hygiene PR without Principal. Paper only.
