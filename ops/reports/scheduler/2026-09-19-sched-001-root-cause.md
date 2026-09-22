@@ -121,7 +121,14 @@ That is the MERGE-BLOCKING control. Heartbeat-on-fire is the log that fills the 
 | delta | `57741s` |
 | status | `late` (correct for forced dispatch vs yesterday's anchor) |
 
-**Invoker finding:** Panel was never a viable invoker: seven routines, two boxes, zero fires, including a webhook path (C1 silent). Fix was not configuration — move execution somewhere that provably runs. Controls belong on the path that executes. B1 Stage 1 (PR #90): Actions cron + durable completion commit-back is the invoker. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action.
+**Invoker record (Principal decision, same day):** Grok is a pure clock plus agent wake. Actions is execution. The box is interactive desk work, not a production host.
+
+- Panel SCHEDULE cron — dead (7 routines, 0 fires).
+- Panel WEBHOOK path — dead (C1 silent).
+- Grok Bot app routine — pure clock + agent wake. Stamps a completion and wakes a desk for interactive work. No live fetch. No delivery. Proven 2026-09-22 by run_id `box-us-pre-20260922T133710Z` (`ops/reports/scheduler/completions/grok.us_pre_market__20260922T130000Z.json`). Auto-review blocked `--live` on that US Pre-Market fire; degrade-to-dry (`--no-db`, DQ unavailable) is permanent correct behaviour. No standing Auto-review allow.
+- GitHub Actions — execution. Fetch, brief, deliver. The runner runs the CLI and commits the output. This close is the Stage 1 stamp (`actions-b1-35727756341`).
+
+Follow-ons, not built here: Neon/R2 credentials go to Actions secrets, not the box; a separate Telegram bot for Actions stands; Stage 2 (Actions delivers a real pack to the Principal DM) is the right next build; minutes of cron drift on the 06:30 digest are accepted. Cron live on `main`; next on-anchor test is 06:30 Australia/Sydney without Principal action. SCHED-001 stays CLOSED on the Actions run_id.
 
 Close pack: [../incident-closures/20260922-sched-001-actions-invoker-close.md](../incident-closures/20260922-sched-001-actions-invoker-close.md). House lesson: `config/knowledge/house-lessons.md` (2026-09-22).
 
