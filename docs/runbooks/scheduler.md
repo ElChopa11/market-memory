@@ -64,3 +64,14 @@ uv run lab schedule miss-check --baseline-before today --no-db
 `--baseline-before today` is the Australia/Sydney calendar date of `--now` (or now). Writes `ops/reports/scheduler/known-missed-baseline.yaml` (gitignored). Subsequent miss-check loads that file. Windows are **labeled**, not deleted. SCHED-001 stays OPEN.
 
 Hive group / desk pack `--send` stays SEND_FROZEN. DM-only live path is `lab deliver test --to-principal-dm --i-mean-it` (does not change miss-check). SCHED-001 stays OPEN. Root cause: [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md).
+
+## B1 Stage 1 — GitHub Actions invoker (permanent clock)
+
+Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hybrid-sydney-morning.yml`:
+
+- `on.schedule` dual cron for weekday 06:30 Australia/Sydney (AEST `30 20 * * 0-4` UTC; AEDT `30 19 * * 0-4` UTC). Off-season companion is skipped unless within ±900s of the local anchor.
+- `on.workflow_dispatch` for Principal canary (default force stamp).
+- Job runs `uv run lab schedule heartbeat --routine-id grok.sydney_morning --no-db --source github.actions` (no Telegram; never `--send`).
+- Completion JSON is **upload-artifact** only. Completions stay gitignored (`ops/reports/scheduler/completions/**`). Miss-check on the box does **not** see Actions artifacts unless Principal decides to sync/commit them later — that gap is Unverified / Principal judgement; Stage 1 does not auto-push to main.
+
+Manual fire: Actions → **hybrid-sydney-morning** → Run workflow → leave `force` true.

@@ -1,0 +1,153 @@
+# B1 Stage 1 — permanent invoker after Grok Bot panel schedule proved dead.
+# Runs lab CLI on the GitHub runner with --no-db (no Telegram). Stamps a
+# scheduler completion row under ops/reports/scheduler/completions/ and uploads
+# it as an Actions artifact. Completions are gitignored; do not auto-push to main.
+#
+# Stage 2 DM send is OUT OF SCOPE. No TELEGRAM_* secrets. GROUP SEND_FROZEN.
+# Paper only.
+
+name: hybrid-sydney-morning
+
+on:
+  schedule:
+    # Catalog: grok.sydney_morning = weekday 06:30 Australia/Sydney
+    # (config/schedules/routines.yaml). miss_after_seconds=900 (±15m OK).
+    #
+    # AEST (UTC+10, ~first Sun Apr → first Sun Oct):
+    #   Mon–Fri 06:30 AEST = Sun–Thu 20:30 UTC → cron below.
+    - cron: "30 20 * * 0-4"
+    # AEDT (UTC+11, ~first Sun Oct → first Sun Apr):
+    #   Mon–Fri 06:30 AEDT = Sun–Thu 19:30 UTC → cron below.
+    # Dual cron: the off-season companion is skipped by the ±900s guard
+    # (workflow_dispatch canaries bypass the guard).
+    - cron: "30 19 * * 0-4"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Stamp even outside ±15m of Sydney 06:30 (Principal canary)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  stage1-stamp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        run: uv sync --all-packages
+
+      - name: Stage-1 canary — stamp grok.sydney_morning completion (--no-db, no Telegram)
+        id: stamp
+        env:
+          # schedule → false; workflow_dispatch → inputs.force (default true)
+          FORCE_STAMP: ${{ github.event_name == 'workflow_dispatch' && inputs.force || 'false' }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          uv run python - <<'PY'
+          """Skip off-season dual-cron companion; stamp when within ±900s (or force)."""
+          from __future__ import annotations
+
+          import json
+          import os
+          import subprocess
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          ROOT = Path(".").resolve()
+          ROUTINE = "grok.sydney_morning"
+          MISS_AFTER = 900  # catalog miss_after_seconds; Stage-1 tolerance
+          SYD = ZoneInfo("Australia/Sydney")
+          now = datetime.now(timezone.utc)
+          local = now.astimezone(SYD)
+          force = os.environ.get("FORCE_STAMP", "false").lower() in {"1", "true", "yes"}
+
+          # Weekday Mon–Fri in Sydney matching catalog weekdays.
+          if local.weekday() >= 5 and not force:
+              print(json.dumps({"skip": True, "reason": "weekend_sydney", "local": local.isoformat()}))
+              Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8").write("skipped=true\n")
+              sys.exit(0)
+
+          anchor_local = local.replace(hour=6, minute=30, second=0, microsecond=0)
+          anchor = anchor_local.astimezone(timezone.utc)
+          delta = int((now - anchor).total_seconds())
+          within = abs(delta) <= MISS_AFTER
+          if not within and not force:
+              print(
+                  json.dumps(
+                      {
+                          "skip": True,
+                          "reason": "outside_anchor_window",
+                          "delta_seconds": delta,
+                          "miss_after_seconds": MISS_AFTER,
+                          "anchor_utc": anchor.isoformat(),
+                          "now_utc": now.isoformat(),
+                          "note": "dual-cron off-season companion; counterpart cron owns this DST period",
+                      },
+                      indent=2,
+                      sort_keys=True,
+                  )
+              )
+              Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8").write("skipped=true\n")
+              sys.exit(0)
+
+          run_id = f"actions-b1-{os.environ['GITHUB_RUN_ID']}"
+          dest = ROOT / "ops" / "reports" / "scheduler" / "completions"
+          dest.mkdir(parents=True, exist_ok=True)
+          cmd = [
+              "uv",
+              "run",
+              "lab",
+              "schedule",
+              "heartbeat",
+              "--routine-id",
+              ROUTINE,
+              "--run-id",
+              run_id,
+              "--exit-status",
+              "0",
+              "--no-db",
+              "--source",
+              "github.actions",
+              "--cli",
+              "lab schedule heartbeat (actions-b1)",
+              "--repo-root",
+              str(ROOT),
+              "--completions-dir",
+              str(dest),
+          ]
+          print(json.dumps({"cmd": cmd, "force": force, "delta_seconds": delta}, indent=2))
+          proc = subprocess.run(cmd, check=False)
+          if proc.returncode != 0:
+              sys.exit(proc.returncode)
+          rows = sorted(dest.glob(f"{ROUTINE}__*.json"))
+          if not rows:
+              print("::error::heartbeat exited 0 but wrote no completion JSON", file=sys.stderr)
+              sys.exit(1)
+          latest = rows[-1]
+          print(latest.read_text(encoding="utf-8"))
+          out = Path(os.environ["GITHUB_OUTPUT"])
+          with out.open("a", encoding="utf-8") as fh:
+              fh.write("skipped=false\n")
+              fh.write(f"completion_path={latest}\n")
+              fh.write(f"run_id={run_id}\n")
+          PY
+
+      - name: Upload completion artifact
+        if: steps.stamp.outputs.skipped != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sydney-morning-completion-${{ github.run_id }}
+          path: ops/reports/scheduler/completions/grok.sydney_morning__*.json
+          if-no-files-found: error
+          retention-days: 30
