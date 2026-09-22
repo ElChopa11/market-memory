@@ -24,6 +24,7 @@ def add_deliver_parser(sub) -> None:
 
     pack_p = deliver_sub.add_parser("pack", help="build Telegram payload from an Ops pack or markdown")
     _add_pack_args(pack_p)
+    _add_principal_dm_args(pack_p, subject="pack")
 
     test_p = deliver_sub.add_parser(
         "test",
@@ -35,16 +36,7 @@ def add_deliver_parser(sub) -> None:
     test_p.add_argument("--no-send", action="store_true", help="dry-run (default); write payload under briefs/")
     test_p.add_argument("--send", action="store_true", help="gated live send (requires --i-mean-it)")
     test_p.add_argument("--ignore-quiet-hours", action="store_true")
-    test_p.add_argument(
-        "--i-mean-it",
-        action="store_true",
-        help="required for a live POST; without it, writes payload only",
-    )
-    test_p.add_argument(
-        "--to-principal-dm",
-        action="store_true",
-        help="route this test ping to TELEGRAM_CHAT_ID_PRINCIPAL_DM only (never TELEGRAM_CHAT_ID group)",
-    )
+    _add_principal_dm_args(test_p, subject="test ping")
     test_p.add_argument("--as-of", help="UTC fire time for the completion stamp (catalog local_time + weekday)")
     add_completion_args(test_p)
 
@@ -108,6 +100,7 @@ def add_deliver_parser(sub) -> None:
     add_completion_args(decay_p)
 
     _add_pack_args(deliver_p)
+    _add_principal_dm_args(deliver_p, subject="pack")
 
 
 def _add_pack_args(parser) -> None:
@@ -122,6 +115,24 @@ def _add_pack_args(parser) -> None:
     parser.add_argument("--no-db", action="store_true")
     parser.add_argument("--ignore-quiet-hours", action="store_true")
     add_completion_args(parser)
+
+
+def _add_principal_dm_args(parser, *, subject: str) -> None:
+    parser.add_argument(
+        "--i-mean-it",
+        action="store_true",
+        help="required for a live POST to TELEGRAM_CHAT_ID_PRINCIPAL_DM; without it, writes payload only",
+    )
+    parser.add_argument(
+        "--to-principal-dm",
+        action="store_true",
+        help=f"route this {subject} to TELEGRAM_CHAT_ID_PRINCIPAL_DM only (never TELEGRAM_CHAT_ID group)",
+    )
+
+
+def _dm_route_cmd(cmd: str | None) -> bool:
+    """Pack (incl. bare `lab deliver`) and test share the principal-DM route; fanout does not."""
+    return cmd in {None, "pack", "test"}
 
 
 def dispatch_deliver(args: Namespace) -> int:
@@ -160,15 +171,21 @@ def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str |
     send = _want_send(args)
     if send is None:
         return 2, None
-    to_dm = cmd == "test" and bool(getattr(args, "to_principal_dm", False))
-    live_test = cmd == "test" and bool(getattr(args, "i_mean_it", False))
-    group_live = bool(send or live_test) and not to_dm
+    to_dm = _dm_route_cmd(cmd) and bool(getattr(args, "to_principal_dm", False))
+    live_confirm = bool(getattr(args, "i_mean_it", False))
+    # test: --i-mean-it alone is live intent; pack: --send or --i-mean-it
+    group_intent = bool(send) or live_confirm
+    group_live = group_intent and not to_dm
     if group_live:
         print(SEND_FROZEN_MSG, file=sys.stderr)
         prepare_deliver(send=False)
         return 2, None
-    if to_dm and bool(send) and not live_test:
-        print("lab deliver test: --to-principal-dm live POST requires --i-mean-it", file=sys.stderr)
+    if to_dm and bool(send) and not live_confirm:
+        label = "test" if cmd == "test" else "pack"
+        print(
+            f"lab deliver {label}: --to-principal-dm live POST requires --i-mean-it",
+            file=sys.stderr,
+        )
         prepare_deliver(send=False)
         return 2, None
     report = prepare_deliver(send=False)
@@ -205,9 +222,7 @@ def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str |
         rc = _cmd_decay(args)
         return (2 if not report.ok else rc), None
     if cmd == "test":
-        to_dm = bool(getattr(args, "to_principal_dm", False))
-        live_test = bool(getattr(args, "i_mean_it", False))
-        if to_dm and live_test and not report.ok:
+        if to_dm and live_confirm and not report.ok:
             print(
                 "lab deliver test: preflight FAIL; no live DM POST (not degraded publish)",
                 file=sys.stderr,
@@ -216,6 +231,12 @@ def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str |
         rc, path = _cmd_test(args)
         return (2 if not report.ok else rc), path
     if cmd in {None, "pack"}:
+        if to_dm and live_confirm and not report.ok:
+            print(
+                "lab deliver pack: preflight FAIL; no live DM POST (not degraded publish)",
+                file=sys.stderr,
+            )
+            args.i_mean_it = False
         rc, path = _cmd_pack(args)
         return (2 if not report.ok else rc), path
     print("usage: lab deliver pack|fanout|watchlist|listings|scorecard|decay|test|inbound", file=sys.stderr)
@@ -257,23 +278,28 @@ def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
         return 2, None
     markdown, as_of, completeness, session_date, extra = loaded
     out_root = Path(args.out).resolve() if getattr(args, "out", None) else root
+    to_dm = bool(getattr(args, "to_principal_dm", False))
+    # Match lab deliver test: live POST only when --to-principal-dm and --i-mean-it.
+    live = to_dm and bool(getattr(args, "i_mean_it", False))
     result = deliver(
         markdown,
         desk=desk,
         as_of=as_of,
-        send=send,
+        send=live,
         kind="desk_pack",
         completeness_pct=completeness,
         repo=root,
         out_root=out_root,
         session_date=session_date,
         respect_quiet_hours=not bool(getattr(args, "ignore_quiet_hours", False)),
+        chat_id_env_override=PRINCIPAL_DM_CHAT_ID_ENV if to_dm else None,
     )
     payload = result.as_public_dict()
-    payload["no_send"] = not send
+    payload["no_send"] = not live
+    payload["to_principal_dm"] = to_dm
     payload.update(extra)
     print(json.dumps(payload, sort_keys=True, indent=2))
-    if send and not result.sent:
+    if live and not result.sent:
         return 2, _payload_path(payload)
     return 0, _payload_path(payload)
 
