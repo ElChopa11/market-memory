@@ -1,10 +1,17 @@
-# B1 Stage 1 — permanent invoker after Grok Bot panel schedule proved dead.
-# Runs lab CLI on the GitHub runner with --no-db (no Telegram). Stamps a
-# scheduler completion row under ops/reports/scheduler/completions/, commits
-# that JSON back to the branch the workflow ran on (durable for box miss-check),
-# and also upload-artifact as a secondary copy.
+# B1 hybrid Sydney Morning — GitHub Actions invoker after Grok Bot panel
+# schedule proved dead.
 #
-# Stage 2 DM send is OUT OF SCOPE. No TELEGRAM_* secrets. GROUP SEND_FROZEN.
+# Stage 1 (schedule + dispatch): lab schedule heartbeat --no-db. No Telegram.
+#   Stamps ops/reports/scheduler/completions/, commits JSON back to the run
+#   branch (durable for box miss-check), upload-artifact secondary.
+#
+# Stage 2 PREP (workflow_dispatch ONLY, gated): lab deliver pack
+#   --to-principal-dm --i-mean-it using Actions secrets for a SECOND bot
+#   (separate blast radius from box /home/box/agent-data/delivery/telegram.env).
+#   TELEGRAM_CHAT_ID must remain UNSET (DM-only). GROUP SEND_FROZEN — never
+#   --send to the Hive group. Default confirmation input is false so accidental
+#   runs cannot send. Do NOT workflow_dispatch Stage 2 until Principal approves.
+#
 # Paper only. Do not auto-merge.
 
 name: hybrid-sydney-morning
@@ -25,11 +32,19 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: "Stamp even outside ±15m of Sydney 06:30 (Principal canary)"
+        description: "Stage 1: stamp even outside ±15m of Sydney 06:30 (Principal canary)"
         type: boolean
         default: true
+      i_mean_it_stage2:
+        description: >-
+          Stage 2 PREP: explicit Principal confirm to POST a pack to
+          TELEGRAM_CHAT_ID_PRINCIPAL_DM via Actions second-bot secrets.
+          Default false — accidental Run workflow must not send. Do not enable
+          until Principal approves the diff + secret names.
+        type: boolean
+        default: false
 
-# Push completion JSON back to the run branch (GITHUB_TOKEN). No Telegram secrets.
+# Stage 1 pushes completion JSON (GITHUB_TOKEN). Stage 2 job narrows to read.
 permissions:
   contents: write
 
@@ -39,7 +54,10 @@ concurrency:
 
 jobs:
   stage1-stamp:
+    # Unchanged Stage 1 path: schedule + dispatch. No Telegram secrets.
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -302,3 +320,71 @@ jobs:
           echo "::error::STAMP COMMIT-BACK FAILED: completion JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. This is the silent-drop failure class — job FAILS; do not treat the fire as durable."
           echo "::error::local stamp path: ${COMPLETION_PATH} run_id=${RUN_ID}"
           exit 1
+
+  # -------------------------------------------------------------------------
+  # Stage 2 PREP — Principal DM pack via Actions second-bot secrets.
+  # Runs ONLY on workflow_dispatch when i_mean_it_stage2=true (default false).
+  # Schedule path never enters this job. Stage 1 above is unchanged.
+  # Do NOT enable until Principal approves this diff + secret names.
+  # -------------------------------------------------------------------------
+  stage2-principal-dm-pack:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.i_mean_it_stage2 == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # Actions-only SECOND bot — NOT the box telegram.env token (separate blast radius).
+      # Secret NAMES only below; never invent values; never commit values.
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID_PRINCIPAL_DM: ${{ secrets.TELEGRAM_CHAT_ID_PRINCIPAL_DM }}
+      # TELEGRAM_CHAT_ID intentionally omitted — must remain UNSET (DM-only).
+      # Force delivery to use process env only (no box telegram.env on the runner).
+      MM_DELIVERY_ENV_FILE: /tmp/mm-actions-stage2-no-delivery.env
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        run: uv sync --all-packages
+
+      - name: Guard — refuse if group chat id is present in Actions env
+        run: |
+          set -euo pipefail
+          if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "::error::TELEGRAM_CHAT_ID must remain UNSET in Actions (DM-only Stage 2; GROUP SEND_FROZEN)."
+            exit 1
+          fi
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ]; then
+            echo "::error::secret TELEGRAM_BOT_TOKEN is missing (Actions second bot)."
+            exit 1
+          fi
+          if [ -z "${TELEGRAM_CHAT_ID_PRINCIPAL_DM:-}" ]; then
+            echo "::error::secret TELEGRAM_CHAT_ID_PRINCIPAL_DM is missing."
+            exit 1
+          fi
+          echo "Stage 2 env guard OK (names only; values not printed). TELEGRAM_CHAT_ID unset."
+
+      - name: Stage-2 PREP — pack to Principal DM (--to-principal-dm --i-mean-it, --no-db)
+        run: |
+          set -euo pipefail
+          # Fixture pack canary until Neon + live brief path. Never group send.
+          # GROUP SEND_FROZEN stays; --to-principal-dm is the only live route.
+          AS_OF="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          OUT="/tmp/stage2-principal-dm-${GITHUB_RUN_ID}"
+          mkdir -p "${OUT}"
+          echo "lab deliver pack --to-principal-dm --i-mean-it --no-db (as_of=${AS_OF})"
+          uv run lab deliver pack \
+            --from-markdown tests/fixtures/phase5e/desk-pack.md \
+            --as-of "${AS_OF}" \
+            --desk ops \
+            --to-principal-dm \
+            --i-mean-it \
+            --ignore-quiet-hours \
+            --no-db \
+            --repo-root . \
+            --out "${OUT}"

@@ -7,7 +7,7 @@ import sys
 from argparse import Namespace
 from pathlib import Path
 
-from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
+from mm_common.env import CHAT_ID_ENV, PRINCIPAL_DM_CHAT_ID_ENV
 from mm_common.naming import require_publishing_desk, require_route_slug, route_slugs_help
 from mm_common.time import parse_utc, utcnow
 from mm_delivery.deliver import deliver
@@ -189,6 +189,11 @@ def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str |
         prepare_deliver(send=False)
         return 2, None
     report = prepare_deliver(send=False)
+    # Actions Stage 2 leaves TELEGRAM_CHAT_ID unset (DM-only second bot).
+    # Group-route MISSING must not block --to-principal-dm live; deliver() still
+    # requires TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID_PRINCIPAL_DM. Other preflight
+    # errors still strip --i-mean-it (no degraded publish).
+    dm_preflight_blocks = bool(to_dm and live_confirm and _dm_live_preflight_blocks(report))
     if cmd == "fanout":
         from mm_delivery.fanout import fanout_desk
 
@@ -222,25 +227,47 @@ def _dispatch_deliver_body(args: Namespace, cmd: str | None) -> tuple[int, str |
         rc = _cmd_decay(args)
         return (2 if not report.ok else rc), None
     if cmd == "test":
-        if to_dm and live_confirm and not report.ok:
+        if dm_preflight_blocks:
             print(
                 "lab deliver test: preflight FAIL; no live DM POST (not degraded publish)",
                 file=sys.stderr,
             )
             args.i_mean_it = False
+        elif to_dm and live_confirm and not report.ok and CHAT_ID_ENV in report.error_names:
+            print(
+                "lab deliver test: TELEGRAM_CHAT_ID unset OK for --to-principal-dm "
+                "(DM-only; GROUP SEND_FROZEN)",
+                file=sys.stderr,
+            )
         rc, path = _cmd_test(args)
-        return (2 if not report.ok else rc), path
+        # DM-only live may proceed with group chat unset; other missing requireds still fail.
+        exit_ok = report.ok or (to_dm and not dm_preflight_blocks and set(report.error_names) <= {CHAT_ID_ENV})
+        return (2 if not exit_ok else rc), path
     if cmd in {None, "pack"}:
-        if to_dm and live_confirm and not report.ok:
+        if dm_preflight_blocks:
             print(
                 "lab deliver pack: preflight FAIL; no live DM POST (not degraded publish)",
                 file=sys.stderr,
             )
             args.i_mean_it = False
+        elif to_dm and live_confirm and not report.ok and CHAT_ID_ENV in report.error_names:
+            print(
+                "lab deliver pack: TELEGRAM_CHAT_ID unset OK for --to-principal-dm "
+                "(DM-only; GROUP SEND_FROZEN)",
+                file=sys.stderr,
+            )
         rc, path = _cmd_pack(args)
-        return (2 if not report.ok else rc), path
+        exit_ok = report.ok or (to_dm and not dm_preflight_blocks and set(report.error_names) <= {CHAT_ID_ENV})
+        return (2 if not exit_ok else rc), path
     print("usage: lab deliver pack|fanout|watchlist|listings|scorecard|decay|test|inbound", file=sys.stderr)
     return 2, None
+
+
+def _dm_live_preflight_blocks(report) -> bool:
+    """True when preflight errors (other than unset group chat) block DM live POST."""
+    if report.ok:
+        return False
+    return any(name != CHAT_ID_ENV for name in report.error_names)
 
 
 def _payload_path(payload: dict) -> str | None:

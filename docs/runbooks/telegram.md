@@ -126,6 +126,19 @@ Parse mode is MarkdownV2. Messages longer than 4096 characters are split with or
 
 `lab deliver decay` presents the IMP-031 Quant prompt-hash decay watch (pinned SHA-256; mismatch is a NOTIFY/queue signal, not a gate waiver) and fans it to `quant` with an Ops mirror, inheriting the watch `content_hash`. Decay schedule is 08:05 Sydney; it also does **not** close SCHED-001.
 
+## B1 Stage 2 PREP — Actions second bot → Principal DM (do not run yet)
+
+**Do not run until Principal approves.** Draft workflow only: see [scheduler.md](scheduler.md) § B1 Stage 2 PREP and `.github/workflows/hybrid-sydney-morning.yml` job `stage2-principal-dm-pack`.
+
+| Item | Detail |
+|---|---|
+| Gate | `workflow_dispatch` input `i_mean_it_stage2` default **false** |
+| CLI | `lab deliver pack --to-principal-dm --i-mean-it --no-db` (fixture markdown canary; never group `--send`) |
+| Actions secrets (names only) | `TELEGRAM_BOT_TOKEN` (second bot), `TELEGRAM_CHAT_ID_PRINCIPAL_DM` |
+| Must stay UNSET | `TELEGRAM_CHAT_ID` (Hive group) — GROUP SEND_FROZEN |
+| Blast radius | Actions second bot ≠ box `/home/box/agent-data/delivery/telegram.env` |
+| Before first send | Principal must `/start` the second bot in DM |
+
 ## Import walls
 
 `packages/delivery` must not import `mm_execution`. Research / desks / quant must not grow a signing surface. CI: `scripts/check_import_boundaries.py`.
