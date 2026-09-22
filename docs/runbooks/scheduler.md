@@ -65,9 +65,37 @@ uv run lab schedule miss-check --baseline-before today --no-db
 
 Hive group / desk pack `--send` stays SEND_FROZEN. DM-only live path is `lab deliver test --to-principal-dm --i-mean-it` (does not change miss-check). Root cause (historical): [ops/reports/scheduler/2026-09-19-sched-001-root-cause.md](../../ops/reports/scheduler/2026-09-19-sched-001-root-cause.md). **SCHED-001 CLOSED** citing run_id `actions-b1-35727756341` — [ops/reports/incident-closures/20260922-sched-001-actions-invoker-close.md](../../ops/reports/incident-closures/20260922-sched-001-actions-invoker-close.md).
 
-## B1 Stage 1 — GitHub Actions invoker (permanent clock)
+## Locked architecture (Principal 2026-09-22)
 
-Grok Bot panel schedule is dead. The permanent invoker is `.github/workflows/hybrid-sydney-morning.yml`:
+| Path | Role | Evidence |
+|---|---|---|
+| Panel SCHEDULE cron | Dead | 7 routines, 0 fires |
+| Panel WEBHOOK | Dead | C1 silent |
+| Grok Bot app routine | Pure clock + agent wake | Stamps a completion and wakes a desk for interactive work. No live fetch. No delivery. Proven 2026-09-22 by run_id `box-us-pre-20260922T133710Z` (`ops/reports/scheduler/completions/grok.us_pre_market__20260922T130000Z.json`). Auto-review blocked `--live`; degrade-to-dry (`--no-db`, DQ unavailable) is permanent correct behaviour. No standing Auto-review allow. |
+| GitHub Actions | Execution | Fetch, brief, deliver. The runner is ephemeral: it runs the CLI itself and commits the output. Auditable by construction. Durable path. Stage 1 stamp observed as `actions-b1-35727756341` (commit `857f55c` on `main`, `completions/` only). |
+| Bot box | Interactive desk work | Not a production host. |
+
+House lesson: [config/knowledge/house-lessons.md](../../config/knowledge/house-lessons.md) (2026-09-22 Principal decision, run_id `box-us-pre-20260922T133710Z`). ADR: [ADR/0019-grok-clock-actions-execution.md](../../ADR/0019-grok-clock-actions-execution.md).
+
+Why:
+
+1. The Actions runner is destroyed after every job (no persistent state, cookie seeds, screenshots, or autorecovery). Credential exposures this week came from shared-box state.
+2. Actions has different egress. That may fix keyless API 429s that backoff only mitigates.
+3. Actions is auditable by construction (log, `run_id`, commit, diff).
+4. A standing Auto-review allow would permanently widen the path for an occasional need. Principal rejected that trade.
+
+Follow-on decisions (record only; not built here):
+
+- Neon/R2 credentials go to Actions secrets, not the box.
+- A separate Telegram bot for Actions stands (two credential stores, two blast radii).
+- Stage 2 is the right next build: Actions delivering a real pack to the Principal DM.
+- Minutes of Actions cron drift on the 06:30 digest are accepted as drift. They are not a skip.
+
+This section does not change `.github/workflows/hybrid-sydney-morning.yml`. That file stays one AEST cron. Every fire stamps. No ±900s skip. No second cron.
+
+## B1 Stage 1 — GitHub Actions execution path (stamp today)
+
+Actions is the execution path. This workflow is still the Stage 1 stamp for `grok.sydney_morning`, via `.github/workflows/hybrid-sydney-morning.yml`. Fetch, brief, and Principal-DM delivery are Stage 2 (next build; not this file).
 
 - `on.schedule` one cron while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps.
 - `on.workflow_dispatch` for a Principal canary. Manual dispatch stamps the same way as the cron (no skip).
