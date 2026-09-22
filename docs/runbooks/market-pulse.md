@@ -81,6 +81,32 @@ Shared GET helper (`mm_common.http`, also used by `lab data source-health`): def
 
 Every market-data section has an as-of timestamp. Pulse display quality is `fresh | stale | partial | unavailable` (`ok` maps to `fresh` in markdown). Snapshot HL fields label capture/`ingested_at`; they do not disguise capture time as exchange `market_time`.
 
+### Observation age → quality (FRED; per-series lag)
+
+**Fetch success is not freshness.** Quality for cadence-gated sources is computed from observation age vs the brief knowledge clock:
+
+| Clock | Meaning |
+|---|---|
+| Observation date | FRED series observation `date` (stored on `AssetPrint.as_of`) |
+| Knowledge clock | Brief `as_of_knowledge` / live capture `as_of` (never `published_at` alone) |
+| Age | Calendar days: `knowledge_date − observation_date` |
+
+Config: `config/briefing/macro.yaml` → `freshness.fred`:
+
+| Field | Default | Effect |
+|---|---|---|
+| `cadence` | `daily` | Source-level default cadence label |
+| `max_calendar_lag_days` | `2` | **Daily default.** If age **>** this value → `stale` (display may show `stale (Nd)`). Never `fresh`. Applies to any FRED series **without** a per-series override (e.g. US10Y / DGS10). |
+| `series.<SYMBOL>` | — | Per-series override. Set `cadence` + `max_calendar_lag_days` for monthly / low-cadence prints. Optional `fred_series_id` for matching by FRED id. |
+
+**Why per-series:** A global daily lag of 2 would falsely mark monthly FRED (CPI, NFP/payrolls) stale every time — those prints are legitimately 30+ days old relative to a month-start observation stamp. Monthly overrides (default **45** calendar days for CPI / NFP in repo config) keep a ~30–45d print eligible for fresh; only past that series' own threshold → stale.
+
+Principal-reasonable daily default: FRED daily series older than **2 calendar days** behind `as_of_knowledge` cannot be labelled fresh. The 2026-09-22 US Close Brief incident (US10Y as-of 2026-09-18, four days old, shown as fresh / +7.0bp) is the motivating case — a 4-day-old *daily* print must render as stale with age visible, not fresh.
+
+Layer: `mm_briefing.freshness` (shared helper; `lag_for(source, symbol, series_id)`) + live FRED fetcher + `complete_cross_asset` gate so all Pulse consumers see the same rule. Stooq / CoinGecko cadence thresholds are out of scope for this fix (separate routing work).
+
+Memory ingest of FRED remains `historical=True` (facts about the past are not snapshot-stale in Market Memory). Pulse live display is a separate product surface and applies the calendar lag gate above.
+
 ### Hardened failure modes (live)
 
 | Source | Typical class | What operators see | What not to do |

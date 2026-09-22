@@ -275,7 +275,7 @@ def test_queue_preserves_fred_krx_and_parks_candidate_studies() -> None:
     assert not any("IMP-034" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-022" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-039" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     assert "KRX:005930" in queue
     assert "licence_verdict" in queue
     assert "ELIGIBLE" in queue
@@ -284,7 +284,7 @@ def test_queue_preserves_fred_krx_and_parks_candidate_studies() -> None:
     assert queue.count("| **Status** | OPEN |") >= 3
     report = load_queue(ROOT)
     assert report.ok
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False
     live = LIVE.read_text(encoding="utf-8")

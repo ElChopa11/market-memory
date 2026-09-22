@@ -22,6 +22,13 @@ from mm_common.http import (
 )
 from mm_common.time import as_utc, from_unix_ms, parse_utc
 from mm_ingest.sources import POLYGON_BASE_URL
+from mm_briefing.freshness import (
+    DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS,
+    FreshnessConfig,
+    gate_snapshot_freshness,
+    load_freshness_config,
+    quality_from_observation_age,
+)
 from mm_briefing.models import ASSET_ORDER, AssetPrint, MacroSnapshot, worst_quality
 
 # Pulse slot → preferred live source. Stooq is not primary (SRC-STOOQ-404).
@@ -142,8 +149,16 @@ def empty_snapshot(
     )
 
 
-def complete_cross_asset(snapshot: MacroSnapshot) -> MacroSnapshot:
-    """Fill required slots with unavailable rows so missing sources are visible."""
+def complete_cross_asset(
+    snapshot: MacroSnapshot,
+    *,
+    freshness: FreshnessConfig | None = None,
+) -> MacroSnapshot:
+    """Fill required slots with unavailable rows so missing sources are visible.
+
+    Applies cadence freshness gates (FRED daily lag, etc.) so fetch-ok alone
+    cannot label an aged observation as fresh for all Pulse consumers.
+    """
     by_symbol = snapshot.by_symbol()
     filled: list[AssetPrint] = []
     for symbol in ASSET_ORDER:
@@ -166,7 +181,7 @@ def complete_cross_asset(snapshot: MacroSnapshot) -> MacroSnapshot:
     quality = snapshot.data_quality
     for row in assets:
         quality = worst_quality(quality, row.data_quality)
-    return MacroSnapshot(
+    completed = MacroSnapshot(
         as_of=snapshot.as_of,
         prior_us_close=snapshot.prior_us_close,
         assets=assets,
@@ -174,6 +189,7 @@ def complete_cross_asset(snapshot: MacroSnapshot) -> MacroSnapshot:
         source=snapshot.source,
         notes=snapshot.notes,
     )
+    return gate_snapshot_freshness(completed, config=freshness)
 
 
 def live_macro_spec(macro: dict[str, Any]) -> dict[str, Any]:
@@ -246,6 +262,7 @@ class LiveMacroFetcher:
         self._env = env
         self._sleep = sleep or time.sleep
         self._max_attempts = max_attempts
+        self._freshness = load_freshness_config(spec)
 
     def fetch(self, as_of: datetime, *, prior_us_close: datetime) -> MacroSnapshot:
         notes: list[str] = []
@@ -311,7 +328,7 @@ class LiveMacroFetcher:
             quality = worst_quality(quality, row.data_quality)
         if notes:
             quality = worst_quality(quality, "partial")
-        return MacroSnapshot(
+        snap = MacroSnapshot(
             as_of=as_utc(as_of),
             prior_us_close=as_utc(prior_us_close),
             assets=merged,
@@ -319,6 +336,7 @@ class LiveMacroFetcher:
             source="live",
             notes=tuple(notes),
         )
+        return gate_snapshot_freshness(snap, reference_as_of=captured, config=self._freshness)
 
     def _getenv(self, name: str) -> str | None:
         if self._env is not None:
@@ -567,9 +585,21 @@ class LiveMacroFetcher:
             prior = _maybe_float(values[1].get("value")) if len(values) > 1 else None
             obs_date = values[0].get("date")
             quote_as_of = _date_as_utc(str(obs_date)) if obs_date else captured
+            # Quality from observation age vs brief as_of_knowledge — not fetch success.
+            # Per-series lag with daily default (monthly CPI/NFP override in freshness config).
+            resolved = self._freshness.lag_for(
+                source="fred",
+                symbol=str(symbol).upper(),
+                series_id=str(series_id),
+            )
+            max_lag = resolved[1] if resolved else DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS
             quality = "ok" if last is not None else "unavailable"
-            if quote_as_of is not None and (captured.date() - quote_as_of.date()).days > 4:
-                quality = worst_quality(quality, "stale")
+            quality = quality_from_observation_age(
+                quality,
+                observation_as_of=quote_as_of,
+                reference_as_of=captured,
+                max_calendar_lag_days=max_lag,
+            )
             out.append(
                 AssetPrint(
                     symbol=str(symbol).upper(),

@@ -1,4 +1,4 @@
-"""IMP-043 is DONE (#71); IMP-044/045 stay BACKLOG; IMP-047 holds the slot."""
+"""IMP-043 is DONE (#71); IMP-044/045 stay BACKLOG; zero IN_PROGRESS."""
 
 from __future__ import annotations
 
@@ -20,11 +20,11 @@ def test_queue_imp043_done_isolation_and_topics_backlog() -> None:
     assert not any("IMP-043" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-044" in line and "IN_PROGRESS" in line for line in board_lines)
     assert not any("IMP-045" in line and "IN_PROGRESS" in line for line in board_lines)
-    assert "`IN_PROGRESS` count: **1** (IMP-056)" in queue
+    assert "`IN_PROGRESS` count: **0**" in queue
     assert (ROOT / "ops" / "plans" / "IMP-043-hybrid-delivery-env.md").is_file()
     report = load_queue(ROOT)
     assert report.ok, report.errors
-    assert report.in_progress == ("IMP-056",)
+    assert report.in_progress == ()
     assert report.auto_merge is False
     assert report.auto_waive is False
     ok_044, reason_044 = can_start("IMP-044", report)
