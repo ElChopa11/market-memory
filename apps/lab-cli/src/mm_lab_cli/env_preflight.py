@@ -24,7 +24,7 @@ from mm_delivery.telegram import TelegramClient, redact_telegram
 
 SEND_FROZEN_MSG = (
     "lab: SEND_FROZEN for group/desk pack send. Hive group stays frozen. "
-    "DM-only live path: lab deliver test --to-principal-dm --i-mean-it"
+    "DM-only live path: lab deliver pack|test --to-principal-dm --i-mean-it"
 )
 GROUP_SEND_FROZEN = True
 
