@@ -55,6 +55,12 @@ crypto_pulse:
 
 live:
   enabled: false
+  # Shared retry policy for live macro HTTP (CoinGecko / Polygon / FRED / Stooq canary).
+  # Exponential backoff + jitter via mm_common.http; honour Retry-After; ceiling several seconds.
+  http:
+    max_attempts: 5
+    backoff_s: 0.25
+    backoff_ceiling_s: 8.0
   # Stooq is not the Pulse primary path (SRC-STOOQ-404 http_404). Optional canary only;
   # no scrape fallback. Prefer polygon ETF proxies below.
   stooq:
@@ -68,6 +74,9 @@ live:
     api_key_env: POLYGON_API_KEY
     base_url: https://api.polygon.io
     lookback_calendar_days: 10
+    max_attempts: 5
+    backoff_s: 0.25
+    backoff_ceiling_s: 8.0
     symbols:
       ES:
         ticker: SPY
@@ -92,12 +101,18 @@ live:
     # https://fred.stlouisfed.org — key from FRED_API_KEY
     api_key_env: FRED_API_KEY
     base_url: https://api.stlouisfed.org/fred/series/observations
+    max_attempts: 5
+    backoff_s: 0.25
+    backoff_ceiling_s: 8.0
     series:
       US10Y: DGS10
   coingecko:
     # Always enabled by live_macro_spec when ids are present (--live always fetches).
     enabled: false
     base_url: https://api.coingecko.com/api/v3/simple/price
+    max_attempts: 5
+    backoff_s: 0.25
+    backoff_ceiling_s: 8.0
     ids:
       BTC: bitcoin
       ETH: ethereum

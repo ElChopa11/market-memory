@@ -211,7 +211,9 @@ def test_spot_cross_check_divergence_and_binance_unavailable() -> None:
     )
     assert prints == {}
     assert error == ERROR_RATE_LIMITED
-    assert calls["n"] == 2  # one retry
+    from mm_common.http import DEFAULT_MAX_ATTEMPTS
+
+    assert calls["n"] == DEFAULT_MAX_ATTEMPTS  # exponential retries on 429
 
 
 def test_fred_and_calendar_fixtures() -> None:

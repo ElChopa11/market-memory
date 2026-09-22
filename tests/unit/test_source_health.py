@@ -370,7 +370,9 @@ def test_stooq_404_classified_not_retried() -> None:
     assert "5750" not in report.markdown
 
 
-def test_stooq_503_retries_once() -> None:
+def test_stooq_503_retries_with_default_max_attempts() -> None:
+    from mm_common.http import DEFAULT_MAX_ATTEMPTS
+
     stooq_calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -393,5 +395,5 @@ def test_stooq_503_retries_once() -> None:
     stooq = report.by_id()["stooq"]
     assert stooq.status == "unavailable"
     assert stooq.error_class == "http_5xx"
-    assert stooq_calls["n"] == 2
-    assert any("attempts=2" in note for note in stooq.notes)
+    assert stooq_calls["n"] == DEFAULT_MAX_ATTEMPTS
+    assert any(f"attempts={DEFAULT_MAX_ATTEMPTS}" in note for note in stooq.notes)

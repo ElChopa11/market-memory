@@ -149,8 +149,45 @@ def test_never_strips_coingecko_unavailable_notes() -> None:
     filled = apply_crypto_pulse_from_hl(macro, _hl(), macro_config=MACRO_CFG)
     assert filled.by_symbol()["BTC"].last == 85995.0
     assert any("coingecko unavailable" in note.lower() for note in filled.notes)
+    assert any("divergence not computed (coingecko 429)" in note for note in filled.notes)
     assert CRYPTO_PULSE_SOR_NOTE in filled.notes
 
+
+def test_cg_429_gap_line_when_hl_sor_prints() -> None:
+    macro = complete_cross_asset(
+        snapshot_from_payload(
+            {
+                "source": "live",
+                "notes": ["coingecko unavailable (error_class=rate_limited); no prices invented"],
+                "assets": [],
+            },
+            as_of=AS_OF,
+            prior_us_close=PRIOR,
+            source="live",
+        )
+    )
+    filled = apply_crypto_pulse_from_hl(macro, _hl(), macro_config=MACRO_CFG)
+    blob = "\n".join(filled.notes)
+    assert "BTC divergence not computed (coingecko 429)" in blob
+    assert "ETH divergence not computed (coingecko 429)" in blob
+    assert "coingecko unavailable" in blob.lower()
+    assert filled.by_symbol()["BTC"].last == 85995.0
+
+
+def test_cg_timeout_gap_uses_error_class_not_silent() -> None:
+    macro = complete_cross_asset(
+        snapshot_from_payload(
+            {
+                "notes": ["coingecko unavailable (error_class=timeout); no prices invented"],
+                "assets": [],
+            },
+            as_of=AS_OF,
+            prior_us_close=PRIOR,
+            source="live",
+        )
+    )
+    filled = apply_crypto_pulse_from_hl(macro, _hl(), macro_config=MACRO_CFG)
+    assert any("divergence not computed (coingecko timeout)" in note for note in filled.notes)
 
 def test_normal_path_oracle_metric_below_100bps() -> None:
     cg_spot = 85945.0 + 50.0  # ~5.8 bps vs oracle

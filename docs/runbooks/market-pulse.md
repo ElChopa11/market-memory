@@ -99,7 +99,7 @@ Default oracle threshold **100 bps** sits above normal BTC mark−oracle basis (
 
 Hypothesis (non-binding): CoinGecko public endpoints may be rate-limited or blocked on some operator boxes while HL `/info` works. Always-fetch keeps the failure visible in notes; do not invent figures either way.
 
-Shared GET helper (`mm_common.http`, also used by `lab data source-health`): default timeout **8s**; **one** retry only on `timeout` / `unreachable` / `429` / `5xx`. HTTP **404 is terminal** (no retry, no scrape fallback).
+Shared GET helper (`mm_common.http`, also used by `lab data source-health` and HL `/info`): default timeout **8s**; **up to 5 attempts** with exponential backoff + jitter (honour `Retry-After`; ceiling several seconds) on `timeout` / `unreachable` / `429` / `5xx`. HTTP **404 is terminal** (no retry, no scrape fallback). Per-source overrides under `config/briefing/macro.yaml` → `live.http` / `live.coingecko` and `config/ingest.yaml` → `rate_limits.*`.
 
 Every market-data section has an as-of timestamp. Pulse display quality is `fresh | stale | partial | unavailable` (`ok` maps to `fresh` in markdown). Snapshot HL fields label capture/`ingested_at`; they do not disguise capture time as exchange `market_time`.
 
@@ -138,7 +138,7 @@ Memory ingest of FRED remains `historical=True` (facts about the past are not sn
 | Polygon / Cboe VIX | structural (not on stocks plan) | VIX slot **unavailable** with reason (VIXY is not VIX) | Do not scrape Cboe JSON; do not label VIXY as VIX. |
 | Stooq CSV `https://stooq.com/q/l/` | `http_404` (`SRC-STOOQ-404`), `timeout`, `http_5xx`, `parse_error` | Optional canary only; Pulse primary is Polygon proxies | Do **not** add HTML scrapers, country mirrors, or Yahoo/investing.com fallbacks (ToS). |
 | FRED | `missing_env` if `FRED_API_KEY` unset; else `timeout` / `http_5xx` / `tos_or_blocked` / `parse_error` | Rates slot **unavailable**; note names the env, never the value | Do **not** commit the key. Do not paste it into git, briefs, or tickets. |
-| CoinGecko | `timeout` / `http_5xx` / `rate_limited` | Always attempted on `--live`; unavailable note **kept** even when HL mid fills the table | Do not invent last/prior. Do not strip CG notes. |
+| CoinGecko | `timeout` / `http_5xx` / `rate_limited` | Always attempted on `--live`; unavailable note **kept**; when HL mid fills the table, also emit `divergence not computed (coingecko 429)` (or the closed `error_class`) — never silent | Do not invent last/prior. Do not strip CG notes. |
 | CoinGecko ↔ HL | `source_divergence` when `|div| >` path threshold | Slot quality → `partial`; DQ event with both stamps; raw path tags `metric=raw_mid_vs_spot` `confidence=low` | Do not silently prefer HL on a large disagreement. |
 | Hyperliquid `/info` | allowlist only | Memory first; `--live` fallback still refuses wallet/user types; **crypto pulse SoR** for BTC/ETH mid | No `hl_trade` / signing. Do not invent prior_close from mid alone. |
 

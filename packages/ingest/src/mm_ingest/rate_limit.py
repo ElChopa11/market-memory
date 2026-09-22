@@ -45,16 +45,19 @@ def timeout_from_settings(settings: dict, name: str, *, default: float = 8.0) ->
     return default
 
 
-def retry_from_settings(settings: dict, name: str) -> tuple[int, float]:
-    from mm_common.http import DEFAULT_BACKOFF_S, DEFAULT_MAX_ATTEMPTS
+def retry_from_settings(settings: dict, name: str) -> tuple[int, float, float]:
+    from mm_common.http import DEFAULT_BACKOFF_CEILING_S, DEFAULT_BACKOFF_S, DEFAULT_MAX_ATTEMPTS
 
     block = settings.get("rate_limits") if isinstance(settings.get("rate_limits"), dict) else {}
     spec = block.get(name) if isinstance(block, dict) else None
     attempts = DEFAULT_MAX_ATTEMPTS
     backoff = DEFAULT_BACKOFF_S
+    ceiling = DEFAULT_BACKOFF_CEILING_S
     if isinstance(spec, dict):
         if spec.get("max_attempts") is not None:
             attempts = int(spec["max_attempts"])
         if spec.get("backoff_s") is not None:
             backoff = float(spec["backoff_s"])
-    return attempts, backoff
+        if spec.get("backoff_ceiling_s") is not None:
+            ceiling = float(spec["backoff_ceiling_s"])
+    return attempts, backoff, ceiling

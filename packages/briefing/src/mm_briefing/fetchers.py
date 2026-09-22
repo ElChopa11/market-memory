@@ -14,6 +14,8 @@ from urllib.parse import urlencode
 import httpx
 
 from mm_common.http import (
+    DEFAULT_BACKOFF_CEILING_S,
+    DEFAULT_BACKOFF_S,
     DEFAULT_MAX_ATTEMPTS,
     DEFAULT_TIMEOUT,
     ERROR_PARSE,
@@ -271,6 +273,11 @@ def apply_crypto_pulse_from_hl(
             )
             if compare_note:
                 extra_notes.append(compare_note)
+            elif cg_print is None or cg_print.last is None:
+                # CG mandatory on --live; never silent when HL SoR prints without a CG compare.
+                gap = _divergence_not_computed_note(symbol, snapshot.notes, cg_print=cg_print)
+                if gap:
+                    extra_notes.append(gap)
             if escalated:
                 quality = worst_quality(quality, "partial")
             replaced.append(
@@ -460,6 +467,33 @@ def _crypto_divergence_bps(
     return None, "unavailable", None
 
 
+def _coingecko_error_class_from_notes(notes: tuple[str, ...] | list[str]) -> str | None:
+    import re
+
+    for note in notes:
+        match = re.search(r"coingecko unavailable \(error_class=([^)]+)\)", note, flags=re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    return None
+
+
+def _divergence_not_computed_note(
+    symbol: str,
+    notes: tuple[str, ...] | list[str],
+    *,
+    cg_print: AssetPrint | None,
+) -> str:
+    """Explicit gap when HL SoR prints but CG compare cannot run (never silent / accidental b)."""
+    err = _coingecko_error_class_from_notes(notes)
+    if err is None and cg_print is not None and cg_print.last is None:
+        err = "unavailable"
+    if err is None:
+        err = "unavailable"
+    # Principal wording: surface 429 for rate_limited; otherwise the closed error_class.
+    label = "429" if err == "rate_limited" else err
+    return f"{symbol} divergence not computed (coingecko {label})"
+
+
 def _fmt_as_of(value: datetime | None) -> str:
     if value is None:
         return "n/a"
@@ -544,6 +578,28 @@ class LiveMacroFetcher:
         self._sleep = sleep or time.sleep
         self._max_attempts = max_attempts
         self._freshness = load_freshness_config(spec)
+
+    def _retry_kwargs(self, source_spec: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Per-source http retry (max_attempts / backoff / ceiling); shared http.py defaults."""
+        live = self.spec.get("live") if isinstance(self.spec.get("live"), dict) else {}
+        http = live.get("http") if isinstance(live.get("http"), dict) else {}
+        src = source_spec if isinstance(source_spec, dict) else {}
+        max_attempts = int(
+            src.get("max_attempts")
+            or http.get("max_attempts")
+            or self._max_attempts
+            or DEFAULT_MAX_ATTEMPTS
+        )
+        backoff_s = float(src.get("backoff_s") or http.get("backoff_s") or DEFAULT_BACKOFF_S)
+        ceiling = float(
+            src.get("backoff_ceiling_s") or http.get("backoff_ceiling_s") or DEFAULT_BACKOFF_CEILING_S
+        )
+        return {
+            "max_attempts": max(1, max_attempts),
+            "backoff_s": backoff_s,
+            "backoff_ceiling_s": ceiling,
+            "sleep": self._sleep,
+        }
 
     def fetch(self, as_of: datetime, *, prior_us_close: datetime) -> MacroSnapshot:
         notes: list[str] = []
@@ -644,8 +700,7 @@ class LiveMacroFetcher:
             result = http_get(
                 client,
                 url,
-                max_attempts=self._max_attempts,
-                sleep=self._sleep,
+                **self._retry_kwargs(spec),
             )
             max_attempts_seen = max(max_attempts_seen, result.attempts)
             if not result.ok or result.text is None:
@@ -764,9 +819,8 @@ class LiveMacroFetcher:
                 client,
                 url,
                 params={"adjusted": "true", "sort": "asc", "limit": 15, "apiKey": key},
-                max_attempts=self._max_attempts,
-                sleep=self._sleep,
                 parse_json=True,
+                **self._retry_kwargs(spec),
             )
             if not result.ok:
                 errors += 1
@@ -847,9 +901,8 @@ class LiveMacroFetcher:
                 client,
                 base,
                 params=params,
-                max_attempts=self._max_attempts,
-                sleep=self._sleep,
                 parse_json=True,
+                **self._retry_kwargs(spec),
             )
             if not result.ok:
                 errors += 1
@@ -919,9 +972,8 @@ class LiveMacroFetcher:
             client,
             base,
             params=params,
-            max_attempts=self._max_attempts,
-            sleep=self._sleep,
             parse_json=True,
+            **self._retry_kwargs(spec),
         )
         if not result.ok:
             return [], f"coingecko unavailable (error_class={result.error_class}); no prices invented"

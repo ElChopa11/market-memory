@@ -109,33 +109,39 @@ rate_limits:
   hyperliquid:
     max_requests_per_minute: 60
     timeout_seconds: 8
-    max_attempts: 2
+    max_attempts: 5
     backoff_s: 0.25
+    backoff_ceiling_s: 8.0
   polygon:
     max_requests_per_minute: 5
     timeout_seconds: 8
-    max_attempts: 2
+    max_attempts: 5
     backoff_s: 0.25
+    backoff_ceiling_s: 8.0
   coingecko:
     max_requests_per_minute: 10
     timeout_seconds: 8
-    max_attempts: 2
+    max_attempts: 5
     backoff_s: 0.25
+    backoff_ceiling_s: 8.0
   binance:
     max_requests_per_minute: 20
     timeout_seconds: 8
-    max_attempts: 2
+    max_attempts: 5
     backoff_s: 0.25
+    backoff_ceiling_s: 8.0
   fred:
     max_requests_per_minute: 20
     timeout_seconds: 8
-    max_attempts: 2
+    max_attempts: 5
     backoff_s: 0.25
+    backoff_ceiling_s: 8.0
   edgar:
     max_requests_per_minute: 60
     timeout_seconds: 8
-    max_attempts: 2
+    max_attempts: 5
     backoff_s: 0.15
+    backoff_ceiling_s: 8.0
 
 # Principal lock: equities default vendor = Polygon. Ask is N/A.
 equities:

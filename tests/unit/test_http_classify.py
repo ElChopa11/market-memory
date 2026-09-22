@@ -63,17 +63,19 @@ def test_http_404_is_terminal_no_retry() -> None:
     assert result.ok is False
 
 
-def test_http_5xx_retries_once_then_fails() -> None:
+def test_http_5xx_retries_until_max_attempts_then_fails() -> None:
     calls = {"n": 0}
+    sleeps: list[float] = []
 
     def handler(_request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         return httpx.Response(503, text="down")
 
-    result = http_get(_client(handler), "https://example.test/", sleep=lambda _: None)
+    result = http_get(_client(handler), "https://example.test/", sleep=sleeps.append, rng=lambda: 0.0)
     assert result.error_class == ERROR_HTTP_5XX
     assert result.attempts == DEFAULT_MAX_ATTEMPTS
-    assert calls["n"] == 2
+    assert calls["n"] == DEFAULT_MAX_ATTEMPTS
+    assert len(sleeps) == DEFAULT_MAX_ATTEMPTS - 1
 
 
 def test_http_5xx_then_200_succeeds() -> None:
@@ -92,7 +94,7 @@ def test_http_5xx_then_200_succeeds() -> None:
     assert calls["n"] == 2
 
 
-def test_timeout_retries_once() -> None:
+def test_timeout_retries_until_max_attempts() -> None:
     calls = {"n": 0}
 
     def handler(_request: httpx.Request) -> httpx.Response:
@@ -101,9 +103,46 @@ def test_timeout_retries_once() -> None:
 
     result = http_get(_client(handler), "https://example.test/", sleep=lambda _: None)
     assert result.error_class == ERROR_TIMEOUT
-    assert result.attempts == 2
-    assert calls["n"] == 2
+    assert result.attempts == DEFAULT_MAX_ATTEMPTS
+    assert calls["n"] == DEFAULT_MAX_ATTEMPTS
     assert result.exception_name == "ReadTimeout"
+
+
+def test_exponential_backoff_honours_retry_after_and_ceiling() -> None:
+    from mm_common.http import DEFAULT_BACKOFF_CEILING_S, compute_backoff_s
+
+    # attempt=4 → 0.25 * 8 = 2.0; full jitter with rng=1.0 → 2.0
+    assert compute_backoff_s(4, backoff_s=0.25, ceiling_s=8.0, rng=lambda: 1.0) == 2.0
+    # attempt=10 → exp huge but capped at ceiling before jitter
+    assert compute_backoff_s(10, backoff_s=0.25, ceiling_s=8.0, rng=lambda: 1.0) == 8.0
+    # Retry-After wins even above ceiling
+    assert (
+        compute_backoff_s(1, backoff_s=0.25, ceiling_s=8.0, retry_after=12.0, rng=lambda: 0.0) == 12.0
+    )
+    assert DEFAULT_BACKOFF_CEILING_S == 8.0
+
+
+def test_http_429_uses_retry_after_header() -> None:
+    calls = {"n": 0}
+    sleeps: list[float] = []
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(429, text="slow", headers={"Retry-After": "3"})
+        return httpx.Response(200, text="ok")
+
+    result = http_get(
+        _client(handler),
+        "https://example.test/",
+        sleep=sleeps.append,
+        rng=lambda: 0.0,
+        max_attempts=5,
+    )
+    assert result.ok is True
+    assert calls["n"] == 3
+    assert sleeps[0] >= 3.0
+    assert result.attempts == 3
 
 
 def test_bad_json_is_parse_error_not_retried() -> None:
