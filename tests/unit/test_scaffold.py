@@ -125,6 +125,7 @@ def test_core_docs_present() -> None:
         "ops/plans/IMP-059-c00x-instance-autotrack-detectors.md",
         "docs/runbooks/scheduler.md",
         "ADR/0018-schedule-heartbeat.md",
+        "ADR/0019-grok-clock-actions-execution.md",
         "config/schedules/routines.yaml",
         "ADR/0016-edgar-adapter.md",
         "ADR/0017-unconditional-base-rates.md",
