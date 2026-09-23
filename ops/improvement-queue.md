@@ -131,7 +131,7 @@ Each item must include at least: **ID**, **Priority**, **Type**, **Desk**, **Own
 | **Dependencies** | Principal-supplied Actions secrets (direct Neon DSN, R2 endpoint, access key, secret key, bucket). See [docs/runbooks/persistence-neon-r2.md](../docs/runbooks/persistence-neon-r2.md). Live wire stays Principal-gated. |
 | **Risk level** | Medium (raw-object persist / charts fail closed until durable backend exists). |
 | **Status** | OPEN |
-| **PR** | Prepare-only (env names, offline SQL, R2 client glue). Live wire is not this change. Sydney morning workflow not modified. Earlier status note vs [#88](https://github.com/ElChopa11/market-memory/pull/88). |
+| **PR** | Prepare-only draft [#105](https://github.com/ElChopa11/market-memory/pull/105) (env names, offline SQL, R2 client glue). Live wire is not this change. Sydney morning workflow not modified. Earlier status note vs [#88](https://github.com/ElChopa11/market-memory/pull/88). |
 | **Lesson learned** | *(open — DOWN SERVICE; MinIO missing on bot box expected; live Neon/R2 wire blocked on Principal Actions secrets — not missing_env)* |
 
 ### TG-UNGATED-PRE-HYBRID — pre-Hybrid Telegram is ungated
