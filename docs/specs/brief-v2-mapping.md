@@ -8,6 +8,13 @@ Unavailable fields render ⚪ and the literal word `unavailable` (house glyph: `
 
 Stage values: `now` | `Neon` | `later`.
 
+## Proxy vs structural
+
+House rule for index tokens. No other series are named here.
+
+- **Proxy with label** where a liquid tracker tracks the thing itself. NDX → QQQ ETF already on the tape (`config/briefing/macro.yaml` `polygon.symbols.NQ.ticker`). The label must say not the NDX index and not NQ futures.
+- **Structural unavailable (⚪)** where the liquid tracker tracks a derivative of the thing and that difference is material. VIX → do not bind VIXY or UVXY. Those track rolling VIX futures, not the spot VIX index. VIX stays `structural_unavailable`.
+
 | token | source of record | field path | unit | derivation rule | stage (now / Neon / later) | fallback when unavailable |
 |---|---|---|---|---|---|---|
 | `{3_SENTENCE_SUMMARY}` | `mm_briefing.render.KEY_TAKEAWAY_LINES` | n/a (no generator) | text | `INSUFFICIENT DATA` until a restatement-only generator is coded and tested. Future rule, not implemented: restate rendered values only; no "suggests"; no "indicates"; same provenance as the table; if degraded, name missing feeds only | now | `INSUFFICIENT DATA` |
@@ -35,7 +42,7 @@ Stage values: `now` | `Neon` | `later`.
 | `{LEVEL}` | Unverified — needs Intel | n/a (Message 6 not wired) | text | no formula | later | ⚪ `unavailable` |
 | `{LIQUIDITY_ICON}` | Unverified — needs Intel | n/a (no liquidity domain in `presentation.yaml`) | glyph | `icon = states[state].icon` once a slot is named | later | ⚪ `unavailable` |
 | `{MAG}` | Unverified — needs Intel | n/a (Message 6 not wired) | 1 | no formula | later | ⚪ `unavailable` |
-| `{MISSING_FEEDS_LIST}` | `mm_briefing.render._missing_feeds_list` | `AssetPrint.symbol` where `pulse_to_health_state(AssetPrint.data_quality) = unavailable`. Includes structural VIX | slot id | every such symbol in render order. Empty list is `none` | now | `none` |
+| `{MISSING_FEEDS_LIST}` | `mm_briefing.render._missing_feeds_list` | `AssetPrint.symbol` where `pulse_to_health_state(AssetPrint.data_quality) = unavailable`. Includes structural VIX. Not VIXY or UVXY | slot id | every such symbol in render order. Empty list is `none` | now | `none` |
 | `{QUADRANT_LABEL}` | `mm_briefing.hl` snapshot only (`mid_px`, `open_interest`); deltas need Neon | `sign(Δprice) × sign(ΔOI)` | label | `quadrant = sign(Δprice) × sign(ΔOI)`. `Δprice = (last - prior_close) / prior_close`. `ΔOI = (oi - oi_prior) / oi_prior`. Not an interpretation | Neon | `INSUFFICIENT DATA` |
 | `{RATES_DIR}` | `config/briefing/macro.yaml` `fred.series.US10Y` | `AssetPrint` symbol `US10Y`, `fred_series_id` `DGS10`, `AssetPrint.last` | sign | `sign(Δ1D)` with `Δ1D = (last - prior_close) / prior_close` | Neon | ⚪ `unavailable` |
 | `{RATES_ICON}` | `config/briefing/presentation.yaml` `domains[id=rates]` | `DomainHealth.state` for symbol `US10Y` | glyph | `icon = states[pulse_to_health_state(AssetPrint.data_quality)].icon` | now | ⚪ `unavailable` |
@@ -45,5 +52,5 @@ Stage values: `now` | `Neon` | `later`.
 | `{STORY}` | Unverified — needs Intel | n/a (no news scraper) | text | no formula | later | ⚪ `unavailable` |
 | `{USD_DIR}` | `config/briefing/macro.yaml` `polygon.symbols.DXY` | `AssetPrint` symbol `DXY`, `quoted_symbol` `UUP`, `AssetPrint.last` | sign | `sign(Δ1D)` with `Δ1D = (last - prior_close) / prior_close` | Neon | ⚪ `unavailable` |
 | `{USD_ICON}` | `config/briefing/presentation.yaml` `domains[id=usd]` | `DomainHealth.state` for symbol `DXY` | glyph | `icon = states[pulse_to_health_state(AssetPrint.data_quality)].icon` | now | ⚪ `unavailable` |
-| `{VAL}` | Last, where a live slot exists: Polygon `AssetPrint.last` (`ES`/`SPY`, `NQ`/`QQQ`, `DXY`/`UUP`, `CL`/`USO`); FRED `US10Y`/`DGS10` `observations[0].value`; BTC/ETH `HLInstrumentState.metric("mid_px")`. Current HL levels also exist: `open_interest`, `funding`, `basis_mark_oracle`, `liquidation_size_sum`. 2s10s, Gold, Credit, SOL, ZEC, XMR, CB premium, NDX: Unverified — needs Intel | `mm_briefing.models.AssetPrint.last`; `mm_briefing.hl` metrics above | px, or percent when `AssetPrint.unit = "%"` | `Last = AssetPrint.last` (now). Do not fill these until Neon: `Δ1D = (last - prior_close) / prior_close`; `Δ5D`, `Δ20D` from stored prints; `z30d = (x - mean30) / stdev30`; `corr20d(BTC, NDX)`. vs-BTC ratio Unverified — needs Intel | now | ⚪ `unavailable` for Last. `INSUFFICIENT DATA` for Δ, z30d, and corr |
-| `{VOLATILITY_ICON}` | `config/briefing/presentation.yaml` `domains[id=vol]` | `DomainHealth.state` for symbol `VIX` (`structural_unavailable`, excluded from the health denominator) | glyph | `icon = states[pulse_to_health_state(AssetPrint.data_quality)].icon` | now | ⚪ `unavailable` |
+| `{VAL}` | Last, where a live slot exists: Polygon `AssetPrint.last` (`ES`/`SPY`, `NQ`/`QQQ`, `DXY`/`UUP`, `CL`/`USO`); FRED `US10Y`/`DGS10` `observations[0].value`; BTC/ETH `HLInstrumentState.metric("mid_px")`. NDX Last is that same QQQ print (proxy with label). VIX Last is structural unavailable — do not bind VIXY or UVXY. Current HL levels also exist: `open_interest`, `funding`, `basis_mark_oracle`, `liquidation_size_sum`. 2s10s, Gold, Credit, SOL, ZEC, XMR, CB premium: Unverified — needs Intel | `mm_briefing.models.AssetPrint.last`; `mm_briefing.hl` metrics above; NDX label on `quoted_symbol` `QQQ` | px, or percent when `AssetPrint.unit = "%"` | `Last = AssetPrint.last` (now). NDX = QQQ; label says not the NDX index and not NQ futures. VIX has no proxy fill. Do not fill these until Neon: `Δ1D = (last - prior_close) / prior_close`; `Δ5D`, `Δ20D` from stored prints; `z30d = (x - mean30) / stdev30`; `corr20d(BTC, NDX)` uses the QQQ proxy with that label. vs-BTC ratio Unverified — needs Intel | now | ⚪ `unavailable` for Last, including VIX. `INSUFFICIENT DATA` for Δ, z30d, and corr |
+| `{VOLATILITY_ICON}` | `config/briefing/presentation.yaml` `domains[id=vol]` | `DomainHealth.state` for symbol `VIX` (`structural_unavailable`, excluded from the health denominator). Not VIXY or UVXY | glyph | `icon = states[pulse_to_health_state(AssetPrint.data_quality)].icon` | now | ⚪ `unavailable` |
