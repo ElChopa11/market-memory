@@ -6,9 +6,26 @@ Generated (Australia/Sydney): 2026-03-10T23:00:00+11:00 (AEDT)
 US session status: pre_market — US pre-market (04:00–09:30 before cash open) (DST=EDT, offset -04:00; cash open 09:30, cash close 16:00 America/New_York)
 Memory watermark (as_of_knowledge): 2026-03-10T12:00:00+00:00
 As-of knowledge: 2026-03-10T12:00:00+00:00 (ingested_at lockstep; never published_at / market_time)
-Overall data quality: partial
+Data health: 93% (6 fresh, 1 degraded, 0 stale, 0 unavailable / 7 scored; structural excluded: none)
+Coverage of observed data states with versioned weights. Not a confidence score.
+Icons mark data state only (fresh / degraded / stale / unavailable). Green is not a direction.
+Regime: INSUFFICIENT DATA
 Macro source: fixture
 HL origin: hyperliquid.info
+
+## Data health
+
+Per-domain state. Icons are data state only, never direction.
+
+| Domain | State | Detail |
+|---|---|---|
+| Equities | 🟢 fresh | ES, NQ |
+| Rates | 🟢 fresh | US10Y |
+| USD | 🟢 fresh | DXY |
+| Oil | 🟢 fresh | CL |
+| Vol | 🟢 fresh | VIX |
+| Crypto | 🟢 fresh | BTC, ETH |
+| Hyperliquid | 🟡 degraded | BTC fresh, ETH degraded |
 
 ## Data quality by source
 
@@ -23,30 +40,30 @@ HL origin: hyperliquid.info
 Section as-of: 2026-03-10T12:00:00+00:00 (capture/quote time — not an exchange-event clock unless the source says so)
 Required slots (always listed): crypto, equity-index proxy, rates, USD, oil, vol. Unavailable is shown, never invented.
 
-| Slot | Symbol | Last | Prior close | Change | Name | Source | As-of | Quality |
+| Slot | Symbol | Last | Prior close | Change | Name | Source | As-of | State |
 |---|---|---:|---:|---:|---|---|---|---|
-| equity-index proxy | ES | 5750.00 | 5720.00 | +0.52% | S&P 500 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| equity-index proxy | NQ | 20500.00 | 20400.00 | +0.49% | Nasdaq 100 futures | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| rates | US10Y | 4.28 | 4.22 | +6.0bp | US 10Y yield | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| USD | DXY | 103.80 | 104.20 | -0.38% | US Dollar Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| oil | CL | 78.50 | 77.20 | +1.68% | WTI crude | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| vol | VIX | 16.20 | 17.80 | -8.99% | CBOE Volatility Index | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| crypto | BTC | 65500.00 | 64800.00 | +1.08% | Bitcoin | fixture | 2026-03-10T12:00:00+00:00 | fresh |
-| crypto | ETH | 3550.00 | 3480.00 | +2.01% | Ether | fixture | 2026-03-10T12:00:00+00:00 | fresh |
+| equity-index proxy | ES | 5750.00 | 5720.00 | +0.52% | S&P 500 futures | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
+| equity-index proxy | NQ | 20500.00 | 20400.00 | +0.49% | Nasdaq 100 futures | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
+| rates | US10Y | 4.28 | 4.22 | +6.0bp | US 10Y yield | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
+| USD | DXY | 103.80 | 104.20 | -0.38% | US Dollar Index | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
+| oil | CL | 78.50 | 77.20 | +1.68% | WTI crude | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
+| vol | VIX | 16.20 | 17.80 | -8.99% | CBOE Volatility Index | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
+| crypto | BTC | 65500.00 | 64800.00 | +1.08% | Bitcoin | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
+| crypto | ETH | 3550.00 | 3480.00 | +2.01% | Ether | fixture | 2026-03-10T12:00:00+00:00 | 🟢 fresh |
 
 ## What changed since prior US close
 
 Prior US close watermark: 2026-03-09T20:00:00+00:00
 Figures below are recorded prints vs that close; missing slots stay unavailable (not invented).
 
-- ES [equity-index proxy] (S&P 500 futures): last 5750.00 / +0.52% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- NQ [equity-index proxy] (Nasdaq 100 futures): last 20500.00 / +0.49% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- US10Y [rates] (US 10Y yield): last 4.28 / +6.0bp [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- DXY [USD] (US Dollar Index): last 103.80 / -0.38% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- CL [oil] (WTI crude): last 78.50 / +1.68% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- VIX [vol] (CBOE Volatility Index): last 16.20 / -8.99% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- BTC [crypto] (Bitcoin): last 65500.00 / +1.08% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
-- ETH [crypto] (Ether): last 3550.00 / +2.01% [quality=fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- ES [equity-index proxy] (S&P 500 futures): last 5750.00 / +0.52% [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- NQ [equity-index proxy] (Nasdaq 100 futures): last 20500.00 / +0.49% [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- US10Y [rates] (US 10Y yield): last 4.28 / +6.0bp [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- DXY [USD] (US Dollar Index): last 103.80 / -0.38% [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- CL [oil] (WTI crude): last 78.50 / +1.68% [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- VIX [vol] (CBOE Volatility Index): last 16.20 / -8.99% [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- BTC [crypto] (Bitcoin): last 65500.00 / +1.08% [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
+- ETH [crypto] (Ether): last 3550.00 / +2.01% [state=🟢 fresh; source=fixture; as-of=2026-03-10T12:00:00+00:00; obs none]
 - HL vs prior US close 2026-03-09T20:00:00+00:00 (close-to-close change only when a prior observation exists; current snapshot is labeled, not invented as a move):
   - BTC: OI +20.05% vs prior print; current funding 0.000400 (snapshot, not a close-to-close delta); current mid 65500 (snapshot, not a close-to-close delta) [quality=fresh; source=hyperliquid.info]
   - ETH: OI change unavailable (no retained observation at/before prior US close); current funding -0.000100 (snapshot, not a close-to-close delta); current mid 3550 (snapshot, not a close-to-close delta) [quality=partial; source=hyperliquid.info]
@@ -71,7 +88,7 @@ Section as-of / memory watermark: 2026-03-10T12:00:00+00:00
 Source: hyperliquid.info — public `/info` allowlist only (no wallet, user, account, or trading endpoints).
 Snapshot fields have no exchange event time; capture is ingested_at / as_of_knowledge.
 
-### BTC (quality=fresh; source=hyperliquid.info)
+### BTC (🟢 fresh; source=hyperliquid.info)
 
 - Instrument as-of knowledge: 2026-03-10T12:00:00+00:00
 - Funding: 0.000400 (obs 01FROZENBTCFUNDING00000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T08:00:00+00:00)
@@ -81,7 +98,7 @@ Snapshot fields have no exchange event time; capture is ingested_at / as_of_know
 - Liquidations (window sum): 2.5 (obs 01FROZENBTCLIQ000000000001)
 - Levels: basis_mark_minus_oracle=110, session_high=65800, session_low=64600
 
-### ETH (quality=partial; source=hyperliquid.info)
+### ETH (🟡 degraded; source=hyperliquid.info)
 
 - Instrument as-of knowledge: 2026-03-10T12:00:00+00:00
 - Funding: -0.000100 (obs 01FROZENETHFUNDING00000001; as-of 2026-03-10T12:00:00+00:00; market_time 2026-03-10T08:00:00+00:00)

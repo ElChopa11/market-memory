@@ -1,0 +1,87 @@
+# Brief v2 — US Close / Sydney Morning presentation
+
+Principal target-spec, 2026-09-23. Paper only. This file describes the **end state** of the intelligence engine and the visual presentation, then **stages** what may be built. Stage A is the only stage implemented with this spec. Stage B and Stage C are described so they are not invented early.
+
+Hive group send stays frozen. This spec does not dispatch workflows, does not edit the Sydney morning cron, and does not send Telegram.
+
+## Why it stages
+
+About 70% of the end state is delta-based: Δ1D/5D/20D, the cross-asset heatmap, what-changed, positioning state, anomalies, and the scorecard. Those need stored history.
+
+Intel packet `ops/reports/intel-packets/2026-09-23-us-close-obs-none-neon-backlog.md` states: unique fields 20 = persistence 16 + missing source/key 6 + unwired 0. Building the visual layer before Neon yields a dashboard of em-dashes.
+
+Neon backlog is not a VIX entitlement. VIX stays structural unavailable (Cboe; not on the Polygon stocks plan). A Neon backfill does not create a VIX print.
+
+## Hard rule
+
+Only do this if the methodology is fully defined and the historical data is actually stored. Otherwise you create fake precision.
+
+No confidence percentage, no regime label, and no precision figure computed from absent data. If the inputs are not there, the panel says **INSUFFICIENT DATA** and shows nothing else. A 60% confidence bar derived from nothing is worse than no bar.
+
+Icons in this spec are **data state only**. Green is not a direction and is not a buy.
+
+## End state (describe, do not build here)
+
+One US Close / Sydney Morning brief, split across 6–8 Telegram cards. Skip a card that has nothing to say. Never send a card of dashes.
+
+| Panel | What it is when the inputs exist |
+|---|---|
+| Regime panel | Mechanical, versioned config. Example shape: risk-on = equities up + spreads down + vol down + USD down. No subjective bullish/bearish score. |
+| Data health score | Percentage plus a per-domain state column. |
+| Cross-asset heatmap | Δ1D / Δ5D / Δ20D across the slot set, from stored prints. |
+| OI × price matrix | Open-interest change against price change, from stored HL history. |
+| Scenario map | Named paths with triggers that are defined in config and evaluable from stored data. |
+| Signal board | Thesis scorecard, signal precision, confidence — only from the instance ledger. |
+
+### Card order
+
+1. executive
+2. dashboard
+3. macro
+4. crypto
+5. positioning
+6. catalysts
+7. scenarios
+8. audit
+
+Skip empty cards entirely. Never send a card of dashes.
+
+### Regime
+
+Definitions must be mechanical and versioned in config. Spec shape example: risk-on = equities up + spreads down + vol down + USD down. No subjective bullish/bearish scoring anywhere.
+
+Stage A does **not** invent regime labels without methodology and stored history. Stage A stubs the panel as **INSUFFICIENT DATA** when regime config and history are not ready.
+
+## STAGE A — now (no history required; pure presentation)
+
+Implemented with this spec. Inputs are the prints the brief already has. Nothing here computes a delta engine, a heatmap, a regime, or a confidence score.
+
+1. **Data health score** replaces the worst-slot header (`Data quality: unavailable` / `Overall data quality`). A structural miss such as VIX must not zero the header. The score is a coverage rollup of observed states with weights versioned in [`config/briefing/presentation.yaml`](../../config/briefing/presentation.yaml): fresh 1.0, degraded 0.5, stale 0.0, unavailable 0.0. Structural-unavailable prints (VIX entitlement) are listed and **excluded from the denominator**. If nothing is scored, the line is **INSUFFICIENT DATA**, not 0% invented from an empty set and not a confidence bar.
+2. **Per-domain state column.** States: fresh / degraded / stale / unavailable, rendered as icons. Icons = data state only, never direction. `partial` maps to degraded. The domain table is the dashboard card.
+3. **Message splitting.** 6–8 sequential Telegram cards in the order above, not one body chunked at 4096. `lab deliver pack --from-markdown` uses the cards when the file is a US Close or US Pre-Market brief. A single card that exceeds the Telegram cap may still be safety-split; that is not the product design. Desk packs that are not pulse briefs keep the existing 4096 sequencer.
+4. **Skip empty cards.** Positioning and scenarios are omitted in Stage A (no methodology + stored history). A calendar that only says "none" is omitted. An all-n/a price table is not sent as the macro card; those rows stay on the audit card. A card whose body is only dashes is omitted.
+5. **Proxy symbol column.** When the print is a Polygon ETF proxy, the Symbol column is the ticker that was quoted (`SPY`, `QQQ`, `UUP`, `USO`). The label says what it proxies, so 28.48 / 144.08 are not read as DXY / CL. The slot id stays on the Slot column and as `slot=` on the bullet. VIX has no proxy ticker.
+6. **Provenance stays.** Source tags, as_of, #93 proxy labels, observation ids, and `obs none` remain on the audit card and on any card that shows a print. The visual layer sits on top. It does not replace the audit trail.
+7. **Regime stub.** Executive says `Regime: INSUFFICIENT DATA` and nothing else in that panel. No risk-on / risk-off label.
+
+Stage B/C content that would otherwise look like a metric is omitted or, where a named panel must appear, rendered as **INSUFFICIENT DATA** with nothing else. Stage A does not compute confidence, precision, or a regime from absent history.
+
+### Related freshness (not a visual panel)
+
+Daily FRED freshness is business-day age, lag 1 **business** day. See [../runbooks/market-pulse.md](../runbooks/market-pulse.md). That gate is not Δ5D/Δ20D and it is not Stage B. Monthly CPI/NFP stay on calendar lag 45. There is no US holiday calendar in the business-day count. Calendar-day lag=1 is not shipped.
+
+## STAGE B — after Neon
+
+Deltas (Δ1D/5D/20D), heatmap, OI×price matrix, what-changed engine, relative strength, positioning state.
+
+Do not build these on a packet whose history is `obs none`. Only do this if the methodology is fully defined and the historical data is actually stored. Otherwise you create fake precision.
+
+## STAGE C — after the instance ledger
+
+Thesis scorecard, signal precision, confidence scoring.
+
+Same hard rule. A scorecard percentage without a ledger is fake precision. Stage A keeps existing lab right/wrong hooks as audit text and does not attach a confidence figure.
+
+## Out of scope for the Stage A change
+
+Stage B, Stage C, Neon persistence, `obs none` backfill, workflow or cron edits, Actions dispatch, Telegram send, merge to main.

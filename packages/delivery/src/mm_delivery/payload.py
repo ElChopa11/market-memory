@@ -91,13 +91,25 @@ def build_payload(
     environ: dict[str, str] | None = None,
     content_hash_override: str | None = None,
     chat_id_env_override: str | None = None,
+    message_texts: tuple[str, ...] | None = None,
 ) -> DeliveryPayload:
-    """Exact Telegram chunks + idempotency key. Secrets stay in env, not in this object."""
+    """Exact Telegram chunks + idempotency key. Secrets stay in env, not in this object.
+
+    ``message_texts`` is the Stage A card sequence (one body per card). Each card
+    is escaped on its own. A card longer than the Telegram cap is safety-split;
+    the product design is the card list, not a 4096 chop of one body.
+    """
     require_route_slug(desk)
     watermark = as_utc(as_of)
     content_hash = content_hash_override or sha256_hex(markdown.encode("utf-8"))
     key = idempotency_key(desk=desk, as_of=watermark, content_hash=content_hash)
-    chunks = chunk_markdown_v2(markdown, limit=settings.max_message_chars)
+    if message_texts:
+        chunks_list: list[str] = []
+        for text in message_texts:
+            chunks_list.extend(chunk_markdown_v2(text, limit=settings.max_message_chars))
+        chunks = tuple(chunks_list)
+    else:
+        chunks = chunk_markdown_v2(markdown, limit=settings.max_message_chars)
     route = settings.route(desk)
     thread_id = route.thread_id if route else None
     if chat_id_env_override == PRINCIPAL_DM_CHAT_ID_ENV:

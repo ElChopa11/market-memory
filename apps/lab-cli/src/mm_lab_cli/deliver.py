@@ -291,6 +291,13 @@ def _want_send(args: Namespace) -> bool | None:
     return send
 
 
+def _pulse_message_texts(markdown: str) -> tuple[str, ...] | None:
+    """Stage A cards for a Market Pulse brief. Other markdown keeps 4096 chunking."""
+    from mm_briefing.cards import message_texts_for_pulse
+
+    return message_texts_for_pulse(markdown)
+
+
 def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
     send = _want_send(args)
     if send is None:
@@ -320,6 +327,7 @@ def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
         session_date=session_date,
         respect_quiet_hours=not bool(getattr(args, "ignore_quiet_hours", False)),
         chat_id_env_override=PRINCIPAL_DM_CHAT_ID_ENV if to_dm else None,
+        message_texts=_pulse_message_texts(markdown),
     )
     payload = result.as_public_dict()
     payload["no_send"] = not live

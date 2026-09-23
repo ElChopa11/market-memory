@@ -288,6 +288,12 @@ def test_polygon_etf_proxies_parse_with_honest_labels() -> None:
     assert by["ES"].prior_close == 500.0
     assert by["ES"].source == "polygon"
     assert "not ES futures" in by["ES"].name
+    assert by["ES"].quoted_symbol == "SPY"
+    assert by["NQ"].quoted_symbol == "QQQ"
+    assert by["DXY"].quoted_symbol == "UUP"
+    assert by["CL"].quoted_symbol == "USO"
+    assert by["VIX"].structural_unavailable is True
+    assert by["VIX"].quoted_symbol is None
     assert by["NQ"].last == 405.0
     assert "not NQ futures" in by["NQ"].name
     assert by["DXY"].last == 28.3

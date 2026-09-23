@@ -25,7 +25,8 @@ from mm_common.http import (
 from mm_common.time import as_utc, from_unix_ms, parse_utc
 from mm_ingest.sources import POLYGON_BASE_URL
 from mm_briefing.freshness import (
-    DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS,
+    AGE_BASIS_BUSINESS,
+    DEFAULT_FRED_DAILY_MAX_BUSINESS_LAG_DAYS,
     FreshnessConfig,
     gate_snapshot_freshness,
     load_freshness_config,
@@ -759,6 +760,7 @@ class LiveMacroFetcher:
                     source="polygon",
                     as_of=captured,
                     source_url=base,
+                    structural_unavailable=True,
                 )
             )
             note_parts.append(f"polygon structural unavailable for {slot}: {reason}")
@@ -770,6 +772,7 @@ class LiveMacroFetcher:
             for symbol, meta in symbols.items():
                 slot = str(symbol).upper()
                 label = _polygon_label(slot, meta)
+                ticker = _polygon_ticker(meta)
                 out.append(
                     AssetPrint(
                         symbol=slot,
@@ -781,6 +784,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=base,
+                        quoted_symbol=ticker or None,
                     )
                 )
             note_parts.extend(missing_env_notes(env_name, source="Polygon"))
@@ -810,6 +814,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=base,
+                        quoted_symbol=ticker or None,
                     )
                 )
                 continue
@@ -837,6 +842,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=url,
+                        quoted_symbol=ticker or None,
                     )
                 )
                 continue
@@ -864,6 +870,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=url,
+                        quoted_symbol=ticker or None,
                     )
                 )
                 continue
@@ -926,13 +933,19 @@ class LiveMacroFetcher:
                 symbol=str(symbol).upper(),
                 series_id=str(series_id),
             )
-            max_lag = resolved[1] if resolved else DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS
+            if resolved is None:
+                max_lag = DEFAULT_FRED_DAILY_MAX_BUSINESS_LAG_DAYS
+                age_basis = AGE_BASIS_BUSINESS
+            else:
+                max_lag = resolved.max_lag_days
+                age_basis = resolved.age_basis
             quality = "ok" if last is not None else "unavailable"
             quality = quality_from_observation_age(
                 quality,
                 observation_as_of=quote_as_of,
                 reference_as_of=captured,
-                max_calendar_lag_days=max_lag,
+                max_lag_days=max_lag,
+                age_basis=age_basis,
             )
             out.append(
                 AssetPrint(
@@ -1088,6 +1101,7 @@ def _parse_polygon_aggs(
         open=last_open,
         as_of=last_time,
         source_url=source_url,
+        quoted_symbol=ticker or None,
     )
 
 

@@ -131,6 +131,7 @@ def deliver(
     png_filename: str | None = None,
     failed_sink: list[dict[str, Any]] | None = None,
     chat_id_env_override: str | None = None,
+    message_texts: tuple[str, ...] | None = None,
 ) -> DeliveryResult:
     """Build the exact payload. POST only when send=True and every gate passes.
 
@@ -162,6 +163,7 @@ def deliver(
         environ=environ,
         content_hash_override=content_hash_override,
         chat_id_env_override=chat_id_env_override,
+        message_texts=message_texts,
     )
     written: dict[str, str] | None = None
     if out_root is not None:
