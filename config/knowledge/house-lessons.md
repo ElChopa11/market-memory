@@ -332,6 +332,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-23 — A config file is not wired until a test asserts the behaviour it drives
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-23 |
+| **run_id** | *(none invented — Principal day order 2026-09-23 P2. Cite the audit packet [ops/reports/config-wiring/2026-09-23.md](../../ops/reports/config-wiring/2026-09-23.md). Do not invent a persist run_id.)* |
+| **Desk** | Ops / Intel / IC/Risk |
+| **What happened** | Gate 5's `config/macro/event_calendar.yaml` looked live and was loaded by nothing until #101. It was the third config that week that looked live and was not. A path constant, a file on disk, or an `is_file()` check is not a loader. Filing the data is half the job. |
+| **Lesson** | **A config file is not wired until a test asserts the behaviour it drives.** Filing data is half the job. Example: Gate 5 / `config/macro/event_calendar.yaml` — the calendar blocks a candidate only because `mm_desks.event_calendar.load_event_calendar` reads it and `tests/unit/test_gate5_event_calendar.py` asserts that blackout. The 2026-09-23 audit still finds two files in the same class: `config/listings/calendar.yaml` and `config/listings/index_events.yaml` (path constants in `mm_listings.config`, existence check only, empty bodies, no `yaml` read). Earnings coverage remains a source gap (0/15 Polygon confirmation; Benzinga 403; events=ticker_change only). Until that gap is resolved, **Gate 5 is lockup + macro only**. That limitation belongs on the brief **GAPS** line (`GAPS: Gate 5 is lockup + macro only (0/15 Polygon confirmation; Benzinga 403; events=ticker_change only)`), not only in the queue. |
+| **Does not** | Authorise a new earnings source. Does not scrape Finnhub, Nasdaq, or FMP. Does not treat lockup + macro as full event coverage. Does not treat a path constant or an `is_file()` check as a loader. Does not authorise a Telegram send or a `live.yaml` edit. Does not retune `hybrid-sydney-morning.yml`. |
+| **Overrides prior** | No — no persist `run_id`. Process lesson. Not a literature prior. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).
