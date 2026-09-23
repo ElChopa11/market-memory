@@ -7,9 +7,11 @@
 #   also upload-artifact as a secondary copy. This job is the clock proof
 #   (fire → stamp → exit). It does not brief and it does not deliver.
 #
-# One cron only, on stage1-stamp: AEST weekday 06:30 (Sun–Thu 20:30 UTC).
-# No ±900s anchor guard and no skip. Every fire stamps. The AEDT companion
-# cron is not scheduled. Do not add a second cron.
+# Two AEST crons, both on stage1-stamp (and brief-and-deliver when secrets
+# are present). Primary: weekday 06:30 Australia/Sydney (Sun–Thu 20:30 UTC).
+# Prove/backup duplicate: weekday 08:30 Australia/Sydney (Sun–Thu 22:30 UTC)
+# while AEST (UTC+10) is in force. Keep both. No ±900s anchor guard and no
+# skip. Every fire stamps. The AEDT companion cron is not scheduled.
 #
 # brief-and-deliver (needs stage1-stamp): runs on schedule, or on
 # workflow_dispatch only when input i_mean_it_deliver is true (boolean,
@@ -31,9 +33,13 @@ name: hybrid-sydney-morning
 
 on:
   schedule:
-    # grok.sydney_morning = weekday 06:30 Australia/Sydney while AEST (UTC+10)
-    # is in force. Mon–Fri 06:30 AEST = Sun–Thu 20:30 UTC.
+    # Primary: grok.sydney_morning weekday 06:30 Australia/Sydney while AEST
+    # (UTC+10) is in force. Mon–Fri 06:30 AEST = Sun–Thu 20:30 UTC.
     - cron: "30 20 * * 0-4"
+    # Prove/backup duplicate of the same workflow. Mon–Fri 08:30 AEST =
+    # Sun–Thu 22:30 UTC while AEST (UTC+10) is in force. Do not remove the
+    # 06:30 cron. No AEDT companion.
+    - cron: "30 22 * * 0-4"  # Mon–Fri 08:30 AEST = Sun–Thu 22:30 UTC while AEST (UTC+10) is in force
   workflow_dispatch:
     inputs:
       i_mean_it_deliver:
