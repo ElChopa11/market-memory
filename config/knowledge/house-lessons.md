@@ -332,6 +332,12 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-23 — prove note (no run_id; does not override a prior)
+
+Next Actions Sydney brief: a partial Polygon fill with `error_class=rate_limited` or stderr `rate-limit headers source=api.polygon.io status=429` is free-tier throttling (5 calls/min), not a missing `POLYGON_API_KEY`; US10Y Quality `stale (Nd)` when calendar age > 2 days means #92 is live on this path.
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

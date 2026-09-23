@@ -103,6 +103,19 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     # Secret NAMES only (Actions second bot; not box telegram.env).
     assert "secrets.TELEGRAM_BOT_TOKEN" in brief
     assert "secrets.TELEGRAM_CHAT_ID_PRINCIPAL_DM" in brief
+    # Optional equities/rates richness. Empty when absent; not a hard fail.
+    assert "POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}" in brief
+    assert "FRED_API_KEY: ${{ secrets.FRED_API_KEY }}" in brief
+    assert "POLYGON_API_KEY" not in stage1
+    assert "FRED_API_KEY" not in stage1
+    gate_start = brief.index("- name: Gate —")
+    gate_end = brief.index("- uses: actions/checkout@v4")
+    gate = brief[gate_start:gate_end]
+    assert "POLYGON_API_KEY" not in gate
+    assert "FRED_API_KEY" not in gate
+    header = text.split("name: hybrid-sydney-morning", 1)[0]
+    assert "not required for stamp or DM" in header
+    assert "POLYGON_API_KEY" in header and "FRED_API_KEY" in header
     # Group id must stay unset — never wire the group secret.
     assert re.search(r"secrets\.TELEGRAM_CHAT_ID\s*}}", text) is None
     assert "TELEGRAM_CHAT_ID: ${{" not in text
@@ -132,6 +145,12 @@ def test_brief_and_deliver_runbook_lists_secret_names() -> None:
     assert "TELEGRAM_CHAT_ID" in blob
     assert "soft-skip" in blob or "soft skip" in blob.lower() or "Soft skip" in blob
     assert "MM_LOG_RATE_LIMIT_HEADERS" in blob
+    # Optional data richness — listed in both runbooks; not required for stamp or DM.
+    for book in (sched, tg):
+        assert "POLYGON_API_KEY" in book
+        assert "FRED_API_KEY" in book
+        assert "optional data richness" in book
+        assert "not required for stamp or DM" in book
 
 
 def test_completions_are_not_gitignored() -> None:

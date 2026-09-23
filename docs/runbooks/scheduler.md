@@ -141,11 +141,13 @@ Principal prove (once): Actions → **hybrid-sydney-morning** → **Run workflow
 
 | Name | Role |
 |---|---|
-| `TELEGRAM_BOT_TOKEN` | Actions-only **second** bot. Not the box `/home/box/agent-data/delivery/telegram.env` token. |
-| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | Principal private DM. |
+| `TELEGRAM_BOT_TOKEN` | Actions-only **second** bot. Not the box `/home/box/agent-data/delivery/telegram.env` token. Required for the DM step. |
+| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | Principal private DM. Required for the DM step. |
 | `TELEGRAM_CHAT_ID` | **Must stay unset.** The job exits 1 if it is set. Never the Hive group. |
+| `POLYGON_API_KEY` | Optional data richness for equities slots. Not required for stamp or DM. Absent Actions secret resolves to empty; `lab brief close` marks those slots unavailable and the job does not fail. |
+| `FRED_API_KEY` | Optional data richness for rates slots. Not required for stamp or DM. Absent Actions secret resolves to empty; `lab brief close` marks those slots unavailable and the job does not fail. |
 
-No other secrets on this path (no `FRED_API_KEY`, no `POLYGON_API_KEY`). Those slots stay `unavailable` in the brief. CoinGecko and Hyperliquid `/info` are keyless.
+CoinGecko and Hyperliquid `/info` stay keyless. `POLYGON_API_KEY` and `FRED_API_KEY` are optional data richness (not required for stamp or DM). Principal adds Actions copies separate from the box `market-data/keys.env`. Missing either does not soft-skip the job and does not block the DM POST.
 
 Group preflight treats unset `TELEGRAM_CHAT_ID` as an error for desk publish. DM-only `--to-principal-dm --i-mean-it` proceeds when that is the only preflight error. Any other preflight error strips `--i-mean-it` (no degraded publish).
 
