@@ -1,6 +1,6 @@
 # Brief v2 — US Close / Sydney Morning presentation
 
-Principal target-spec, 2026-09-23. Paper only. The token-only target layout is [brief-v2-template.md](brief-v2-template.md). This file describes the **end state**, then **stages** what may be built. Stage A fills only template tokens that already have inputs. Stage B and Stage C are not built.
+Principal target-spec, 2026-09-23. Paper only. The token-only target layout is [brief-v2-template.md](brief-v2-template.md) (format only). Token binding source of record is [brief-v2-mapping.md](brief-v2-mapping.md). This file describes the **end state**, then **stages** what may be built. Stage A fills only template tokens that already have inputs. Stage B and Stage C are not built.
 
 Hive group send stays frozen. This spec does not dispatch workflows, does not edit the Sydney morning cron, and does not send Telegram.
 
