@@ -1,14 +1,25 @@
-# B1 Stage 1 — permanent invoker after Grok Bot panel schedule proved dead.
-# Runs lab CLI on the GitHub runner with --no-db (no Telegram). Stamps a
-# scheduler completion row under ops/reports/scheduler/completions/, commits
-# that JSON back to the branch the workflow ran on (durable for box miss-check),
-# and also upload-artifact as a secondary copy.
+# B1 hybrid Sydney Morning — GitHub Actions invoker after Grok Bot panel
+# schedule proved dead.
 #
-# One cron only: AEST weekday 06:30 (Sun–Thu 20:30 UTC). No ±900s anchor
-# guard and no skip. Every fire stamps. The AEDT companion cron is not scheduled.
+# stage1-stamp (schedule + workflow_dispatch): lab schedule heartbeat --no-db.
+#   No Telegram. Stamps ops/reports/scheduler/completions/, commits that JSON
+#   back to the branch the workflow ran on (durable for box miss-check), and
+#   also upload-artifact as a secondary copy. This job is the clock proof
+#   (fire → stamp → exit). It does not brief and it does not deliver.
 #
-# Stage 2 DM send is OUT OF SCOPE. No TELEGRAM_* secrets. GROUP SEND_FROZEN.
-# Paper only. Do not auto-merge.
+# One cron only, on stage1-stamp: AEST weekday 06:30 (Sun–Thu 20:30 UTC).
+# No ±900s anchor guard and no skip. Every fire stamps. The AEDT companion
+# cron is not scheduled. Do not add a second cron.
+#
+# brief-and-deliver (schedule only, needs stage1-stamp): when both Actions
+# secrets below are present, lab brief close --live --no-db then lab deliver
+# pack --to-principal-dm --i-mean-it. Soft-skip (exit 0, later steps skipped)
+# when either secret is absent — the stamp still stands. Exit 1 if
+# TELEGRAM_CHAT_ID is set. workflow_dispatch does not enter this job (a manual
+# Run workflow cannot send). GROUP SEND_FROZEN. Paper only. Do not auto-merge.
+#
+# Secret names only (Principal adds values): TELEGRAM_BOT_TOKEN (second bot),
+# TELEGRAM_CHAT_ID_PRINCIPAL_DM. Never TELEGRAM_CHAT_ID.
 
 name: hybrid-sydney-morning
 
@@ -251,3 +262,124 @@ jobs:
           echo "::error::STAMP COMMIT-BACK FAILED: completion JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. This is the silent-drop failure class — job FAILS; do not treat the fire as durable."
           echo "::error::local stamp path: ${COMPLETION_PATH} run_id=${RUN_ID}"
           exit 1
+
+  brief-and-deliver:
+    needs: stage1-stamp
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # Actions-only SECOND bot — not the box telegram.env token.
+      # Names only. Never invent values. Never commit values.
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID_PRINCIPAL_DM: ${{ secrets.TELEGRAM_CHAT_ID_PRINCIPAL_DM }}
+      # TELEGRAM_CHAT_ID is intentionally not mapped. It must remain UNSET.
+      # Force process env only (no box telegram.env on the runner).
+      MM_DELIVERY_ENV_FILE: /tmp/mm-actions-brief-no-delivery.env
+    steps:
+      - name: Gate — group chat unset; soft-skip when DM secrets are absent
+        id: gate
+        run: |
+          set -euo pipefail
+          if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "::error::TELEGRAM_CHAT_ID must remain UNSET (DM-only; GROUP SEND_FROZEN). Refusing brief and deliver."
+            exit 1
+          fi
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID_PRINCIPAL_DM:-}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Telegram secrets absent (TELEGRAM_BOT_TOKEN and/or TELEGRAM_CHAT_ID_PRINCIPAL_DM). Soft skip. Stage 1 stamp already succeeded. No brief. No deliver."
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "DM secrets present (values not printed). TELEGRAM_CHAT_ID unset. Will brief then deliver to Principal DM."
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.ready == 'true'
+
+      - uses: astral-sh/setup-uv@v6
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        if: steps.gate.outputs.ready == 'true'
+        run: uv sync --all-packages
+
+      - name: Live US-close brief (lab brief close --live --no-db)
+        id: brief
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          # P0.4: print hostname + status + Retry-After/*ratelimit* only.
+          # Never the request URL (query keys and bot tokens live there).
+          MM_LOG_RATE_LIMIT_HEADERS: "1"
+        run: |
+          set -euo pipefail
+          AS_OF="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export AS_OF
+          OUT="/tmp/sydney-brief-${GITHUB_RUN_ID}"
+          mkdir -p "${OUT}"
+          echo "P0.4 rate-limit headers enabled (MM_LOG_RATE_LIMIT_HEADERS=1). Compare stderr status=200 vs status=429 with box CoinGecko / Hyperliquid limits."
+          uv run lab brief close --live --no-db --as-of "${AS_OF}" --repo-root . --out "${OUT}" | tee /tmp/brief-close.json
+          uv run python - <<'PY'
+          import json, os
+          from pathlib import Path
+          raw = Path("/tmp/brief-close.json").read_text(encoding="utf-8")
+          start = raw.find("{")
+          end = raw.rfind("}")
+          if start < 0 or end < start:
+              raise SystemExit("brief close did not print a JSON object")
+          payload = json.loads(raw[start : end + 1])
+          path = str(payload.get("path") or "")
+          if not path or not Path(path).is_file():
+              raise SystemExit(f"brief path missing: {path}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as fh:
+              fh.write(f"brief_path={path}\n")
+              fh.write(f"as_of={os.environ['AS_OF']}\n")
+              fh.write(f"data_quality={payload.get('data_quality') or ''}\n")
+          print(json.dumps({
+              "brief_path": path,
+              "as_of": os.environ["AS_OF"],
+              "data_quality": payload.get("data_quality"),
+          }))
+          PY
+
+      - name: Upload brief markdown (no Telegram payload)
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sydney-morning-brief-${{ github.run_id }}
+          path: ${{ steps.brief.outputs.brief_path }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Deliver pack to Principal DM (--to-principal-dm --i-mean-it)
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          BRIEF_PATH: ${{ steps.brief.outputs.brief_path }}
+          AS_OF: ${{ steps.brief.outputs.as_of }}
+        run: |
+          set -euo pipefail
+          if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "::error::TELEGRAM_CHAT_ID must remain UNSET (DM-only; GROUP SEND_FROZEN)."
+            exit 1
+          fi
+          if [ -z "${BRIEF_PATH}" ] || [ ! -f "${BRIEF_PATH}" ]; then
+            echo "::error::brief markdown missing; refusing deliver"
+            exit 1
+          fi
+          # 06:30 Australia/Sydney is inside quiet_hours 22:00–07:00.
+          # This scheduled digest is the morning brief, so quiet hours do not apply.
+          OUT="/tmp/sydney-dm-${GITHUB_RUN_ID}"
+          mkdir -p "${OUT}"
+          echo "lab deliver pack --to-principal-dm --i-mean-it --no-db (as_of=${AS_OF})"
+          uv run lab deliver pack \
+            --from-markdown "${BRIEF_PATH}" \
+            --as-of "${AS_OF}" \
+            --desk ops \
+            --to-principal-dm \
+            --i-mean-it \
+            --ignore-quiet-hours \
+            --no-db \
+            --repo-root . \
+            --out "${OUT}"

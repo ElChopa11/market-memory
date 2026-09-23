@@ -7,6 +7,7 @@ is on-box only.
 
 from __future__ import annotations
 
+import importlib
 import json
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
 from mm_common.time import parse_utc
 from mm_delivery.deliver import deliver
 from mm_delivery.idempotency import DedupeStore
-from mm_delivery.telegram import TelegramClient
+from mm_delivery.telegram import TelegramApiResult, TelegramClient
 from mm_lab_cli.cli import main
 from mm_lab_cli.env_preflight import GROUP_SEND_FROZEN, SEND_FROZEN_MSG
 
@@ -164,6 +165,65 @@ def test_pack_to_principal_dm_without_env_refuses_live(tmp_path: Path, capsys) -
         assert payload.get("sent") is False
         assert payload.get("chat_id_env") == PRINCIPAL_DM_CHAT_ID_ENV
         assert payload.get("to_principal_dm") is True
+
+
+def test_pack_to_principal_dm_live_allows_unset_group_chat(tmp_path: Path, monkeypatch, capsys) -> None:
+    """Actions path: TELEGRAM_CHAT_ID unset must not block DM live POST."""
+    monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setenv(PRINCIPAL_DM_CHAT_ID_ENV, DM_CHAT)
+    posted: list[str] = []
+
+    class _FakeApi:
+        def send_message(self, *, chat_id, text, **kwargs):
+            posted.append(str(chat_id))
+            assert "api.telegram.org" not in text
+            assert GROUP_CHAT not in text
+            return TelegramApiResult(
+                method="sendMessage",
+                ok=True,
+                error_class="none",
+                attempts=1,
+                status_code=200,
+                payload={"ok": True},
+            )
+
+        def close(self) -> None:
+            return None
+
+    deliver_module = importlib.import_module("mm_delivery.deliver")
+    monkeypatch.setattr(deliver_module.TelegramClient, "from_settings", lambda *args, **kwargs: _FakeApi())
+    rc = main(
+        [
+            "deliver",
+            "pack",
+            "--from-markdown",
+            str(PACK_MD),
+            "--as-of",
+            AS_OF,
+            "--desk",
+            "ops",
+            "--to-principal-dm",
+            "--i-mean-it",
+            "--ignore-quiet-hours",
+            "--repo-root",
+            str(ROOT),
+            "--out",
+            str(tmp_path),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert "TELEGRAM_CHAT_ID unset OK" in captured.err
+    assert "SEND_FROZEN" not in captured.err or "to-principal-dm" in captured.err
+    payload = json.loads(captured.out)
+    assert payload["sent"] is True
+    assert payload["to_principal_dm"] is True
+    assert payload["chat_id_env"] == PRINCIPAL_DM_CHAT_ID_ENV
+    assert posted
+    assert set(posted) == {DM_CHAT}
+    assert "test-token" not in captured.out
+    assert "test-token" not in captured.err
 
 
 def test_pack_dm_deliver_posts_only_principal_dm_not_group() -> None:

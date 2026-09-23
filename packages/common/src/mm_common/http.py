@@ -8,11 +8,14 @@ Does not talk to Hyperliquid signing (ingest uses the same backoff helpers).
 
 from __future__ import annotations
 
+import os
 import random
+import sys
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -105,6 +108,40 @@ def classify_exception(exc: BaseException) -> str:
 
 def is_retryable(error_class: str) -> bool:
     return error_class in RETRYABLE_ERROR_CLASSES
+
+
+def _public_http_source(url: str) -> str:
+    """Hostname only. Never the path or query (API keys and bot tokens live there)."""
+    host = urlparse(url).hostname or ""
+    return host or "http"
+
+
+def maybe_log_rate_limit_headers(response: httpx.Response | None, *, source: str) -> None:
+    """Print status and rate-limit headers when ``MM_LOG_RATE_LIMIT_HEADERS=1``.
+
+    Allowlisted names only (``Retry-After``, ``*ratelimit*``). Never the request
+    URL, never ``Authorization``, never secret values. Opt-in so pytest stays quiet.
+    """
+    flag = (os.environ.get("MM_LOG_RATE_LIMIT_HEADERS") or "").strip().lower()
+    if flag not in {"1", "true", "yes"}:
+        return
+    if response is None:
+        print(f"rate-limit headers source={source} status=none headers=(none)", file=sys.stderr)
+        return
+    picked: list[str] = []
+    for key, value in response.headers.items():
+        lowered = key.lower()
+        if lowered != "retry-after" and "ratelimit" not in lowered:
+            continue
+        text = str(value).replace("\n", " ").replace("\r", " ").strip()
+        if len(text) > 80:
+            text = text[:80]
+        picked.append(f"{key}={text}")
+    blob = "; ".join(picked) if picked else "(none)"
+    print(
+        f"rate-limit headers source={source} status={response.status_code} headers={blob}",
+        file=sys.stderr,
+    )
 
 
 def missing_env_notes(env_name: str, *, source: str) -> tuple[str, ...]:
@@ -242,6 +279,7 @@ def _request(
                 continue
             return last
         status = response.status_code
+        maybe_log_rate_limit_headers(response, source=_public_http_source(url))
         if status == 200:
             text = response.text
             payload = None

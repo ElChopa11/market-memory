@@ -193,3 +193,35 @@ def test_http_post_json_succeeds_on_200() -> None:
     result = http_post(_client(handler), "https://telegram.test/sendMessage", json_body={"text": "x"})
     assert result.ok is True
     assert result.json_payload == {"ok": True}
+
+
+def test_rate_limit_header_log_is_opt_in_and_omits_url(capsys, monkeypatch) -> None:
+    """P0.4: hostname + status + rate-limit headers only. Never the request URL."""
+    monkeypatch.delenv("MM_LOG_RATE_LIMIT_HEADERS", raising=False)
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text="ok",
+            headers={"X-RateLimit-Remaining": "12", "Authorization": "secret-token"},
+        )
+
+    url = "https://api.coingecko.com/api/v3/simple/price?x-cg-demo-api-key=supersecret"
+    http_get(_client(handler), url, sleep=lambda _: None, max_attempts=1)
+    quiet = capsys.readouterr().err
+    assert quiet == ""
+
+    monkeypatch.setenv("MM_LOG_RATE_LIMIT_HEADERS", "1")
+
+    def limited(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, text="slow", headers={"Retry-After": "3", "Set-Cookie": "session=sekrit"})
+
+    http_get(_client(limited), url, sleep=lambda _: None, max_attempts=1)
+    err = capsys.readouterr().err
+    assert "source=api.coingecko.com" in err
+    assert "status=429" in err
+    assert "retry-after=3" in err.lower()
+    assert "supersecret" not in err
+    assert "sekrit" not in err
+    assert "simple/price" not in err
+    assert "secret-token" not in err

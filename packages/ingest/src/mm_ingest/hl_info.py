@@ -20,6 +20,7 @@ from mm_common.http import (
     classify_http_status,
     compute_backoff_s,
     is_retryable,
+    maybe_log_rate_limit_headers,
     parse_retry_after,
 )
 
@@ -123,6 +124,7 @@ class HyperliquidInfoClient:
                     continue
                 raise HyperliquidInfoError(f"Hyperliquid info {info_type} failed: {error_class}") from exc
             last_status = response.status_code
+            maybe_log_rate_limit_headers(response, source=f"hyperliquid.info {info_type}")
             if response.status_code == 200:
                 return response.json()
             error_class = classify_http_status(response.status_code)
