@@ -67,7 +67,18 @@ Implemented with this spec. Inputs are the prints the brief already has. Nothing
 9. **Audit, from the rendered MacroSnapshot (no Neon).** `{FRESHEST_FEED_NAME}` is the slot symbol, or every slot symbol tied for the latest `as_of`, among the asset rows already on the brief. `{MISSING_FEEDS_LIST}` is every one of those slots whose rendered state is unavailable (including structural VIX). An empty missing list renders `none`. The audit `Data quality:` line is the same health percentage as the header, not `worst_quality`.
 10. **`{3_SENTENCE_SUMMARY}` does not ship filled.** Stage A renders the literal line `INSUFFICIENT DATA` under `KEY TAKEAWAY`. No prose. A future generator, not built here, may only restate values present in the render and must not interpret them. No directional language, no "suggests", no "indicates". Every figure must carry the same provenance as the table. If the render is degraded, the summary says which feeds are missing and nothing else. Until those constraints are coded and tested, the line stays `INSUFFICIENT DATA`.
 
-Stage B/C content that would otherwise look like a metric is omitted or, where a named panel must appear, rendered as **INSUFFICIENT DATA** with nothing else. Stage A does not compute confidence, precision, or a regime from absent history. Messages 3–5 in the template stay headed placeholders. Their bodies are not built.
+Stage B/C content that would otherwise look like a metric is omitted or, where a named panel must appear, rendered as **INSUFFICIENT DATA** and nothing else. Stage A does not compute confidence, precision, or a regime from absent history. Messages 3–5 are now in the template as tokens. Stage A does not bind those bodies.
+
+### Message 3–5 binding rules (document only; no generators)
+
+These rules are not implemented. Stage A keeps DATE, the audit feed lines, and `INSUFFICIENT DATA` for `{3_SENTENCE_SUMMARY}`. Message 3–5 stay template-only until Stage B.
+
+- Unavailable fields render as ⚪ and the literal word `unavailable` (or the house glyph already used for that state). The field is not omitted.
+- `{QUADRANT_LABEL}` is mechanical from the sign of Δprice and ΔOI only. It is not an interpretation. If either delta is unavailable, render `INSUFFICIENT DATA` and do not guess the quadrant.
+- `{DOMINANT_DRIVER_OR_"indeterminate"}` and `{LEADING_CLUSTER_OR_"none"}` populate only from a versioned config rule, never an LLM read of the tape. If unresolved, render `indeterminate` and `none` respectively.
+- Every Message 5 `z30d` column needs 30 days of history. That is Stage B behind Neon. Stage A leaves it unbound on the `INSUFFICIENT DATA` path.
+- BTC vs NDX correlation (20d) is Stage B behind Neon.
+- Δ1D / Δ5D / Δ20D on Messages 3 and 4 stay `needs_neon`, the same as the Stage A token audit.
 
 ### Related freshness (not a visual panel)
 
@@ -75,7 +86,7 @@ Daily FRED freshness is business-day age, lag 1 **business** day. See [../runboo
 
 ## STAGE B — after Neon
 
-Deltas (Δ1D/5D/20D), heatmap, OI×price matrix, what-changed engine, relative strength, positioning state.
+Deltas (Δ1D/5D/20D) including the Message 3–4 columns, BTC vs NDX correlation (20d), Message 5 `z30d` columns, heatmap, OI×price quadrant from stored Δprice and ΔOI, what-changed engine, relative strength, positioning state.
 
 Do not build these on a packet whose history is `obs none`. Only do this if the methodology is fully defined and the historical data is actually stored. Otherwise you create fake precision.
 

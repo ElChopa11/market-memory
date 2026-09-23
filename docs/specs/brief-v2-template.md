@@ -51,11 +51,77 @@ BTC        {VAL}   {VAL}   {VAL}   {VAL}   {VAL}   {ICON}
 ETH        {VAL}   {VAL}   {VAL}   {VAL}   {VAL}   {ICON}
 
 ## Message 3 — Macro
+
+MACRO TRANSMISSION
+{DATE}
+
+              Last      Δ1D     Δ5D     Δ20D    State
+US 10Y        {VAL}     {VAL}   {VAL}   {VAL}   {ICON}
+2s10s         {VAL}     {VAL}   {VAL}   {VAL}   {ICON}
+DXY           {VAL}     {VAL}   {VAL}   {VAL}   {ICON}
+Oil           {VAL}     {VAL}   {VAL}   {VAL}   {ICON}
+Gold          {VAL}     {VAL}   {VAL}   {VAL}   {ICON}
+Credit        {VAL}     {VAL}   {VAL}   {VAL}   {ICON}
+
+TRANSMISSION CHAIN
+Rates {RATES_DIR} → USD {USD_DIR} → Equities {EQ_DIR} → Risk {RISK_DIR}
+
+DRIVER
+{DOMINANT_DRIVER_OR_"indeterminate"}
+
 ## Message 4 — Crypto
+
+CRYPTO TAPE
+{DATE}
+
+          Last      Δ1D     Δ5D     Δ20D    vs BTC   State
+BTC       {VAL}     {VAL}   {VAL}   {VAL}   —        {ICON}
+ETH       {VAL}     {VAL}   {VAL}   {VAL}   {VAL}    {ICON}
+SOL       {VAL}     {VAL}   {VAL}   {VAL}   {VAL}    {ICON}
+ZEC       {VAL}     {VAL}   {VAL}   {VAL}   {VAL}    {ICON}
+XMR       {VAL}     {VAL}   {VAL}   {VAL}   {VAL}    {ICON}
+
+BTC vs NDX correlation (20d): {VAL} {ICON}
+
+CLUSTER LEADERSHIP
+{LEADING_CLUSTER_OR_"none"}
+
 ## Message 5 — Positioning
 
-(structure per source doc; Don to confirm panels from the source document —
-these three pages were not legible in the print)
+BTC POSITIONING
+
+PRICE        {VAL}     Δ1D {VAL}
+OPEN INT     {VAL}     Δ1D {VAL}
+FUNDING      {VAL}     z30d {VAL}  {BAR}
+BASIS        {VAL}     z30d {VAL}  {BAR}
+LIQUIDATIONS {VAL}     {BAR}
+CB PREMIUM   {VAL}     z30d {VAL}
+
+OI × PRICE STATE
+{QUADRANT_LABEL}   {ICON}
+  price↑ OI↑ = long build
+  price↑ OI↓ = short cover
+  price↓ OI↑ = short build
+  price↓ OI↓ = long liquidation
+
+ETH POSITIONING
+
+PRICE        {VAL}     Δ1D {VAL}
+OPEN INT     {VAL}     Δ1D {VAL}
+FUNDING      {VAL}     z30d {VAL}  {BAR}
+BASIS        {VAL}     z30d {VAL}  {BAR}
+LIQUIDATIONS {VAL}     {BAR}
+CB PREMIUM   {VAL}     z30d {VAL}
+
+OI × PRICE STATE
+{QUADRANT_LABEL}   {ICON}
+  price↑ OI↑ = long build
+  price↑ OI↓ = short cover
+  price↓ OI↑ = short build
+  price↓ OI↓ = long liquidation
+
+POSITIONING CONFIDENCE
+{CONFIDENCE_OR_"INSUFFICIENT HISTORY"}
 
 ## Message 6 — News
 
