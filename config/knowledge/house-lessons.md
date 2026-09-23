@@ -332,6 +332,20 @@ This lesson **still stands**. Enumerating publishers by what the repo invokes is
 
 ---
 
+## 2026-09-23 — Permission decline triggers cross-agent all-stop
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-23 (Principal, Australia/Sydney) |
+| **run_id** | *(none — Principal process lesson. Do not invent a persist run_id.)* |
+| **Desk** | Ops / Coord |
+| **What happened** | Declining a local-execution / permission prompt from **one** agent (Intel declined a Moey FS grant) triggered `StopSubagent(all)` behaviour that cancelled in-flight turns on peer agents (Coord/Don, Research, Quant), not only the requester. Scope is **not** limited to the agent that asked for the grant. |
+| **Lesson** | **A permission decline triggers a cross-agent all-stop.** Declining a local-execution / permission prompt from one agent cancels in-flight turns on peer agents, not only the requester. A mid-flight decline can silently kill a merge watch, a CI watch, or a running PR workstream. Anything time-sensitive must be checked after any permission decline. **Standing rule (Coord):** after any permission decline, verify what was in flight and report whether it survived. Do not assume. |
+| **Does not** | Authorise a Telegram send or lift `SEND_FROZEN`. Does not authorise `workflow_dispatch`. Does not edit `.github/workflows/hybrid-sydney-morning.yml` or cron/guard. Does not authorise live trading, a size, or a scan-gate. Does not invent a persist `run_id`. Does not treat the decline as scoped only to the requester. |
+| **Overrides prior** | No — process lesson. Not a literature prior. No persist `run_id`. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).
