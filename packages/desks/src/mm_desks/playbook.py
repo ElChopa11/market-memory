@@ -18,6 +18,7 @@ from mm_desks.chart import compute_levels, png_filename, render_png
 from mm_desks.dq import publish_allowed
 from mm_desks.envelope import DeskEnvelope, envelope_from_row
 from mm_desks.fixture import load_frozen_day
+from mm_desks.gaps import with_gate5_gaps_line
 from mm_desks.ladder import (
     ARTIFACT_TYPES,
     ENGINE_VERSION,
@@ -538,6 +539,7 @@ def run_playbook(
     elif ideas:
         brief_text = f"no LLM; templated cut for {instruments[0]} (observed)\n" + ideas_line(bias_rows, n_total)
 
+    brief_text = with_gate5_gaps_line(brief_text)
     artifacts.append(
         make_artifact(
             artifact_type="OFFICIAL_BRIEF",

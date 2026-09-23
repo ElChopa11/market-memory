@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from mm_common.time import in_ops_tz
+from mm_desks.gaps import GATE5_EARNINGS_GAPS_LINE
 from mm_desks.naming import PIPELINE, desk_display
 from mm_desks.protocol import DeskContext, DeskOutput
 from mm_desks.universe import membership_of
@@ -50,7 +51,12 @@ def _tape_rows(ctx: DeskContext) -> list[str]:
 
 
 def _gaps(ctx: DeskContext) -> list[str]:
-    rows: list[str] = []
+    rows: list[str] = [
+        (
+            f"| {GATE5_EARNINGS_GAPS_LINE} | standing source gap on the brief | "
+            f"{desk_display('intel')} |"
+        )
+    ]
     intel = _desk(ctx, "intel")
     if intel:
         for source_id in intel.payload.get("required_missing") or []:
@@ -72,8 +78,6 @@ def _gaps(ctx: DeskContext) -> list[str]:
             rows.append(f"| {slug} {err} | Ops assembled with desk FAILED | {out.desk} |")
     if _desk(ctx, "ops") is None:
         rows.append(f"| ops pack | waiting on Ops assemble | {desk_display('ops')} |")
-    if not rows:
-        rows.append("| none listed | — | — |")
     seen: set[str] = set()
     out: list[str] = []
     for row in rows:
