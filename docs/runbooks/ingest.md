@@ -29,6 +29,8 @@ Real ingest that stores raw payloads **requires a durable backend**. If MinIO/S3
 
 `NullObjectStore` (empty object key) never inserts `raw_object` rows. Do not treat an in-memory pointer as an audit trail after restart.
 
+Managed Neon + Cloudflare R2 (Actions secrets, not the bot box) is documented in [persistence-neon-r2.md](persistence-neon-r2.md). That runbook is prepare-only: no credentials, and `.github/workflows/hybrid-sydney-morning.yml` stays `--no-db`.
+
 ## Boot, migrate, ingest, query
 
 ```bash
