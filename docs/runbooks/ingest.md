@@ -60,6 +60,23 @@ uv run lab ingest --window 7d
 # equivalent worker:
 uv run ingest-once --window 7d
 
+## Actions persist (gated; ingest only)
+
+GitHub Actions does not ingest on the Sydney morning cron. `.github/workflows/hybrid-sydney-morning.yml` stays `--no-db` on the heartbeat and on `brief-and-deliver`. Persistence is a separate workflow: `.github/workflows/ingest-persist.yml`.
+
+**DO NOT RUN** until `lab migrate` has been applied to the target database and the Principal has said OK.
+
+| Control | Behaviour |
+|---|---|
+| Trigger | `workflow_dispatch` only. No `schedule`. No cron. Thursday cannot fire it. |
+| Input | `i_mean_it_persist` (boolean, default **false**). The job does not run unless it is true. |
+| Command | `uv run lab ingest --window 7d` with **no** `--no-db` and **no** `--no-objects`. |
+| Secrets | `POSTGRES_DSN`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`. Names only. |
+| Bucket | `MINIO_BUCKET` is not set. Code default bucket name is `market-memory`. |
+| Region | `S3_REGION=auto` is job env (not a secret) so the R2 client signs with region `auto`. |
+
+`brief-and-deliver` does not `need` this job and still passes `--no-db`, so a failed ingest write cannot fail the Thursday brief or the Principal DM.
+
 # 5. Point-in-time: what did we know at T?
 uv run lab what-did-we-know --at 2026-09-10T00:00:00Z
 uv run lab what-did-we-know --at 2026-09-10T00:05:00Z --instrument BTC --metric mid_px

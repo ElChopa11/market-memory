@@ -1,0 +1,116 @@
+# First --no-db drop: ingest only.
+#
+# DO NOT RUN until after `lab migrate` has been applied to the target database
+# and the Principal has said OK. This file is dispatch-only. It has no
+# schedule and no cron. hybrid-sydney-morning (Thursday 06:30 Australia/Sydney,
+# cron "30 20 * * 0-4") is a different workflow and is not modified here.
+#
+# Actions today does not invoke `lab ingest` or `ingest-once`. The only
+# --no-db commands on hybrid-sydney-morning are the Stage 1 heartbeat and
+# brief-and-deliver (`lab brief close --live --no-db` and
+# `lab deliver pack ... --no-db`). Those stay. A persistence error in this
+# workflow cannot fail delivery: brief-and-deliver does not need this job,
+# and it still passes --no-db so it never opens POSTGRES_DSN.
+#
+# Gate: workflow_dispatch input i_mean_it_persist (boolean, default false).
+# The job if and the step both refuse unless that input is true. A plain
+# Run workflow does not persist. Unattended Thursday cannot write.
+#
+# Secret names only (Principal adds values): POSTGRES_DSN, MINIO_ENDPOINT,
+# MINIO_ACCESS_KEY, MINIO_SECRET_KEY. MINIO_BUCKET stays unset — the code
+# default bucket name is market-memory. S3_REGION=auto is job env, not a
+# secret (Cloudflare R2). Never TELEGRAM_*. Paper only. Do not auto-merge.
+
+name: ingest-persist
+
+on:
+  workflow_dispatch:
+    inputs:
+      i_mean_it_persist:
+        description: >-
+          Principal prove: lab ingest WITH Postgres and R2 pointers (no --no-db).
+          Default false — Run workflow does not persist. No schedule. Thursday
+          cron cannot fire this workflow. Do not run until migrate is applied.
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ingest-persist
+  cancel-in-progress: false
+
+jobs:
+  ingest-persist:
+    # Dispatch only, and only when the Principal sets the input true.
+    # Boolean inputs context, or string 'true' on the event payload.
+    # Default false matches neither. There is no schedule branch.
+    if: github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_persist == true || github.event.inputs.i_mean_it_persist == 'true')
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
+      MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+      MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+      MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+      # MINIO_BUCKET is intentionally not mapped. object_store_from_env
+      # defaults the bucket name to market-memory.
+      # R2 signing region. Job env, not a secret. Read by s3_region_from_env.
+      S3_REGION: auto
+      I_MEAN_IT_PERSIST: ${{ inputs.i_mean_it_persist }}
+    steps:
+      - name: Gate — dispatch + i_mean_it_persist + required secrets
+        id: gate
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]; then
+            echo "::error::ingest persist is workflow_dispatch only. Refusing."
+            exit 1
+          fi
+          if [ "${I_MEAN_IT_PERSIST}" != "true" ]; then
+            echo "::error::refusing persist: i_mean_it_persist is not true."
+            exit 1
+          fi
+          if [ -z "${POSTGRES_DSN:-}" ]; then
+            echo "::error::POSTGRES_DSN is empty. Refusing before any database write."
+            exit 1
+          fi
+          if [ -z "${MINIO_ENDPOINT:-}" ] || [ -z "${MINIO_ACCESS_KEY:-}" ] || [ -z "${MINIO_SECRET_KEY:-}" ]; then
+            echo "::error::MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY must all be set. Refusing before any raw_object pointer."
+            exit 1
+          fi
+          if [ -n "${MINIO_BUCKET:-}" ]; then
+            echo "::error::MINIO_BUCKET must stay unset (code default bucket is market-memory)."
+            exit 1
+          fi
+          if [ "${S3_REGION:-}" != "auto" ]; then
+            echo "::error::S3_REGION must be auto (job env, not a secret)."
+            exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "persist gate ok (values not printed). bucket default market-memory. S3_REGION=auto. i_mean_it_persist=true."
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.ready == 'true'
+
+      - uses: astral-sh/setup-uv@v6
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        if: steps.gate.outputs.ready == 'true'
+        run: uv sync --all-packages
+
+      - name: Live public ingest with Postgres (lab ingest, no --no-db)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          # Hyperliquid public /info only. cmd_ingest without --fixture calls
+          # ingest_from_client. No --no-db. No --no-objects. No --fixture.
+          # DSN and MinIO keys stay in the environment (not argv).
+          echo "lab ingest --window 7d (persist; no --no-db)"
+          uv run lab ingest --window 7d
