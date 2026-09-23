@@ -24,8 +24,10 @@ Same workflow as the Stage 1 stamp: `.github/workflows/hybrid-sydney-morning.yml
 | `TELEGRAM_BOT_TOKEN` | yes — Actions **second** bot, not the box `telegram.env` token |
 | `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | yes — Principal DM |
 | `TELEGRAM_CHAT_ID` | **must stay unset** — job exits 1 if set |
+| `POLYGON_API_KEY` | no — optional data richness for equities slots; not required for stamp or DM |
+| `FRED_API_KEY` | no — optional data richness for rates slots; not required for stamp or DM |
 
-Either DM secret absent → soft skip (stamp already succeeded; no brief; no POST). Both present → `lab brief close --live --no-db` then `lab deliver pack --from-markdown <brief> --to-principal-dm --i-mean-it --ignore-quiet-hours --no-db`. Unset `TELEGRAM_CHAT_ID` does not block that DM POST. Any other preflight error does. Group `--send` stays SEND_FROZEN. Principal reviews before secrets are added; the schedule does not send until then. See [scheduler.md](scheduler.md).
+Either DM secret absent → soft skip (stamp already succeeded; no brief; no POST). Both present → `lab brief close --live --no-db` then `lab deliver pack --from-markdown <brief> --to-principal-dm --i-mean-it --ignore-quiet-hours --no-db`. Unset `TELEGRAM_CHAT_ID` does not block that DM POST. Any other preflight error does. Group `--send` stays SEND_FROZEN. Principal reviews before Telegram secrets are added; the schedule does not send until then. `POLYGON_API_KEY` and `FRED_API_KEY` are optional data richness (not required for stamp or DM). Absent Actions secrets resolve to empty; the brief marks those slots unavailable and the job does not fail. Principal adds Actions copies separate from the box `market-data/keys.env`. See [scheduler.md](scheduler.md).
 
 Every Hive fire must stamp a completion row (`lab brief` / `lab deliver` / `lab schedule heartbeat`) under `ops/reports/scheduler/completions/` so `lab schedule miss-check` can see the executed path. See [scheduler.md](scheduler.md). Do not change the miss detector.
 

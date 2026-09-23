@@ -13,9 +13,9 @@
 #
 # brief-and-deliver (needs stage1-stamp): runs on schedule, or on
 # workflow_dispatch only when input i_mean_it_deliver is true (boolean,
-# default false). When both Actions secrets below are present, lab brief
+# default false). When both Telegram Actions secrets below are present, lab brief
 # close --live --no-db then lab deliver pack --to-principal-dm --i-mean-it.
-# Soft-skip (exit 0, later steps skipped) when either secret is absent — the
+# Soft-skip (exit 0, later steps skipped) when either Telegram secret is absent — the
 # stamp still stands. Exit 1 if TELEGRAM_CHAT_ID is set. A dispatch with
 # i_mean_it_deliver left false skips this job (cannot send). stage1-stamp
 # has no if, so it still runs on every dispatch, then this job when the
@@ -23,6 +23,9 @@
 #
 # Secret names only (Principal adds values): TELEGRAM_BOT_TOKEN (second bot),
 # TELEGRAM_CHAT_ID_PRINCIPAL_DM. Never TELEGRAM_CHAT_ID.
+# Optional data richness (not required for stamp or DM): POLYGON_API_KEY,
+# FRED_API_KEY. Absent secrets resolve to empty; brief marks those slots
+# unavailable. The job does not fail when they are missing.
 
 name: hybrid-sydney-morning
 
@@ -288,6 +291,11 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID_PRINCIPAL_DM: ${{ secrets.TELEGRAM_CHAT_ID_PRINCIPAL_DM }}
       # TELEGRAM_CHAT_ID is intentionally not mapped. It must remain UNSET.
+      # Optional data richness for equities/rates. Not required for stamp or DM.
+      # Absent Actions secrets resolve to empty; lab brief close marks those
+      # slots unavailable and this job does not fail.
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       # Force process env only (no box telegram.env on the runner).
       MM_DELIVERY_ENV_FILE: /tmp/mm-actions-brief-no-delivery.env
     steps:
