@@ -56,6 +56,11 @@ def main(argv: list[str] | None = None) -> int:
         help="dry-run: normalize fixture envelopes without Postgres or object store",
     )
 
+    sub.add_parser(
+        "history-backfill",
+        help="one-off Polygon daily + full FRED DGS10/DGS2 + HL 1d candles (persist)",
+    ).add_argument("--dsn", help="Postgres DSN (default POSTGRES_DSN)")
+
     know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
     know.add_argument("--at", required=True, help="UTC instant (ISO-8601)")
     know.add_argument("--instrument", help="filter by instrument (locked HL perps: BTC, ETH, UNI, AAVE)")
@@ -137,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_migrate()
     if args.cmd == "ingest":
         return cmd_ingest(args)
+    if args.cmd == "history-backfill":
+        return cmd_history_backfill(args)
     if args.cmd == "what-did-we-know":
         return cmd_what_did_we_know(args)
     if args.cmd == "thesis":
@@ -222,6 +229,11 @@ def cmd_status() -> int:
     print("Base rates: lab base-rate compute --fixture PATH --no-db (unconditional dip/zone/first-entry rates; C-001/002/003 cite these; not a study)")
     print("Queue: lab queue check | lab queue can-start IMP-XXX (hygiene only; no auto-merge, no gate waiver)")
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
+    print(
+        "History backfill: lab history-backfill "
+        "(one-off Polygon daily, full FRED DGS10/DGS2, HL 1d candles; "
+        "Actions gate i_mean_it_backfill defaults false)."
+    )
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")
@@ -331,6 +343,70 @@ def cmd_ingest(args: argparse.Namespace) -> int:
                 )
             payload = stats.as_public_dict()
     print(json.dumps(payload))
+    return 0
+
+
+def cmd_history_backfill(args: argparse.Namespace) -> int:
+    """One-off history pull. The Actions gate is what prints SKIP; this command persists."""
+    import os
+
+    from mm_ingest.config import load_ingest_settings
+    from mm_ingest.history_backfill import (
+        collect_history_backfill,
+        history_backfill_plan,
+        hl_client_for_settings,
+        persist_history_envelopes,
+        polygon_adapter_for_plan,
+    )
+    from mm_ingest.macro import API_KEY_ENV as FRED_API_KEY_ENV
+    from mm_ingest.equities.polygon import API_KEY_ENV as POLYGON_API_KEY_ENV
+    from mm_memory.db import session_scope
+    from mm_memory.object_store import ObjectStoreConfigError, object_store_from_env
+
+    plan = history_backfill_plan()
+    print(json.dumps({"phase": "plan", **plan.as_public_dict()}))
+    missing = [name for name in (POLYGON_API_KEY_ENV, FRED_API_KEY_ENV) if not os.environ.get(name, "").strip()]
+    if missing:
+        print(
+            "history-backfill refused: missing " + ", ".join(missing) + " (values not printed)",
+            file=sys.stderr,
+        )
+        return 2
+    settings = load_ingest_settings()
+    try:
+        store = object_store_from_env(enabled=bool(settings.get("store_raw_objects", True)))
+    except ObjectStoreConfigError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    ingested_at = utcnow()
+    adapter = polygon_adapter_for_plan(plan, settings=settings)
+    try:
+        with hl_client_for_settings(settings) as client:
+            collected = collect_history_backfill(
+                plan,
+                ingested_at=ingested_at,
+                polygon=adapter,
+                hl_client=client,
+                stale_after_seconds=int(settings.get("stale_after_seconds", 120)),
+            )
+    finally:
+        adapter.close()
+
+    payload: dict[str, Any] = {"phase": "fetch", **collected.as_public_dict()}
+    if collected.errors:
+        print(json.dumps(payload))
+        return 1
+
+    dsn = args.dsn or dsn_from_env()
+    with session_scope(dsn) as session:
+        stats = persist_history_envelopes(session, collected.envelopes, object_store=store)
+    payload["persist"] = stats.as_public_dict()
+    short = collected.hl_below_minimum()
+    payload["hl_below_minimum"] = short
+    print(json.dumps(payload))
+    if short:
+        return 1
     return 0
 
 

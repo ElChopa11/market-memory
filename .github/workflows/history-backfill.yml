@@ -1,0 +1,120 @@
+# One-off history backfill for a fresh Neon database.
+#
+# DO NOT RUN until the Principal says so after the Thursday unattended fire.
+# Sequence: lab migrate has already been applied, and this job runs before
+# recurring ingest-persist. This workflow does not call lab migrate, does not
+# start ingest-persist, and does not brief or deliver.
+#
+# Trigger: workflow_dispatch only. No schedule. No cron. hybrid-sydney-morning
+# is a different file and is not modified here. Thursday 06:30 Australia/Sydney
+# (cron "30 20 * * 0-4") cannot fire this workflow.
+#
+# Gate: input i_mean_it_backfill (boolean, default false). False prints SKIP
+# and exits 0. That path does not check out the repo, does not open Postgres,
+# and does not call Polygon, FRED, or Hyperliquid.
+#
+# Secret names only: POSTGRES_DSN, POLYGON_API_KEY, FRED_API_KEY,
+# MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY. MINIO_BUCKET stays
+# unset (code default bucket market-memory). S3_REGION=auto is job env, not
+# a secret. Never TELEGRAM_*. Paper only. Do not auto-merge.
+
+name: history-backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      i_mean_it_backfill:
+        description: >-
+          Principal prove: one-off history backfill into Postgres (Polygon daily,
+          full FRED DGS10/DGS2, HL 1d candles). Default false prints SKIP and
+          does not touch the database or any API. No schedule. Do not run until
+          after migrate and after the Thursday unattended fire.
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: history-backfill
+  cancel-in-progress: false
+
+jobs:
+  history-backfill:
+    # Dispatch only. The job still starts when the input is false so the step
+    # can print SKIP and exit 0. There is no schedule branch.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+      MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+      MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+      # MINIO_BUCKET is intentionally not mapped.
+      S3_REGION: auto
+      I_MEAN_IT_BACKFILL: ${{ inputs.i_mean_it_backfill }}
+    steps:
+      - name: Gate — SKIP unless i_mean_it_backfill
+        id: gate
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]; then
+            echo "::error::history backfill is workflow_dispatch only. Refusing."
+            exit 1
+          fi
+          if [ "${I_MEAN_IT_BACKFILL}" != "true" ]; then
+            echo "SKIP"
+            echo "history-backfill: i_mean_it_backfill is not true. No database write. No API calls."
+            exit 0
+          fi
+          if [ -z "${POSTGRES_DSN:-}" ]; then
+            echo "::error::POSTGRES_DSN is empty. Refusing before any database write."
+            exit 1
+          fi
+          if [ -z "${POLYGON_API_KEY:-}" ]; then
+            echo "::error::POLYGON_API_KEY is empty. Refusing before any Polygon call."
+            exit 1
+          fi
+          if [ -z "${FRED_API_KEY:-}" ]; then
+            echo "::error::FRED_API_KEY is empty. Refusing before any FRED call."
+            exit 1
+          fi
+          if [ -z "${MINIO_ENDPOINT:-}" ] || [ -z "${MINIO_ACCESS_KEY:-}" ] || [ -z "${MINIO_SECRET_KEY:-}" ]; then
+            echo "::error::MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY must all be set. Refusing before any raw_object pointer."
+            exit 1
+          fi
+          if [ -n "${MINIO_BUCKET:-}" ]; then
+            echo "::error::MINIO_BUCKET must stay unset (code default bucket is market-memory)."
+            exit 1
+          fi
+          if [ "${S3_REGION:-}" != "auto" ]; then
+            echo "::error::S3_REGION must be auto (job env, not a secret)."
+            exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "backfill gate ok (values not printed). S3_REGION=auto. i_mean_it_backfill=true."
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.ready == 'true'
+
+      - uses: astral-sh/setup-uv@v6
+        if: steps.gate.outputs.ready == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        if: steps.gate.outputs.ready == 'true'
+        run: uv sync --all-packages
+
+      - name: History backfill (Polygon daily, FRED full series, HL 1d)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          # No --no-db. No --fixture. No brief. No deliver. No migrate.
+          echo "lab history-backfill (persist)"
+          uv run lab history-backfill

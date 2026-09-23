@@ -82,6 +82,34 @@ Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — l
 
 The Hyperliquid client **refuses** user-private types (`clearinghouseState`, `userFills`, `openOrders`, …). There is no `hl_trade` module. Phase 5b adds public `l2Book` to the allowlist.
 
+## History backfill (one-off, dispatch-gated)
+
+**DO NOT RUN** until the Principal says so after the Thursday unattended fire. Sequence is `lab migrate` on the fresh database, then this job, then recurring ingest-persist. This command does not migrate, does not brief, and does not deliver.
+
+Workflow: `.github/workflows/history-backfill.yml`. Trigger is `workflow_dispatch` only. There is no `schedule` and no cron. `hybrid-sydney-morning.yml` is not part of this path. Its heartbeat and `brief-and-deliver` stay `--no-db`.
+
+| Control | Behaviour |
+|---|---|
+| Input | `i_mean_it_backfill` (boolean, default **false**). False prints `SKIP` and exits 0. No checkout, no Postgres, no Polygon, no FRED, no Hyperliquid. |
+| Command | `uv run lab history-backfill` with **no** `--no-db` and **no** `--fixture`. |
+| Secrets | `POSTGRES_DSN`, `POLYGON_API_KEY`, `FRED_API_KEY`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`. Names only. |
+| Bucket | `MINIO_BUCKET` is not set. Code default bucket name is `market-memory`. |
+| Region | `S3_REGION=auto` is job env (not a secret). |
+
+What one successful run requests:
+
+| Source | Endpoint | Window | Approx calls | Rate limit |
+|---|---|---|---|---|
+| Polygon | `GET /v2/aggs/ticker/{ticker}/range/1/day/{start}/{end}` `adjusted=true` `limit=50000` | 730 calendar days. Tickers are the brief tape slots in `config/briefing/macro.yaml` (`live.polygon.symbols`): SPY, QQQ, UUP, USO. VIX is structural and is not called. | 4 (one GET per ticker; no `next_url` follow) | `config/ingest.yaml` is 5 req/min. Four calls fit in one minute. Not multi-minute. A larger ticker list sleeps via `MinutePacer` because `RateLimitBudget` only refuses. `http_get` still backs off on 429. |
+| FRED | `GET /fred/series/observations` | Full series for DGS10 and DGS2 (`limit` omitted; API default 100000). The ingest helper's default `limit=5` is unchanged. The live brief fetch stays `limit=2`. | 2 | 20 req/min in config. One page each. |
+| Hyperliquid | `POST /info` `candleSnapshot` interval `1d` | 90 calendar days on enabled perps (BTC, ETH, UNI, AAVE). Open time is field `t` (unix ms). `T` is the close time. | 4 (one POST per coin; under the 500-row page) | 60 req/min. Not multi-minute. |
+
+2s10s is DGS10 minus DGS2. This job does not write a spread row. It does not write Δ1D/Δ5D/Δ20D or z30d columns. Those are later reads over the stored daily closes (`ohlcv_close`, `candle_close`) and the two yield series.
+
+Idempotency: a second dispatch with the same values does not insert a second observation. `ObservationRepository.put_observation` dedupes on `claim_hash` (`observation_claim_hash_uidx`). `claim_hash` is source, instrument, metric, market time, value, and extras. It does not include `ingested_at`. This command also skips the raw-object put when that claim already exists. A revised print is a new `claim_hash` plus a `contradicts` link, not an overwrite.
+
+A run that returns zero bars does not open Postgres. A run that stores HL candles but any coin is under 60 sessions exits 1 after the commit so the gap is visible. The log is the JSON from `lab history-backfill`. It is not a `research_run` row.
+
 ## Phase 5b feeds
 
 See [polygon-hl-structure.md](polygon-hl-structure.md): Polygon OHLCV + corporate actions (env `POLYGON_API_KEY`); HL basis / L2 / predicted funding; optional CoinGecko/Binance public spot DQ; FRED + fixture calendar. Missing keys → `unavailable` + `error_class`; never invent.

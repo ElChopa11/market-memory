@@ -74,6 +74,7 @@ class PolygonEquitiesAdapter:
         daily_timespan: str = "day",
         intraday_multiplier: int = 5,
         intraday_timespan: str = "minute",
+        agg_limit: int | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self._env = dict(env) if env is not None else None
@@ -88,6 +89,8 @@ class PolygonEquitiesAdapter:
         self.daily_timespan = daily_timespan
         self.intraday_multiplier = intraday_multiplier
         self.intraday_timespan = intraday_timespan
+        # None keeps the vendor default page size. History backfill sets 50000.
+        self.agg_limit = agg_limit
         self.last_error_class = ERROR_NONE
         self.last_notes: tuple[str, ...] = ()
 
@@ -176,10 +179,10 @@ class PolygonEquitiesAdapter:
             )
             if not POLYGON_OHLCV_ADJUSTED:
                 raise RuntimeError("unadjusted Polygon OHLCV is not a research path")
-            payload, error_class = self._get(
-                path,
-                params={"adjusted": POLYGON_ADJUSTED_QUERY},
-            )
+            params: dict[str, Any] = {"adjusted": POLYGON_ADJUSTED_QUERY}
+            if self.agg_limit is not None:
+                params["limit"] = int(self.agg_limit)
+            payload, error_class = self._get(path, params=params)
             if error_class != ERROR_NONE:
                 self.last_error_class = error_class
                 continue

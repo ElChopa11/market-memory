@@ -51,6 +51,8 @@ def fetch_fred_series(
     max_attempts: int = DEFAULT_MAX_ATTEMPTS,
     sleep: Callable[[float], None] | None = None,
     stale_after_seconds: int = 120,
+    limit: int | None = 5,
+    page_all: bool = False,
 ) -> tuple[list[ObservationEnvelope], str]:
     key = _getenv(api_key_env, env)
     symbols = [str(s).upper() for s in series]
@@ -77,62 +79,131 @@ def fetch_fred_series(
     last_error = ERROR_NONE
     try:
         for symbol, series_id in series.items():
-            if not limiter.allow():
-                last_error = ERROR_RATE_LIMITED
-                out.append(
-                    feed_status_envelope(
-                        source_name=FRED_SOURCE_NAME,
-                        instrument=str(symbol).upper(),
-                        ingested_at=ingested_at,
-                        error_class=ERROR_RATE_LIMITED,
-                        notes=("FRED rate-limit budget exhausted; no series invented",),
-                        venue="macro",
-                    )
-                )
-                continue
-            params = {
-                "series_id": series_id,
-                "api_key": key,
-                "file_type": "json",
-                "sort_order": "desc",
-                "limit": 5,
-            }
-            kwargs: dict[str, Any] = {
-                "params": params,
-                "max_attempts": max_attempts,
-                "parse_json": True,
-            }
-            if sleep is not None:
-                kwargs["sleep"] = sleep
-            result = http_get(client, base_url, **kwargs)
-            if not result.ok:
-                last_error = result.error_class
-                out.append(
-                    feed_status_envelope(
-                        source_name=FRED_SOURCE_NAME,
-                        instrument=str(symbol).upper(),
-                        ingested_at=ingested_at,
-                        error_class=result.error_class,
-                        notes=(f"FRED HTTP failed (error_class={result.error_class}); key not printed",),
-                        venue="macro",
-                        source_url_or_id=f"fred:{series_id}",
-                    )
-                )
-                continue
-            payload = result.json_payload if isinstance(result.json_payload, dict) else {}
-            out.extend(
-                normalize_fred_observations(
-                    payload,
-                    instrument=str(symbol).upper(),
-                    series_id=str(series_id),
-                    ingested_at=ingested_at,
-                    stale_after_seconds=stale_after_seconds,
-                )
+            page_envs, page_error = _pull_fred_symbol(
+                client,
+                base_url,
+                key=key,
+                symbol=str(symbol).upper(),
+                series_id=str(series_id),
+                ingested_at=ingested_at,
+                limiter=limiter,
+                limit=limit,
+                page_all=page_all,
+                max_attempts=max_attempts,
+                sleep=sleep,
+                stale_after_seconds=stale_after_seconds,
             )
+            if page_error != ERROR_NONE:
+                last_error = page_error
+            out.extend(page_envs)
     finally:
         if owns:
             client.close()
     return out, last_error
+
+
+def _pull_fred_symbol(
+    client: httpx.Client,
+    base_url: str,
+    *,
+    key: str,
+    symbol: str,
+    series_id: str,
+    ingested_at: datetime,
+    limiter: RateLimitBudget,
+    limit: int | None,
+    page_all: bool,
+    max_attempts: int,
+    sleep: Callable[[float], None] | None,
+    stale_after_seconds: int,
+) -> tuple[list[ObservationEnvelope], str]:
+    """One FRED series.
+
+    The default (``page_all`` false) is one request, ``sort_order=desc``,
+    ``limit`` 5. That is the ingest helper the brief does not use. The live
+    brief fetch stays in ``mm_briefing.fetchers`` with ``limit`` 2.
+
+    ``page_all`` true and ``limit`` None omits ``limit`` so the API default
+    (100000) applies, then follows ``offset`` while ``count`` is larger than
+    the rows already returned. DGS10 / DGS2 fit in one page.
+    """
+    offset = 0
+    pages = 0
+    out: list[ObservationEnvelope] = []
+    while True:
+        if not limiter.allow():
+            return [
+                feed_status_envelope(
+                    source_name=FRED_SOURCE_NAME,
+                    instrument=symbol,
+                    ingested_at=ingested_at,
+                    error_class=ERROR_RATE_LIMITED,
+                    notes=("FRED rate-limit budget exhausted; no series invented",),
+                    venue="macro",
+                )
+            ], ERROR_RATE_LIMITED
+        params: dict[str, Any] = {
+            "series_id": series_id,
+            "api_key": key,
+            "file_type": "json",
+            "sort_order": "asc" if page_all else "desc",
+        }
+        if page_all:
+            if limit is not None:
+                params["limit"] = limit
+            if offset:
+                params["offset"] = offset
+        else:
+            params["limit"] = 5 if limit is None else limit
+        kwargs: dict[str, Any] = {
+            "params": params,
+            "max_attempts": max_attempts,
+            "parse_json": True,
+        }
+        if sleep is not None:
+            kwargs["sleep"] = sleep
+        result = http_get(client, base_url, **kwargs)
+        if not result.ok:
+            return [
+                feed_status_envelope(
+                    source_name=FRED_SOURCE_NAME,
+                    instrument=symbol,
+                    ingested_at=ingested_at,
+                    error_class=result.error_class,
+                    notes=(f"FRED HTTP failed (error_class={result.error_class}); key not printed",),
+                    venue="macro",
+                    source_url_or_id=f"fred:{series_id}",
+                )
+            ], result.error_class
+        payload = result.json_payload if isinstance(result.json_payload, dict) else {}
+        page = normalize_fred_observations(
+            payload,
+            instrument=symbol,
+            series_id=series_id,
+            ingested_at=ingested_at,
+            stale_after_seconds=stale_after_seconds,
+        )
+        if page and all(row.metric == "feed_status" for row in page):
+            # Default single-page helper: HTTP 200 with no rows still returns the
+            # degrade envelope and error_class none (historical behaviour).
+            # Full-series backfill treats that as a failed pull.
+            if page_all:
+                return page, ERROR_PARSE
+            return page, ERROR_NONE
+        out.extend(page)
+        pages += 1
+        if not page_all:
+            break
+        observations = payload.get("observations") if isinstance(payload, dict) else None
+        returned = len(observations) if isinstance(observations, list) else 0
+        try:
+            count = int(payload.get("count") or 0) if isinstance(payload, dict) else 0
+        except (TypeError, ValueError):
+            count = 0
+        offset += returned
+        if returned == 0 or count <= 0 or offset >= count or pages >= 20:
+            break
+    return out, ERROR_NONE
 
 
 def normalize_fred_observations(
