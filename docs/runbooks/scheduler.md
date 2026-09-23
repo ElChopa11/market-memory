@@ -95,7 +95,7 @@ This section does not change `.github/workflows/hybrid-sydney-morning.yml`. That
 
 ## B1 Stage 1 — GitHub Actions execution path (stamp today)
 
-Actions is the execution path. This workflow is still the Stage 1 stamp for `grok.sydney_morning`, via `.github/workflows/hybrid-sydney-morning.yml`. Fetch, brief, and Principal-DM delivery are Stage 2 (next build; not this file).
+Actions is the execution path. `stage1-stamp` in `.github/workflows/hybrid-sydney-morning.yml` is the clock proof for `grok.sydney_morning` (fire → stamp → exit). It does not brief and it does not deliver. `brief-and-deliver` runs after that stamp on the same scheduled run. See the next section.
 
 - `on.schedule` one cron while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps.
 - `on.workflow_dispatch` for a Principal canary. Manual dispatch stamps the same way as the cron (no skip).
@@ -113,4 +113,37 @@ Actions is the execution path. This workflow is still the Stage 1 stamp for `gro
 | Draft PR canary (before merge) | Actions → Run workflow → branch **`cursor/b1-sydney-morning-actions-ae81`** (or current PR head) | That PR branch |
 | After merge | `schedule` on default branch | `main` |
 
-Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft. The job stamps; there is no force flag and no ±900s skip.
+Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft. The stamp job runs; there is no force flag and no ±900s skip. `workflow_dispatch` does **not** run `brief-and-deliver` (a manual Run workflow cannot send).
+
+## B1 brief-and-deliver (same workflow, after the stamp)
+
+Job `brief-and-deliver` has `needs: stage1-stamp` and `if: github.event_name == 'schedule'`. The cron on `stage1-stamp` is unchanged (`30 20 * * 0-4`). No ±900s guard. No second cron. No `i_mean_it_stage2` input.
+
+| Scheduled run | What happens |
+|---|---|
+| Always | `stage1-stamp` writes and pushes the completion row, with or without Telegram secrets. |
+| `TELEGRAM_BOT_TOKEN` or `TELEGRAM_CHAT_ID_PRINCIPAL_DM` absent | `brief-and-deliver` soft-skips (exit 0; later steps skipped). No fetch. No POST. Stamp stands. |
+| Both present, and `TELEGRAM_CHAT_ID` unset | `lab brief close --live --no-db`, then `lab deliver pack --from-markdown <brief> --as-of <UTC> --desk ops --to-principal-dm --i-mean-it --ignore-quiet-hours --no-db`. |
+| `TELEGRAM_CHAT_ID` set | `brief-and-deliver` exits 1. Group stays SEND_FROZEN. |
+
+`--ignore-quiet-hours` is required on this path because 06:30 Australia/Sydney falls inside `quiet_hours` 22:00–07:00. This job is the morning digest, not an overnight alert.
+
+Stage 1 alone still does not brief or deliver. Schedule runs from the default branch only. A draft PR does not send. Principal reviews before any live send. Do not `workflow_dispatch` expecting a DM.
+
+**Secret names (Actions; Principal adds values):**
+
+| Name | Role |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Actions-only **second** bot. Not the box `/home/box/agent-data/delivery/telegram.env` token. |
+| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | Principal private DM. |
+| `TELEGRAM_CHAT_ID` | **Must stay unset.** The job exits 1 if it is set. Never the Hive group. |
+
+No other secrets on this path (no `FRED_API_KEY`, no `POLYGON_API_KEY`). Those slots stay `unavailable` in the brief. CoinGecko and Hyperliquid `/info` are keyless.
+
+Group preflight treats unset `TELEGRAM_CHAT_ID` as an error for desk publish. DM-only `--to-principal-dm --i-mean-it` proceeds when that is the only preflight error. Any other preflight error strips `--i-mean-it` (no degraded publish).
+
+### P0.4 — Actions egress vs box rate limits
+
+Fetch code classifies HTTP 429 as `error_class=rate_limited` and honours `Retry-After` internally. It does not print rate-limit headers unless `MM_LOG_RATE_LIMIT_HEADERS=1`. The brief step sets that flag. Stderr then prints `rate-limit headers source=<hostname> status=<code> headers=...` for CoinGecko (`api.coingecko.com` via `http_get`) and Hyperliquid (`hyperliquid.info <info type>`). Allowlisted header names only (`Retry-After`, `*ratelimit*`). The request URL is not printed (query keys and bot tokens live in URLs).
+
+This agent did not measure GitHub-hosted runner egress. The next scheduled run that has both DM secrets prints those lines in the brief step log **before** the DM POST. A clean pass is `status=200` with `headers=(none)` or a remaining quota. A limited pass is `status=429` plus `Retry-After`. Compare that log to box 429s. `workflow_dispatch` does not run the brief, so it does not answer P0.4 and it does not send. Do not add the two secrets until Principal accepts a live DM on the following scheduled fire.

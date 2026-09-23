@@ -15,6 +15,18 @@ uv run lab deliver pack --from-markdown PATH --as-of UTC --to-principal-dm --i-m
 
 Those commands POST only to env `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. Missing that env → refuse. Never silently fall back to `TELEGRAM_CHAT_ID` (group). Preflight still runs. `--routine-id` still stamps a completion row. **Live acceptance is on-box only** (cloud VM has no delivery token). Pytest mocks Telegram HTTP and is not acceptance.
 
+### Actions Sydney morning (`brief-and-deliver`)
+
+Same workflow as the Stage 1 stamp: `.github/workflows/hybrid-sydney-morning.yml`. Job `brief-and-deliver` runs only on `schedule`, after `stage1-stamp`. It does not run on `workflow_dispatch`.
+
+| Secret name | Required for the DM step |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | yes — Actions **second** bot, not the box `telegram.env` token |
+| `TELEGRAM_CHAT_ID_PRINCIPAL_DM` | yes — Principal DM |
+| `TELEGRAM_CHAT_ID` | **must stay unset** — job exits 1 if set |
+
+Either DM secret absent → soft skip (stamp already succeeded; no brief; no POST). Both present → `lab brief close --live --no-db` then `lab deliver pack --from-markdown <brief> --to-principal-dm --i-mean-it --ignore-quiet-hours --no-db`. Unset `TELEGRAM_CHAT_ID` does not block that DM POST. Any other preflight error does. Group `--send` stays SEND_FROZEN. Principal reviews before secrets are added; the schedule does not send until then. See [scheduler.md](scheduler.md).
+
 Every Hive fire must stamp a completion row (`lab brief` / `lab deliver` / `lab schedule heartbeat`) under `ops/reports/scheduler/completions/` so `lab schedule miss-check` can see the executed path. See [scheduler.md](scheduler.md). Do not change the miss detector.
 
 | Rule | Detail |
