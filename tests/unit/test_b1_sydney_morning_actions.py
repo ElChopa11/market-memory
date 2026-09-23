@@ -73,10 +73,25 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     text = _workflow_text()
     stage1, brief = _split_jobs(text)
     assert "needs: stage1-stamp" in brief
-    assert "github.event_name == 'schedule'" in brief
-    # Manual Run workflow must not enter the deliver job.
-    assert "workflow_dispatch" not in brief
+    # One cron line, still only on the workflow (not copied into this job).
+    assert text.count('cron: "30 20 * * 0-4"') == 1
+    assert 'cron: "30 20 * * 0-4"' not in brief
+    deliver_if = (
+        "if: github.event_name == 'schedule' || "
+        "(github.event_name == 'workflow_dispatch' && "
+        "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true'))"
+    )
+    assert deliver_if in brief
+    assert brief.count("i_mean_it_deliver") >= 1
+    # Dispatch input: boolean, default false. Not the retired Stage 2 name.
+    assert "i_mean_it_deliver:" in text
+    assert "type: boolean" in text
+    assert "default: false" in text
+    assert text.count("default: false") == 1
     assert "i_mean_it_stage2" not in text
+    # Stamp job is not gated on the input (manual prove still stamps first).
+    assert "i_mean_it_deliver" not in stage1
+    assert "\n    if:" not in stage1
     assert "lab brief close" in brief
     assert "--live" in brief
     assert "--no-db" in brief
@@ -102,8 +117,6 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     assert "STAMP COMMIT-BACK FAILED" not in brief
     assert "contents: read" in brief
     assert "MM_LOG_RATE_LIMIT_HEADERS" in brief
-    # Stage 1 cron line is not duplicated into the second job.
-    assert 'cron: "30 20 * * 0-4"' not in brief
     assert "outside_anchor_window" not in stage1
 
 
@@ -112,6 +125,8 @@ def test_brief_and_deliver_runbook_lists_secret_names() -> None:
     tg = TELEGRAM_RUNBOOK.read_text(encoding="utf-8")
     blob = sched + "\n" + tg
     assert "brief-and-deliver" in blob
+    assert "i_mean_it_deliver" in blob
+    assert "defaults to false" in blob
     assert "TELEGRAM_BOT_TOKEN" in blob
     assert "TELEGRAM_CHAT_ID_PRINCIPAL_DM" in blob
     assert "TELEGRAM_CHAT_ID" in blob

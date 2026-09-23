@@ -17,7 +17,7 @@ Those commands POST only to env `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. Missing that en
 
 ### Actions Sydney morning (`brief-and-deliver`)
 
-Same workflow as the Stage 1 stamp: `.github/workflows/hybrid-sydney-morning.yml`. Job `brief-and-deliver` runs only on `schedule`, after `stage1-stamp`. It does not run on `workflow_dispatch`.
+Same workflow as the Stage 1 stamp: `.github/workflows/hybrid-sydney-morning.yml`. Job `brief-and-deliver` runs after `stage1-stamp` on `schedule`, and on `workflow_dispatch` only when input `i_mean_it_deliver` is true. That input defaults to false, so a plain Run workflow cannot send. Principal prove: Actions → hybrid-sydney-morning → Run workflow → set `i_mean_it_deliver` true (stamp still runs first).
 
 | Secret name | Required for the DM step |
 |---|---|

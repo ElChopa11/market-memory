@@ -113,11 +113,11 @@ Actions is the execution path. `stage1-stamp` in `.github/workflows/hybrid-sydne
 | Draft PR canary (before merge) | Actions → Run workflow → branch **`cursor/b1-sydney-morning-actions-ae81`** (or current PR head) | That PR branch |
 | After merge | `schedule` on default branch | `main` |
 
-Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → use the **PR branch** while draft. The stamp job runs; there is no force flag and no ±900s skip. `workflow_dispatch` does **not** run `brief-and-deliver` (a manual Run workflow cannot send).
+Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → select this branch (or `main` after merge). The stamp job runs; there is no force flag and no ±900s skip. Leave `i_mean_it_deliver` false (it defaults to false) and `brief-and-deliver` does not run — that cannot send. Set `i_mean_it_deliver` true to stamp, then brief and deliver to the Principal DM.
 
 ## B1 brief-and-deliver (same workflow, after the stamp)
 
-Job `brief-and-deliver` has `needs: stage1-stamp` and `if: github.event_name == 'schedule'`. The cron on `stage1-stamp` is unchanged (`30 20 * * 0-4`). No ±900s guard. No second cron. No `i_mean_it_stage2` input.
+Job `brief-and-deliver` has `needs: stage1-stamp`. It runs when `github.event_name == 'schedule'`, or when `github.event_name == 'workflow_dispatch'` and `i_mean_it_deliver` is true. The input is a boolean and defaults to false. The cron on `stage1-stamp` is unchanged (`30 20 * * 0-4`). No ±900s guard. No second cron. No `i_mean_it_stage2` input. `stage1-stamp` has no `if`, so a manual prove still stamps first.
 
 | Scheduled run | What happens |
 |---|---|
@@ -128,7 +128,14 @@ Job `brief-and-deliver` has `needs: stage1-stamp` and `if: github.event_name == 
 
 `--ignore-quiet-hours` is required on this path because 06:30 Australia/Sydney falls inside `quiet_hours` 22:00–07:00. This job is the morning digest, not an overnight alert.
 
-Stage 1 alone still does not brief or deliver. Schedule runs from the default branch only. A draft PR does not send. Principal reviews before any live send. Do not `workflow_dispatch` expecting a DM.
+Stage 1 alone still does not brief or deliver. The schedule path ignores `i_mean_it_deliver` and is the same as the merged brief-and-deliver job: secrets absent → soft skip exit 0; both secrets and `TELEGRAM_CHAT_ID` unset → brief then Principal DM; `TELEGRAM_CHAT_ID` set → exit 1.
+
+| Dispatch | What happens |
+|---|---|
+| `i_mean_it_deliver` false (default) | `stage1-stamp` runs. `brief-and-deliver` does not run. No send. |
+| `i_mean_it_deliver` true | `stage1-stamp` runs first, then the same brief+DM gate as a scheduled fire. |
+
+Principal prove (once): Actions → **hybrid-sydney-morning** → **Run workflow** → branch of this change → set `i_mean_it_deliver` true. Default false cannot send.
 
 **Secret names (Actions; Principal adds values):**
 
@@ -146,4 +153,4 @@ Group preflight treats unset `TELEGRAM_CHAT_ID` as an error for desk publish. DM
 
 Fetch code classifies HTTP 429 as `error_class=rate_limited` and honours `Retry-After` internally. It does not print rate-limit headers unless `MM_LOG_RATE_LIMIT_HEADERS=1`. The brief step sets that flag. Stderr then prints `rate-limit headers source=<hostname> status=<code> headers=...` for CoinGecko (`api.coingecko.com` via `http_get`) and Hyperliquid (`hyperliquid.info <info type>`). Allowlisted header names only (`Retry-After`, `*ratelimit*`). The request URL is not printed (query keys and bot tokens live in URLs).
 
-This agent did not measure GitHub-hosted runner egress. The next scheduled run that has both DM secrets prints those lines in the brief step log **before** the DM POST. A clean pass is `status=200` with `headers=(none)` or a remaining quota. A limited pass is `status=429` plus `Retry-After`. Compare that log to box 429s. `workflow_dispatch` does not run the brief, so it does not answer P0.4 and it does not send. Do not add the two secrets until Principal accepts a live DM on the following scheduled fire.
+This agent did not measure GitHub-hosted runner egress. A run that enters `brief-and-deliver` with both DM secrets prints those lines in the brief step log **before** the DM POST. A clean pass is `status=200` with `headers=(none)` or a remaining quota. A limited pass is `status=429` plus `Retry-After`. Compare that log to box 429s. A Run workflow with `i_mean_it_deliver` left at its default false does not run the brief and cannot send. Set it true to prove the DM; that run also prints the P0.4 lines. The schedule does not read the input.
