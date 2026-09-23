@@ -11,12 +11,15 @@
 # No ±900s anchor guard and no skip. Every fire stamps. The AEDT companion
 # cron is not scheduled. Do not add a second cron.
 #
-# brief-and-deliver (schedule only, needs stage1-stamp): when both Actions
-# secrets below are present, lab brief close --live --no-db then lab deliver
-# pack --to-principal-dm --i-mean-it. Soft-skip (exit 0, later steps skipped)
-# when either secret is absent — the stamp still stands. Exit 1 if
-# TELEGRAM_CHAT_ID is set. workflow_dispatch does not enter this job (a manual
-# Run workflow cannot send). GROUP SEND_FROZEN. Paper only. Do not auto-merge.
+# brief-and-deliver (needs stage1-stamp): runs on schedule, or on
+# workflow_dispatch only when input i_mean_it_deliver is true (boolean,
+# default false). When both Actions secrets below are present, lab brief
+# close --live --no-db then lab deliver pack --to-principal-dm --i-mean-it.
+# Soft-skip (exit 0, later steps skipped) when either secret is absent — the
+# stamp still stands. Exit 1 if TELEGRAM_CHAT_ID is set. A dispatch with
+# i_mean_it_deliver left false skips this job (cannot send). stage1-stamp
+# has no if, so it still runs on every dispatch, then this job when the
+# input is true. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
 #
 # Secret names only (Principal adds values): TELEGRAM_BOT_TOKEN (second bot),
 # TELEGRAM_CHAT_ID_PRINCIPAL_DM. Never TELEGRAM_CHAT_ID.
@@ -29,6 +32,14 @@ on:
     # is in force. Mon–Fri 06:30 AEST = Sun–Thu 20:30 UTC.
     - cron: "30 20 * * 0-4"
   workflow_dispatch:
+    inputs:
+      i_mean_it_deliver:
+        description: >-
+          Principal prove: stamp, then brief and POST to the Principal DM.
+          Default false — Run workflow cannot send. The schedule path ignores this input.
+        type: boolean
+        default: false
+        required: false
 
 # Push completion JSON back to the run branch (GITHUB_TOKEN). No Telegram secrets.
 permissions:
@@ -265,7 +276,9 @@ jobs:
 
   brief-and-deliver:
     needs: stage1-stamp
-    if: github.event_name == 'schedule'
+    # Schedule ignores the input (#104 path). Dispatch runs only on explicit true
+    # (boolean inputs context, or string 'true' on the event payload). Default false matches neither.
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
