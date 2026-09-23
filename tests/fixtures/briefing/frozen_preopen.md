@@ -1,5 +1,6 @@
 # US Pre-Market Brief — 2026-03-10
 
+DATE: Generated (UTC) 2026-03-10T12:00:00+00:00; America/New_York 2026-03-10T08:00:00-04:00 (EDT); Australia/Sydney 2026-03-10T23:00:00+11:00 (AEDT); Memory watermark (as_of_knowledge) 2026-03-10T12:00:00+00:00; As-of knowledge 2026-03-10T12:00:00+00:00
 Generated (UTC): 2026-03-10T12:00:00+00:00
 Generated (America/New_York): 2026-03-10T08:00:00-04:00 (EDT)
 Generated (Australia/Sydney): 2026-03-10T23:00:00+11:00 (AEDT)
@@ -10,6 +11,9 @@ Data health: 93% (6 fresh, 1 degraded, 0 stale, 0 unavailable / 7 scored; struct
 Coverage of observed data states with versioned weights. Not a confidence score.
 Icons mark data state only (fresh / degraded / stale / unavailable). Green is not a direction.
 Regime: INSUFFICIENT DATA
+KEY TAKEAWAY
+INSUFFICIENT DATA
+
 Macro source: fixture
 HL origin: hyperliquid.info
 
@@ -127,6 +131,12 @@ Snapshot fields have no exchange event time; capture is ingested_at / as_of_know
 - Invalidation: ETH lags while BTC funding remains bid; lose support without OI confirmation
 - No-trade: ETH open_interest is missing or partial; HL ETH data_quality=partial
 
+
+## Audit
+
+Data quality: 93%
+Freshest feed: ES, NQ, US10Y, DXY, CL, VIX, BTC, ETH
+Major missing feeds: none
 
 ---
 **Informational only — no decision, no recommendation, no order intent.**

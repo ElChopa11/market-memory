@@ -1,5 +1,6 @@
 # US Close Brief — 2026-03-10
 
+DATE: Generated (UTC) 2026-03-10T20:15:00+00:00; America/New_York 2026-03-10T16:15:00-04:00 (EDT); Australia/Sydney 2026-03-11T07:15:00+11:00 (AEDT); As-of knowledge 2026-03-10T20:15:00+00:00
 Generated (UTC): 2026-03-10T20:15:00+00:00
 Generated (America/New_York): 2026-03-10T16:15:00-04:00 (EDT)
 Generated (Australia/Sydney): 2026-03-11T07:15:00+11:00 (AEDT)
@@ -9,6 +10,8 @@ Data health: 93% (6 fresh, 1 degraded, 0 stale, 0 unavailable / 7 scored; struct
 Coverage of observed data states with versioned weights. Not a confidence score.
 Icons mark data state only (fresh / degraded / stale / unavailable). Green is not a direction.
 Regime: INSUFFICIENT DATA
+KEY TAKEAWAY
+INSUFFICIENT DATA
 
 ## Data health
 
@@ -97,6 +100,12 @@ Overnight reference:
 - Liquidations (window sum): 0 (obs none)
 - Levels: basis_mark_minus_oracle=3, session_high=3580, session_low=3460
 
+
+## Audit
+
+Data quality: 93%
+Freshest feed: ES, NQ, US10Y, DXY, CL, VIX, BTC, ETH
+Major missing feeds: none
 
 ---
 **Informational only — no decision, no recommendation, no order intent.**

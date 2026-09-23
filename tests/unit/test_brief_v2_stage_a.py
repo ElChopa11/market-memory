@@ -113,8 +113,10 @@ def test_proxy_symbol_column_prints_the_quoted_ticker() -> None:
     assert "| oil | CL |" not in doc.markdown
     assert "slot=DXY" in doc.markdown
     assert "slot=CL" in doc.markdown
-    assert not any(line.startswith("Data quality:") for line in doc.markdown.splitlines())
-    assert "Data health:" in doc.markdown
+    header, audit = doc.markdown.split("## Audit", 1)
+    assert not any(line.startswith("Data quality:") for line in header.splitlines())
+    assert "Data health:" in header
+    assert "Data quality:" in audit
 
 
 def test_fixture_brief_splits_into_ordered_cards_and_skips_empty() -> None:
@@ -131,6 +133,13 @@ def test_fixture_brief_splits_into_ordered_cards_and_skips_empty() -> None:
     assert "executive" in ids and "dashboard" in ids and "audit" in ids
     joined = "\n".join(body for _id, body in cards)
     assert "Regime: INSUFFICIENT DATA" in joined
+    executive = next(body for card_id, body in cards if card_id == "executive")
+    assert "KEY TAKEAWAY\nINSUFFICIENT DATA" in executive
+    assert "suggests" not in executive.lower()
+    assert "indicates" not in executive.lower()
+    audit = next(body for card_id, body in cards if card_id == "audit")
+    assert "Freshest feed:" in audit
+    assert "Major missing feeds:" in audit
     assert "01FROZENBTCFUNDING00000001" in joined
     assert "obs " in joined or "obs none" in joined
     assert "as-of=" in joined or "As-of" in joined
@@ -206,3 +215,77 @@ def test_lab_deliver_pack_sends_brief_as_cards(tmp_path: Path, capsys) -> None:
     assert texts[0].startswith("executive")
     assert all("positioning (" not in text for text in texts)
     assert any("01FROZENBTCFUNDING00000001" in text for text in texts)
+
+
+def test_date_fill_reuses_header_stamps_and_audit_uses_snapshot_rows() -> None:
+    older = datetime(2026, 9, 18, 15, 0, tzinfo=timezone.utc)
+    newer = datetime(2026, 9, 21, 15, 0, tzinfo=timezone.utc)
+    assets = (
+        _print("ES", quoted="SPY"),
+        AssetPrint(
+            symbol="US10Y",
+            name="US 10Y yield",
+            last=4.1,
+            prior_close=4.0,
+            unit="%",
+            data_quality="ok",
+            source="fred",
+            as_of=newer,
+            observation_id="obs-10y",
+        ),
+        AssetPrint(
+            symbol="VIX",
+            name="CBOE VIX (structurally unavailable without Cboe entitlement)",
+            last=None,
+            prior_close=None,
+            data_quality="unavailable",
+            source="polygon",
+            as_of=older,
+            structural_unavailable=True,
+        ),
+        AssetPrint(
+            symbol="CL",
+            name="WTI",
+            last=None,
+            prior_close=None,
+            data_quality="unavailable",
+            source="polygon",
+            as_of=None,
+            quoted_symbol="USO",
+        ),
+    )
+    # ES as_of is AS_OF (2026-03-10), older than US10Y.
+    snap = MacroSnapshot(
+        as_of=AS_OF,
+        prior_us_close=PRIOR,
+        assets=assets,
+        data_quality="partial",
+        source="live",
+    )
+    doc = render_close(
+        generated_at=AS_OF,
+        as_of=AS_OF,
+        overnight=snap,
+        session=snap,
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="partial",
+    )
+    date_line = next(line for line in doc.markdown.splitlines() if line.startswith("DATE:"))
+    assert "Generated (UTC) 2026-03-10T20:15:00+00:00" in date_line
+    assert "America/New_York 2026-03-10T16:15:00-04:00" in date_line
+    assert "Australia/Sydney 2026-03-11T07:15:00+11:00" in date_line
+    assert "As-of knowledge 2026-03-10T20:15:00+00:00" in date_line
+    assert "Generated (UTC): 2026-03-10T20:15:00+00:00" in doc.markdown
+    assert date_line.count("2026-03-10T20:15:00+00:00") == 2
+    assert "KEY TAKEAWAY\nINSUFFICIENT DATA" in doc.markdown
+    assert "suggests" not in doc.markdown.lower()
+    assert "indicates" not in doc.markdown.lower()
+    audit = doc.markdown.split("## Audit", 1)[1]
+    assert "Freshest feed: US10Y" in audit
+    assert "Major missing feeds: VIX, CL" in audit
+    assert "Data quality:" in audit
+    assert "Data quality: unavailable" not in doc.markdown

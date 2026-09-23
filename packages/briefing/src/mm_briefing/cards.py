@@ -31,6 +31,7 @@ HEADING_CARD = {
     "Hyperliquid market structure": "crypto",
     "Hyperliquid into the next session": "crypto",
     "Watchlist": "audit",
+    "Audit": "audit",
 }
 
 _EMPTY_CALENDAR = (

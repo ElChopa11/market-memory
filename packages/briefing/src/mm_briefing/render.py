@@ -33,6 +33,12 @@ NO_DECISION_FOOTER = (
     "This brief does not change universe membership, size a trade, submit an order, or approve risk.",
 )
 
+# {3_SENTENCE_SUMMARY} is not generated in Stage A. Literal insufficient, not prose.
+KEY_TAKEAWAY_LINES = (
+    "KEY TAKEAWAY",
+    "INSUFFICIENT DATA",
+)
+
 SOURCE_HEALTH_POINTER = (
     "Standing source-health (Data desk, not this brief): `lab data source-health` → "
     "`ops/reports/source-health/` (latest dated file). Pointer only — this brief does not embed a health report."
@@ -51,6 +57,71 @@ def brief_hash(markdown: str) -> str:
 
 def iso(ts: datetime) -> str:
     return ts.isoformat(timespec="seconds")
+
+
+def _date_fill(
+    *,
+    generated_at: datetime,
+    ny: datetime,
+    syd: datetime,
+    as_of: datetime,
+    watermark: datetime | None = None,
+) -> str:
+    """{DATE} is the header stamps already rendered. No second clock."""
+    parts = [
+        f"Generated (UTC) {iso(generated_at)}",
+        f"America/New_York {iso(ny)} ({ny.tzname() or 'America/New_York'})",
+        f"Australia/Sydney {iso(syd)} ({syd.tzname() or 'Australia/Sydney'})",
+    ]
+    if watermark is not None:
+        parts.append(f"Memory watermark (as_of_knowledge) {iso(watermark)}")
+    parts.append(f"As-of knowledge {iso(as_of)}")
+    return "DATE: " + "; ".join(parts)
+
+
+def _audit_section(assets: tuple[AssetPrint, ...], *, health_pct: int | None) -> list[str]:
+    """Message 8 fills from the snapshot already rendered. No Neon read."""
+    if health_pct is None:
+        quality = "Data quality: INSUFFICIENT DATA"
+    else:
+        quality = f"Data quality: {health_pct}%"
+    return [
+        "",
+        "## Audit",
+        "",
+        quality,
+        f"Freshest feed: {_freshest_feed_name(assets)}",
+        f"Major missing feeds: {_missing_feeds_list(assets)}",
+    ]
+
+
+def _freshest_feed_name(assets: tuple[AssetPrint, ...]) -> str:
+    """Slot symbols whose as_of equals the latest as_of on the rendered rows."""
+    stamped = [row for row in assets if row.as_of is not None]
+    if not stamped:
+        return "unavailable"
+    latest = max(row.as_of for row in stamped if row.as_of is not None)
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in stamped:
+        if row.as_of == latest and row.symbol not in seen:
+            seen.add(row.symbol)
+            names.append(row.symbol)
+    return ", ".join(names)
+
+
+def _missing_feeds_list(assets: tuple[AssetPrint, ...]) -> str:
+    """Every rendered slot whose data state is unavailable. Empty stays `none`."""
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in assets:
+        if pulse_to_health_state(row.data_quality) != "unavailable":
+            continue
+        if row.symbol in seen:
+            continue
+        seen.add(row.symbol)
+        names.append(row.symbol)
+    return ", ".join(names) if names else "none"
 
 
 def render_preopen(
@@ -82,6 +153,7 @@ def render_preopen(
     lines = [
         f"# US Pre-Market Brief — {session_date.isoformat()}",
         "",
+        _date_fill(generated_at=generated_at, ny=ny_gen, syd=syd_gen, as_of=as_of, watermark=watermark),
         f"Generated (UTC): {iso(generated_at)}",
         f"Generated (America/New_York): {iso(ny_gen)} ({ny_gen.tzname() or session_tz})",
         f"Generated (Australia/Sydney): {iso(syd_gen)} ({syd_gen.tzname() or lab_tz})",
@@ -93,6 +165,8 @@ def render_preopen(
         f"Memory watermark (as_of_knowledge): {iso(watermark)}",
         f"As-of knowledge: {iso(as_of)} (ingested_at lockstep; never published_at / market_time)",
         *health.header_lines(icons=presentation.icons),
+        *KEY_TAKEAWAY_LINES,
+        "",
         f"Macro source: {macro.source}",
         f"HL origin: {hl_origin}",
         "",
@@ -186,6 +260,7 @@ def render_preopen(
     else:
         lines.append("- Watchlist empty.")
         lines.append("")
+    lines.extend(_audit_section(macro.assets, health_pct=health.pct))
     lines.extend(["", *_no_decision_footer(live_macro=macro.source == "live")])
     markdown = "\n".join(lines).rstrip() + "\n"
     return BriefDocument(
@@ -227,12 +302,14 @@ def render_close(
     lines = [
         f"# US Close Brief — {session_date.isoformat()}",
         "",
+        _date_fill(generated_at=generated_at, ny=ny, syd=syd, as_of=as_of),
         f"Generated (UTC): {iso(generated_at)}",
         f"Generated (America/New_York): {iso(ny)} ({ny.tzname() or session_tz})",
         f"Generated (Australia/Sydney): {iso(syd)} ({syd.tzname() or lab_tz})",
         f"US session status: {status.code} — {status.label} (DST={status.tzname})",
         f"As-of knowledge: {iso(as_of)} (ingested_at watermark; never published_at alone)",
         *health.header_lines(icons=presentation.icons),
+        *KEY_TAKEAWAY_LINES,
         "",
         *health.section_lines(icons=presentation.icons),
         "",
@@ -283,6 +360,7 @@ def render_close(
         lines.append("- No dated catalysts remaining in the look-ahead window.")
     lines.extend(["", "## Hyperliquid into the next session", ""])
     lines.extend(_hl_section(hl))
+    lines.extend(_audit_section(session.assets, health_pct=health.pct))
     lines.extend(["", *NO_DECISION_FOOTER])
     markdown = "\n".join(lines).rstrip() + "\n"
     return BriefDocument(
