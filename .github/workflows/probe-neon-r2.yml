@@ -1,0 +1,82 @@
+# Read-only Neon + R2 connectivity probe.
+#
+# Dispatch only. This file has no timer and must not gain one.
+# A plain Run workflow hits the soft gate and exits 0 without opening a socket.
+# Set i_mean_it_probe to true to run the checks. A failed check exits 1.
+#
+# What the probe does
+# - R2: parse the host from secret MINIO_ENDPOINT, DNS-resolve it, and complete
+#   a verified TLS handshake (Python ssl default context, SNI, certificate
+#   verification). No AWS SDK and no S3 API.
+# - Neon: connect with secret POSTGRES_DSN over SSL. sslmode=disable and allow
+#   are refused before connect. A missing sslmode, or sslmode=prefer, is
+#   upgraded to require. verify-ca and verify-full are kept. One transaction
+#   is marked READ ONLY, runs SELECT 1 and SELECT current_database(), version(),
+#   checks SHOW transaction_read_only, then the driver rolls it back.
+#
+# What the probe does not do
+# - No timer. No schema migration. No CREATE / ALTER / DROP.
+# - No INSERT / UPDATE / DELETE and no committed Neon transaction.
+# - No object list, head, put, or delete. No object is created or removed.
+# - No access key and no secret key. S3_REGION is omitted because boto is unused.
+# - Does not print POSTGRES_DSN, passwords, or the raw endpoint URL.
+# - Does not change the Sydney morning workflow or any existing timer.
+#
+# The log includes the R2 hostname, the Neon host, the database name, and a
+# short server version. Repository secrets stay masked by Actions as well.
+
+name: probe-neon-r2
+
+on:
+  workflow_dispatch:
+    inputs:
+      i_mean_it_probe:
+        description: >-
+          Soft gate. false (default) skips both probes and exits 0 without
+          opening a socket. true runs read-only Neon SELECT and R2 DNS+TLS.
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  probe-neon-r2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Soft gate
+        id: gate
+        env:
+          I_MEAN_IT_PROBE: ${{ github.event.inputs.i_mean_it_probe }}
+        run: |
+          set -euo pipefail
+          if [ "${I_MEAN_IT_PROBE}" = "true" ]; then
+            echo "run=true" >> "${GITHUB_OUTPUT}"
+            echo "PROBE GATE: i_mean_it_probe=true; read-only checks will run"
+          else
+            echo "run=false" >> "${GITHUB_OUTPUT}"
+            echo "PROBE SKIP: soft gate i_mean_it_probe is not true; no Neon or R2 socket was opened"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v6
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Read-only Neon and R2 connectivity
+        if: steps.gate.outputs.run == 'true'
+        env:
+          POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
+          MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+        run: |
+          set -euo pipefail
+          # Driver only. Do not sync the workspace.
+          # psycopg 3.3.5 matches uv.lock. This step does not apply schema changes.
+          uv run --no-project --with 'psycopg[binary]==3.3.5' python scripts/probe_neon_r2_connectivity.py
