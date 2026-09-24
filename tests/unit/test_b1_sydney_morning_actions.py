@@ -128,10 +128,34 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     # No group --send flag (substring-safe: this job must not contain the token).
     assert "--send" not in brief
     assert "--no-send" not in brief
-    # Deliver job does not rewrite the Stage 1 commit-back.
-    assert "git push" not in brief
+    # Stamp commit-back stays on stage1. Deliver receipt commit-back is a separate hard scope.
+    assert "git push" in stage1
+    assert "STAMP COMMIT-BACK FAILED" in stage1
     assert "STAMP COMMIT-BACK FAILED" not in brief
-    assert "contents: read" in brief
+    assert "git push" in brief
+    assert "DELIVER RECEIPT COMMIT-BACK FAILED" in brief
+    assert "contents: write" in brief
+    assert 'git add -- "${RECEIPTS_DIR}/$(basename -- "${RECEIPT_PATH}")"' in brief
+    assert 'git add -- "${COMPLETIONS_DIR}/$(basename -- "${COMPLETION_PATH}")"' not in brief
+    assert "completions/receipts" in brief
+    assert "decide_deliver" in brief
+    assert "accept_delivery" in brief
+    assert "write_deliver_receipt" in brief
+    assert "already_delivered" in brief
+    assert brief.index("Deliver-receipt gate") < brief.index("Live US-close brief")
+    assert brief.index('git fetch origin "${BRANCH}"') < brief.index("decide_deliver")
+    assert 'git checkout -B "${BRANCH}" "origin/${BRANCH}"' in brief
+    assert brief.index("decide_deliver") < brief.index("uv run lab brief close")
+    assert brief.index("uv run lab brief close") < brief.index("uv run lab deliver pack")
+    assert brief.index("uv run lab deliver pack") < brief.index("write_deliver_receipt")
+    assert "steps.receipt.outputs.already_delivered != 'true'" in brief
+    assert "needs.stage1-stamp.outputs.scheduled_for" in brief
+    assert "scheduled_for: ${{ steps.stamp.outputs.scheduled_for }}" in stage1
+    assert "write_deliver_receipt" not in stage1
+    assert "already_delivered" not in stage1
+    assert text.count("cancel-in-progress:") == 1
+    assert "cancel-in-progress: false" in text
+    assert "repository_dispatch" not in text
     assert "MM_LOG_RATE_LIMIT_HEADERS" in brief
     assert "outside_anchor_window" not in stage1
 
@@ -154,6 +178,15 @@ def test_brief_and_deliver_runbook_lists_secret_names() -> None:
         assert "FRED_API_KEY" in book
         assert "optional data richness" in book
         assert "not required for stamp or DM" in book
+    sentence = (
+        "A drifted cron (or second trigger) arriving after a successful deliver "
+        "for that anchor is a silent no-op / already_delivered, not a failure or miss."
+    )
+    assert sentence in sched
+    assert sentence in tg
+    index = (ROOT / "ops" / "reports" / "scheduler" / "README.md").read_text(encoding="utf-8")
+    assert sentence in index
+    assert sentence in COMPLETIONS_README.read_text(encoding="utf-8")
 
 
 def test_completions_are_not_gitignored() -> None:
@@ -162,3 +195,5 @@ def test_completions_are_not_gitignored() -> None:
     readme = COMPLETIONS_README.read_text(encoding="utf-8")
     assert "ARE committed" in readme or "are committed" in readme.lower()
     assert "Do not commit generated JSON" not in readme
+    assert "receipts/" in readme
+    assert "ops/reports/scheduler/completions/receipts" not in gi

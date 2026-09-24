@@ -15,13 +15,21 @@
 #
 # brief-and-deliver (needs stage1-stamp): runs on schedule, or on
 # workflow_dispatch only when input i_mean_it_deliver is true (boolean,
-# default false). When both Telegram Actions secrets below are present, lab brief
-# close --live --no-db then lab deliver pack --to-principal-dm --i-mean-it.
+# default false). Before brief or Telegram, look for a deliver receipt keyed
+# on the stamp's scheduled_anchor_ts (scheduled_for — not wall clock, not
+# run_id) under ops/reports/scheduler/completions/receipts/. Receipt present
+# → exit 0, already_delivered, no Telegram. No receipt → lab brief close
+# --live --no-db then lab deliver pack --to-principal-dm --i-mean-it.
+# Write the receipt only after deliver exits 0 and stdout JSON has sent: true.
+# A failed send writes no receipt (anchor stays open). A later trigger for
+# that anchor is a silent no-op, not a failure or miss. Receipt commit-back
+# is hard-scoped to completions/receipts/*.deliver.json (same fail-loud
+# rebase-retry as the stamp; it does not stage completion rows).
 # Soft-skip (exit 0, later steps skipped) when either Telegram secret is absent — the
 # stamp still stands. Exit 1 if TELEGRAM_CHAT_ID is set. A dispatch with
 # i_mean_it_deliver left false skips this job (cannot send). stage1-stamp
 # has no if, so it still runs on every dispatch, then this job when the
-# input is true. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
+# input is true. Both crons stay. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
 #
 # Secret names only (Principal adds values): TELEGRAM_BOT_TOKEN (second bot),
 # TELEGRAM_CHAT_ID_PRINCIPAL_DM. Never TELEGRAM_CHAT_ID.
@@ -50,7 +58,8 @@ on:
         default: false
         required: false
 
-# Push completion JSON back to the run branch (GITHUB_TOKEN). No Telegram secrets.
+# Push completion JSON and deliver receipts back to the run branch (GITHUB_TOKEN).
+# No Telegram secrets. Receipt commit-back is a separate hard scope from the stamp.
 permissions:
   contents: write
 
@@ -61,6 +70,9 @@ concurrency:
 jobs:
   stage1-stamp:
     runs-on: ubuntu-latest
+    outputs:
+      scheduled_for: ${{ steps.stamp.outputs.scheduled_for }}
+      run_id: ${{ steps.stamp.outputs.run_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -290,7 +302,7 @@ jobs:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true'))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     env:
       # Actions-only SECOND bot — not the box telegram.env token.
       # Names only. Never invent values. Never commit values.
@@ -323,6 +335,13 @@ jobs:
 
       - uses: actions/checkout@v4
         if: steps.gate.outputs.ready == 'true'
+        with:
+          # Branch tip, not the queued SHA: a prior run may have pushed a receipt
+          # after this run was queued. concurrency keeps runs serial; fetch below
+          # still reads origin before the gate.
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
 
       - uses: astral-sh/setup-uv@v6
         if: steps.gate.outputs.ready == 'true'
@@ -333,9 +352,50 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: uv sync --all-packages
 
+      - name: Deliver-receipt gate (scheduled_anchor, before brief or Telegram)
+        id: receipt
+        if: success() && steps.gate.outputs.ready == 'true'
+        env:
+          SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Queued runs keep the event SHA. A prior run's receipt lives on the branch tip.
+          git fetch origin "${BRANCH}"
+          git checkout -B "${BRANCH}" "origin/${BRANCH}"
+          uv run python - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          from mm_desks.deliver_receipt import ALREADY_DELIVERED, decide_deliver, find_receipt, relative_receipt_path
+
+          root = Path(".").resolve()
+          completions = root / "ops" / "reports" / "scheduler" / "completions"
+          scheduled_for = os.environ.get("SCHEDULED_FOR") or ""
+          routine = "grok.sydney_morning"
+          try:
+              decision = decide_deliver(completions, routine, scheduled_for)
+          except ValueError as exc:
+              print(f"::error::{exc}", file=sys.stderr)
+              sys.exit(1)
+          out = Path(os.environ["GITHUB_OUTPUT"])
+          if decision == ALREADY_DELIVERED:
+              path = find_receipt(completions, routine, scheduled_for)
+              rel = relative_receipt_path(path, repo_root=root) if path is not None else ""
+              print(f"already_delivered scheduled_anchor={scheduled_for} receipt={rel}")
+              print('{"outcome":"already_delivered","telegram":false}')
+              with out.open("a", encoding="utf-8") as fh:
+                  fh.write("already_delivered=true\n")
+              sys.exit(0)
+          print(f"no deliver receipt for scheduled_anchor={scheduled_for}; will brief then deliver")
+          with out.open("a", encoding="utf-8") as fh:
+              fh.write("already_delivered=false\n")
+          PY
+
       - name: Live US-close brief (lab brief close --live --no-db)
         id: brief
-        if: steps.gate.outputs.ready == 'true'
+        if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
         env:
           # P0.4: print hostname + status + Retry-After/*ratelimit* only.
           # Never the request URL (query keys and bot tokens live there).
@@ -372,7 +432,7 @@ jobs:
           PY
 
       - name: Upload brief markdown (no Telegram payload)
-        if: steps.gate.outputs.ready == 'true'
+        if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: sydney-morning-brief-${{ github.run_id }}
@@ -381,10 +441,13 @@ jobs:
           retention-days: 14
 
       - name: Deliver pack to Principal DM (--to-principal-dm --i-mean-it)
-        if: steps.gate.outputs.ready == 'true'
+        id: deliver
+        if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
         env:
           BRIEF_PATH: ${{ steps.brief.outputs.brief_path }}
           AS_OF: ${{ steps.brief.outputs.as_of }}
+          SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
+          RUN_ID: ${{ needs.stage1-stamp.outputs.run_id }}
         run: |
           set -euo pipefail
           if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
@@ -400,6 +463,7 @@ jobs:
           OUT="/tmp/sydney-dm-${GITHUB_RUN_ID}"
           mkdir -p "${OUT}"
           echo "lab deliver pack --to-principal-dm --i-mean-it --no-db (as_of=${AS_OF})"
+          set +e
           uv run lab deliver pack \
             --from-markdown "${BRIEF_PATH}" \
             --as-of "${AS_OF}" \
@@ -409,4 +473,154 @@ jobs:
             --ignore-quiet-hours \
             --no-db \
             --repo-root . \
-            --out "${OUT}"
+            --out "${OUT}" \
+            > "/tmp/sydney-deliver-${GITHUB_RUN_ID}.json"
+          DELIVER_RC=$?
+          set -e
+          export DELIVER_RC
+          uv run python - <<'PY'
+          """Write a deliver receipt only when exit 0 and sent is true."""
+          import os
+          import sys
+          from pathlib import Path
+
+          from mm_desks.deliver_receipt import (
+              accept_delivery,
+              assert_receipt_committable,
+              parse_deliver_stdout,
+              write_deliver_receipt,
+          )
+
+          root = Path(".").resolve()
+          stdout_path = Path(f"/tmp/sydney-deliver-{os.environ['GITHUB_RUN_ID']}.json")
+          stdout = stdout_path.read_text(encoding="utf-8") if stdout_path.is_file() else ""
+          rc = int(os.environ["DELIVER_RC"])
+          parsed = parse_deliver_stdout(stdout) or {}
+          print({
+              "deliver_rc": rc,
+              "sent": parsed.get("sent"),
+              "reason": parsed.get("reason"),
+          })
+          if not accept_delivery(stdout, rc):
+              print(
+                  "::error::deliver did not report sent: true; no receipt written; anchor stays open",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+          scheduled_for = os.environ.get("SCHEDULED_FOR") or ""
+          run_id = os.environ.get("RUN_ID") or ""
+          path, created = write_deliver_receipt(
+              completions_dir=root / "ops" / "reports" / "scheduler" / "completions",
+              routine_id="grok.sydney_morning",
+              scheduled_anchor_ts=scheduled_for,
+              run_id=run_id,
+              sent=True,
+              source="github.actions",
+          )
+          if path is None or not created:
+              print(
+                  "::warning::sent was true but receipt already existed; not overwriting (first writer wins)"
+              )
+              sys.exit(0)
+          rel = assert_receipt_committable(path, repo_root=root)
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as fh:
+              fh.write("wrote=true\n")
+              fh.write(f"receipt_path={rel}\n")
+          print(f"wrote deliver receipt {rel}")
+          PY
+
+      - name: Commit + push deliver receipt (durable first-writer-wins)
+        if: success() && steps.deliver.outputs.wrote == 'true'
+        env:
+          RECEIPT_PATH: ${{ steps.deliver.outputs.receipt_path }}
+          SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
+          RUN_ID: ${{ needs.stage1-stamp.outputs.run_id }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          RECEIPTS_DIR="ops/reports/scheduler/completions/receipts"
+          ROUTINE_ID="grok.sydney_morning"
+
+          # HARD SCOPE: path must live under completions/receipts/ only.
+          case "${RECEIPT_PATH}" in
+            "${RECEIPTS_DIR}"/grok.sydney_morning__*.deliver.json) ;;
+            *)
+              echo "::error::SCOPE VIOLATION: refusing path outside ${RECEIPTS_DIR}: ${RECEIPT_PATH}"
+              exit 1
+              ;;
+          esac
+          test -f "${RECEIPT_PATH}"
+
+          uv run python - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+
+          from mm_desks.deliver_receipt import assert_receipt_committable
+
+          try:
+              rel = assert_receipt_committable(Path(os.environ["RECEIPT_PATH"]), repo_root=Path(".").resolve())
+          except ValueError as exc:
+              print(f"::error::{exc}", file=sys.stderr)
+              sys.exit(1)
+          if rel != os.environ["RECEIPT_PATH"]:
+              print(f"::error::receipt path mismatch: {rel}", file=sys.stderr)
+              sys.exit(1)
+          print("deliver receipt field check OK (non-secret, sent true, anchor-keyed)")
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # HARD SCOPE: git add path-filtered to receipts/ ONLY — never completion rows.
+          git add -- "${RECEIPTS_DIR}/$(basename -- "${RECEIPT_PATH}")"
+          mapfile -t STAGED_ALL < <(git diff --cached --name-only)
+          mapfile -t STAGED_OK < <(git diff --cached --name-only -- "${RECEIPTS_DIR}/")
+          if [[ "${#STAGED_ALL[@]}" -eq 0 ]]; then
+            echo "No new receipt bytes to commit."
+            exit 0
+          fi
+          if [[ "${#STAGED_ALL[@]}" -ne "${#STAGED_OK[@]}" ]]; then
+            echo "::error::SCOPE VIOLATION: staged files outside ${RECEIPTS_DIR}:"
+            printf '%s\n' "${STAGED_ALL[@]}"
+            git reset HEAD -- . || true
+            exit 1
+          fi
+          for staged in "${STAGED_ALL[@]}"; do
+            case "${staged}" in
+              "${RECEIPTS_DIR}/"*.deliver.json) ;;
+              *)
+                echo "::error::SCOPE VIOLATION: staged non-receipt or path escape: ${staged}"
+                git reset HEAD -- . || true
+                exit 1
+                ;;
+            esac
+          done
+          if [[ "${#STAGED_ALL[@]}" -ne 1 || "${STAGED_ALL[0]}" != "${RECEIPT_PATH}" ]]; then
+            echo "::error::SCOPE VIOLATION: expected sole staged path ${RECEIPT_PATH}, got:"
+            printf '%s\n' "${STAGED_ALL[@]}"
+            git reset HEAD -- . || true
+            exit 1
+          fi
+
+          MSG="scheduler(deliver-receipt): ${ROUTINE_ID} scheduled_for=${SCHEDULED_FOR} run_id=${RUN_ID} sent=true"
+          git commit -m "${MSG}"
+          echo "Commit message: ${MSG}"
+          echo "Push target branch: ${BRANCH} (github.ref_name)"
+
+          # HARD RETRY: non-fast-forward → git pull --rebase → retry. Exhausted → FAIL LOUDLY.
+          for attempt in 1 2 3 4 5; do
+            if git push origin "HEAD:${BRANCH}"; then
+              echo "Pushed deliver receipt to origin/${BRANCH} (attempt ${attempt})"
+              exit 0
+            fi
+            echo "::warning::push rejected / non-fast-forward (attempt ${attempt}/5); git pull --rebase origin ${BRANCH}"
+            if ! git pull --rebase origin "${BRANCH}"; then
+              echo "::error::git pull --rebase origin ${BRANCH} FAILED on attempt ${attempt}"
+              git rebase --abort 2>/dev/null || true
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "::error::DELIVER RECEIPT COMMIT-BACK FAILED: receipt JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. Job FAILS; a later trigger may retry only if this receipt is not on the branch."
+          echo "::error::local receipt path: ${RECEIPT_PATH} scheduled_for=${SCHEDULED_FOR} run_id=${RUN_ID}"
+          exit 1

@@ -91,13 +91,13 @@ Follow-on decisions (record only; not built here):
 - Stage 2 is the right next build: Actions delivering a real pack to the Principal DM.
 - Minutes of Actions cron drift on the 06:30 digest are accepted as drift. They are not a skip.
 
-This section does not change `.github/workflows/hybrid-sydney-morning.yml`. That file stays one AEST cron. Every fire stamps. No ±900s skip. No second cron.
+This section does not change `.github/workflows/hybrid-sydney-morning.yml`. Both AEST crons stay. Every fire stamps. No ±900s skip. Neither cron is removed.
 
 ## B1 Stage 1 — GitHub Actions execution path (stamp today)
 
 Actions is the execution path. `stage1-stamp` in `.github/workflows/hybrid-sydney-morning.yml` is the clock proof for `grok.sydney_morning` (fire → stamp → exit). It does not brief and it does not deliver. `brief-and-deliver` runs after that stamp on the same scheduled run. See the next section.
 
-- `on.schedule` one cron while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps.
+- `on.schedule` two crons while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC), and the 08:30 prove/backup is `30 22 * * 0-4` UTC (Sun–Thu 22:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps. Neither cron is removed.
 - `on.workflow_dispatch` for a Principal canary. Manual dispatch stamps the same way as the cron (no skip).
 - Job runs `uv run lab schedule heartbeat --routine-id grok.sydney_morning --no-db --source github.actions` (no Telegram; never `--send`).
 - **Durable path:** the job commits the completion JSON to the branch the workflow ran on (`github.ref_name`) with an auditable message (`routine_id`, `run_id`, `scheduled_for`, `actual`, `delta_seconds`, `status`), using `permissions: contents: write` and rebase-retry on non-fast-forward. Completions are **not** gitignored.
@@ -117,18 +117,22 @@ Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → sele
 
 ## B1 brief-and-deliver (same workflow, after the stamp)
 
-Job `brief-and-deliver` has `needs: stage1-stamp`. It runs when `github.event_name == 'schedule'`, or when `github.event_name == 'workflow_dispatch'` and `i_mean_it_deliver` is true. The input is a boolean and defaults to false. The cron on `stage1-stamp` is unchanged (`30 20 * * 0-4`). No ±900s guard. No second cron. No `i_mean_it_stage2` input. `stage1-stamp` has no `if`, so a manual prove still stamps first.
+Job `brief-and-deliver` has `needs: stage1-stamp`. It runs when `github.event_name == 'schedule'`, or when `github.event_name == 'workflow_dispatch'` and `i_mean_it_deliver` is true. The input is a boolean and defaults to false. Both AEST crons stay (`30 20 * * 0-4` and `30 22 * * 0-4`). No ±900s guard. No `i_mean_it_stage2` input. `stage1-stamp` has no `if`, so a manual prove still stamps first.
 
 | Scheduled run | What happens |
 |---|---|
 | Always | `stage1-stamp` writes and pushes the completion row, with or without Telegram secrets. |
 | `TELEGRAM_BOT_TOKEN` or `TELEGRAM_CHAT_ID_PRINCIPAL_DM` absent | `brief-and-deliver` soft-skips (exit 0; later steps skipped). No fetch. No POST. Stamp stands. |
-| Both present, and `TELEGRAM_CHAT_ID` unset | `lab brief close --live --no-db`, then `lab deliver pack --from-markdown <brief> --as-of <UTC> --desk ops --to-principal-dm --i-mean-it --ignore-quiet-hours --no-db`. |
+| Both present, `TELEGRAM_CHAT_ID` unset, and no deliver receipt for this stamp's `scheduled_anchor_ts` | `lab brief close --live --no-db`, then `lab deliver pack --from-markdown <brief> --as-of <UTC> --desk ops --to-principal-dm --i-mean-it --ignore-quiet-hours --no-db`. The receipt is written only after that command exits 0 and stdout JSON has `"sent": true`. |
+| Deliver receipt already present for this stamp's `scheduled_anchor_ts` | Exit 0. Log `already_delivered`. No brief. No POST. |
+| Deliver runs but `sent` is not true | No receipt file. The anchor stays open so a later trigger can retry. |
 | `TELEGRAM_CHAT_ID` set | `brief-and-deliver` exits 1. Group stays SEND_FROZEN. |
 
 `--ignore-quiet-hours` is required on this path because 06:30 Australia/Sydney falls inside `quiet_hours` 22:00–07:00. This job is the morning digest, not an overnight alert.
 
-Stage 1 alone still does not brief or deliver. The schedule path ignores `i_mean_it_deliver` and is the same as the merged brief-and-deliver job: secrets absent → soft skip exit 0; both secrets and `TELEGRAM_CHAT_ID` unset → brief then Principal DM; `TELEGRAM_CHAT_ID` set → exit 1.
+Stage 1 alone still does not brief or deliver. The schedule path ignores `i_mean_it_deliver` and is the same as the merged brief-and-deliver job: secrets absent → soft skip exit 0; both secrets and `TELEGRAM_CHAT_ID` unset → receipt check, then brief and Principal DM only when that anchor has no receipt; `TELEGRAM_CHAT_ID` set → exit 1.
+
+Deliver receipt is first-writer-wins on the stamp's `scheduled_anchor_ts` (`scheduled_for`), not wall clock and not `run_id` alone. `grok.sydney_morning` anchors at 06:30 Australia/Sydney on that local date, so the 06:30 cron and the 08:30 cron share one receipt. The file is `ops/reports/scheduler/completions/receipts/grok.sydney_morning__{anchor}.deliver.json`. A drifted cron (or second trigger) arriving after a successful deliver for that anchor is a silent no-op / already_delivered, not a failure or miss.
 
 | Dispatch | What happens |
 |---|---|

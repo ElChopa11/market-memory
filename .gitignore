@@ -58,6 +58,7 @@ ops/reports/scheduler/incidents/**
 # Scheduler completion rows (IMP-046 / B1 Stage 1) are committed on purpose so the
 # box can `git pull` and miss-check can read them. Actions stamps + Hive stamps
 # under ops/reports/scheduler/completions/*.json are durable SoT (not gitignored).
+# Deliver receipts under completions/receipts/*.deliver.json are committed too.
 
 # known-missed baseline (IMP-056). History labeled, not deleted. Do not commit generated YAML.
 ops/reports/scheduler/known-missed-baseline.yaml
