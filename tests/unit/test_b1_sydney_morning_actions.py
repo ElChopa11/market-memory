@@ -35,7 +35,8 @@ def test_hybrid_sydney_morning_workflow_stage1_contract() -> None:
     stage1, _brief = _split_jobs(text)
     assert "workflow_dispatch:" in text
     assert "schedule:" in text
-    assert text.count('cron: "30 20 * * 0-4"') == 1  # AEST 06:30 → prior-day 20:30 UTC
+    assert text.count('cron: "30 20 * * 0-4"') == 1  # AEST 06:30 primary → prior-day 20:30 UTC
+    assert text.count('cron: "30 22 * * 0-4"') == 1  # AEST 08:30 prove/backup → prior-day 22:30 UTC
     assert 'cron: "30 19 * * 0-4"' not in text  # AEDT companion cron stays off
     assert "outside_anchor_window" not in text
     assert "FORCE_STAMP" not in text
@@ -73,9 +74,11 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     text = _workflow_text()
     stage1, brief = _split_jobs(text)
     assert "needs: stage1-stamp" in brief
-    # One cron line, still only on the workflow (not copied into this job).
+    # Both crons live on the workflow schedule, not inside this job.
     assert text.count('cron: "30 20 * * 0-4"') == 1
+    assert text.count('cron: "30 22 * * 0-4"') == 1
     assert 'cron: "30 20 * * 0-4"' not in brief
+    assert 'cron: "30 22 * * 0-4"' not in brief
     deliver_if = (
         "if: github.event_name == 'schedule' || "
         "(github.event_name == 'workflow_dispatch' && "
