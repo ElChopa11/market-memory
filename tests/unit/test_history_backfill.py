@@ -78,7 +78,7 @@ def test_history_backfill_is_cli_only_and_hybrid_brief_stays(capsys) -> None:
     assert '"phase": "plan"' in section
     assert '"phase": "fetch"' in section
     assert "morning-deliver PAT" in section
-    assert "no `workflow_dispatch`" in section
+    assert "No `workflow_dispatch`" in section
     assert "no `repository_dispatch`" in section
     assert "no `schedule`" in section
     assert "POSTGRES_DSN" in section
