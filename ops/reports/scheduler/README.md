@@ -6,6 +6,7 @@ Miss sweep artifacts. Heartbeat-on-fire is a log; these files are the control tr
 |---|---|
 | [2026-09-19-sched-001-root-cause.md](2026-09-19-sched-001-root-cause.md) | Cause report. (a) 08:00 unexplained OPEN. (b) 06:30 / Fri 17:00 unverified. |
 | [backfill-2026-09-19.md](backfill-2026-09-19.md) | Configured vs completions since lookback. |
+| [2026-09-24-escalate-missing-actions-schedule.md](2026-09-24-escalate-missing-actions-schedule.md) | Principal house lesson 2026-09-24. Later that morning Actions did fire (`actions-b1-35931476917`, `event=schedule`, `delta_seconds=9120`, ~09:02 Sydney): hour-scale drift, not a permanent skip and not a forced `workflow_dispatch`. Escalate when a usable on-time deliver is still missing. #115 was unmerged during the 08:30 window. |
 | `incidents/YYYY-MM-DD-miss.md` | OPEN escalation from `lab schedule miss-check` (generated). |
 | [completions/](completions/) | Hive → lab CLI completion JSON. Miss-check reads these. |
 | `known-missed-baseline.yaml` | Generated. Pre-today (Australia/Sydney) closed windows labeled known-missed. Not deleted. |
