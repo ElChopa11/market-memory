@@ -2,12 +2,14 @@
 # Phase 0: always reports that live promotion is hard-gated.
 # Later this workflow will require a promotion-decision artifact, halt-path
 # acknowledgement, and Principal label before any live enablement tag.
+#
+# Manual workflow_dispatch was removed. Phase 0 has no intentional manual
+# promotion path. Phase 6 can redesign a proper control later.
 
 name: promote-gate
 
 on:
   pull_request:
-  workflow_dispatch:
 
 jobs:
   phase0-hard-gate:
