@@ -1,4 +1,4 @@
-"""Dispatch-only Neon migrate workflow. Does not connect."""
+"""CLI-only Neon migrate. No Actions trigger. Does not connect."""
 
 from __future__ import annotations
 
@@ -6,8 +6,9 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKFLOW = ROOT / ".github" / "workflows" / "migrate-neon.yml"
-HYBRID = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
+WORKFLOWS = ROOT / ".github" / "workflows"
+RUNBOOK = ROOT / "docs" / "runbooks" / "migrate-neon.md"
+HYBRID = WORKFLOWS / "hybrid-sydney-morning.yml"
 SCHEMA = ROOT / "ops" / "reports" / "persistence" / "2026-09-23-neon-migrate-head-schema.md"
 SQL = ROOT / "ops" / "reports" / "persistence" / "2026-09-23-migrate-through-0010.sql"
 REV_0011 = (
@@ -31,80 +32,41 @@ REV_0012 = (
     / "0012_heartbeat_if_not_exists.py"
 )
 
-APPLY_IF = (
-    "if: inputs.i_mean_it_migrate == true || "
-    "github.event.inputs.i_mean_it_migrate == 'true'"
-)
-SKIP_IF = (
-    "if: inputs.i_mean_it_migrate != true && "
-    "github.event.inputs.i_mean_it_migrate != 'true'"
-)
+
+def test_migrate_neon_has_no_actions_workflow() -> None:
+    assert not (WORKFLOWS / "migrate-neon.yml").exists()
+    for path in WORKFLOWS.glob("*.yml"):
+        text = path.read_text(encoding="utf-8")
+        assert "i_mean_it_migrate" not in text
+        assert "name: migrate-neon" not in text
+        assert "environment: neon-write" not in text
 
 
-def _job_block(text: str, job_name: str) -> str:
-    """Return one job body, from its key through the line before the next job."""
-    lines = text.splitlines()
-    start = None
-    for index, line in enumerate(lines):
-        if line == f"  {job_name}:":
-            start = index
-            break
-    assert start is not None, job_name
-    end = len(lines)
-    for index in range(start + 1, len(lines)):
-        line = lines[index]
-        if line.startswith("  ") and not line.startswith("   ") and line.endswith(":"):
-            end = index
-            break
-    return "\n".join(lines[start:end])
-
-
-def test_migrate_neon_is_dispatch_only_and_gated() -> None:
-    text = WORKFLOW.read_text(encoding="utf-8")
-    assert "name: migrate-neon" in text
-    assert text.count("workflow_dispatch:") == 1
-    trigger = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-    assert "workflow_dispatch:" in trigger
-    assert "repository_dispatch" not in trigger
-    assert re.search(r"(?m)^[ \t]*schedule:", text) is None
-    assert re.search(r"(?m)^[ \t]*push:", text) is None
-    assert re.search(r"(?m)^[ \t]*pull_request:", text) is None
-    assert re.search(r"(?m)^[ \t]*workflow_call:", text) is None
-    assert "repository_dispatch:" not in text
-    assert "cron:" not in text
-    assert "needs:" not in text
-    assert "i_mean_it_migrate:" in text
-    assert "type: boolean" in text
-    assert "default: false" in text
-    assert text.count("default: false") == 1
-
-    skip = _job_block(text, "skip")
-    migrate = _job_block(text, "migrate")
-    assert SKIP_IF in skip
-    assert "environment:" not in skip
-    assert "${{ secrets." not in skip
-    assert "SKIP: i_mean_it_migrate is not true. Not connecting to Postgres. POSTGRES_DSN is not read." in skip
-    assert "exit 0" in skip
-    assert APPLY_IF not in skip
-
-    assert APPLY_IF in migrate
-    # Job-level if, plus checkout, setup-uv, sync, and the apply step.
-    assert migrate.count(APPLY_IF) == 5
-    assert re.search(r"(?m)^    environment: neon-write$", migrate)
-    assert "environment:" not in skip
-    assert text.count("environment: neon-write") == 1
-    assert "secrets.POSTGRES_DSN" in migrate
-    assert "secrets.POSTGRES_DSN" not in skip
-    assert "REFUSE: i_mean_it_migrate is not true. Environment approval does not replace the input gate. Not connecting." in migrate
-
-    assert "secrets.DATABASE_URL" not in text
-    assert "secrets.NEON_API_KEY" not in text
-    assert "MINIO_" not in text
-    assert "uv run lab migrate" in migrate
+def test_migrate_runbook_is_cli_only() -> None:
+    text = RUNBOOK.read_text(encoding="utf-8")
+    assert "CLI-only" in text
+    assert "uv run lab migrate" in text
+    assert "migrated to" in text
     assert "0012_heartbeat_if_not_exists" in text
-    assert "-pooler" in text
+    assert "POSTGRES_DSN" in text
+    assert "DATABASE_URL" in text
+    assert "NEON_API_KEY" in text
     assert ".neon.tech" in text
-    assert "--no-db" not in text
+    assert "-pooler" in text
+    assert "sslmode=require" in text
+    assert "morning-deliver PAT" in text
+    assert "not a gate" in text
+    assert "Delete `neon-write`" in text
+    assert "This repository is private" in text
+    assert "The repository is public" not in text
+    assert "workflow_dispatch" in text
+    assert "no `workflow_dispatch`" in text
+    assert "repository_dispatch" in text
+    assert "no `repository_dispatch`" in text
+    assert "schedule" in text
+    assert "Waiting" not in text
+    assert "New environment" not in text
+    assert "i_mean_it_migrate" in text
 
 
 def test_hybrid_sydney_morning_flags_unchanged() -> None:
