@@ -43,6 +43,8 @@ from mm_ingest.sources import POLYGON_BASE_URL, POLYGON_SOURCE_NAME
 
 API_KEY_ENV = "POLYGON_API_KEY"
 DAILY_PATH = "/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{start}/{end}"
+# One request for the whole US stock session. Retain filters; do not loop tickers.
+GROUPED_DAILY_PATH = "/v2/aggs/grouped/locale/us/market/stocks/{date}"
 POLYGON_OHLCV_ADJUSTED = True
 POLYGON_ADJUSTED_QUERY = "true"
 DIVIDENDS_PATH = "/v3/reference/dividends"
@@ -119,6 +121,23 @@ class PolygonEquitiesAdapter:
 
     def ohlcv_daily(self, query: EquitiesQuery) -> tuple[OHLCVBar, ...]:
         return self._ohlcv(query, multiplier=self.daily_multiplier, timespan=self.daily_timespan)
+
+    def grouped_daily(self, session_date: date) -> tuple[Any, str]:
+        """One Stocks Basic grouped-daily request for a single session date.
+
+        The retain allowlist filters the body. This method does not issue a
+        request per ticker and does not walk a history range.
+        """
+        if isinstance(session_date, datetime) or not isinstance(session_date, date):
+            raise TypeError("grouped_daily takes one calendar date, not a window")
+        if self.resolve_api_key() is None:
+            self.missing_key_notes()
+            return None, ERROR_MISSING_ENV
+        path = GROUPED_DAILY_PATH.format(date=session_date.isoformat())
+        return self._get(
+            path,
+            params={"adjusted": POLYGON_ADJUSTED_QUERY, "include_otc": "false"},
+        )
 
     def continuity_check(
         self,
