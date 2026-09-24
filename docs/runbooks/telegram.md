@@ -19,6 +19,8 @@ Those commands POST only to env `TELEGRAM_CHAT_ID_PRINCIPAL_DM`. Missing that en
 
 Same workflow as the Stage 1 stamp: `.github/workflows/hybrid-sydney-morning.yml`. Job `brief-and-deliver` runs after `stage1-stamp` on `schedule`, and on `workflow_dispatch` only when input `i_mean_it_deliver` is true. That input defaults to false, so a plain Run workflow cannot send. Principal prove: Actions → hybrid-sydney-morning → Run workflow → set `i_mean_it_deliver` true (stamp still runs first).
 
+Grok clock path: `.github/workflows/sydney-morning-repo-dispatch.yml` listens for `repository_dispatch` type `sydney-morning-deliver` and calls the same jobs with deliver hardcoded. No Telegram token on Grok. The sealed dispatch PAT path is `/home/box/agent-data/infra/github-sm-dispatch.pat` (Principal-created, mode 0600). Caller retry, PAT scopes, and the event contract are in [scheduler.md](scheduler.md). Hive SEND_FROZEN. `TELEGRAM_CHAT_ID` stays unset.
+
 | Secret name | Required for the DM step |
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | yes — Actions **second** bot, not the box `telegram.env` token |
