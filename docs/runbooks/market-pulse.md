@@ -131,7 +131,7 @@ Memory ingest of FRED remains `historical=True` (facts about the past are not sn
 
 ### Gate by default
 
-Config load fails if a live source the brief will turn on has no `freshness.<source>.policy`. Static `enabled: false` still counts when the source has a symbol / series / id map, because `--live` turns those maps on. Named exemptions (`policy: exempt` plus a non-empty `exemption`) are allowed and must say why; a missing reason fails load. There is no `_GATED_SOURCES` allow-list.
+A freshness gate scoped to the one source that exposed a bug leaves every other enabled source able to render as fresh. The gate is the default. Config load fails if a live source the brief will turn on has no `freshness.<source>.policy`. Polygon is included: `policy` must be `session` (a calendar-day policy is rejected). Static `enabled: false` still counts when the source has a symbol / series / id map, because `--live` turns those maps on. Named exemptions (`policy: exempt` plus a non-empty `exemption`) are allowed and must say why; a missing reason fails load. There is no `_GATED_SOURCES` allow-list. No enabled source in this file uses an exemption.
 
 | Source on the live brief | Policy in `macro.yaml` |
 |---|---|
@@ -141,9 +141,9 @@ Config load fails if a live source the brief will turn on has no `freshness.<sou
 | Hyperliquid perp mid | `snapshot` (same 20-minute capture lag; `hyperliquid.info /info` matches this rule) |
 | Stooq | Not enabled (`symbols` empty). Enabling it without a policy fails load. |
 
-### Polygon session freshness (US RTH proxies)
+### Polygon session freshness (US equity session)
 
-Product rule: **has a newer session bar become due that we are not showing?**
+US equity regular hours, `America/New_York`. Product rule: **has a newer session bar become due that we are not showing?**
 
 | Clock vs 16:00 America/New_York | Print on screen | Quality |
 |---|---|---|
@@ -152,14 +152,46 @@ Product rule: **has a newer session bar become due that we are not showing?**
 | After the close + grace | Prior session, newer bar due | stale. No change / Δ |
 | Any of the above | The bar for the session that is already due | fresh |
 
-`grace_minutes: 20` is **provisional**. It was **not measured** on this repo's `POLYGON_API_KEY` (CI has no key; this change does not call Polygon). It is not a publish time. The number is chosen so a brief at 16:30 America/New_York — primary Sydney-morning cron `20:30 UTC` while the US is on EDT, 30 minutes after the cash close — is past the grace, and a missing new bar is stale rather than left fresh. While the US is on EST that same UTC cron is 15:30 ET, still before the close, so the prior bar is the correct fresh print.
+#### Publish lag (how it was read)
 
-**Measurement method (not run here):** after 16:00 America/New_York on a regular session, poll `GET /v2/aggs/ticker/SPY/range/1/day/{session}/{session}?adjusted=true` with the lab key until `results` contains that session date. Record minutes after 16:00. Repeat on several regular sessions. Set `grace_minutes` from the observed max plus a small buffer. Do not treat one day as the tier SLA.
+The brief calls `GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}`.
 
-**Known false cases (16:00 hard-coded; no NYSE holiday calendar):**
+On 2026-09-24 the vendor Plan Recency table for that endpoint was fetched from [custom bars](https://massive.com/docs/rest/stocks/aggregates/custom-bars):
 
-- **False-stale** on a weekday when the NYSE is fully closed (New Year's Day, MLK Day, Presidents Day, Good Friday, Memorial Day, Juneteenth, Independence Day, Labor Day, Thanksgiving Day, Christmas Day, including observed weekdays): after 16:00 ET + grace the prior bar is marked stale even though no newer session exists. Same honesty class as FRED Monday.
-- **False-fresh** on early closes at 13:00 ET (Friday after Thanksgiving, weekday Christmas Eve, weekday July 3): until 16:00 ET + grace, a missing new bar stays fresh (and is not even `pending session` until 16:00). If the new bar is in the payload it is shown and is not marked stale.
+| Plan | Recency |
+|---|---|
+| Stocks Basic | End-of-day (no minute in the table) |
+| Stocks Starter | 15-minute delayed |
+| Stocks Developer | 15-minute delayed |
+| Stocks Advanced | Real-time |
+| Stocks Business | Real-time |
+
+`POLYGON_API_KEY` was unset in the environment that wrote this. No request was sent to `api.polygon.io`. This key's first-seen minute was **not** stopwatched. The repo does not name which stocks plan the key is on. Ingest's Polygon budget is 5 requests/minute, which is free-tier shaped and closer to Basic than to a named delayed plan.
+
+`grace_minutes: 20` is that documented **15-minute** Starter/Developer recency plus 5 minutes. A brief at 16:30 America/New_York (primary Sydney-morning cron `20:30 UTC` while the US is on EDT) is past this grace. While the US is on EST that same UTC cron is 15:30 ET, still before the close, so the prior bar is the correct fresh print. If the key is Basic, "End-of-day" still has no clock, and 20 minutes can false-stale a 16:30 ET brief.
+
+A later stopwatch, when a key is present: after 16:00 America/New_York on a regular session, poll `GET /v2/aggs/ticker/SPY/range/1/day/{session}/{session}?adjusted=true` until `results` contains that session date. Record minutes after 16:00. Repeat on several regular sessions. Replace `grace_minutes` from the observed maximum plus a small buffer.
+
+#### Known limitations — the 16:00 calendar does not cover these
+
+Early closes at **13:00 ET** (not in the calendar). Until the hard-coded 16:00, a missing new bar stays fresh and is not yet `pending session`. That is a false-fresh window, not a correct early close:
+
+- Friday after Thanksgiving (13:00 ET)
+- Christmas Eve when it is a weekday (13:00 ET)
+- July 3 when it is a midweek session (13:00 ET)
+
+Full weekday closures are **false-stale** after 16:00 ET + grace (same honesty class as FRED Monday). The prior bar is marked stale even though no newer session exists. Observed-weekday shifts of these names are uncovered too:
+
+- New Year's Day
+- Martin Luther King Jr. Day
+- Presidents Day
+- Good Friday
+- Memorial Day
+- Juneteenth
+- Independence Day
+- Labor Day
+- Thanksgiving Day
+- Christmas Day
 
 ### Hardened failure modes (live)
 

@@ -18,6 +18,9 @@ import yaml
 from mm_briefing.config import load_briefing_settings
 from mm_briefing.fetchers import LiveMacroFetcher, _parse_polygon_aggs
 from mm_briefing.freshness import (
+    DOCUMENTED_DELAYED_PLAN_RECENCY_MINUTES,
+    EARLY_CLOSE_LIMITATIONS,
+    FULL_CLOSE_FALSE_STALE,
     PENDING_SESSION_NOTE,
     PROVISIONAL_POLYGON_GRACE_MINUTES,
     STALE_SESSION_NOTE,
@@ -314,7 +317,21 @@ def test_repo_macro_declares_policies_for_enabled_live_sources() -> None:
     polygon = cfg.rule_for(source="polygon")
     assert polygon is not None
     assert polygon.policy == "session"
+    assert DOCUMENTED_DELAYED_PLAN_RECENCY_MINUTES == 15
     assert polygon.grace_minutes == PROVISIONAL_POLYGON_GRACE_MINUTES == 20
+    assert polygon.grace_minutes == DOCUMENTED_DELAYED_PLAN_RECENCY_MINUTES + 5
+    assert EARLY_CLOSE_LIMITATIONS == (
+        "Friday after Thanksgiving (13:00 ET)",
+        "Christmas Eve when it is a weekday (13:00 ET)",
+        "July 3 when it is a midweek session (13:00 ET)",
+    )
+    assert "Thanksgiving Day" in FULL_CLOSE_FALSE_STALE
+    assert "Christmas Day" in FULL_CLOSE_FALSE_STALE
+    runbook = (ROOT / "docs" / "runbooks" / "market-pulse.md").read_text(encoding="utf-8")
+    for name in EARLY_CLOSE_LIMITATIONS:
+        assert name in runbook
+    for name in FULL_CLOSE_FALSE_STALE:
+        assert name in runbook
     assert polygon.rth_close == time(16, 0)
     assert polygon.session_timezone == "America/New_York"
     assert cfg.rule_for(source="coingecko").policy == "snapshot"

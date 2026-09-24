@@ -45,10 +45,40 @@ DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS = 45
 DEFAULT_RTH_CLOSE = time(16, 0)
 DEFAULT_SESSION_TZ = "America/New_York"
 
-# Provisional only — not a measured Polygon publish lag for this repo's key.
-# Config must set grace_minutes explicitly; this constant is the value the
-# repo yaml and tests lock. See docs/runbooks/market-pulse.md.
-PROVISIONAL_POLYGON_GRACE_MINUTES = 20
+# Publish lag for the brief's endpoint
+# ``GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}``.
+# Read 2026-09-24 from
+# https://massive.com/docs/rest/stocks/aggregates/custom-bars
+# (Plan Recency table): Stocks Starter and Stocks Developer are
+# "15-minute delayed"; Stocks Advanced / Business are real-time; Stocks Basic
+# is "End-of-day" with no minute in that table.
+# A live stopwatch was not run: POLYGON_API_KEY was unset, so no request
+# was sent to api.polygon.io. This repo does not name which stocks plan the
+# key is on. Grace is the documented 15-minute delayed-plan recency plus a
+# 5-minute buffer. It does not claim to measure Basic end-of-day.
+DOCUMENTED_DELAYED_PLAN_RECENCY_MINUTES = 15
+PROVISIONAL_POLYGON_GRACE_MINUTES = DOCUMENTED_DELAYED_PLAN_RECENCY_MINUTES + 5
+
+# 16:00 ET does not describe these sessions. Until that clock, a missing new
+# bar stays fresh (false-fresh). They are not in the session calendar.
+EARLY_CLOSE_LIMITATIONS = (
+    "Friday after Thanksgiving (13:00 ET)",
+    "Christmas Eve when it is a weekday (13:00 ET)",
+    "July 3 when it is a midweek session (13:00 ET)",
+)
+# After 16:00 ET plus grace the prior bar is stale even though no session ran.
+FULL_CLOSE_FALSE_STALE = (
+    "New Year's Day",
+    "Martin Luther King Jr. Day",
+    "Presidents Day",
+    "Good Friday",
+    "Memorial Day",
+    "Juneteenth",
+    "Independence Day",
+    "Labor Day",
+    "Thanksgiving Day",
+    "Christmas Day",
+)
 
 PENDING_SESSION_NOTE = "pending session"
 STALE_SESSION_NOTE = "newer session bar expected"
