@@ -38,7 +38,7 @@ docker compose up -d
 # 2. Workspace
 uv sync --all-packages
 
-# 3. Schema
+# 3. Schema (local compose). Neon is a different path: docs/runbooks/migrate-neon.md
 uv run lab migrate
 # equivalent: uv run python -c "from mm_memory.migrate import upgrade_head; upgrade_head()"
 

@@ -1,0 +1,109 @@
+# One-shot Alembic apply against Neon.
+#
+# workflow_dispatch only. No cron. No repository_dispatch. No push or
+# pull_request trigger. Do not call hybrid-sydney-morning. No PAT.
+#
+# The confirm input must be exactly i_mean_it_migrate. Any other value
+# exits non-zero before checkout and does not read POSTGRES_DSN.
+#
+# Secret: existing repository secret POSTGRES_DSN. Do not print it.
+# Command is lab migrate, once. History backfill is not this job.
+# Delete this file after the one successful run in the same sitting.
+
+name: migrate-neon
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: >-
+          Paste exactly i_mean_it_migrate to apply Alembic head using the
+          existing POSTGRES_DSN secret. Any other value fails and does not connect.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-neon
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require confirm string
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          if [ "${CONFIRM}" != "i_mean_it_migrate" ]; then
+            echo "REFUSE: confirm is not exactly i_mean_it_migrate. Not connecting. POSTGRES_DSN was not read."
+            exit 1
+          fi
+          echo "confirm accepted. POSTGRES_DSN was not read on this step."
+
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        run: uv sync --all-packages
+
+      - name: Apply Alembic head
+        env:
+          POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
+        run: |
+          set -euo pipefail
+          uv run python - <<'PY'
+          import os
+          import sys
+          from urllib.parse import parse_qs, urlparse
+
+          def mask(value: str) -> None:
+              if value:
+                  print("::add-mask::" + value, flush=True)
+
+          dsn = os.environ.get("POSTGRES_DSN") or ""
+          if not dsn.strip():
+              print("FAIL: repository secret POSTGRES_DSN is empty. Not connecting.")
+              sys.exit(1)
+          mask(dsn)
+          try:
+              parsed = urlparse(dsn)
+              host = (parsed.hostname or "").lower()
+              modes = [item.lower() for item in parse_qs(parsed.query).get("sslmode", [])]
+          except Exception:
+              print("FAIL: POSTGRES_DSN could not be parsed. Not connecting. DSN not printed.")
+              sys.exit(1)
+          mask(parsed.username or "")
+          mask(parsed.password or "")
+          if parsed.username and parsed.password:
+              mask(f"{parsed.username}:{parsed.password}")
+          if dsn.startswith("postgresql://"):
+              mask("postgresql+psycopg://" + dsn[len("postgresql://") :])
+          elif dsn.startswith("postgres://"):
+              mask("postgresql+psycopg://" + dsn[len("postgres://") :])
+          if (not host.endswith(".neon.tech")) or ("-pooler" in host):
+              print(
+                  "REFUSE: POSTGRES_DSN must be a direct Neon host "
+                  "(suffix .neon.tech, no -pooler). Host not printed."
+              )
+              sys.exit(1)
+          if modes not in (["require"], ["verify-full"], ["verify-ca"]):
+              print(
+                  "REFUSE: POSTGRES_DSN must set sslmode=require "
+                  "(or verify-full or verify-ca). Query not printed."
+              )
+              sys.exit(1)
+          print("POSTGRES_DSN is set. Direct Neon host check passed. DSN not printed.")
+          PY
+          echo "alembic_head=$(uv run python -c 'from mm_memory.migrate import alembic_head; print(alembic_head())')"
+          if ! uv run lab migrate; then
+            echo "FAIL: lab migrate exited non-zero."
+            exit 1
+          fi
+          echo "SUCCESS: lab migrate exited 0."
