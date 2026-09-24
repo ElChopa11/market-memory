@@ -115,18 +115,23 @@ class AssetPrint:
     as_of: datetime | None = None
     observation_id: str | None = None
     source_url: str | None = None
+    freshness_note: str | None = None
 
     @property
     def change(self) -> float | None:
+        # Stale prints stay visible. They are not a current move.
+        if self.data_quality == "stale":
+            return None
         if self.last is None or self.prior_close is None:
             return None
         return self.last - self.prior_close
 
     @property
     def change_pct(self) -> float | None:
-        if self.last is None or self.prior_close in (None, 0):
+        delta = self.change
+        if delta is None or self.prior_close in (None, 0):
             return None
-        return (self.last - self.prior_close) / self.prior_close * 100.0
+        return delta / self.prior_close * 100.0
 
     @property
     def change_bp(self) -> float | None:

@@ -194,6 +194,8 @@ def test_apply_print_freshness_gates_fred_only() -> None:
     gated = apply_print_freshness(fred, reference_as_of=BRIEF_AS_OF)
     assert gated.data_quality == "stale"
     assert gated.last == 4.12  # never invent / wipe the figure
+    assert gated.prior_close == 4.05
+    assert gated.change_bp is None  # no delta against a stale print
 
     fixture = AssetPrint(
         symbol="US10Y",

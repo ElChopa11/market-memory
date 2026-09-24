@@ -123,11 +123,43 @@ Config: `config/briefing/macro.yaml` → `freshness.fred`:
 
 **Why per-series:** A global daily lag of 2 would falsely mark monthly FRED (CPI, NFP/payrolls) stale every time — those prints are legitimately 30+ days old relative to a month-start observation stamp. Monthly overrides (default **45** calendar days for CPI / NFP in repo config) keep a ~30–45d print eligible for fresh; only past that series' own threshold → stale.
 
-Principal-reasonable daily default: FRED daily series older than **2 calendar days** behind `as_of_knowledge` cannot be labelled fresh. The 2026-09-22 US Close Brief incident (US10Y as-of 2026-09-18, four days old, shown as fresh / +7.0bp) is the motivating case — a 4-day-old *daily* print must render as stale with age visible, not fresh.
+Principal-reasonable daily default: FRED daily series older than **2 calendar days** behind `as_of_knowledge` cannot be labelled fresh. The 2026-09-22 US Close Brief incident (US10Y as-of 2026-09-18, four days old, shown as fresh / +7.0bp) is the motivating case — a 4-day-old *daily* print must render as stale with age visible, not fresh. A stale print does not yield a change.
 
-Layer: `mm_briefing.freshness` (shared helper; `lag_for(source, symbol, series_id)`) + live FRED fetcher + `complete_cross_asset` gate so all Pulse consumers see the same rule. Stooq / CoinGecko cadence thresholds are out of scope for this fix (separate routing work).
+Layer: `mm_briefing.freshness` (shared helper; `lag_for(source, symbol, series_id)` for calendar policies) + live FRED fetcher + `complete_cross_asset` gate so all Pulse consumers see the same FRED rule.
 
-Memory ingest of FRED remains `historical=True` (facts about the past are not snapshot-stale in Market Memory). Pulse live display is a separate product surface and applies the calendar lag gate above.
+Memory ingest of FRED remains `historical=True` (facts about the past are not snapshot-stale in Market Memory). Pulse live display is a separate product surface and applies the calendar lag gate above. FRED Monday (a Friday print with no newer business-day print, still calendar-stale on Monday) is unchanged.
+
+### Gate by default
+
+Config load fails if a live source the brief will turn on has no `freshness.<source>.policy`. Static `enabled: false` still counts when the source has a symbol / series / id map, because `--live` turns those maps on. Named exemptions (`policy: exempt` plus a non-empty `exemption`) are allowed and must say why; a missing reason fails load. There is no `_GATED_SOURCES` allow-list.
+
+| Source on the live brief | Policy in `macro.yaml` |
+|---|---|
+| FRED | `calendar` (daily default 2; CPI/NFP monthly 45) |
+| Polygon ETF proxies | `session` (below) |
+| CoinGecko | `snapshot` (`max_snapshot_lag_minutes: 20`; endpoint has no vendor timestamp, fetcher stamps capture) |
+| Hyperliquid perp mid | `snapshot` (same 20-minute capture lag; `hyperliquid.info /info` matches this rule) |
+| Stooq | Not enabled (`symbols` empty). Enabling it without a policy fails load. |
+
+### Polygon session freshness (US RTH proxies)
+
+Product rule: **has a newer session bar become due that we are not showing?**
+
+| Clock vs 16:00 America/New_York | Print on screen | Quality |
+|---|---|---|
+| Before today's cash close | Prior session close | fresh |
+| After the close, inside `grace_minutes` | Prior session close | fresh, note `pending session` (not stale) |
+| After the close + grace | Prior session, newer bar due | stale. No change / Δ |
+| Any of the above | The bar for the session that is already due | fresh |
+
+`grace_minutes: 20` is **provisional**. It was **not measured** on this repo's `POLYGON_API_KEY` (CI has no key; this change does not call Polygon). It is not a publish time. The number is chosen so a brief at 16:30 America/New_York — primary Sydney-morning cron `20:30 UTC` while the US is on EDT, 30 minutes after the cash close — is past the grace, and a missing new bar is stale rather than left fresh. While the US is on EST that same UTC cron is 15:30 ET, still before the close, so the prior bar is the correct fresh print.
+
+**Measurement method (not run here):** after 16:00 America/New_York on a regular session, poll `GET /v2/aggs/ticker/SPY/range/1/day/{session}/{session}?adjusted=true` with the lab key until `results` contains that session date. Record minutes after 16:00. Repeat on several regular sessions. Set `grace_minutes` from the observed max plus a small buffer. Do not treat one day as the tier SLA.
+
+**Known false cases (16:00 hard-coded; no NYSE holiday calendar):**
+
+- **False-stale** on a weekday when the NYSE is fully closed (New Year's Day, MLK Day, Presidents Day, Good Friday, Memorial Day, Juneteenth, Independence Day, Labor Day, Thanksgiving Day, Christmas Day, including observed weekdays): after 16:00 ET + grace the prior bar is marked stale even though no newer session exists. Same honesty class as FRED Monday.
+- **False-fresh** on early closes at 13:00 ET (Friday after Thanksgiving, weekday Christmas Eve, weekday July 3): until 16:00 ET + grace, a missing new bar stays fresh (and is not even `pending session` until 16:00). If the new bar is in the payload it is shown and is not marked stale.
 
 ### Hardened failure modes (live)
 

@@ -6,7 +6,7 @@ from datetime import datetime
 
 from mm_common.hashing import sha256_hex
 from mm_briefing.divergences import fmt_pct, fmt_px
-from mm_briefing.freshness import format_quality_with_age
+from mm_briefing.freshness import format_print_quality
 from mm_briefing.hl import basis_mark_oracle, funding_value, liquidation_size_sum, oi_change_pct
 from mm_briefing.models import (
     AlertEvent,
@@ -339,15 +339,7 @@ def _asset_table(
         else:
             change = fmt_pct(row.change_pct)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
-        quality = (
-            format_quality_with_age(
-                row.data_quality,
-                observation_as_of=row.as_of,
-                reference_as_of=knowledge_as_of,
-            )
-            if knowledge_as_of is not None
-            else pulse_quality(row.data_quality)
-        )
+        quality = format_print_quality(row, reference_as_of=knowledge_as_of)
         lines.append(
             f"| {slot_label(row.symbol)} | {row.symbol} | {fmt_px(row.last)} | {fmt_px(row.prior_close)} | {change} "
             f"| {row.name} | {row.source} | {as_of} | {quality} |"
@@ -370,15 +362,7 @@ def _since_close_bullets(
             delta = fmt_pct(row.change_pct)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
         obs = row.observation_id or "none"
-        quality = (
-            format_quality_with_age(
-                row.data_quality,
-                observation_as_of=row.as_of,
-                reference_as_of=knowledge_as_of,
-            )
-            if knowledge_as_of is not None
-            else pulse_quality(row.data_quality)
-        )
+        quality = format_print_quality(row, reference_as_of=knowledge_as_of)
         lines.append(
             f"- {row.symbol} [{slot_label(row.symbol)}] ({row.name}): last {fmt_px(row.last)} / {delta} "
             f"[quality={quality}; source={row.source}; as-of={as_of}; obs {obs}]"
