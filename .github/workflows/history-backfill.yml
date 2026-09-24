@@ -5,18 +5,26 @@
 # recurring ingest-persist. This workflow does not call lab migrate, does not
 # start ingest-persist, and does not brief or deliver.
 #
-# Trigger: workflow_dispatch only. No schedule. No cron. hybrid-sydney-morning
-# is a different file and is not modified here. Thursday 06:30 Australia/Sydney
-# (cron "30 20 * * 0-4") cannot fire this workflow.
+# Trigger: workflow_dispatch only. No timer. hybrid-sydney-morning is a
+# different file and is not modified here. That file cannot start this one.
+# There is no repository_dispatch trigger.
 #
-# Gate: input i_mean_it_backfill (boolean, default false). False prints SKIP
-# and exits 0. That path does not check out the repo, does not open Postgres,
-# and does not call Polygon, FRED, or Hyperliquid.
+# Two jobs:
+# - skip: i_mean_it_backfill is not true. Prints SKIP, exits 0. No secrets,
+#   no checkout, no Environment, so it does not wait for a reviewer.
+# - history-backfill: input is true. Names Environment neon-write. That is
+#   the hard gate in front of secrets and the database. Required reviewers
+#   must approve before the job starts. i_mean_it_backfill stays; approval
+#   does not replace it.
 #
-# Secret names only: POSTGRES_DSN, POLYGON_API_KEY, FRED_API_KEY,
-# MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY. MINIO_BUCKET stays
-# unset (code default bucket market-memory). S3_REGION=auto is job env, not
-# a secret. Never TELEGRAM_*. Paper only. Do not auto-merge.
+# A true dispatch before Environment neon-write exists can create that
+# Environment with no protection rules. See docs/runbooks/ingest.md.
+#
+# Secret names only, on the history-backfill job: POSTGRES_DSN,
+# POLYGON_API_KEY, FRED_API_KEY, MINIO_ENDPOINT, MINIO_ACCESS_KEY,
+# MINIO_SECRET_KEY. MINIO_BUCKET stays unset (code default bucket
+# market-memory). S3_REGION=auto is job env, not a secret. Never TELEGRAM_*.
+# Paper only. Do not auto-merge.
 
 name: history-backfill
 
@@ -27,8 +35,9 @@ on:
         description: >-
           Principal prove: one-off history backfill into Postgres (Polygon daily,
           full FRED DGS10/DGS2, HL 1d candles). Default false prints SKIP and
-          does not touch the database or any API. No schedule. Do not run until
-          after migrate and after the Thursday unattended fire.
+          does not touch the database, any API, or Environment neon-write.
+          Do not run until after migrate, after the Thursday unattended fire,
+          and until neon-write has Required reviewers set to the Principal.
         type: boolean
         default: false
         required: false
@@ -41,10 +50,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  skip:
+    # Ungated. A false dispatch prints SKIP and exits 0 without requesting
+    # Environment neon-write. No secrets. No checkout.
+    if: inputs.i_mean_it_backfill != true && github.event.inputs.i_mean_it_backfill != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate — SKIP unless i_mean_it_backfill
+        run: |
+          set -euo pipefail
+          echo "SKIP"
+          echo "history-backfill: i_mean_it_backfill is not true. No database write. No API calls."
+          exit 0
+
   history-backfill:
-    # Dispatch only. The job still starts when the input is false so the step
-    # can print SKIP and exit 0. There is no schedule branch.
-    if: github.event_name == 'workflow_dispatch'
+    # Hard gate. Evaluated only when i_mean_it_backfill is true. A false
+    # dispatch skips this job; a skipped job does not wait for reviewers
+    # and does not materialise secrets. Do not chain skip in front of
+    # this job. The jobs are mutually exclusive; a dependency would skip
+    # the apply on the true path, because skip is skipped then.
+    if: github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_backfill == true || github.event.inputs.i_mean_it_backfill == 'true')
+    environment: neon-write
     runs-on: ubuntu-latest
     env:
       POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
@@ -57,7 +83,7 @@ jobs:
       S3_REGION: auto
       I_MEAN_IT_BACKFILL: ${{ inputs.i_mean_it_backfill }}
     steps:
-      - name: Gate — SKIP unless i_mean_it_backfill
+      - name: Gate — refuse unless i_mean_it_backfill and secrets are present
         id: gate
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
@@ -68,9 +94,8 @@ jobs:
             exit 1
           fi
           if [ "${I_MEAN_IT_BACKFILL}" != "true" ]; then
-            echo "SKIP"
-            echo "history-backfill: i_mean_it_backfill is not true. No database write. No API calls."
-            exit 0
+            echo "::error::REFUSE: i_mean_it_backfill is not true. Environment approval does not replace the input gate. Not connecting."
+            exit 1
           fi
           if [ -z "${POSTGRES_DSN:-}" ]; then
             echo "::error::POSTGRES_DSN is empty. Refusing before any database write."

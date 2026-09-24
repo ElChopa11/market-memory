@@ -62,24 +62,66 @@ def test_plan_uses_brief_tape_slots_and_states_call_counts() -> None:
     assert FRED_BACKFILL_SERIES["US2Y"] == "DGS2"
 
 
+def _job_block(text: str, job_name: str) -> str:
+    """Return one job body, from its key through the line before the next job."""
+    lines = text.splitlines()
+    start = None
+    for index, line in enumerate(lines):
+        if line == f"  {job_name}:":
+            start = index
+            break
+    assert start is not None, job_name
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        line = lines[index]
+        if line.startswith("  ") and not line.startswith("   ") and line.endswith(":"):
+            end = index
+            break
+    return "\n".join(lines[start:end])
+
+
 def test_workflow_is_dispatch_gated_and_hybrid_brief_stays() -> None:
     workflow = (ROOT / ".github" / "workflows" / "history-backfill.yml").read_text(encoding="utf-8")
-    assert "workflow_dispatch:" in workflow
+    assert workflow.count("workflow_dispatch:") == 1
+    trigger = workflow.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
+    assert "workflow_dispatch:" in trigger
+    assert "repository_dispatch" not in trigger
+    assert "repository_dispatch:" not in workflow
     assert "schedule:" not in workflow
     assert "cron:" not in workflow
+    assert "needs:" not in workflow
     assert "i_mean_it_backfill:" in workflow
     assert "default: false" in workflow
-    assert 'echo "SKIP"' in workflow
-    assert "uv run lab history-backfill\n" in workflow
+    assert workflow.count("default: false") == 1
     assert "lab history-backfill --" not in workflow
     assert "brief-and-deliver" not in workflow
     assert "hybrid-sydney-morning" not in workflow.split("jobs:", 1)[1]
-    assert "POLYGON_API_KEY:" in workflow
-    assert "FRED_API_KEY:" in workflow
-    assert "POSTGRES_DSN:" in workflow
-    assert "S3_REGION: auto" in workflow
     assert "MINIO_BUCKET: ${{" not in workflow
-    assert 'MINIO_BUCKET must stay unset' in workflow
+
+    skip = _job_block(workflow, "skip")
+    apply = _job_block(workflow, "history-backfill")
+    assert 'echo "SKIP"' in skip
+    assert "exit 0" in skip
+    assert "environment:" not in skip
+    assert "${{ secrets." not in skip
+    assert "uv run lab history-backfill" not in skip
+    assert "S3_REGION" not in skip
+
+    assert "\n    environment: neon-write\n" in apply
+    assert workflow.count("environment: neon-write") == 1
+    assert "inputs.i_mean_it_backfill == true" in apply
+    assert "github.event_name == 'workflow_dispatch'" in apply
+    assert "POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}" in apply
+    assert "POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}" in apply
+    assert "FRED_API_KEY: ${{ secrets.FRED_API_KEY }}" in apply
+    assert "MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}" in apply
+    assert "MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}" in apply
+    assert "MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}" in apply
+    assert "S3_REGION: auto" in apply
+    assert "MINIO_BUCKET must stay unset" in apply
+    assert "uv run lab history-backfill" in apply
+    assert "uv run lab history-backfill\n" in workflow
+    assert "REFUSE: i_mean_it_backfill is not true. Environment approval does not replace the input gate. Not connecting." in apply
 
     hybrid = (ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml").read_text(encoding="utf-8")
     assert 'cron: "30 20 * * 0-4"' in hybrid
