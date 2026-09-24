@@ -16,7 +16,7 @@ from mm_common.hashing import claim_hash
 from mm_common.http import ERROR_MISSING_ENV
 from mm_ingest.config import load_instruments
 from mm_ingest.equities.polygon import GROUPED_DAILY_PATH, PolygonEquitiesAdapter
-from mm_ingest.hl_info import ALLOWED_INFO_TYPES
+from mm_ingest.hl_info import ALLOWED_INFO_TYPES, FORBIDDEN_INFO_TYPES, HyperliquidInfoClient
 from mm_ingest.mvp_retain import (
     HISTORY_BACKFILL_WIRED,
     LIVE_NEON_ENABLED,
@@ -299,11 +299,11 @@ def test_no_quadrant_and_no_backfill_entrypoint() -> None:
     assert "20:30:00" not in text
     assert inspect.signature(build_retain_envelopes).parameters["captured_at"].default is inspect.Parameter.empty
     plan = http_plan(date(2026, 9, 23))
-    assert len(plan) == 2
+    assert len(plan) == 3
     assert plan[0]["body"] == {"type": "metaAndAssetCtxs"}
     assert plan[1]["path"] == "/v2/aggs/grouped/locale/us/market/stocks/2026-09-23"
+    assert plan[2]["body"] == {"type": "spotMetaAndAssetCtxs"}
     blob = json.dumps(plan)
-    assert "spotMetaAndAssetCtxs" not in blob
     assert "fundingHistory" not in blob
     assert "candleSnapshot" not in blob
 
@@ -313,7 +313,7 @@ def test_prior_capture_must_be_earlier() -> None:
         _build(spot=_spot_payload(), prior=CAPTURE, captured_at=CAPTURE)
 
 
-def test_grouped_daily_is_one_request_and_capture_does_not_fetch_spot() -> None:
+def test_grouped_daily_is_one_request_and_capture_fetches_spot_meta() -> None:
     calls: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -338,14 +338,15 @@ def test_grouped_daily_is_one_request_and_capture_does_not_fetch_spot() -> None:
 
     class _HL:
         def __init__(self) -> None:
-            self.calls = 0
+            self.calls: list[str] = []
 
         def meta_and_asset_ctxs(self):
-            self.calls += 1
-            return _perp_payload()
+            self.calls.append("metaAndAssetCtxs")
+            return _perp_payload("DRV")
 
-        def post(self, body):
-            raise AssertionError(f"unexpected info post {body}")
+        def spot_meta_and_asset_ctxs(self):
+            self.calls.append("spotMetaAndAssetCtxs")
+            return _spot_payload(mid="1.25")
 
     hl = _HL()
     envelopes = capture_mvp_retain(
@@ -355,12 +356,14 @@ def test_grouped_daily_is_one_request_and_capture_does_not_fetch_spot() -> None:
         session_date=date(2026, 9, 23),
         captured_at=CAPTURE,
         prior_captured_at=PRIOR,
-        spot_meta_and_asset_ctxs=_spot_payload(),
     )
-    assert hl.calls == 1
+    assert hl.calls == ["metaAndAssetCtxs", "spotMetaAndAssetCtxs"]
     assert len(calls) == 2
-    assert sum(1 for e in envelopes if e.instrument == "DRV") == 1
-    assert next(e for e in envelopes if e.instrument == "DRV").identity.value == "1.25"
+    drv_rows = [e for e in envelopes if e.instrument == "DRV"]
+    assert [e.metric for e in drv_rows] == ["mid_px"]
+    assert drv_rows[0].identity.value == "1.25"
+    assert drv_rows[0].source_url_or_id == "spotMetaAndAssetCtxs"
+    assert drv_rows[0].payload["quadrant_eligible"] is False
 
 
 def test_missing_polygon_key_does_not_invent_closes() -> None:
@@ -374,11 +377,16 @@ def test_missing_polygon_key_does_not_invent_closes() -> None:
     )
 
     class _HL:
-        calls = 0
+        def __init__(self) -> None:
+            self.calls: list[str] = []
 
         def meta_and_asset_ctxs(self):
-            self.calls += 1
+            self.calls.append("metaAndAssetCtxs")
             return _perp_payload()
+
+        def spot_meta_and_asset_ctxs(self):
+            self.calls.append("spotMetaAndAssetCtxs")
+            return _spot_payload(mid=None)
 
     hl = _HL()
     envelopes = capture_mvp_retain(
@@ -388,7 +396,7 @@ def test_missing_polygon_key_does_not_invent_closes() -> None:
         session_date=date(2026, 9, 23),
         captured_at=CAPTURE,
     )
-    assert hl.calls == 1
+    assert hl.calls == ["metaAndAssetCtxs", "spotMetaAndAssetCtxs"]
     assert adapter.last_error_class == ERROR_MISSING_ENV
     closes = [e for e in envelopes if e.metric == "close"]
     assert len(closes) == 17
@@ -451,7 +459,8 @@ def test_cli_retain_is_fixture_only(monkeypatch, tmp_path: Path, capsys) -> None
     assert body["price_only"] == 1
     assert body["equities"] == 17
     assert body["envelopes"] == 75
-    assert body["calls"] == 2
+    assert body["calls"] == 3
+    assert body["call_plan"][2]["body"] == {"type": "spotMetaAndAssetCtxs"}
     assert body["drv_metrics"] == ["mid_px"]
     assert body["purr_metrics"] == ["open_interest", "funding", "mid_px"]
     assert body["knt_present"] is False
@@ -471,6 +480,46 @@ def test_cli_retain_is_fixture_only(monkeypatch, tmp_path: Path, capsys) -> None
     assert "DO NOT RUN" in capsys.readouterr().err
 
 
+def test_capture_posts_spot_meta_through_the_info_client() -> None:
+    posted: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        posted.append(str(body.get("type")))
+        if body.get("type") == "metaAndAssetCtxs":
+            return httpx.Response(200, json=_perp_payload("KNT", "DRV"))
+        if body.get("type") == "spotMetaAndAssetCtxs":
+            return httpx.Response(200, json=_spot_payload(mid="1.25"))
+        raise AssertionError(body)
+
+    hl = HyperliquidInfoClient(transport=httpx.MockTransport(handler), sleep=lambda _: None)
+    polygon_calls: list[httpx.Request] = []
+
+    def polygon_handler(request: httpx.Request) -> httpx.Response:
+        polygon_calls.append(request)
+        return httpx.Response(200, json=_grouped("SPX"))
+
+    adapter = PolygonEquitiesAdapter(
+        api_key="test-key",
+        http_client=httpx.Client(transport=httpx.MockTransport(polygon_handler), timeout=2.0),
+        sleep=lambda _: None,
+    )
+    envelopes = capture_mvp_retain(
+        load_mvp_retain_spec(),
+        hl_client=hl,
+        polygon_adapter=adapter,
+        session_date=date(2026, 9, 23),
+        captured_at=CAPTURE,
+    )
+    assert posted == ["metaAndAssetCtxs", "spotMetaAndAssetCtxs"]
+    assert len(polygon_calls) == 1
+    drv = [e for e in envelopes if e.instrument == "DRV"]
+    assert [e.metric for e in drv] == ["mid_px"]
+    assert drv[0].identity.value == "1.25"
+    assert drv[0].payload["hl_type"] == "spotMetaAndAssetCtxs"
+    assert "KNT" not in {e.instrument for e in envelopes}
+
+
 def test_no_cron_or_migrate_workflow_wires_retain() -> None:
     workflows = ROOT / ".github" / "workflows"
     names = [path.name for path in workflows.glob("*.yml")]
@@ -479,5 +528,6 @@ def test_no_cron_or_migrate_workflow_wires_retain() -> None:
         text = path.read_text(encoding="utf-8")
         assert "lab retain" not in text
         assert "mvp_retain" not in text
-    assert "spotMetaAndAssetCtxs" not in ALLOWED_INFO_TYPES
+    assert "spotMetaAndAssetCtxs" in ALLOWED_INFO_TYPES
+    assert "spotMetaAndAssetCtxs" not in FORBIDDEN_INFO_TYPES
     assert "metaAndAssetCtxs" in ALLOWED_INFO_TYPES

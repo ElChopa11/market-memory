@@ -120,12 +120,13 @@ uv run lab retain --fixture PATH --no-db
 |---|---|---|
 | 1 | Hyperliquid `metaAndAssetCtxs` (one `/info`) | 19 BOUND perps: `open_interest`, `funding`, `mid_px` |
 | 2 | Polygon `GET /v2/aggs/grouped/locale/us/market/stocks/{date}` | 17 US names: session `close` |
+| 3 | Hyperliquid `spotMetaAndAssetCtxs` (one `/info`) | DRV/USDC spot pair index 700: `mid_px` only |
 
-DRV (spot DRV/USDC, index 700) is PRICE-ONLY (`mid_px` only). That pair is not in the perp meta response, and this path does not add a `spotMetaAndAssetCtxs` POST. A fixture may include an already-fetched spot payload. Null `midPx` stays partial; `markPx` is not copied.
+Three calls, 37 instruments. DRV is PRICE-ONLY (no open interest, no funding, no quadrant). Null `midPx` stays partial; `markPx` is not copied. A fixture dry-run may embed the spot payload instead of calling the network.
 
 Allowlist: `config/ingest/mvp_retain.yaml`. Existing `lab ingest` membership (BTC, ETH, UNI, AAVE) is unchanged. Venue queue SPX, NQ1!, CL1!, BTC1!, SAMSUN, KOSDA is not retained. KNT is absent. PURR is a bound perp.
 
 Captures store the given timestamp. There is no fixed slot window and no default sample clock. When `prior_captured_at` is set, each row records `interval_seconds` for a later delta. This command does not compute a quadrant label and does not backfill history.
 
-**Do not run against Neon** until Principal says so after the Friday dual-cron prove. `lab retain` without `--fixture --no-db` exits 2. No cron calls it.
+**Do not run against Neon.** `LIVE_NEON_ENABLED` stays false. `lab retain` without `--fixture --no-db` exits 2. No cron calls it. Friday's dual-cron prove is the receipt gate, not a hold on this spot call.
 
