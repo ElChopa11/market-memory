@@ -56,6 +56,17 @@ def main(argv: list[str] | None = None) -> int:
         help="dry-run: normalize fixture envelopes without Postgres or object store",
     )
 
+    retain = sub.add_parser(
+        "retain",
+        help="forward-only MVP retain dry-run (fixture --no-db only; live Neon gated)",
+    )
+    retain.add_argument("--fixture", type=Path, help="JSON/YAML capture fixture (no network)")
+    retain.add_argument(
+        "--no-db",
+        action="store_true",
+        help="required: normalize retain envelopes without Postgres",
+    )
+
     know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
     know.add_argument("--at", required=True, help="UTC instant (ISO-8601)")
     know.add_argument("--instrument", help="filter by instrument (locked HL perps: BTC, ETH, UNI, AAVE)")
@@ -137,6 +148,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_migrate()
     if args.cmd == "ingest":
         return cmd_ingest(args)
+    if args.cmd == "retain":
+        return cmd_retain(args)
     if args.cmd == "what-did-we-know":
         return cmd_what_did_we_know(args)
     if args.cmd == "thesis":
@@ -222,6 +235,10 @@ def cmd_status() -> int:
     print("Base rates: lab base-rate compute --fixture PATH --no-db (unconditional dip/zone/first-entry rates; C-001/002/003 cite these; not a study)")
     print("Queue: lab queue check | lab queue can-start IMP-XXX (hygiene only; no auto-merge, no gate waiver)")
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
+    print(
+        "Retain: lab retain --fixture PATH --no-db "
+        "(forward-only; 19 bound + DRV price-only + 17 closes; live Neon gated until Principal after the Fri dual-cron prove)"
+    )
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")
@@ -330,6 +347,26 @@ def cmd_ingest(args: argparse.Namespace) -> int:
                     stale_after_seconds=int(settings.get("stale_after_seconds", 120)),
                 )
             payload = stats.as_public_dict()
+    print(json.dumps(payload))
+    return 0
+
+
+def cmd_retain(args: argparse.Namespace) -> int:
+    """Fixture dry-run only. Does not open Postgres, Hyperliquid, or Polygon."""
+    if not getattr(args, "fixture", None) or not getattr(args, "no_db", False):
+        print(
+            "DO NOT RUN. lab retain against Neon is gated until Principal after the Fri dual-cron prove. "
+            "Use --fixture PATH --no-db. No history backfill. No production ingest.",
+            file=sys.stderr,
+        )
+        return 2
+    from mm_ingest.mvp_retain import retain_from_fixture
+
+    try:
+        payload = retain_from_fixture(args.fixture)
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     print(json.dumps(payload))
     return 0
 

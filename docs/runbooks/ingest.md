@@ -108,3 +108,24 @@ Local compose uses `lab`/`lab` for Postgres and `minioadmin` for MinIO. Those ar
 
 Standing Data desk report (not a brief): `uv run lab data source-health`. See [source-health.md](source-health.md).
 
+## MVP retain (draft, gated)
+
+Forward-only observation retain for one capture. It writes the existing `observation` table through `persist_envelopes` when a caller invokes that helper. The CLI does not open Postgres.
+
+```bash
+uv run lab retain --fixture PATH --no-db
+```
+
+| Call | Request | Retain |
+|---|---|---|
+| 1 | Hyperliquid `metaAndAssetCtxs` (one `/info`) | 19 BOUND perps: `open_interest`, `funding`, `mid_px` |
+| 2 | Polygon `GET /v2/aggs/grouped/locale/us/market/stocks/{date}` | 17 US names: session `close` |
+
+DRV (spot DRV/USDC, index 700) is PRICE-ONLY (`mid_px` only). That pair is not in the perp meta response, and this path does not add a `spotMetaAndAssetCtxs` POST. A fixture may include an already-fetched spot payload. Null `midPx` stays partial; `markPx` is not copied.
+
+Allowlist: `config/ingest/mvp_retain.yaml`. Existing `lab ingest` membership (BTC, ETH, UNI, AAVE) is unchanged. Venue queue SPX, NQ1!, CL1!, BTC1!, SAMSUN, KOSDA is not retained. KNT is absent. PURR is a bound perp.
+
+Captures store the given timestamp. There is no fixed slot window and no default sample clock. When `prior_captured_at` is set, each row records `interval_seconds` for a later delta. This command does not compute a quadrant label and does not backfill history.
+
+**Do not run against Neon** until Principal says so after the Friday dual-cron prove. `lab retain` without `--fixture --no-db` exits 2. No cron calls it.
+
