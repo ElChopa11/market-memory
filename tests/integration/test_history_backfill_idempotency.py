@@ -1,4 +1,4 @@
-"""Second history-backfill dispatch does not duplicate an unchanged claim."""
+"""A second history-backfill run does not duplicate an unchanged claim."""
 
 from __future__ import annotations
 

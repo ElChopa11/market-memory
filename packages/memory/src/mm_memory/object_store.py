@@ -204,7 +204,7 @@ def s3_region_from_env() -> str:
     """Region passed to the S3 client.
 
     Unset keeps ``us-east-1`` (local MinIO). Cloudflare R2 needs ``auto``.
-    The history-backfill job sets ``S3_REGION=auto`` as plain env, not a secret.
+    Laptop history-backfill exports ``S3_REGION=auto`` when the endpoint is R2.
     """
     return _env("S3_REGION", "AWS_DEFAULT_REGION", "AWS_REGION") or "us-east-1"
 

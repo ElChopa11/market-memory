@@ -1,4 +1,4 @@
-"""History backfill plan, gates, and fetch limits. No live HTTP."""
+"""History backfill plan, CLI, and fetch limits. No live HTTP."""
 
 from __future__ import annotations
 
@@ -62,66 +62,53 @@ def test_plan_uses_brief_tape_slots_and_states_call_counts() -> None:
     assert FRED_BACKFILL_SERIES["US2Y"] == "DGS2"
 
 
-def _job_block(text: str, job_name: str) -> str:
-    """Return one job body, from its key through the line before the next job."""
-    lines = text.splitlines()
-    start = None
-    for index, line in enumerate(lines):
-        if line == f"  {job_name}:":
-            start = index
-            break
-    assert start is not None, job_name
-    end = len(lines)
-    for index in range(start + 1, len(lines)):
-        line = lines[index]
-        if line.startswith("  ") and not line.startswith("   ") and line.endswith(":"):
-            end = index
-            break
-    return "\n".join(lines[start:end])
+def test_history_backfill_is_cli_only_and_hybrid_brief_stays(capsys) -> None:
+    workflow = ROOT / ".github" / "workflows" / "history-backfill.yml"
+    assert not workflow.exists()
+    for path in (ROOT / ".github" / "workflows").glob("*.yml"):
+        text = path.read_text(encoding="utf-8")
+        assert "i_mean_it_backfill" not in text
+        assert "name: history-backfill" not in text
+        assert "environment: neon-write" not in text
 
+    runbook = (ROOT / "docs" / "runbooks" / "ingest.md").read_text(encoding="utf-8")
+    section = runbook.split("## History backfill", 1)[1].split("## Phase 5b feeds", 1)[0]
+    assert "CLI-only" in section
+    assert "uv run lab history-backfill" in section
+    assert '"phase": "plan"' in section
+    assert '"phase": "fetch"' in section
+    assert "morning-deliver PAT" in section
+    assert "no `workflow_dispatch`" in section
+    assert "no `repository_dispatch`" in section
+    assert "no `schedule`" in section
+    assert "POSTGRES_DSN" in section
+    assert "POLYGON_API_KEY" in section
+    assert "FRED_API_KEY" in section
+    assert "MINIO_ENDPOINT" in section
+    assert "MINIO_ACCESS_KEY" in section
+    assert "MINIO_SECRET_KEY" in section
+    assert "MINIO_BUCKET" in section
+    assert "market-memory" in section
+    assert "S3_REGION=auto" in section
+    assert "No `TELEGRAM_*`" in section
+    assert "public `/info`" in section
+    assert "ON CONFLICT DO NOTHING" in section
+    assert "observation_claim_hash_uidx" in section
+    assert "contradicts" in section
+    assert "not a gate" in section
+    assert "Delete `neon-write`" in section
+    assert "This repository is private" in section
+    assert "The repository is public" not in section
+    assert "Waiting" not in section
+    assert "New environment" not in section
+    assert "i_mean_it_backfill" in section
 
-def test_workflow_is_dispatch_gated_and_hybrid_brief_stays() -> None:
-    workflow = (ROOT / ".github" / "workflows" / "history-backfill.yml").read_text(encoding="utf-8")
-    assert workflow.count("workflow_dispatch:") == 1
-    trigger = workflow.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-    assert "workflow_dispatch:" in trigger
-    assert "repository_dispatch" not in trigger
-    assert "repository_dispatch:" not in workflow
-    assert "schedule:" not in workflow
-    assert "cron:" not in workflow
-    assert "needs:" not in workflow
-    assert "i_mean_it_backfill:" in workflow
-    assert "default: false" in workflow
-    assert workflow.count("default: false") == 1
-    assert "lab history-backfill --" not in workflow
-    assert "brief-and-deliver" not in workflow
-    assert "hybrid-sydney-morning" not in workflow.split("jobs:", 1)[1]
-    assert "MINIO_BUCKET: ${{" not in workflow
-
-    skip = _job_block(workflow, "skip")
-    apply = _job_block(workflow, "history-backfill")
-    assert 'echo "SKIP"' in skip
-    assert "exit 0" in skip
-    assert "environment:" not in skip
-    assert "${{ secrets." not in skip
-    assert "uv run lab history-backfill" not in skip
-    assert "S3_REGION" not in skip
-
-    assert "\n    environment: neon-write\n" in apply
-    assert workflow.count("environment: neon-write") == 1
-    assert "inputs.i_mean_it_backfill == true" in apply
-    assert "github.event_name == 'workflow_dispatch'" in apply
-    assert "POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}" in apply
-    assert "POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}" in apply
-    assert "FRED_API_KEY: ${{ secrets.FRED_API_KEY }}" in apply
-    assert "MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}" in apply
-    assert "MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}" in apply
-    assert "MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}" in apply
-    assert "S3_REGION: auto" in apply
-    assert "MINIO_BUCKET must stay unset" in apply
-    assert "uv run lab history-backfill" in apply
-    assert "uv run lab history-backfill\n" in workflow
-    assert "REFUSE: i_mean_it_backfill is not true. Environment approval does not replace the input gate. Not connecting." in apply
+    assert main([]) == 0
+    status = capsys.readouterr().out
+    assert "Actions gate" not in status
+    assert "i_mean_it_backfill" not in status
+    assert "CLI-only" in status
+    assert "no GitHub Actions trigger" in status
 
     hybrid = (ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml").read_text(encoding="utf-8")
     assert 'cron: "30 20 * * 0-4"' in hybrid

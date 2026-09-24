@@ -5,7 +5,8 @@ Does not change ``lab ingest`` (hourly HL window) or the live brief fetch
 (``limit`` 2). No signing. No Telegram.
 
 Sequence: after ``lab migrate``, before recurring ingest-persist.
-Dispatch stays gated in GitHub Actions (``i_mean_it_backfill`` default false).
+Run on the Principal machine: ``uv run lab history-backfill``.
+No GitHub Actions trigger (no workflow_dispatch, repository_dispatch, or schedule).
 """
 
 from __future__ import annotations
@@ -140,7 +141,7 @@ class HistoryBackfillPlan:
             )
         return {
             "sequence": "after lab migrate on the fresh database, before recurring ingest-persist",
-            "do_not_run": "DO NOT RUN until the Principal says so after the Thursday unattended fire",
+            "do_not_run": "DO NOT RUN until the Principal says so",
             "polygon": {
                 "endpoint": POLYGON_ENDPOINT,
                 "adjusted": True,
@@ -171,7 +172,7 @@ class HistoryBackfillPlan:
                 ),
                 "timestamp_field": "observations[].date at T00:00:00Z",
                 "metric": "fred_observation",
-                "spread": "2s10s is DGS10 minus DGS2. This job does not write a spread row.",
+                "spread": "2s10s is DGS10 minus DGS2. This command does not write a spread row.",
                 "brief_unchanged": "live brief fetch remains limit=2 for the series in config/briefing/macro.yaml",
             },
             "hyperliquid": {
@@ -200,7 +201,7 @@ class HistoryBackfillPlan:
                 "put_observation selects on claim_hash and inserts ON CONFLICT DO NOTHING "
                 "on observation_claim_hash_uidx. claim_hash excludes ingested_at. "
                 "A revised value is a new claim_hash and a contradicts link, not an in-place update. "
-                "This job skips the raw-object put when that claim_hash already exists."
+                "This command skips the raw-object put when that claim_hash already exists."
             ),
             "as_of": self.as_of,
         }

@@ -58,7 +58,10 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser(
         "history-backfill",
-        help="one-off Polygon daily + full FRED DGS10/DGS2 + HL 1d candles (persist)",
+        help=(
+            "CLI-only one-off Polygon daily + full FRED DGS10/DGS2 + HL 1d candles "
+            "(persist; no GitHub Actions trigger)"
+        ),
     ).add_argument("--dsn", help="Postgres DSN (default POSTGRES_DSN)")
 
     know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
@@ -231,8 +234,8 @@ def cmd_status() -> int:
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
     print(
         "History backfill: lab history-backfill "
-        "(one-off Polygon daily, full FRED DGS10/DGS2, HL 1d candles; "
-        "Actions gate i_mean_it_backfill defaults false)."
+        "(CLI-only; one-off Polygon daily, full FRED DGS10/DGS2, HL 1d candles; "
+        "no GitHub Actions trigger)."
     )
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
@@ -347,7 +350,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
 
 def cmd_history_backfill(args: argparse.Namespace) -> int:
-    """One-off history pull. The Actions gate is what prints SKIP; this command persists."""
+    """One-off history pull from the Principal machine. CLI-only. No GitHub Actions trigger."""
     import os
 
     from mm_ingest.config import load_ingest_settings
