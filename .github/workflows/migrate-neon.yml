@@ -1,13 +1,25 @@
 # Dispatch-gated Alembic apply against Neon.
 #
-# workflow_dispatch ONLY. There is no cron and no push or pull_request
-# trigger. A plain Run workflow leaves i_mean_it_migrate false, prints a
-# skip line, exits 0, and does not connect.
+# workflow_dispatch ONLY. There is no push or pull_request trigger, and no
+# repository_dispatch trigger. A plain Run workflow leaves i_mean_it_migrate
+# false. That path is job "skip": it prints a skip line, exits 0, and does
+# not connect. Job "skip" has no environment key, so it does not wait for
+# a reviewer.
+#
+# Job "migrate" runs only when i_mean_it_migrate is true. That job names
+# Environment neon-write. That GitHub Environment is the hard gate in
+# front of secrets and the database. Required reviewers must approve before
+# the job starts. i_mean_it_migrate stays; approval does not replace it.
+#
+# The Environment is a repository Settings object. Create it before any
+# true dispatch. A true dispatch while neon-write is missing can create the
+# Environment with no protection rules. See docs/runbooks/migrate-neon.md.
 #
 # DO NOT RUN until the Principal says so after the Thursday unattended fire.
 #
-# Secret: repository secret POSTGRES_DSN only. Direct Neon host (no -pooler).
-# No DATABASE_URL alias. No NEON_API_KEY. No object-store secrets.
+# Secret: repository secret POSTGRES_DSN only, and only on the migrate job.
+# Direct Neon host (no -pooler). No DATABASE_URL alias. No NEON_API_KEY.
+# No object-store secrets.
 # Command: uv run lab migrate (Alembic head). This file refuses unless the
 # script head is 0012_heartbeat_if_not_exists, the revision verified in-repo.
 
@@ -19,9 +31,10 @@ on:
       i_mean_it_migrate:
         description: >-
           Apply Alembic head to repository secret POSTGRES_DSN (Neon direct
-          host). Default false — Run workflow does not connect. There is no
-          cron. DO NOT RUN until the Principal says so after the Thursday
-          unattended fire.
+          host). Default false — Run workflow does not connect and does not
+          wait for Environment neon-write. There is no schedule. DO NOT RUN
+          until the Principal says so after the Thursday unattended fire,
+          and until neon-write has Required reviewers set to the Principal.
         type: boolean
         default: false
         required: false
@@ -34,14 +47,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  migrate:
+  skip:
+    # Ungated. A false dispatch prints SKIP and exits 0 without requesting
+    # Environment neon-write. No secrets. No checkout.
+    if: inputs.i_mean_it_migrate != true && github.event.inputs.i_mean_it_migrate != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Skip unless i_mean_it_migrate is true
-        if: inputs.i_mean_it_migrate != true && github.event.inputs.i_mean_it_migrate != 'true'
         run: |
           echo "SKIP: i_mean_it_migrate is not true. Not connecting to Postgres. POSTGRES_DSN is not read."
           exit 0
+
+  migrate:
+    # Hard gate. Evaluated only when i_mean_it_migrate is true. A false
+    # dispatch skips this job; a skipped job does not wait for reviewers
+    # and does not materialise secrets. Do not chain skip in front of
+    # this job. The jobs are mutually exclusive; a dependency would skip
+    # migrate on the true path, because skip is skipped then.
+    if: inputs.i_mean_it_migrate == true || github.event.inputs.i_mean_it_migrate == 'true'
+    environment: neon-write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse unless i_mean_it_migrate is still true
+        if: inputs.i_mean_it_migrate != true && github.event.inputs.i_mean_it_migrate != 'true'
+        run: |
+          echo "REFUSE: i_mean_it_migrate is not true. Environment approval does not replace the input gate. Not connecting."
+          exit 1
 
       - uses: actions/checkout@v4
         if: inputs.i_mean_it_migrate == true || github.event.inputs.i_mean_it_migrate == 'true'

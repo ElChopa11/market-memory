@@ -35,33 +35,72 @@ APPLY_IF = (
     "if: inputs.i_mean_it_migrate == true || "
     "github.event.inputs.i_mean_it_migrate == 'true'"
 )
+SKIP_IF = (
+    "if: inputs.i_mean_it_migrate != true && "
+    "github.event.inputs.i_mean_it_migrate != 'true'"
+)
+
+
+def _job_block(text: str, job_name: str) -> str:
+    """Return one job body, from its key through the line before the next job."""
+    lines = text.splitlines()
+    start = None
+    for index, line in enumerate(lines):
+        if line == f"  {job_name}:":
+            start = index
+            break
+    assert start is not None, job_name
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        line = lines[index]
+        if line.startswith("  ") and not line.startswith("   ") and line.endswith(":"):
+            end = index
+            break
+    return "\n".join(lines[start:end])
 
 
 def test_migrate_neon_is_dispatch_only_and_gated() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     assert "name: migrate-neon" in text
     assert text.count("workflow_dispatch:") == 1
+    trigger = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
+    assert "workflow_dispatch:" in trigger
+    assert "repository_dispatch" not in trigger
     assert re.search(r"(?m)^[ \t]*schedule:", text) is None
     assert re.search(r"(?m)^[ \t]*push:", text) is None
     assert re.search(r"(?m)^[ \t]*pull_request:", text) is None
     assert re.search(r"(?m)^[ \t]*workflow_call:", text) is None
+    assert "repository_dispatch:" not in text
     assert "cron:" not in text
+    assert "needs:" not in text
     assert "i_mean_it_migrate:" in text
     assert "type: boolean" in text
     assert "default: false" in text
     assert text.count("default: false") == 1
-    assert (
-        "if: inputs.i_mean_it_migrate != true && "
-        "github.event.inputs.i_mean_it_migrate != 'true'"
-    ) in text
-    assert "SKIP: i_mean_it_migrate is not true. Not connecting to Postgres. POSTGRES_DSN is not read." in text
-    assert "exit 0" in text
-    assert text.count(APPLY_IF) == 4
-    assert "secrets.POSTGRES_DSN" in text
+
+    skip = _job_block(text, "skip")
+    migrate = _job_block(text, "migrate")
+    assert SKIP_IF in skip
+    assert "environment:" not in skip
+    assert "${{ secrets." not in skip
+    assert "SKIP: i_mean_it_migrate is not true. Not connecting to Postgres. POSTGRES_DSN is not read." in skip
+    assert "exit 0" in skip
+    assert APPLY_IF not in skip
+
+    assert APPLY_IF in migrate
+    # Job-level if, plus checkout, setup-uv, sync, and the apply step.
+    assert migrate.count(APPLY_IF) == 5
+    assert re.search(r"(?m)^    environment: neon-write$", migrate)
+    assert "environment:" not in skip
+    assert text.count("environment: neon-write") == 1
+    assert "secrets.POSTGRES_DSN" in migrate
+    assert "secrets.POSTGRES_DSN" not in skip
+    assert "REFUSE: i_mean_it_migrate is not true. Environment approval does not replace the input gate. Not connecting." in migrate
+
     assert "secrets.DATABASE_URL" not in text
     assert "secrets.NEON_API_KEY" not in text
     assert "MINIO_" not in text
-    assert "uv run lab migrate" in text
+    assert "uv run lab migrate" in migrate
     assert "0012_heartbeat_if_not_exists" in text
     assert "-pooler" in text
     assert ".neon.tech" in text
