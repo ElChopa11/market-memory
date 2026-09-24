@@ -20,6 +20,8 @@ ALLOWED_EVENT_TYPE_PATHS = {
     ".github/workflows/sydney-morning-repo-dispatch.yml",
     "docs/runbooks/scheduler.md",
     "docs/runbooks/telegram.md",
+    "config/knowledge/house-lessons.md",
+    "ops/reports/status/surfaces-inventory.md",
     "tests/unit/test_sydney_morning_repo_dispatch.py",
     "tests/unit/test_b1_sydney_morning_actions.py",
 }
@@ -134,3 +136,45 @@ def test_runbook_contract_names_event_pat_and_caller_retry() -> None:
     for book in (sched, tg):
         assert "ghp_" not in book
         assert "github_pat_" not in book
+    assert "Sydney Morning" in sched
+    assert "agent-data/infra/" in sched
+    assert "Who may read" in sched
+
+
+def test_dispatch_pat_residual_is_recorded() -> None:
+    lessons = (ROOT / "config" / "knowledge" / "house-lessons.md").read_text(encoding="utf-8")
+    inventory = (ROOT / "ops" / "reports" / "status" / "surfaces-inventory.md").read_text(encoding="utf-8")
+    sched = SCHEDULER.read_text(encoding="utf-8")
+    block = lessons.split("## 2026-09-24 — dispatch PAT on the shared multi-agent box", 1)[1]
+    block = block.split("## How this file grows", 1)[0]
+    assert "*(pending — none invented)*" in block
+    assert SEALED_PAT in block
+    assert "shared multi-agent box" in block
+    assert "sydney-morning-deliver" in block
+    assert "CLI-only" in block
+    assert "Mode bits are not the reason" in block
+    assert "Sydney Morning Grok routine" in block
+    assert "agent-data/" in block
+    assert "secret-request" in block
+    assert "0600 is a hard boundary" in block
+    assert "Overrides prior" in block
+    for needle in (
+        SEALED_PAT,
+        "Standing credential on the shared multi-agent box",
+        "Not capability isolation",
+        "sydney-morning-deliver",
+        "Grok Sydney Morning routine only",
+        "must not exist until then",
+        "/home/box/agent-data/delivery/telegram.env",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CHAT_ID_PRINCIPAL_DM",
+        "POLYGON_API_KEY",
+        "FRED_API_KEY",
+        "Neon DSN",
+        "does not invent a name",
+    ):
+        assert needle in inventory, needle
+    assert "ghp_" not in inventory
+    assert "github_pat_" not in inventory
+    assert "Who may read" in sched
+    assert "Desks must not open `agent-data/infra/`" in sched

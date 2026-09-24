@@ -176,6 +176,16 @@ Don and agents never write the value. Never commit it. Never put it in chat, the
 
 Contents stays closed on the PAT because stamp and receipt commit-back already use the workflow `GITHUB_TOKEN` (`contents: write` inside Actions). The PAT is the clock's dispatch credential, not the git credential.
 
+### Who may read
+
+The only reader is Coord/Don’s **Sydney Morning** Grok routine, and only while it fires `sydney-morning-deliver`.
+
+Desks must not open `agent-data/infra/`. No other desk, routine, or process may read the file.
+
+Mode `0600` stops an accidental open. It is not a hard boundary. The standing file is tolerable because the blast radius is one `repository_dispatch` event type, and migrate/backfill stay CLI-only with no token-reachable trigger. House lesson: [config/knowledge/house-lessons.md](../../config/knowledge/house-lessons.md) (2026-09-24). Inventory: [ops/reports/status/surfaces-inventory.md](../../ops/reports/status/surfaces-inventory.md).
+
+Rotate immediately on any one of: a box incident; a screenshot of a terminal that might show the path or the value; an agent found reading paths under `agent-data/`.
+
 ### Caller retry (Grok routine is out of scope)
 
 This section is the contract for the caller. Implementing the Grok routine is out of scope.
