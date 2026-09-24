@@ -60,7 +60,7 @@ def test_migrate_runbook_is_cli_only() -> None:
     assert "This repository is private" in text
     assert "The repository is public" not in text
     assert "workflow_dispatch" in text
-    assert "no `workflow_dispatch`" in text
+    assert "No `workflow_dispatch`" in text
     assert "repository_dispatch" in text
     assert "no `repository_dispatch`" in text
     assert "schedule" in text
