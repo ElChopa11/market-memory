@@ -14,11 +14,14 @@ from mm_briefing.freshness import (
     DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS,
     apply_print_freshness,
     calendar_age_days,
+    format_print_change,
     format_quality_with_age,
+    fred_no_new_print_note,
     gate_snapshot_freshness,
     load_freshness_config,
     quality_from_observation_age,
 )
+from mm_briefing.render import _asset_table, _since_close_bullets
 from mm_briefing.models import AssetPrint, MacroSnapshot, pulse_quality
 
 
@@ -391,3 +394,86 @@ def test_gate_snapshot_uses_config_threshold() -> None:
     assert gate_snapshot_freshness(snap).assets[0].data_quality == "ok"
     tight = load_freshness_config({"freshness": {"fred": {"max_calendar_lag_days": 1}}})
     assert gate_snapshot_freshness(snap, config=tight).assets[0].data_quality == "stale"
+
+
+def test_fred_daily_behind_keeps_dod_and_names_the_missing_print() -> None:
+    """Weekend / expected lag: +0.0bp stays; it is not a through-dated market call."""
+    obs = datetime(2026, 9, 18, tzinfo=timezone.utc)  # Friday print
+    knowledge = datetime(2026, 9, 19, 21, 0, tzinfo=timezone.utc)  # Saturday
+    row = AssetPrint(
+        symbol="US10Y",
+        name="US 10Y yield",
+        last=4.12,
+        prior_close=4.12,
+        unit="%",
+        data_quality="ok",
+        source="fred",
+        as_of=obs,
+    )
+    assert row.change_bp == 0.0
+    assert fred_no_new_print_note(row, reference_as_of=knowledge) == "no new FRED print since 2026-09-18"
+    labeled = format_print_change(row, reference_as_of=knowledge, numeric=f"{row.change_bp:+.1f}bp")
+    assert labeled == "+0.0bp (no new FRED print since 2026-09-18)"
+    table = "\n".join(_asset_table((row,), vs="Name", knowledge_as_of=knowledge))
+    bullets = "\n".join(_since_close_bullets((row,), knowledge_as_of=knowledge))
+    assert "+0.0bp (no new FRED print since 2026-09-18)" in table
+    assert "+0.0bp (no new FRED print since 2026-09-18)" in bullets
+
+
+def test_fred_same_knowledge_date_has_no_missing_print_label() -> None:
+    obs = datetime(2026, 9, 18, tzinfo=timezone.utc)
+    row = AssetPrint(
+        symbol="US10Y",
+        name="US 10Y yield",
+        last=4.14,
+        prior_close=4.12,
+        unit="%",
+        data_quality="ok",
+        source="fred",
+        as_of=obs,
+    )
+    assert fred_no_new_print_note(row, reference_as_of=obs) is None
+    assert format_print_change(row, reference_as_of=obs, numeric="+2.0bp") == "+2.0bp"
+
+
+def test_fred_monthly_and_non_fred_do_not_get_the_missing_print_label() -> None:
+    knowledge = BRIEF_AS_OF
+    cpi = AssetPrint(
+        symbol="CPI",
+        name="CPI",
+        last=3.1,
+        prior_close=3.0,
+        unit="%",
+        data_quality="ok",
+        source="fred",
+        as_of=CPI_OBS_AS_OF,
+    )
+    assert fred_no_new_print_note(cpi, reference_as_of=knowledge) is None
+    fixture = AssetPrint(
+        symbol="US10Y",
+        name="US 10Y yield",
+        last=4.12,
+        prior_close=4.12,
+        unit="%",
+        data_quality="ok",
+        source="fixture",
+        as_of=OBS_AS_OF,
+    )
+    assert fred_no_new_print_note(fixture, reference_as_of=knowledge) is None
+
+
+def test_stale_fred_daily_keeps_withheld_delta_and_still_names_the_print() -> None:
+    """Display only: a stale print still has no numeric delta. Fetch is unchanged."""
+    row = AssetPrint(
+        symbol="US10Y",
+        name="US 10Y yield",
+        last=4.12,
+        prior_close=4.05,
+        unit="%",
+        data_quality="stale",
+        source="fred",
+        as_of=OBS_AS_OF,
+    )
+    assert row.change_bp is None
+    labeled = format_print_change(row, reference_as_of=BRIEF_AS_OF, numeric="n/a")
+    assert labeled == "n/a (no new FRED print since 2026-09-18)"

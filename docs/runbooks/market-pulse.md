@@ -125,6 +125,8 @@ Config: `config/briefing/macro.yaml` → `freshness.fred`:
 
 Principal-reasonable daily default: FRED daily series older than **2 calendar days** behind `as_of_knowledge` cannot be labelled fresh. The 2026-09-22 US Close Brief incident (US10Y as-of 2026-09-18, four days old, shown as fresh / +7.0bp) is the motivating case — a 4-day-old *daily* print must render as stale with age visible, not fresh. A stale print does not yield a change.
 
+When the knowledge date is after the latest **daily** FRED observation (weekend, or the next print has not landed), the change cell keeps the numeric day-over-day figure versus the prior print and adds `no new FRED print since {observation date}` beside it. That is display only (US10Y / DGS10 and other daily series). It does not invent a newer print and does not change the fetch. Monthly CPI/NFP are not labeled this way.
+
 Layer: `mm_briefing.freshness` (shared helper; `lag_for(source, symbol, series_id)` for calendar policies) + live FRED fetcher + `complete_cross_asset` gate so all Pulse consumers see the same FRED rule.
 
 Memory ingest of FRED remains `historical=True` (facts about the past are not snapshot-stale in Market Memory). Pulse live display is a separate product surface and applies the calendar lag gate above. FRED Monday (a Friday print with no newer business-day print, still calendar-stale on Monday) is unchanged.
@@ -152,11 +154,13 @@ US equity regular hours, `America/New_York`. Product rule: **has a newer session
 | After the close + grace | Prior session, newer bar due | stale. No change / Δ |
 | Any of the above | The bar for the session that is already due | fresh |
 
-#### Publish lag (how it was read)
+#### Publish lag (vendor-stated, not stopwatched)
 
 The brief calls `GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}`.
 
-On 2026-09-24 the vendor Plan Recency table for that endpoint was fetched from [custom bars](https://massive.com/docs/rest/stocks/aggregates/custom-bars):
+The publish lag below is **vendor-stated, not stopwatched**. This repo did not measure when the daily bar appears. `POLYGON_API_KEY` was unset, so no request was sent to `api.polygon.io`. Measure once a run can be observed, after the dual-cron prove. This change stays draft until then.
+
+On 2026-09-24 the vendor Plan Recency table for that endpoint was read from [custom bars](https://massive.com/docs/rest/stocks/aggregates/custom-bars):
 
 | Plan | Recency |
 |---|---|
@@ -166,11 +170,11 @@ On 2026-09-24 the vendor Plan Recency table for that endpoint was fetched from [
 | Stocks Advanced | Real-time |
 | Stocks Business | Real-time |
 
-`POLYGON_API_KEY` was unset in the environment that wrote this. No request was sent to `api.polygon.io`. This key's first-seen minute was **not** stopwatched. The repo does not name which stocks plan the key is on. Ingest's Polygon budget is 5 requests/minute, which is free-tier shaped and closer to Basic than to a named delayed plan.
+The repo does not name which stocks plan the key is on. Ingest's Polygon budget is 5 requests/minute, which is free-tier shaped and closer to Basic than to a named delayed plan.
 
-`grace_minutes: 20` is that documented **15-minute** Starter/Developer recency plus 5 minutes. A brief at 16:30 America/New_York (primary Sydney-morning cron `20:30 UTC` while the US is on EDT) is past this grace. While the US is on EST that same UTC cron is 15:30 ET, still before the close, so the prior bar is the correct fresh print. If the key is Basic, "End-of-day" still has no clock, and 20 minutes can false-stale a 16:30 ET brief.
+`grace_minutes: 20` is that vendor-stated **15-minute** Starter/Developer recency plus 5 minutes. It is not a measured publish time. A brief at 16:30 America/New_York (primary Sydney-morning cron `20:30 UTC` while the US is on EDT) is past this grace. While the US is on EST that same UTC cron is 15:30 ET, still before the close, so the prior bar is the correct fresh print. If the key is Basic, "End-of-day" still has no clock, and 20 minutes can false-stale a 16:30 ET brief.
 
-A later stopwatch, when a key is present: after 16:00 America/New_York on a regular session, poll `GET /v2/aggs/ticker/SPY/range/1/day/{session}/{session}?adjusted=true` until `results` contains that session date. Record minutes after 16:00. Repeat on several regular sessions. Replace `grace_minutes` from the observed maximum plus a small buffer.
+When a run can be observed: after 16:00 America/New_York on a regular session, poll `GET /v2/aggs/ticker/SPY/range/1/day/{session}/{session}?adjusted=true` until `results` contains that session date. Record minutes after 16:00. Repeat on several regular sessions. Replace `grace_minutes` from the observed maximum plus a small buffer.
 
 #### Known limitations — the 16:00 calendar does not cover these
 

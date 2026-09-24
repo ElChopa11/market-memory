@@ -332,6 +332,7 @@ def test_repo_macro_declares_policies_for_enabled_live_sources() -> None:
         assert name in runbook
     for name in FULL_CLOSE_FALSE_STALE:
         assert name in runbook
+    assert "vendor-stated, not stopwatched" in runbook
     assert polygon.rth_close == time(16, 0)
     assert polygon.session_timezone == "America/New_York"
     assert cfg.rule_for(source="coingecko").policy == "snapshot"

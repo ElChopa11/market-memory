@@ -13,10 +13,12 @@ fixture_path: tests/fixtures/briefing/frozen_day.json
 #   - freshness.fred.series.<SYMBOL> overrides for monthly / low-cadence prints
 #     so CPI/NFP at 30–45d are not falsely stale under the daily rule.
 # Polygon is session-aware (newer US equity RTH bar due?), not a calendar-day lag.
-# grace_minutes 20 = documented 15-minute Starter/Developer recency on
-# GET /v2/aggs/ticker/.../range (read 2026-09-24) plus 5 minutes.
-# This key was not stopwatched (POLYGON_API_KEY unset). Basic "End-of-day"
-# has no minute in that table. Half-days at 13:00 ET are not in the calendar.
+# grace_minutes 20 is vendor-stated, not stopwatched: 15-minute
+# Starter/Developer Plan Recency on GET /v2/aggs/ticker/.../range
+# (table read 2026-09-24) plus 5 minutes. POLYGON_API_KEY was unset.
+# Measure once a run can be observed (after the dual-cron prove).
+# Basic "End-of-day" has no minute in that table. Half-days at 13:00 ET
+# are not in the calendar.
 freshness:
   fred:
     policy: calendar

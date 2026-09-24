@@ -45,19 +45,19 @@ DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS = 45
 DEFAULT_RTH_CLOSE = time(16, 0)
 DEFAULT_SESSION_TZ = "America/New_York"
 
-# Publish lag for the brief's endpoint
-# ``GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}``.
-# Read 2026-09-24 from
+# Publish lag is vendor-stated, not stopwatched.
+# Endpoint: ``GET /v2/aggs/ticker/{ticker}/range/1/day/{from}/{to}``.
+# On 2026-09-24 the vendor Plan Recency table was read from
 # https://massive.com/docs/rest/stocks/aggregates/custom-bars
-# (Plan Recency table): Stocks Starter and Stocks Developer are
-# "15-minute delayed"; Stocks Advanced / Business are real-time; Stocks Basic
-# is "End-of-day" with no minute in that table.
-# A live stopwatch was not run: POLYGON_API_KEY was unset, so no request
-# was sent to api.polygon.io. This repo does not name which stocks plan the
-# key is on. Grace is the documented 15-minute delayed-plan recency plus a
-# 5-minute buffer. It does not claim to measure Basic end-of-day.
+# Stocks Starter and Stocks Developer are "15-minute delayed"; Stocks
+# Advanced / Business are real-time; Stocks Basic is "End-of-day" with no
+# minute in that table. POLYGON_API_KEY was unset, so no request was sent
+# to api.polygon.io. This is not a measured first-seen minute. Measure once
+# a run can be observed (after the dual-cron prove). Grace is the
+# vendor-stated 15-minute delayed-plan recency plus a 5-minute buffer.
 DOCUMENTED_DELAYED_PLAN_RECENCY_MINUTES = 15
 PROVISIONAL_POLYGON_GRACE_MINUTES = DOCUMENTED_DELAYED_PLAN_RECENCY_MINUTES + 5
+NO_NEW_FRED_PRINT_PREFIX = "no new FRED print since"
 
 # 16:00 ET does not describe these sessions. Until that clock, a missing new
 # bar stays fresh (false-fresh). They are not in the session calendar.
@@ -521,6 +521,48 @@ def format_print_quality(
             reference_as_of=reference_as_of,
         )
     return label
+
+
+def fred_no_new_print_note(
+    row: AssetPrint,
+    *,
+    reference_as_of: datetime | date | None,
+    config: FreshnessConfig | None = None,
+) -> str | None:
+    """Label when the knowledge date is after the latest daily FRED observation.
+
+    Display only. Does not invent a newer print, does not change fetch, and
+    does not change quality. Monthly series (CPI / NFP) stay unlabeled.
+    """
+    if _policy_source_key(row.source) != "fred":
+        return None
+    if reference_as_of is None or row.as_of is None:
+        return None
+    age = calendar_age_days(row.as_of, reference_as_of)
+    if age is None or age <= 0:
+        return None
+    cfg = config or default_freshness_config()
+    resolved = cfg.lag_for(source="fred", symbol=row.symbol)
+    if resolved is None or resolved[0] != "daily":
+        return None
+    obs = _as_date(row.as_of)
+    if obs is None:
+        return None
+    return f"{NO_NEW_FRED_PRINT_PREFIX} {obs.isoformat()}"
+
+
+def format_print_change(
+    row: AssetPrint,
+    *,
+    reference_as_of: datetime | date | None,
+    numeric: str,
+    config: FreshnessConfig | None = None,
+) -> str:
+    """Keep the numeric day-over-day figure and, when needed, name the missing print."""
+    note = fred_no_new_print_note(row, reference_as_of=reference_as_of, config=config)
+    if not note:
+        return numeric
+    return f"{numeric} ({note})"
 
 
 def _apply_snapshot(row: AssetPrint, *, reference_as_of: datetime, max_minutes: int) -> AssetPrint:

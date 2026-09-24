@@ -6,7 +6,7 @@ from datetime import datetime
 
 from mm_common.hashing import sha256_hex
 from mm_briefing.divergences import fmt_pct, fmt_px
-from mm_briefing.freshness import format_print_quality
+from mm_briefing.freshness import format_print_change, format_print_quality
 from mm_briefing.hl import basis_mark_oracle, funding_value, liquidation_size_sum, oi_change_pct
 from mm_briefing.models import (
     AlertEvent,
@@ -334,10 +334,7 @@ def _asset_table(
         "|---|---|---:|---:|---:|---|---|---|---|",
     ]
     for row in assets:
-        if row.unit == "%":
-            change = f"{row.change_bp:+.1f}bp" if row.change_bp is not None else "n/a"
-        else:
-            change = fmt_pct(row.change_pct)
+        change = _print_change(row, knowledge_as_of=knowledge_as_of)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
         quality = format_print_quality(row, reference_as_of=knowledge_as_of)
         lines.append(
@@ -356,10 +353,7 @@ def _since_close_bullets(
         return ["- No overnight prints available."]
     lines: list[str] = []
     for row in assets:
-        if row.unit == "%":
-            delta = f"{row.change_bp:+.1f}bp" if row.change_bp is not None else "n/a"
-        else:
-            delta = fmt_pct(row.change_pct)
+        delta = _print_change(row, knowledge_as_of=knowledge_as_of)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
         obs = row.observation_id or "none"
         quality = format_print_quality(row, reference_as_of=knowledge_as_of)
@@ -368,6 +362,15 @@ def _since_close_bullets(
             f"[quality={quality}; source={row.source}; as-of={as_of}; obs {obs}]"
         )
     return lines
+
+
+def _print_change(row: AssetPrint, *, knowledge_as_of: datetime | None) -> str:
+    """Numeric DoD, plus a FRED daily note when the knowledge date has no newer print."""
+    if row.unit == "%":
+        numeric = f"{row.change_bp:+.1f}bp" if row.change_bp is not None else "n/a"
+    else:
+        numeric = fmt_pct(row.change_pct)
+    return format_print_change(row, reference_as_of=knowledge_as_of, numeric=numeric)
 
 
 def _hl_since_close(hl: tuple[HLInstrumentState, ...], *, prior_close: datetime) -> list[str]:
