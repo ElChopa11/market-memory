@@ -12,6 +12,7 @@ Private AI-native trading intelligence lab (Hyperliquid-first). Optimised for **
 | [docs/security-model.md](docs/security-model.md) | Treasury vs API wallet, env separation, kill switch |
 | [docs/research-lifecycle.md](docs/research-lifecycle.md) | Artifact chain and definition-of-done gates |
 | [docs/runbooks/ingest.md](docs/runbooks/ingest.md) | Phase 1 how-to: compose, migrate, ingest, query |
+| [docs/runbooks/migrate-neon.md](docs/runbooks/migrate-neon.md) | One-shot Actions migrate (`workflow_dispatch`, confirm `i_mean_it_migrate`). Delete the workflow in the same sitting. |
 | [docs/runbooks/research-workspace.md](docs/runbooks/research-workspace.md) | Phase 2 how-to: create thesis, link evidence, skeptic checklist |
 | [docs/runbooks/market-pulse.md](docs/runbooks/market-pulse.md) | Market Pulse: US pre-market (`briefs/YYYY-MM-DD/us-pre-market.md`), close, alert-check, DST |
 | [docs/runbooks/source-health.md](docs/runbooks/source-health.md) | Standing DQ / source-health report (`ops/reports/source-health/YYYY-MM-DD.md`) |
