@@ -1,15 +1,14 @@
 """Forward-only MVP retain into the existing observation pipeline.
 
-Two HTTP calls when a caller runs :func:`capture_mvp_retain`:
+Three HTTP calls when a caller runs :func:`capture_mvp_retain`:
 
-1. Hyperliquid ``metaAndAssetCtxs`` (one ``/info`` POST) for 19 BOUND perps.
+1. Hyperliquid ``metaAndAssetCtxs`` for 19 BOUND perps.
 2. Polygon grouped-daily (one GET) filtered to 17 US names.
+3. Hyperliquid ``spotMetaAndAssetCtxs`` for DRV/USDC spot pair index 700.
 
-DRV (spot DRV/USDC, pair index 700) is PRICE-ONLY: ``mid_px`` and nothing else.
-That pair is not in perp ``metaAndAssetCtxs``. This module does not POST
-``spotMetaAndAssetCtxs`` (that would be a third call). A fixture may pass an
-already-fetched spot payload. A null ``midPx`` stays partial; ``markPx`` is
-never copied into ``mid_px``.
+DRV is PRICE-ONLY: ``mid_px`` and nothing else. A null ``midPx`` stays partial;
+``markPx`` is never copied into ``mid_px``. A fixture may pass an already-fetched
+spot payload; the capture helper always requests call 3.
 
 Consecutive captures keep the caller-supplied timestamp on the claim identity
 so an unchanged value does not collapse, and so a later value is not a
@@ -42,6 +41,7 @@ SERIES = "mvp_retain"
 HISTORY_BACKFILL_WIRED = False
 LIVE_NEON_ENABLED = False
 HL_INFO_TYPE = "metaAndAssetCtxs"
+SPOT_INFO_TYPE = "spotMetaAndAssetCtxs"
 PRICE_ONLY_SYMBOL = "DRV"
 SPOT_PAIR_INDEX = 700
 
@@ -109,6 +109,7 @@ def load_mvp_retain_spec(path: Path | None = None) -> MvpRetainSpec:
         monitor=frozenset(str(s).upper() for s in (tiers.get("monitor") or [])),
     )
     _validate_spec(spec)
+    _validate_calls(data.get("calls"))
     return spec
 
 
@@ -152,8 +153,21 @@ def _validate_spec(spec: MvpRetainSpec) -> None:
         raise ValueError("HL symbols and equity tickers must not overlap")
 
 
+def _validate_calls(calls: Any) -> None:
+    if not isinstance(calls, list) or len(calls) != 3:
+        raise ValueError("mvp retain spec must list exactly three HTTP calls")
+    if calls[0].get("info_type") != HL_INFO_TYPE:
+        raise ValueError("call 1 must be metaAndAssetCtxs")
+    if calls[1].get("path") != GROUPED_DAILY_PATH:
+        raise ValueError("call 2 must be Polygon grouped-daily")
+    if calls[2].get("info_type") != SPOT_INFO_TYPE:
+        raise ValueError("call 3 must be spotMetaAndAssetCtxs")
+    if calls[2].get("spot_index") != SPOT_PAIR_INDEX:
+        raise ValueError("call 3 must target spot pair index 700")
+
+
 def http_plan(session_date: date | None = None) -> tuple[dict[str, Any], ...]:
-    """The only two requests this retain path is allowed to make."""
+    """The only three requests this retain path is allowed to make."""
     if session_date is not None and isinstance(session_date, datetime):
         raise TypeError("session_date must be a calendar date, not a timestamp range")
     path = GROUPED_DAILY_PATH if session_date is None else GROUPED_DAILY_PATH.format(date=session_date.isoformat())
@@ -170,6 +184,12 @@ def http_plan(session_date: date | None = None) -> tuple[dict[str, Any], ...]:
             "method": "GET",
             "path": path,
             "params": {"adjusted": "true", "include_otc": "false"},
+        },
+        {
+            "call": 3,
+            "transport": "hyperliquid.info",
+            "method": "POST",
+            "body": {"type": SPOT_INFO_TYPE},
         },
     )
 
@@ -236,13 +256,13 @@ def capture_mvp_retain(
     session_date: date,
     captured_at: datetime,
     prior_captured_at: datetime | None = None,
-    spot_meta_and_asset_ctxs: Any | None = None,
 ) -> list[ObservationEnvelope]:
-    """One perp meta read plus one grouped-daily read. Does not fetch spot meta."""
+    """Perp meta, one grouped-daily read, then spot meta for DRV. No Postgres."""
     if isinstance(session_date, datetime) or not isinstance(session_date, date):
         raise TypeError("capture_mvp_retain takes one session date")
     ctxs = hl_client.meta_and_asset_ctxs()
     grouped, error = polygon_adapter.grouped_daily(session_date)
+    spot = hl_client.spot_meta_and_asset_ctxs()
     return build_retain_envelopes(
         spec,
         meta_and_asset_ctxs=ctxs,
@@ -251,7 +271,7 @@ def capture_mvp_retain(
         captured_at=captured_at,
         prior_captured_at=prior_captured_at,
         session_date=session_date,
-        spot_meta_and_asset_ctxs=spot_meta_and_asset_ctxs,
+        spot_meta_and_asset_ctxs=spot,
     )
 
 
@@ -316,7 +336,7 @@ def public_summary(
         "history_backfill": False,
         "backfill_wired": HISTORY_BACKFILL_WIRED,
         "sm_slot_window": False,
-        "calls": 2,
+        "calls": len(http_plan(session_date)),
         "call_plan": list(http_plan(session_date)),
         "instruments": len(metrics_by),
         "bound_perps": sum(1 for symbol in spec.bound_symbols if symbol in metrics_by),
@@ -374,7 +394,7 @@ def _drv_envelope(
                 captured_at=captured_at,
                 quadrant_eligible=False,
                 venue="spot",
-                source_url_or_id="spot:@700",
+                source_url_or_id=SPOT_INFO_TYPE,
                 resolution="spot_index_700",
             )
         return _hl_metric_envelope(
@@ -385,7 +405,7 @@ def _drv_envelope(
             captured_at=captured_at,
             quadrant_eligible=False,
             venue="spot",
-            source_url_or_id="spot:@700",
+            source_url_or_id=SPOT_INFO_TYPE,
             resolution=status,
         )
     perp_ctx = perp_ctxs.get(spec.price_only_symbol)
@@ -553,7 +573,7 @@ def _hl_metric_envelope(
         resolution=resolution,
         raw=ctx or {},
     )
-    payload["hl_type"] = HL_INFO_TYPE if source_url_or_id == HL_INFO_TYPE else "spot_payload"
+    payload["hl_type"] = source_url_or_id if source_url_or_id in {HL_INFO_TYPE, SPOT_INFO_TYPE} else HL_INFO_TYPE
     return _envelope(
         source_name=HL_SOURCE_NAME,
         source_url_or_id=source_url_or_id,

@@ -237,7 +237,7 @@ def cmd_status() -> int:
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
     print(
         "Retain: lab retain --fixture PATH --no-db "
-        "(forward-only; 19 bound + DRV price-only + 17 closes; live Neon gated until Principal after the Fri dual-cron prove)"
+        "(forward-only; 3 calls / 37 instruments: 19 bound + DRV spot mid + 17 closes; LIVE_NEON_ENABLED is false)"
     )
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
@@ -355,7 +355,7 @@ def cmd_retain(args: argparse.Namespace) -> int:
     """Fixture dry-run only. Does not open Postgres, Hyperliquid, or Polygon."""
     if not getattr(args, "fixture", None) or not getattr(args, "no_db", False):
         print(
-            "DO NOT RUN. lab retain against Neon is gated until Principal after the Fri dual-cron prove. "
+            "DO NOT RUN. lab retain does not open Neon (LIVE_NEON_ENABLED is false). "
             "Use --fixture PATH --no-db. No history backfill. No production ingest.",
             file=sys.stderr,
         )

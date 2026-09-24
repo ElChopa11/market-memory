@@ -7,7 +7,7 @@ history_backfill: false
 fixed_slot_window: false
 series: mvp_retain
 
-# Exactly two HTTP calls. Spot meta is not one of them.
+# Three HTTP calls. Call 3 is the DRV spot mid (Principal 2026-09-24 evening).
 calls:
   - id: hl_meta_and_asset_ctxs
     transport: hyperliquid.info
@@ -20,6 +20,13 @@ calls:
     params:
       adjusted: true
       include_otc: false
+  - id: hl_spot_meta_and_asset_ctxs
+    transport: hyperliquid.info
+    method: POST
+    info_type: spotMetaAndAssetCtxs
+    pair: DRV/USDC
+    spot_index: 700
+    metrics: [mid_px]
 
 hl:
   bound_perps:

@@ -31,6 +31,7 @@ ALLOWED_INFO_TYPES = frozenset(
         "allMids",
         "meta",
         "metaAndAssetCtxs",
+        "spotMetaAndAssetCtxs",
         "fundingHistory",
         "candleSnapshot",
         "predictedFundings",
@@ -149,6 +150,11 @@ class HyperliquidInfoClient:
 
     def meta_and_asset_ctxs(self) -> list[Any]:
         payload = self.post({"type": "metaAndAssetCtxs"})
+        return payload if isinstance(payload, list) else []
+
+    def spot_meta_and_asset_ctxs(self) -> list[Any]:
+        """Public spot meta. MVP retain uses this once for DRV/USDC @700 mid only."""
+        payload = self.post({"type": "spotMetaAndAssetCtxs"})
         return payload if isinstance(payload, list) else []
 
     def funding_history(self, coin: str, start_ms: int, end_ms: int | None = None) -> list[dict[str, Any]]:
