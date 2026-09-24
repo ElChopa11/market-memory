@@ -1,0 +1,9 @@
+{
+  "delivered_at_ts": "2026-09-24T06:58:36.948657+00:00",
+  "kind": "deliver_receipt",
+  "routine_id": "grok.sydney_morning",
+  "run_id": "actions-b1-35967088240",
+  "scheduled_anchor_ts": "2026-09-23T20:30:00+00:00",
+  "sent": true,
+  "source": "github.actions"
+}
