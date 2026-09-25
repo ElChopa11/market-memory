@@ -6,7 +6,8 @@ from datetime import datetime
 
 from mm_common.hashing import sha256_hex
 from mm_briefing.divergences import fmt_pct, fmt_px
-from mm_briefing.freshness import format_quality_with_age
+from mm_briefing.freshness import FreshnessConfig, format_quality_with_age
+from mm_briefing.health import load_presentation_config, pulse_to_health_state, score_data_health
 from mm_briefing.hl import basis_mark_oracle, funding_value, liquidation_size_sum, oi_change_pct
 from mm_briefing.models import (
     AlertEvent,
@@ -20,6 +21,7 @@ from mm_briefing.models import (
     SourceStatus,
     ThesisHook,
     WatchItem,
+    display_symbol,
     pulse_quality,
     slot_label,
 )
@@ -29,6 +31,12 @@ NO_DECISION_FOOTER = (
     "---",
     "**Informational only — no decision, no recommendation, no order intent.**",
     "This brief does not change universe membership, size a trade, submit an order, or approve risk.",
+)
+
+# {3_SENTENCE_SUMMARY} is not generated in Stage A. Literal insufficient, not prose.
+KEY_TAKEAWAY_LINES = (
+    "KEY TAKEAWAY",
+    "INSUFFICIENT DATA",
 )
 
 SOURCE_HEALTH_POINTER = (
@@ -51,6 +59,71 @@ def iso(ts: datetime) -> str:
     return ts.isoformat(timespec="seconds")
 
 
+def _date_fill(
+    *,
+    generated_at: datetime,
+    ny: datetime,
+    syd: datetime,
+    as_of: datetime,
+    watermark: datetime | None = None,
+) -> str:
+    """{DATE} is the header stamps already rendered. No second clock."""
+    parts = [
+        f"Generated (UTC) {iso(generated_at)}",
+        f"America/New_York {iso(ny)} ({ny.tzname() or 'America/New_York'})",
+        f"Australia/Sydney {iso(syd)} ({syd.tzname() or 'Australia/Sydney'})",
+    ]
+    if watermark is not None:
+        parts.append(f"Memory watermark (as_of_knowledge) {iso(watermark)}")
+    parts.append(f"As-of knowledge {iso(as_of)}")
+    return "DATE: " + "; ".join(parts)
+
+
+def _audit_section(assets: tuple[AssetPrint, ...], *, health_pct: int | None) -> list[str]:
+    """Message 8 fills from the snapshot already rendered. No Neon read."""
+    if health_pct is None:
+        quality = "Data quality: INSUFFICIENT DATA"
+    else:
+        quality = f"Data quality: {health_pct}%"
+    return [
+        "",
+        "## Audit",
+        "",
+        quality,
+        f"Freshest feed: {_freshest_feed_name(assets)}",
+        f"Major missing feeds: {_missing_feeds_list(assets)}",
+    ]
+
+
+def _freshest_feed_name(assets: tuple[AssetPrint, ...]) -> str:
+    """Slot symbols whose as_of equals the latest as_of on the rendered rows."""
+    stamped = [row for row in assets if row.as_of is not None]
+    if not stamped:
+        return "unavailable"
+    latest = max(row.as_of for row in stamped if row.as_of is not None)
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in stamped:
+        if row.as_of == latest and row.symbol not in seen:
+            seen.add(row.symbol)
+            names.append(row.symbol)
+    return ", ".join(names)
+
+
+def _missing_feeds_list(assets: tuple[AssetPrint, ...]) -> str:
+    """Every rendered slot whose data state is unavailable. Empty stays `none`."""
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in assets:
+        if pulse_to_health_state(row.data_quality) != "unavailable":
+            continue
+        if row.symbol in seen:
+            continue
+        seen.add(row.symbol)
+        names.append(row.symbol)
+    return ", ".join(names) if names else "none"
+
+
 def render_preopen(
     *,
     generated_at: datetime,
@@ -68,16 +141,19 @@ def render_preopen(
     memory_watermark: datetime | None = None,
     hl_origin: str = "market_memory",
     calendar_source: str = "config/briefing/calendar.yaml",
+    freshness: FreshnessConfig | None = None,
 ) -> BriefDocument:
     session_date = session_date_for(as_of)
     status = session_status or us_session_status(generated_at, session_tz=session_tz)
     ny_gen = generated_at.astimezone(NY_TZ)
     syd_gen = generated_at.astimezone(SYDNEY_TZ)
     watermark = memory_watermark if memory_watermark is not None else as_of
-    display_quality = pulse_quality(data_quality)
+    presentation = load_presentation_config()
+    health = score_data_health(macro.assets, hl, config=presentation)
     lines = [
         f"# US Pre-Market Brief — {session_date.isoformat()}",
         "",
+        _date_fill(generated_at=generated_at, ny=ny_gen, syd=syd_gen, as_of=as_of, watermark=watermark),
         f"Generated (UTC): {iso(generated_at)}",
         f"Generated (America/New_York): {iso(ny_gen)} ({ny_gen.tzname() or session_tz})",
         f"Generated (Australia/Sydney): {iso(syd_gen)} ({syd_gen.tzname() or lab_tz})",
@@ -88,9 +164,13 @@ def render_preopen(
         ),
         f"Memory watermark (as_of_knowledge): {iso(watermark)}",
         f"As-of knowledge: {iso(as_of)} (ingested_at lockstep; never published_at / market_time)",
-        f"Overall data quality: {display_quality}",
+        *health.header_lines(icons=presentation.icons),
+        *KEY_TAKEAWAY_LINES,
+        "",
         f"Macro source: {macro.source}",
         f"HL origin: {hl_origin}",
+        "",
+        *health.section_lines(icons=presentation.icons),
         "",
         "## Data quality by source",
         "",
@@ -106,7 +186,9 @@ def render_preopen(
             "",
         ]
     )
-    lines.extend(_asset_table(macro.assets, vs="Name", knowledge_as_of=as_of))
+    lines.extend(
+        _asset_table(macro.assets, vs="Name", knowledge_as_of=as_of, freshness=freshness)
+    )
     if macro.notes:
         lines.append("")
         lines.append("Notes:")
@@ -122,7 +204,7 @@ def render_preopen(
             "",
         ]
     )
-    lines.extend(_since_close_bullets(macro.assets, knowledge_as_of=as_of))
+    lines.extend(_since_close_bullets(macro.assets, knowledge_as_of=as_of, freshness=freshness))
     lines.extend(_hl_since_close(hl, prior_close=macro.prior_us_close))
     lines.extend(
         [
@@ -178,6 +260,7 @@ def render_preopen(
     else:
         lines.append("- Watchlist empty.")
         lines.append("")
+    lines.extend(_audit_section(macro.assets, health_pct=health.pct))
     lines.extend(["", *_no_decision_footer(live_macro=macro.source == "live")])
     markdown = "\n".join(lines).rstrip() + "\n"
     return BriefDocument(
@@ -208,27 +291,41 @@ def render_close(
     data_quality: str,
     session_tz: str = "America/New_York",
     lab_tz: str = "Australia/Sydney",
+    freshness: FreshnessConfig | None = None,
 ) -> BriefDocument:
     session_date = session_date_for(as_of)
     ny = generated_at.astimezone(NY_TZ)
     syd = generated_at.astimezone(SYDNEY_TZ)
     status = us_session_status(generated_at, session_tz=session_tz)
+    presentation = load_presentation_config()
+    health = score_data_health(session.assets, hl, config=presentation)
     lines = [
         f"# US Close Brief — {session_date.isoformat()}",
         "",
+        _date_fill(generated_at=generated_at, ny=ny, syd=syd, as_of=as_of),
         f"Generated (UTC): {iso(generated_at)}",
         f"Generated (America/New_York): {iso(ny)} ({ny.tzname() or session_tz})",
         f"Generated (Australia/Sydney): {iso(syd)} ({syd.tzname() or lab_tz})",
         f"US session status: {status.code} — {status.label} (DST={status.tzname})",
         f"As-of knowledge: {iso(as_of)} (ingested_at watermark; never published_at alone)",
-        f"Data quality: {pulse_quality(data_quality)}",
+        *health.header_lines(icons=presentation.icons),
+        *KEY_TAKEAWAY_LINES,
+        "",
+        *health.section_lines(icons=presentation.icons),
         "",
         "## What moved",
         "",
     ]
-    lines.extend(_asset_table(session.assets, vs="prior US close (session)", knowledge_as_of=as_of))
+    lines.extend(
+        _asset_table(
+            session.assets,
+            vs="prior US close (session)",
+            knowledge_as_of=as_of,
+            freshness=freshness,
+        )
+    )
     lines.extend(["", "Overnight reference:", ""])
-    lines.extend(_since_close_bullets(overnight.assets, knowledge_as_of=as_of))
+    lines.extend(_since_close_bullets(overnight.assets, knowledge_as_of=as_of, freshness=freshness))
     lines.extend(["", "## What was unexpected", ""])
     if unexpected:
         for note in unexpected:
@@ -263,6 +360,7 @@ def render_close(
         lines.append("- No dated catalysts remaining in the look-ahead window.")
     lines.extend(["", "## Hyperliquid into the next session", ""])
     lines.extend(_hl_section(hl))
+    lines.extend(_audit_section(session.assets, health_pct=health.pct))
     lines.extend(["", *NO_DECISION_FOOTER])
     markdown = "\n".join(lines).rstrip() + "\n"
     return BriefDocument(
@@ -326,11 +424,12 @@ def _asset_table(
     *,
     vs: str,
     knowledge_as_of: datetime | None = None,
+    freshness: FreshnessConfig | None = None,
 ) -> list[str]:
     if not assets:
         return ["- No prints (macro snapshot empty or degraded)."]
     lines = [
-        f"| Slot | Symbol | Last | Prior close | Change | {vs} | Source | As-of | Quality |",
+        f"| Slot | Symbol | Last | Prior close | Change | {vs} | Source | As-of | State |",
         "|---|---|---:|---:|---:|---|---|---|---|",
     ]
     for row in assets:
@@ -339,18 +438,14 @@ def _asset_table(
         else:
             change = fmt_pct(row.change_pct)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
-        quality = (
-            format_quality_with_age(
-                row.data_quality,
-                observation_as_of=row.as_of,
-                reference_as_of=knowledge_as_of,
-            )
-            if knowledge_as_of is not None
-            else pulse_quality(row.data_quality)
+        state = _row_state_label(
+            row,
+            knowledge_as_of=knowledge_as_of,
+            freshness=freshness,
         )
         lines.append(
-            f"| {slot_label(row.symbol)} | {row.symbol} | {fmt_px(row.last)} | {fmt_px(row.prior_close)} | {change} "
-            f"| {row.name} | {row.source} | {as_of} | {quality} |"
+            f"| {slot_label(row.symbol)} | {display_symbol(row)} | {fmt_px(row.last)} | {fmt_px(row.prior_close)} | {change} "
+            f"| {row.name} | {row.source} | {as_of} | {state} |"
         )
     return lines
 
@@ -359,6 +454,7 @@ def _since_close_bullets(
     assets: tuple[AssetPrint, ...],
     *,
     knowledge_as_of: datetime | None = None,
+    freshness: FreshnessConfig | None = None,
 ) -> list[str]:
     if not assets:
         return ["- No overnight prints available."]
@@ -370,20 +466,40 @@ def _since_close_bullets(
             delta = fmt_pct(row.change_pct)
         as_of = iso(row.as_of) if row.as_of is not None else "n/a"
         obs = row.observation_id or "none"
-        quality = (
-            format_quality_with_age(
-                row.data_quality,
-                observation_as_of=row.as_of,
-                reference_as_of=knowledge_as_of,
-            )
-            if knowledge_as_of is not None
-            else pulse_quality(row.data_quality)
-        )
+        state = _row_state_label(row, knowledge_as_of=knowledge_as_of, freshness=freshness)
+        shown = display_symbol(row)
+        slot_note = f" slot={row.symbol}" if shown.upper() != row.symbol.upper() else ""
         lines.append(
-            f"- {row.symbol} [{slot_label(row.symbol)}] ({row.name}): last {fmt_px(row.last)} / {delta} "
-            f"[quality={quality}; source={row.source}; as-of={as_of}; obs {obs}]"
+            f"- {shown} [{slot_label(row.symbol)}]{slot_note} ({row.name}): last {fmt_px(row.last)} / {delta} "
+            f"[state={state}; source={row.source}; as-of={as_of}; obs {obs}]"
         )
     return lines
+
+
+def _row_state_label(
+    row: AssetPrint,
+    *,
+    knowledge_as_of: datetime | None,
+    freshness: FreshnessConfig | None,
+) -> str:
+    """Icon + data-state label. Not a direction."""
+    presentation = load_presentation_config()
+    state = pulse_to_health_state(row.data_quality)
+    icon = presentation.icons.get(state, "")
+    if state == "stale" and knowledge_as_of is not None:
+        basis = "calendar"
+        if freshness is not None:
+            resolved = freshness.lag_for(source=row.source, symbol=row.symbol)
+            if resolved is not None:
+                basis = resolved.age_basis
+        aged = format_quality_with_age(
+            row.data_quality,
+            observation_as_of=row.as_of,
+            reference_as_of=knowledge_as_of,
+            age_basis=basis,
+        )
+        return f"{icon} {aged}".strip()
+    return f"{icon} {state}".strip()
 
 
 def _hl_since_close(hl: tuple[HLInstrumentState, ...], *, prior_close: datetime) -> list[str]:
@@ -530,7 +646,10 @@ def _hl_section(hl: tuple[HLInstrumentState, ...]) -> list[str]:
         return ["- No Hyperliquid observations in the as-of window (unavailable)."]
     lines: list[str] = []
     for state in hl:
-        lines.append(f"### {state.instrument} (quality={pulse_quality(state.data_quality)}; source={state.source})")
+        hl_state = pulse_to_health_state(state.data_quality)
+        hl_icon = load_presentation_config().icons.get(hl_state, "")
+        icon_prefix = f"{hl_icon} " if hl_icon else ""
+        lines.append(f"### {state.instrument} ({icon_prefix}{hl_state}; source={state.source})")
         lines.append("")
         as_of = iso(state.as_of_knowledge) if state.as_of_knowledge is not None else "n/a"
         lines.append(f"- Instrument as-of knowledge: {as_of}")

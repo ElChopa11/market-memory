@@ -172,6 +172,7 @@ def generate_preopen(
         memory_watermark=as_utc(memory_watermark) if memory_watermark is not None else as_utc(as_of),
         hl_origin=hl_origin,
         calendar_source=cal_source,
+        freshness=load_freshness_config(settings.macro),
     )
 
 
@@ -221,6 +222,7 @@ def generate_close(
         data_quality=quality,
         session_tz=settings.schedule.session_timezone,
         lab_tz=settings.schedule.lab_timezone,
+        freshness=freshness,
     )
 
 

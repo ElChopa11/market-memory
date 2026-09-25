@@ -6,6 +6,10 @@ This runbook does **not** enable live trading, wallets, or signing. Briefing is 
 
 Plan: [ops/plans/IMP-002-us-market-pulse.md](../../ops/plans/IMP-002-us-market-pulse.md).
 
+## Presentation (brief v2 Stage A)
+
+The printed header is a **data-health score** (coverage of observed states), not a worst-slot rollup. Structural VIX unavailable does not stamp the whole brief `unavailable`. Icons are data state only. Card order and the hard rule are in [../specs/brief-v2.md](../specs/brief-v2.md). `lab deliver pack --from-markdown` of a pulse brief sends those cards. Desk packs that are not pulse briefs still use 4096 sequencing.
+
 ## What it produces
 
 | Mode | Command | Artifact |
@@ -111,23 +115,35 @@ Every market-data section has an as-of timestamp. Pulse display quality is `fres
 |---|---|
 | Observation date | FRED series observation `date` (stored on `AssetPrint.as_of`) |
 | Knowledge clock | Brief `as_of_knowledge` / live capture `as_of` (never `published_at` alone) |
-| Age | Calendar days: `knowledge_date − observation_date` |
+| Daily age | **Business days.** Mon–Fri only, half-open `[obs, ref)`, same count as `numpy.busday_count(obs, ref)`. **No US holiday calendar** in this gate. |
+| Monthly age | Calendar days: `knowledge_date − observation_date` |
 
 Config: `config/briefing/macro.yaml` → `freshness.fred`:
 
-| Field | Default | Effect |
+| Field | Daily default | Effect |
 |---|---|---|
 | `cadence` | `daily` | Source-level default cadence label |
-| `max_calendar_lag_days` | `2` | **Daily default.** If age **>** this value → `stale` (display may show `stale (Nd)`). Never `fresh`. Applies to any FRED series **without** a per-series override (e.g. US10Y / DGS10). |
-| `series.<SYMBOL>` | — | Per-series override. Set `cadence` + `max_calendar_lag_days` for monthly / low-cadence prints. Optional `fred_series_id` for matching by FRED id. |
+| `age_basis` | `business` | Daily series count weekdays. Monthly overrides set `calendar`. |
+| `max_lag_days` | `1` | **Business days** when `age_basis` is `business`. Stale when age **>** this value (age 0–1 fresh, age ≥ 2 stale). Display may show `stale (Nbd)`. This number is **not** a calendar-day lag. |
+| `series.<SYMBOL>` | — | Per-series override. Monthly CPI/NFP set `age_basis: calendar` and `max_lag_days: 45`. Optional `fred_series_id`. |
 
-**Why per-series:** A global daily lag of 2 would falsely mark monthly FRED (CPI, NFP/payrolls) stale every time — those prints are legitimately 30+ days old relative to a month-start observation stamp. Monthly overrides (default **45** calendar days for CPI / NFP in repo config) keep a ~30–45d print eligible for fresh; only past that series' own threshold → stale.
+**Do not read `max_lag_days: 1` as one calendar day.** A calendar-day lag of 1 false-stales every Monday: Friday's print is 3 calendar days old on Monday and would be STALE every week. Business-day age makes Friday → Monday = **1** = fresh.
 
-Principal-reasonable daily default: FRED daily series older than **2 calendar days** behind `as_of_knowledge` cannot be labelled fresh. The 2026-09-22 US Close Brief incident (US10Y as-of 2026-09-18, four days old, shown as fresh / +7.0bp) is the motivating case — a 4-day-old *daily* print must render as stale with age visible, not fresh.
+Worked counts (no holidays):
 
-Layer: `mm_briefing.freshness` (shared helper; `lag_for(source, symbol, series_id)`) + live FRED fetcher + `complete_cross_asset` gate so all Pulse consumers see the same rule. Stooq / CoinGecko cadence thresholds are out of scope for this fix (separate routing work).
+| Observation | Brief knowledge date | Business age | Daily gate (lag 1) |
+|---|---|---|---|
+| Friday | following Monday | 1 | fresh |
+| Monday 2026-09-21 | Wednesday 2026-09-23 | 2 | stale |
+| same weekday | same date | 0 | fresh |
 
-Memory ingest of FRED remains `historical=True` (facts about the past are not snapshot-stale in Market Memory). Pulse live display is a separate product surface and applies the calendar lag gate above.
+**Why per-series:** Monthly FRED (CPI, NFP/payrolls) stays on **calendar** age. Those prints are legitimately 30+ days old. Monthly overrides (default **45** calendar days) keep a ~30–45d print eligible for fresh; only past that series' own threshold → stale. The daily business-day rule does not apply to them.
+
+The 2026-09-22 US Close Brief incident (US10Y as-of 2026-09-18, a Friday, shown as fresh) is still stale under this gate: Friday → Tuesday is 2 business days, and 2 > 1. The 2026-09-23 prove (US10Y as-of 2026-09-21, a Monday) is the same shape, milder: Monday → Wednesday is 2 business days → stale. A Friday print on the next Monday stays fresh.
+
+Layer: `mm_briefing.freshness` (`business_age_days`, `lag_for`) + live FRED fetcher + `complete_cross_asset`. Stooq / CoinGecko cadence thresholds are unchanged. Holiday calendars are not applied.
+
+Memory ingest of FRED remains `historical=True` (facts about the past are not snapshot-stale in Market Memory). Pulse live display is a separate product surface and applies the business-day gate above for daily series.
 
 ### Hardened failure modes (live)
 
@@ -153,6 +169,8 @@ Stooq futures/index CSV (`es.f`, `nq.f`, `dx.f`, `cl.f`, `^vix`) has returned `h
 | DXY | UUP | USD ETF proxy — **not** DX futures / DXY |
 | CL | USO | WTI oil ETF proxy — **not** CL futures |
 | VIX | — | **Structurally unavailable** without Cboe entitlement; VIXY is not VIX |
+
+The brief **Symbol** column prints the proxy ticker that was actually quoted (`SPY`, `QQQ`, `UUP`, `USO`). The label says what that ticker proxies. Slot ids (`ES`, `NQ`, `DXY`, `CL`) stay on the Slot column and in `slot=` when the bullet would otherwise look like the index. VIX has no proxy ticker.
 
 True CME futures prints need a futures subscription / CME Information License the lab does not have. Config: `config/briefing/macro.yaml` → `live.polygon`. Incident: [ops/improvement-queue.md](../../ops/improvement-queue.md) `SRC-STOOQ-404`.
 

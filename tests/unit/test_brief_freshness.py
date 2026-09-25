@@ -10,9 +10,11 @@ import httpx
 from mm_briefing.config import load_briefing_settings
 from mm_briefing.fetchers import LiveMacroFetcher, complete_cross_asset
 from mm_briefing.freshness import (
-    DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS,
+    DEFAULT_FRED_DAILY_MAX_BUSINESS_LAG_DAYS,
     DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS,
+    AGE_BASIS_BUSINESS,
     apply_print_freshness,
+    business_age_days,
     calendar_age_days,
     format_quality_with_age,
     gate_snapshot_freshness,
@@ -37,21 +39,33 @@ def test_repo_macro_yaml_documents_fred_default_and_monthly_overrides() -> None:
     rule = cfg.rule_for(source="fred")
     assert rule is not None
     assert rule.cadence == "daily"
-    assert rule.max_calendar_lag_days == DEFAULT_FRED_MAX_CALENDAR_LAG_DAYS == 2
+    assert rule.age_basis == AGE_BASIS_BUSINESS
+    # Daily threshold is 1 business day, not 1 calendar day.
+    assert rule.max_calendar_lag_days == DEFAULT_FRED_DAILY_MAX_BUSINESS_LAG_DAYS == 1
 
     us10y = cfg.lag_for(source="fred", symbol="US10Y")
-    assert us10y == ("daily", 2)
+    assert us10y is not None
+    assert us10y.cadence == "daily"
+    assert us10y.max_lag_days == 1
+    assert us10y.age_basis == "business"
 
     # Unlisted daily symbol still gets the source default (not monthly).
     dgs_other = cfg.lag_for(source="fred", symbol="US2Y")
-    assert dgs_other == ("daily", 2)
+    assert dgs_other is not None
+    assert (dgs_other.cadence, dgs_other.max_lag_days, dgs_other.age_basis) == ("daily", 1, "business")
 
     cpi = cfg.lag_for(source="fred", symbol="CPI")
-    assert cpi == ("monthly", DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS)
+    assert cpi is not None
+    assert cpi.cadence == "monthly"
+    assert cpi.max_lag_days == DEFAULT_FRED_MONTHLY_MAX_CALENDAR_LAG_DAYS
+    assert cpi.age_basis == "calendar"
     nfp = cfg.lag_for(source="fred", symbol="NFP", series_id="PAYEMS")
-    assert nfp == ("monthly", 45)
+    assert nfp is not None
+    assert (nfp.cadence, nfp.max_lag_days, nfp.age_basis) == ("monthly", 45, "calendar")
     # Match monthly override by FRED series id alone.
-    assert cfg.lag_for(source="fred", series_id="CPIAUCSL") == ("monthly", 45)
+    cpi_id = cfg.lag_for(source="fred", series_id="CPIAUCSL")
+    assert cpi_id is not None
+    assert (cpi_id.cadence, cpi_id.max_lag_days, cpi_id.age_basis) == ("monthly", 45, "calendar")
 
 
 def test_calendar_age_four_days_behind_brief() -> None:
@@ -77,7 +91,8 @@ def test_fred_observation_four_days_behind_cannot_be_fresh() -> None:
 
 
 def test_fred_within_threshold_stays_ok() -> None:
-    # Same-day and T+2 remain eligible for fresh (age <= 2).
+    # Calendar-basis comparator only (explicit lag 2). Not the daily FRED gate.
+    # Daily FRED uses business-day age; see test_friday_print_is_fresh_on_monday.
     same = quality_from_observation_age(
         "ok",
         observation_as_of=BRIEF_AS_OF,
@@ -290,10 +305,16 @@ def test_live_fred_fetcher_four_day_old_observation_is_stale() -> None:
         "freshness": {
             "fred": {
                 "cadence": "daily",
-                "max_calendar_lag_days": 2,
+                "age_basis": "business",
+                "max_lag_days": 1,
                 "series": {
-                    "US10Y": {"cadence": "daily", "fred_series_id": "DGS10"},
-                    "CPI": {"cadence": "monthly", "max_calendar_lag_days": 45, "fred_series_id": "CPIAUCSL"},
+                    "US10Y": {"cadence": "daily", "age_basis": "business", "fred_series_id": "DGS10"},
+                    "CPI": {
+                        "cadence": "monthly",
+                        "age_basis": "calendar",
+                        "max_lag_days": 45,
+                        "fred_series_id": "CPIAUCSL",
+                    },
                 },
             }
         },
@@ -338,9 +359,15 @@ def test_live_fred_fetcher_monthly_cpi_40d_stays_fresh() -> None:
         "freshness": {
             "fred": {
                 "cadence": "daily",
-                "max_calendar_lag_days": 2,
+                "age_basis": "business",
+                "max_lag_days": 1,
                 "series": {
-                    "CPI": {"cadence": "monthly", "max_calendar_lag_days": 45, "fred_series_id": "CPIAUCSL"},
+                    "CPI": {
+                        "cadence": "monthly",
+                        "age_basis": "calendar",
+                        "max_lag_days": 45,
+                        "fred_series_id": "CPIAUCSL",
+                    },
                 },
             }
         },
@@ -367,9 +394,98 @@ def test_live_fred_fetcher_monthly_cpi_40d_stays_fresh() -> None:
     assert pulse_quality(row.data_quality) == "fresh"
 
 
-def test_gate_snapshot_uses_config_threshold() -> None:
+def test_business_age_matches_half_open_weekday_count() -> None:
+    friday = datetime(2026, 9, 18, tzinfo=timezone.utc)
+    monday = datetime(2026, 9, 21, tzinfo=timezone.utc)
+    wednesday = datetime(2026, 9, 23, tzinfo=timezone.utc)
+    assert business_age_days(friday, monday) == 1
+    assert business_age_days(monday, wednesday) == 2
+    assert business_age_days(monday, monday) == 0
+    # Weekend does not add a business day: Sunday → Tuesday counts Monday only.
+    assert business_age_days(datetime(2026, 9, 20, tzinfo=timezone.utc), BRIEF_AS_OF) == 1
+
+
+def test_friday_print_is_fresh_on_monday() -> None:
+    """Principal case. Friday as_of + following Monday must render fresh.
+
+    Calendar-day lag=1 would mark this stale (3 calendar days). That gate is not shipped.
+    """
+    friday = datetime(2026, 9, 18, tzinfo=timezone.utc)
+    monday = datetime(2026, 9, 21, 20, 15, tzinfo=timezone.utc)
+    assert calendar_age_days(friday, monday) == 3
+    assert business_age_days(friday, monday) == 1
+    cfg = load_freshness_config(load_briefing_settings(ROOT).macro)
+    row = AssetPrint(
+        symbol="US10Y",
+        name="US 10Y yield",
+        last=4.12,
+        prior_close=4.05,
+        unit="%",
+        data_quality="ok",
+        source="fred",
+        as_of=friday,
+    )
+    gated = apply_print_freshness(row, reference_as_of=monday, config=cfg)
+    assert gated.data_quality == "ok"
+    assert pulse_quality(gated.data_quality) == "fresh"
+    assert (
+        format_quality_with_age(
+            gated.data_quality,
+            observation_as_of=friday,
+            reference_as_of=monday,
+            age_basis="business",
+        )
+        == "fresh"
+    )
+
+
+def test_daily_business_age_zero_and_one_fresh_two_stale() -> None:
+    cfg = load_freshness_config(load_briefing_settings(ROOT).macro)
+    monday = datetime(2026, 9, 21, tzinfo=timezone.utc)
+    wednesday = datetime(2026, 9, 23, 20, 15, tzinfo=timezone.utc)
+    assert business_age_days(monday, wednesday) == 2
+
+    def _row(as_of: datetime) -> AssetPrint:
+        return AssetPrint(
+            symbol="US10Y",
+            name="US 10Y yield",
+            last=4.12,
+            prior_close=4.05,
+            unit="%",
+            data_quality="ok",
+            source="fred",
+            as_of=as_of,
+        )
+
+    same = apply_print_freshness(_row(wednesday), reference_as_of=wednesday, config=cfg)
+    assert same.data_quality == "ok"
+    one = apply_print_freshness(
+        _row(datetime(2026, 9, 22, tzinfo=timezone.utc)),
+        reference_as_of=wednesday,
+        config=cfg,
+    )
+    assert business_age_days(datetime(2026, 9, 22, tzinfo=timezone.utc), wednesday) == 1
+    assert one.data_quality == "ok"
+    two = apply_print_freshness(_row(monday), reference_as_of=wednesday, config=cfg)
+    assert two.data_quality == "stale"
+    assert pulse_quality(two.data_quality) == "stale"
+    assert (
+        format_quality_with_age(
+            two.data_quality,
+            observation_as_of=monday,
+            reference_as_of=wednesday,
+            age_basis="business",
+        )
+        == "stale (2bd)"
+    )
+
+
+def test_gate_snapshot_uses_business_day_threshold() -> None:
+    """Mon 2026-09-21 read on Wed 2026-09-23 is 2 business days → stale at lag 1."""
+    monday = datetime(2026, 9, 21, tzinfo=timezone.utc)
+    wednesday = datetime(2026, 9, 23, 20, 15, tzinfo=timezone.utc)
     snap = MacroSnapshot(
-        as_of=BRIEF_AS_OF,
+        as_of=wednesday,
         prior_us_close=PRIOR,
         assets=(
             AssetPrint(
@@ -380,12 +496,15 @@ def test_gate_snapshot_uses_config_threshold() -> None:
                 unit="%",
                 data_quality="ok",
                 source="fred",
-                as_of=datetime(2026, 9, 20, tzinfo=timezone.utc),  # age 2 → ok at lag 2
+                as_of=monday,
             ),
         ),
         data_quality="ok",
         source="live",
     )
-    assert gate_snapshot_freshness(snap).assets[0].data_quality == "ok"
-    tight = load_freshness_config({"freshness": {"fred": {"max_calendar_lag_days": 1}}})
-    assert gate_snapshot_freshness(snap, config=tight).assets[0].data_quality == "stale"
+    assert gate_snapshot_freshness(snap).assets[0].data_quality == "stale"
+    # Explicit calendar basis is not the daily product. Age 2 calendar with lag 2 stays ok.
+    calendar_cfg = load_freshness_config(
+        {"freshness": {"fred": {"cadence": "daily", "age_basis": "calendar", "max_lag_days": 2}}}
+    )
+    assert gate_snapshot_freshness(snap, config=calendar_cfg).assets[0].data_quality == "ok"

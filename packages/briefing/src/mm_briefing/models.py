@@ -102,6 +102,12 @@ def slot_label(symbol: str) -> str:
     return SLOT_FOR_SYMBOL.get(symbol.upper(), "other")
 
 
+def display_symbol(row: AssetPrint) -> str:
+    """Symbol column: proxy ticker when the print is an ETF proxy, else the slot symbol."""
+    quoted = (row.quoted_symbol or "").strip()
+    return quoted or row.symbol
+
+
 @dataclass(frozen=True)
 class AssetPrint:
     symbol: str
@@ -115,6 +121,10 @@ class AssetPrint:
     as_of: datetime | None = None
     observation_id: str | None = None
     source_url: str | None = None
+    # Polygon ETF ticker actually quoted (SPY/QQQ/UUP/USO). Slot symbol stays ES/NQ/DXY/CL.
+    quoted_symbol: str | None = None
+    # Entitlement gap (VIX). Excluded from the data-health denominator. Not a Neon gap.
+    structural_unavailable: bool = False
 
     @property
     def change(self) -> float | None:

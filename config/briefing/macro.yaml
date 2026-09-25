@@ -4,36 +4,35 @@ mode: off
 fixture_path: tests/fixtures/briefing/frozen_day.json
 
 # Pulse quality vs observation age (not fetch success).
-# Age = calendar days between observation date (FRED `date` / AssetPrint.as_of)
-# and brief as_of_knowledge (capture / session as_of). Never published_at alone.
-# Beyond the resolved max_calendar_lag_days → stale (never fresh).
-# See docs/runbooks/market-pulse.md.
-#
-# FRED lag is per-series with a default:
-#   - max_calendar_lag_days at the fred: level is the *daily default*
-#   - freshness.fred.series.<SYMBOL> overrides for monthly / low-cadence prints
-#     so CPI/NFP at 30–45d are not falsely stale under the daily rule.
+# Daily FRED uses BUSINESS-DAY age (Mon–Fri, half-open [obs, ref), no US holiday
+# calendar). Stale when business age > max_lag_days. Friday print read Monday
+# = 1 business day = fresh. This is NOT a calendar-day lag: calendar lag=1
+# false-stales every Monday (Fri → Mon = 3 calendar days).
+# Monthly CPI/NFP stay on calendar age with their own lag.
+# Never published_at alone. See docs/runbooks/market-pulse.md.
 freshness:
   fred:
     cadence: daily
-    # Default for daily FRED (US10Y / DGS10 and any series without an override).
-    # Incident 2026-09-22 brief with as-of 2026-09-18 (4d) must not be fresh.
-    max_calendar_lag_days: 2
+    age_basis: business
+    # Unit is BUSINESS days, not calendar days. Age > 1 → stale.
+    # Fri → Mon = 1 (fresh). Mon 2026-09-21 → Wed 2026-09-23 = 2 (stale).
+    max_lag_days: 1
     series:
-      # Daily — omit lag to inherit the default above (documented explicitly).
+      # Daily — inherits business-day lag 1 above.
       US10Y:
         cadence: daily
-        # inherits max_calendar_lag_days: 2
+        age_basis: business
         fred_series_id: DGS10
-      # Monthly / low-cadence — FRED stamps are often month-start; BLS lag is weeks.
-      # Age ~30–45d must remain eligible for fresh; only past this threshold → stale.
+      # Monthly / low-cadence — calendar days. ~30–45d stays eligible for fresh.
       CPI:
         cadence: monthly
-        max_calendar_lag_days: 45
+        age_basis: calendar
+        max_lag_days: 45
         fred_series_id: CPIAUCSL
       NFP:
         cadence: monthly
-        max_calendar_lag_days: 45
+        age_basis: calendar
+        max_lag_days: 45
         fred_series_id: PAYEMS
 
 # Source of record for BTC/ETH What-moved / cross-asset table slots.

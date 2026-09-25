@@ -1,0 +1,55 @@
+# Brief v2 Stage A presentation. Versioned. Paper only.
+# Icons are DATA STATE only. Green is not a direction and is not a buy.
+# Health % is a coverage rollup of observed states. It is not confidence,
+# not a regime score, and not signal precision.
+version: brief-v2-stage-a
+icons_are: data_state_only
+insufficient_data: "INSUFFICIENT DATA"
+# Stage B/C cards are omitted when they have no methodology + stored history.
+# Do not fill them with a fake percentage.
+card_order:
+  - executive
+  - dashboard
+  - macro
+  - crypto
+  - positioning
+  - catalysts
+  - scenarios
+  - audit
+states:
+  fresh:
+    icon: "🟢"
+    weight: 1.0
+  degraded:
+    icon: "🟡"
+    weight: 0.5
+  stale:
+    icon: "🟠"
+    weight: 0.0
+  unavailable:
+    icon: "⚪"
+    weight: 0.0
+# Structural unavailable is listed and excluded from the score denominator.
+# VIX entitlement is not a Neon persistence gap.
+domains:
+  - id: equities
+    label: Equities
+    symbols: [ES, NQ]
+  - id: rates
+    label: Rates
+    symbols: [US10Y]
+  - id: usd
+    label: USD
+    symbols: [DXY]
+  - id: oil
+    label: Oil
+    symbols: [CL]
+  - id: vol
+    label: Vol
+    symbols: [VIX]
+  - id: crypto
+    label: Crypto
+    symbols: [BTC, ETH]
+  - id: hyperliquid
+    label: Hyperliquid
+    from: hl
