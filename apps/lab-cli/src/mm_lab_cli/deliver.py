@@ -18,8 +18,8 @@ from mm_delivery.payload import SEND_ENABLED
 from mm_desks.orchestrator import PIPELINE, run_from_fixture
 from mm_lab_cli.completion import add_completion_args, fired_at_from_args, stamp_cli_fire
 from mm_lab_cli.deadman import (
+    DEADMAN_MISSING_LINE,
     HEALTHCHECKS_PING_URL_ENV,
-    apply_deadman_missing_line,
     ping_deadman_start,
     ping_deadman_success,
 )
@@ -136,6 +136,14 @@ def _add_scheduled_for_arg(parser) -> None:
             "--to-principal-dm --i-mean-it send, append one LATE line to that "
             "same message when send time is more than 30 minutes after the "
             "anchor. The line's run_id is --run-id (the deliver-receipt id)."
+        ),
+    )
+    parser.add_argument(
+        "--capture-line",
+        default="",
+        help=(
+            "CAPTURE status line for this Principal DM. Appended after LATE and "
+            "DEADMAN on an actual --to-principal-dm --i-mean-it send."
         ),
     )
 
@@ -334,6 +342,33 @@ def sydney_morning_late_line(
     return f"LATE: {_SYDNEY_MORNING} fired +{hours}h {minutes}m past anchor. run_id {rid}."
 
 
+def append_dm_status_lines(
+    markdown: str,
+    *,
+    late: str | None = None,
+    deadman: str | None = None,
+    capture: str | None = None,
+) -> str:
+    """Append Principal DM status lines in one fixed order: LATE, DEADMAN, CAPTURE.
+
+    Empty slots are omitted. This is the only append site. DEADMAN stays between
+    LATE and CAPTURE so the healthchecks ping can fill that slot without reordering.
+    """
+    lines: list[str] = []
+    for line in (late, deadman, capture):
+        text = str(line).strip() if line else ""
+        if text:
+            lines.append(text)
+    if not lines:
+        return markdown
+    block = "\n".join(lines)
+    if markdown.endswith("\n"):
+        return f"{markdown}{block}\n"
+    if markdown:
+        return f"{markdown}\n{block}\n"
+    return f"{block}\n"
+
+
 def apply_sydney_morning_late_line(
     markdown: str,
     *,
@@ -346,13 +381,7 @@ def apply_sydney_morning_late_line(
         line = sydney_morning_late_line(scheduled_for, sent_at, run_id)
     except ValueError:
         return markdown
-    if not line:
-        return markdown
-    if markdown.endswith("\n"):
-        return f"{markdown}{line}\n"
-    if markdown:
-        return f"{markdown}\n{line}\n"
-    return f"{line}\n"
+    return append_dm_status_lines(markdown, late=line)
 
 
 def _want_send(args: Namespace) -> bool | None:
@@ -382,19 +411,26 @@ def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
     # Match lab deliver test: live POST only when --to-principal-dm and --i-mean-it.
     live = to_dm and bool(getattr(args, "i_mean_it", False))
     if live:
-        # Same DM. Send-time is this clock, immediately before the existing POST.
-        markdown = apply_sydney_morning_late_line(
-            markdown,
-            scheduled_for=getattr(args, "scheduled_for", "") or "",
-            sent_at=utcnow(),
-            run_id=getattr(args, "run_id", "") or "",
-        )
+        # Same DM. One append, fixed order LATE, DEADMAN, CAPTURE, before the POST.
         # /start only on the path that will send. Anything but HTTP 200 OK
-        # appends one DEADMAN line after LATE. The URL is not logged.
+        # is the DEADMAN line. The URL is not logged.
+        try:
+            late = sydney_morning_late_line(
+                getattr(args, "scheduled_for", "") or "",
+                utcnow(),
+                getattr(args, "run_id", "") or "",
+            )
+        except ValueError:
+            late = None
         secret = os.environ.get(HEALTHCHECKS_PING_URL_ENV)
         start = ping_deadman_start(secret)
-        if start.outcome != "OK":
-            markdown = apply_deadman_missing_line(markdown)
+        deadman = None if start.outcome == "OK" else DEADMAN_MISSING_LINE
+        markdown = append_dm_status_lines(
+            markdown,
+            late=late,
+            deadman=deadman,
+            capture=(getattr(args, "capture_line", "") or "").strip() or None,
+        )
     result = deliver(
         markdown,
         desk=desk,

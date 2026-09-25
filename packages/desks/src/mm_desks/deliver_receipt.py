@@ -45,6 +45,7 @@ RECEIPT_KEYS = frozenset(
         "source",
         "deadman_ping",
         "deadman_ping_at",
+        "capture_rows",
     }
 )
 # Split so the desks tree does not contain the signing snippet the import-boundary
@@ -124,6 +125,10 @@ def validate_receipt_payload(raw: dict) -> dict:
         raise ValueError("deliver receipt kind must be deliver_receipt")
     if raw.get("sent") is not True:
         raise ValueError("deliver receipt requires sent true")
+    if "capture_rows" in raw:
+        rows = raw.get("capture_rows")
+        if rows is not None and (isinstance(rows, bool) or not isinstance(rows, int) or rows < 0):
+            raise ValueError("capture_rows must be a non-negative integer or null")
     routine_id = str(raw.get("routine_id") or "")
     if not routine_id:
         raise ValueError("deliver receipt routine_id missing")
@@ -208,6 +213,9 @@ def accept_delivery(stdout: str, returncode: int) -> bool:
     return int(returncode) == 0 and deliver_sent(stdout)
 
 
+_OMIT = object()
+
+
 def _receipt_body(
     *,
     routine_id: str,
@@ -217,6 +225,7 @@ def _receipt_body(
     delivered_at: datetime | None,
     deadman_ping: str | None = None,
     deadman_ping_at: str | None = None,
+    capture_rows: int | None | object = _OMIT,
 ) -> str:
     anchor = anchor_utc(scheduled_anchor_ts)
     when = as_utc(delivered_at or utcnow())
@@ -230,6 +239,8 @@ def _receipt_body(
         "source": str(source or "github.actions"),
     }
     payload.update(stored_deadman(deadman_ping, deadman_ping_at))
+    if capture_rows is not _OMIT:
+        payload["capture_rows"] = capture_rows
     validate_receipt_payload(payload)
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
@@ -245,6 +256,7 @@ def write_deliver_receipt(
     delivered_at: datetime | None = None,
     deadman_ping: str | None = None,
     deadman_ping_at: str | None = None,
+    capture_rows: int | None | object = _OMIT,
 ) -> tuple[Path | None, bool]:
     """Write a receipt only when ``sent`` is true.
 
@@ -266,6 +278,7 @@ def write_deliver_receipt(
         delivered_at=delivered_at,
         deadman_ping=deadman_ping,
         deadman_ping_at=deadman_ping_at,
+        capture_rows=capture_rows,
     )
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
     try:

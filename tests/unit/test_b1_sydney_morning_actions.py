@@ -80,9 +80,10 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     assert 'cron: "30 20 * * 0-4"' not in brief
     assert 'cron: "30 22 * * 0-4"' not in brief
     deliver_if = (
-        "if: github.event_name == 'schedule' || "
+        "if: (github.event_name != 'workflow_dispatch' || inputs.mode != 'capture_proof') && "
+        "(github.event_name == 'schedule' || "
         "(github.event_name == 'workflow_dispatch' && "
-        "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true'))"
+        "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))"
     )
     assert deliver_if in brief
     assert brief.count("i_mean_it_deliver") >= 1
@@ -92,9 +93,10 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     assert "default: false" in text
     assert text.count("default: false") == 1
     assert "i_mean_it_stage2" not in text
-    # Stamp job is not gated on the input (manual prove still stamps first).
+    # Stamp is not gated on i_mean_it_deliver. mode=capture_proof is the only skip.
     assert "i_mean_it_deliver" not in stage1
-    assert "\n    if:" not in stage1
+    assert stage1.count("\n    if:") == 1
+    assert "inputs.mode != 'capture_proof'" in stage1
     assert "lab brief close" in brief
     assert "--live" in brief
     assert "--no-db" in brief

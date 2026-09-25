@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -54,6 +55,31 @@ def main(argv: list[str] | None = None) -> int:
         "--no-db",
         action="store_true",
         help="dry-run: normalize fixture envelopes without Postgres or object store",
+    )
+
+    retain = sub.add_parser(
+        "retain",
+        help="forward-only MVP retain (fixture --no-db, or morning persist)",
+    )
+    retain.add_argument("--fixture", type=Path, help="JSON/YAML capture fixture (no network)")
+    retain.add_argument(
+        "--no-db",
+        action="store_true",
+        help="required with --fixture: normalize retain envelopes without Postgres",
+    )
+    retain_sub = retain.add_subparsers(dest="retain_cmd")
+    morning = retain_sub.add_parser(
+        "morning",
+        help="one capture for the Sydney anchor; persists via POSTGRES_DSN; always exits 0",
+    )
+    morning.add_argument(
+        "--scheduled-for",
+        default="",
+        help="stamp scheduled_anchor_ts (UTC)",
+    )
+    retain_sub.add_parser(
+        "proof",
+        help="one Neon proof capture (capture_kind=proof); not the morning slot; exits non-zero on failure",
     )
 
     know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
@@ -137,6 +163,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_migrate()
     if args.cmd == "ingest":
         return cmd_ingest(args)
+    if args.cmd == "retain":
+        return cmd_retain(args)
     if args.cmd == "what-did-we-know":
         return cmd_what_did_we_know(args)
     if args.cmd == "thesis":
@@ -222,6 +250,12 @@ def cmd_status() -> int:
     print("Base rates: lab base-rate compute --fixture PATH --no-db (unconditional dip/zone/first-entry rates; C-001/002/003 cite these; not a study)")
     print("Queue: lab queue check | lab queue can-start IMP-XXX (hygiene only; no auto-merge, no gate waiver)")
     print("Dry-run ingest without keys: lab ingest --fixture tests/fixtures/phase5b/polygon_ohlcv.json --no-db")
+    print(
+        "Retain: lab retain --fixture PATH --no-db (dry-run). "
+        "Morning job: lab retain morning --scheduled-for STAMP "
+        "(one Neon capture; failure does not fail delivery). "
+        "Proof: lab retain proof (capture_kind=proof; not the morning slot)"
+    )
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
     print("Ops timezone: Australia/Sydney (display only; all rows are timestamptz UTC).")
@@ -332,6 +366,62 @@ def cmd_ingest(args: argparse.Namespace) -> int:
             payload = stats.as_public_dict()
     print(json.dumps(payload))
     return 0
+
+
+def cmd_retain(args: argparse.Namespace) -> int:
+    """Fixture dry-run, or the morning persist path. Bare retain does not open Postgres."""
+    if getattr(args, "retain_cmd", None) == "morning":
+        return cmd_retain_morning(args)
+    if getattr(args, "retain_cmd", None) == "proof":
+        return cmd_retain_proof(args)
+    if not getattr(args, "fixture", None) or not getattr(args, "no_db", False):
+        print(
+            "DO NOT RUN. lab retain does not open Neon (LIVE_NEON_ENABLED is false). "
+            "Use --fixture PATH --no-db. No history backfill. No production ingest.",
+            file=sys.stderr,
+        )
+        return 2
+    from mm_ingest.mvp_retain import retain_from_fixture
+
+    try:
+        payload = retain_from_fixture(args.fixture)
+    except (OSError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(json.dumps(payload))
+    return 0
+
+
+def cmd_retain_morning(args: argparse.Namespace) -> int:
+    """Persist one morning capture. Always exit 0 so delivery still runs."""
+    from mm_ingest.mvp_retain import capture_failed_line, run_morning_capture
+
+    scheduled = str(getattr(args, "scheduled_for", "") or "")
+    raw_dsn = os.environ.get("POSTGRES_DSN")
+    dsn = raw_dsn.strip() if isinstance(raw_dsn, str) and raw_dsn.strip() else None
+    try:
+        result = run_morning_capture(scheduled_for=scheduled, dsn=dsn)
+        print(json.dumps(result.as_dict()))
+    except Exception:
+        print(json.dumps({"line": capture_failed_line("capture"), "capture_rows": None, "wrote": False}))
+    return 0
+
+
+def cmd_retain_proof(_args: argparse.Namespace) -> int:
+    """Persist one proof capture. Non-zero when the Neon write did not land."""
+    from mm_ingest.mvp_retain import format_proof_report, run_proof_capture
+
+    raw_dsn = os.environ.get("POSTGRES_DSN")
+    dsn = raw_dsn.strip() if isinstance(raw_dsn, str) and raw_dsn.strip() else None
+    try:
+        result = run_proof_capture(dsn=dsn)
+    except Exception:
+        print("CAPTURE_PROOF: FAILED capture")
+        return 1
+    print(format_proof_report(result), end="")
+    if result.wrote and isinstance(result.capture_rows, int) and result.capture_rows > 0:
+        return 0
+    return 1
 
 
 def cmd_what_did_we_know(args: argparse.Namespace) -> int:
