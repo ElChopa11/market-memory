@@ -204,9 +204,9 @@ resolution:
     quote: USD
     coin: VVV
     note: "HL perp USD; coin VVV present on HL per Intel snapshot. Principal display VVVUSD."
-  ZECUSD: { status: resolved, qualified_id: "CRYPTO:ZEC", venue: unspecified, note: "identity resolved; venue not guessed" }
-  XMRUSD: { status: resolved, qualified_id: "CRYPTO:XMR", venue: unspecified, note: "identity resolved; venue not guessed" }
-  LTCUSD: { status: resolved, qualified_id: "CRYPTO:LTC", venue: unspecified, note: "identity resolved; venue not guessed" }
+  ZECUSD: { status: resolved, qualified_id: "CRYPTO:ZEC", venue: hyperliquid, note: "identity resolved; venue not guessed" }
+  XMRUSD: { status: resolved, qualified_id: "CRYPTO:XMR", venue: hyperliquid, note: "identity resolved; venue not guessed" }
+  LTCUSD: { status: resolved, qualified_id: "CRYPTO:LTC", venue: hyperliquid, note: "identity resolved; venue not guessed" }
   CASHCAT: { status: resolved, qualified_id: "WATCHLIST:CASHCAT", venue: unspecified, note: "risk-blocked; state only" }
   PONSUSD: { status: resolved, qualified_id: "WATCHLIST:PONSUSD", venue: unspecified, note: "risk-blocked; state only" }
   CHIPIUSD:
@@ -220,7 +220,7 @@ resolution:
     note: >
       Principal confirmed CHIPIUSD display → HL:CHIP (perp, USD). Intel snapshot:
       CHIPI absent on HL meta, CHIP present. Do not invent a CHIPI listing.
-  DOGEUSD: { status: resolved, qualified_id: "CRYPTO:DOGE", venue: unspecified, note: "identity resolved; venue not guessed" }
+  DOGEUSD: { status: resolved, qualified_id: "CRYPTO:DOGE", venue: hyperliquid, note: "identity resolved; venue not guessed" }
   SPX: { status: resolved, qualified_id: "INDEX:SPX", venue: index }
   NQ1!: { status: resolved, qualified_id: "CME:NQ1!", venue: cme }
   QQQ: { status: resolved, qualified_id: "NASDAQ:QQQ", venue: nasdaq }
