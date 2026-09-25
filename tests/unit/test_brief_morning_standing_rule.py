@@ -5,6 +5,7 @@ The eleven-capture send is one Telegram message. Status lines stay last.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -293,8 +294,8 @@ def test_zero_metric_moves_to_gaps_and_returns_when_nonzero() -> None:
     assert "Liquidations" not in zero
     assert "Open interest" not in zero
     assert "fund " not in zero
-    assert "gaps:" in zero
-    assert "BTC Funding" in _joined(zero)
+    assert "gaps:" not in zero
+    assert "Funding" not in zero
 
     back = _render(hl=(_hl("BTC", funding="0.0000125", oi="0", mid="0", liquidations=("2.5",)),))
     assert "BTC Liquidations (window sum) 2.5" in back
@@ -403,7 +404,7 @@ def test_funding_and_oi_with_prior_are_annualised_and_rounded() -> None:
     )
     assert "11.39% ann" not in on_baseline
     assert "0.000013" not in on_baseline
-    assert "BTC Funding" in on_baseline.split("gaps:", 1)[1]
+    assert "Funding" not in on_baseline
     assert "BTC OI +6.22%" in on_baseline
     assert "38,843" not in on_baseline
     assert " prior 36,569" not in on_baseline
@@ -953,6 +954,61 @@ def test_perp_with_no_print_is_a_gap_and_not_zero() -> None:
     gaps = text.split("gaps:", 1)[1]
     assert "SOL" in gaps
     assert "SOL Funding" not in gaps
+
+
+def test_us_close_and_t1_header_name_one_session() -> None:
+    expected = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol not in {"ES", "NQ", "DXY", "CL"}:
+            continue
+        assets[index] = _print(
+            symbol,
+            last=100.0,
+            prior=99.0,
+            source="polygon",
+            quality="fresh",
+            name=assets[index].name,
+            quoted_symbol=assets[index].quoted_symbol,
+            as_of=expected,
+        )
+    text = _render(assets=tuple(assets))
+    close = re.search(r"US Close (\d{4}-\d{2}-\d{2})", text)
+    header = re.search(r"EQUITY T-1 BY DESIGN \(close (\d{4}-\d{2}-\d{2})\)", text)
+    assert close is not None and header is not None
+    assert close.group(1) == header.group(1)
+
+
+def test_us10y_appears_on_exactly_one_line() -> None:
+    session = _session(_eight())
+    text = render_morning_close(
+        generated_at=GENERATED,
+        as_of=AS_OF,
+        overnight=session,
+        session=session,
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="ok",
+        closing_lines=(
+            "Earlier pair, not this session.",
+            "FRED date did not roll.",
+            "US10Y 4.96 no new print since 2026-09-18",
+        ),
+    ).markdown
+    assert "Earlier pair" not in text
+    assert "FRED date did not roll" not in text
+    us10y_lines = [line for line in _fence_lines(text) if "US10Y" in line]
+    assert len(us10y_lines) == 1
+
+
+def test_baseline_funding_is_not_a_gap() -> None:
+    text = _render(hl=(_hl("BTC", funding="0.0000125", oi=None),))
+    assert "fund " not in text
+    assert "Funding" not in text
+    assert "BTC Funding" not in text
 
 
 def test_as_of_knowledge_line_is_not_in_the_morning_message() -> None:

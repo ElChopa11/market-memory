@@ -163,13 +163,7 @@ def gate_markdown(payload: dict | None = None) -> str:
         }
     )
     fred_cell = _change_cell(fred_row, fred_prior)
-    closing = (
-        "Earlier pair, not this session.",
-        "2026-09-23T23:02:17Z",
-        "2026-09-24T06:58:31Z",
-        "FRED date did not roll.",
-        f"US10Y {float(us10y['last']):.2f} {fred_cell}",
-    )
+    assert fred_cell == "no new print since 2026-09-22"
     doc = render_morning_close(
         generated_at=generated,
         as_of=as_of,
@@ -188,7 +182,6 @@ def gate_markdown(payload: dict | None = None) -> str:
             "RECORDED DATA, --no-send",
             f"Crypto live HL {live_stamp.strftime('%Y-%m-%d %H:%MZ')}",
         ),
-        closing_lines=closing,
     )
     return doc.markdown
 
@@ -227,13 +220,33 @@ def legacy_markdown(payload: dict | None = None) -> str:
     ).markdown
 
 
-def test_recorded_gate_matches_committed_telegram_bytes() -> None:
+def test_committed_dryrun_is_the_live_failure_render() -> None:
+    text = TEMPLATE.read_text(encoding="utf-8")
+    assert "RECORDED DATA" not in text
+    assert "Earlier pair" not in text
+    assert "POLYGON missing_env" in text
+    assert "FRED missing_env" in text
+    assert len([line for line in text.splitlines() if "US10Y" in line]) == 1
+    assert "Funding" not in text
+    assert "KEY TAKEAWAY" not in text
+    assert len(text) <= TELEGRAM_MAX_MESSAGE_CHARS
+    in_fence = False
+    for line in text.splitlines():
+        if line.strip() == "```":
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            assert len(line) <= PHONE_LINE_MAX, line
+    for name in ("BTC", "ETH", "SOL", "HYPE", "NEAR", "ARB", "UNI", "VVV", "ZEC", "DOGE", "XMR", "CHIP", "LTC", "PURR"):
+        assert name in text
+
+
+def test_recorded_fixture_is_one_message_and_not_the_live_file() -> None:
     payload = _load()
     settings = load_telegram_settings(ROOT)
     text = gate_telegram(payload)
     assert settings.parse_mode == "MarkdownV2"
     assert payload["parse_mode"] == "MarkdownV2"
-    assert text == TEMPLATE.read_text(encoding="utf-8")
     assert text.startswith("```\n")
     assert text.rstrip().endswith("```")
     assert len(text) <= TELEGRAM_MAX_MESSAGE_CHARS
@@ -242,10 +255,12 @@ def test_recorded_gate_matches_committed_telegram_bytes() -> None:
     assert "Prior 2026-09-24T06:58:31Z" in text
     assert "Now " not in text
     assert "UTC 2026-09-24 23:17Z" in text
-    assert "Earlier pair, not this session." in text
+    assert "Earlier pair, not this session." not in text
+    assert "US Close 2026-09-23" in text
     assert "EQUITY T-1 BY DESIGN (close 2026-09-23)" in text
     assert "no new session since" not in text
-    assert "no new print since 2026-09-22" in text
+    assert "no new print since" not in text
+    assert len([line for line in text.splitlines() if "US10Y" in line]) == 1
     assert "+15.0bp" in text
     assert "767.81" in text
     assert "SPY 767.81 -0.72%" in text
@@ -267,7 +282,7 @@ def test_recorded_gate_matches_committed_telegram_bytes() -> None:
     assert "100%" not in text
     assert "VIX " not in text
     assert "gaps:" in text and "VIX" in text.split("gaps:", 1)[1]
-    assert "BTC Funding" in text and "ETH Funding" in text
+    assert "Funding" not in text
     assert "As-of knowledge" not in text
     assert "| Symbol |" not in text
     assert "Missing: VIX" not in text

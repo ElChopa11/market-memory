@@ -117,7 +117,7 @@ def render_morning_close(
 ) -> BriefDocument:
     """Render the morning brief. ``overnight`` is not reprinted (no reference block)."""
     del overnight  # the price table is the session print; the reference block is gone
-    session_date = session_date_for(as_of)
+    session_date = _us_close_date(session.assets, as_of)
     ny = generated_at.astimezone(NY_TZ)
     syd = generated_at.astimezone(SYDNEY_TZ)
     presentation = load_presentation_config()
@@ -133,6 +133,7 @@ def render_morning_close(
     if kept_leads:
         lines.append("")
     lines.extend(_clock_lines(generated_at, ny, syd))
+    lines.extend(_missing_env_lines(session.notes))
     lines.extend(_health_lines(health))
     lines.extend(_equity_t1_lines(session.assets, as_of))
     if not _has_observation(session, hl):
@@ -169,7 +170,7 @@ def render_morning_close(
     if catalyst_lines:
         lines.extend(["", "Catalysts", ""])
         lines.extend(catalyst_lines)
-    extras = [line.rstrip() for line in closing_lines if line.strip()]
+    extras = _closing_lines(closing_lines, body="\n".join(lines))
     if extras:
         lines.append("")
         for extra in extras:
@@ -334,18 +335,74 @@ def expected_equity_session(knowledge_as_of: datetime) -> date:
     return day
 
 
-def _equity_t1_lines(assets: tuple[AssetPrint, ...], knowledge_as_of: datetime) -> list[str]:
-    """One header when every Polygon equity slot is the expected prior session."""
-    expected = expected_equity_session(knowledge_as_of)
+def _shared_session_date(assets: tuple[AssetPrint, ...]) -> date | None:
+    """The one bar date shared by ES, NQ, DXY, and CL. None when any slot is missing."""
+    days: list[date] = []
     by_symbol = {row.symbol.upper(): row for row in assets}
     for symbol in _SESSION_SLOTS:
         row = by_symbol.get(symbol)
         if row is None or row.last is None:
-            return []
-        if _observation_date(row.as_of) != expected:
-            return []
-    text = f"{EQUITY_T1_PREFIX} (close {expected.isoformat()})"
+            return None
+        day = _observation_date(row.as_of)
+        if day is None:
+            return None
+        days.append(day)
+    if len(set(days)) != 1:
+        return None
+    return days[0]
+
+
+def _us_close_date(assets: tuple[AssetPrint, ...], knowledge_as_of: datetime) -> date:
+    """Top-line session. When the T-1 header prints, this is that same date."""
+    shared = _shared_session_date(assets)
+    expected = expected_equity_session(knowledge_as_of)
+    if shared is not None and shared == expected:
+        return shared
+    return session_date_for(knowledge_as_of)
+
+
+def _equity_t1_lines(assets: tuple[AssetPrint, ...], knowledge_as_of: datetime) -> list[str]:
+    """One header when every Polygon equity slot is the expected prior session."""
+    shared = _shared_session_date(assets)
+    expected = expected_equity_session(knowledge_as_of)
+    if shared is None or shared != expected:
+        return []
+    text = f"{EQUITY_T1_PREFIX} (close {shared.isoformat()})"
     return _phone_wrap(text)
+
+
+_MISSING_ENV_RE = re.compile(r"missing env ([A-Z0-9_]+)")
+
+
+def _missing_env_lines(notes: tuple[str, ...]) -> list[str]:
+    """Name a source the live fetch could not run. Do not invent its values."""
+    lines: list[str] = []
+    for note in notes:
+        if "unavailable" not in note:
+            continue
+        match = _MISSING_ENV_RE.search(note)
+        if match is None:
+            continue
+        name = match.group(1).removesuffix("_API_KEY").removesuffix("_KEY")
+        line = f"{name} missing_env"
+        if line not in lines:
+            lines.append(line)
+    return lines
+
+
+def _closing_lines(closing_lines: tuple[str, ...], *, body: str) -> list[str]:
+    """Drop a footer that only repeats US10Y or the earlier recorded pair."""
+    kept: list[str] = []
+    for line in closing_lines:
+        text = line.rstrip()
+        if not text.strip():
+            continue
+        if "Earlier pair" in text or "not this session" in text or "FRED date did not roll" in text:
+            continue
+        if "US10Y" in text and "US10Y" in body:
+            continue
+        kept.append(text)
+    return kept
 
 
 def _did_not_roll(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> bool:
@@ -650,6 +707,12 @@ def _positioning(
                 continue
             current = _metric_value(state, metric_name)
             prior = read_prior(prior_reader, state.instrument, metric_name)
+            if metric_name == "funding":
+                if current is None:
+                    gaps.append(f"{state.instrument} {label}")
+                elif not funding_on_baseline(current):
+                    lines.extend(_metric_lines(state, metric_name, label, current, prior))
+                continue
             if _show_metric(metric_name, current, prior):
                 lines.extend(_metric_lines(state, metric_name, label, current, prior))
             else:
@@ -674,7 +737,7 @@ def _show_metric(
 
     Open interest with no prior is a gap, even when non-zero.
     Funding is shown only when the hourly print is off the HL interest
-    baseline. On baseline it is the same number every quiet morning.
+    baseline. On baseline it is omitted, not listed as a gap.
     A zero that matches the prior stays on the gaps line.
     """
     if metric_name == "funding":
