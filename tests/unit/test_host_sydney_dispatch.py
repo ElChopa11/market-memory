@@ -26,7 +26,7 @@ def _crontab_job() -> list[str]:
     jobs = []
     for line in CRONTAB.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
-        if not stripped or stripped.startswith("#") or stripped.startswith("CRON_TZ="):
+        if not stripped or stripped.startswith("#") or "=" in stripped.split()[0]:
             continue
         jobs.append(stripped)
     return jobs
@@ -39,6 +39,9 @@ def test_crontab_uses_catalog_sydney_morning_anchor() -> None:
     assert list(routine.weekdays) == ["Mon", "Tue", "Wed", "Thu", "Fri"]
     text = CRONTAB.read_text(encoding="utf-8")
     assert "CRON_TZ=Australia/Sydney" in text
+    assert "does not honour CRON_TZ" in text
+    assert "MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token" in text
+    assert "MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log" in text
     jobs = _crontab_job()
     assert len(jobs) == 1
     fields = jobs[0].split()
@@ -91,6 +94,17 @@ def test_runbook_matches_merged_124_workflow_dispatch() -> None:
     assert "Mon 5 Oct 2026" in text
     assert "fine-grained" in text
     assert "Actions" in text
+    assert "vixie" in text
+    assert "does not honour `CRON_TZ`" in text
+    assert "timedatectl show -p Timezone --value" in text
+    assert 'test "$tz" = "Australia/Sydney"' in text
+    assert "env -i" in text
+    assert "MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token" in text
+    assert "MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log" in text
+    assert "/var/log/market-memory" in text
+    assert "90 days" in text
+    assert "12 Oct 2026" in text
+    assert "$HOME/mm-host" not in text
     script = SCRIPT.read_text(encoding="utf-8")
     assert "workflow_dispatch" in script
     assert "/actions/workflows/${WORKFLOW}/dispatches" in script
@@ -233,6 +247,49 @@ def test_bad_token_mode_refuses_before_curl(tmp_path: Path) -> None:
     assert proc.returncode != 0
     assert count == 0
     assert "token_file_mode=644" in logged
+    assert TOKEN not in blob
+
+
+def test_unwritable_log_still_posts_and_retries(tmp_path: Path) -> None:
+    blocked = tmp_path / "blocked"
+    blocked.mkdir()
+    blocked.chmod(0o555)
+    log = blocked / "nested" / "dispatch.log"
+    try:
+        proc, logged, _header, count, blob = _run(
+            tmp_path,
+            ["503", "204"],
+            extra_env={"MM_HOST_LOG": str(log)},
+        )
+    finally:
+        blocked.chmod(0o755)
+    assert proc.returncode == 0
+    assert count == 2
+    assert not log.exists()
+    assert logged == ""
+    assert "attempt=1" in proc.stderr and "result=http:503" in proc.stderr
+    assert "attempt=2" in proc.stderr and "result=http:204" in proc.stderr
+    assert TOKEN not in blob
+
+
+def test_unwritable_log_still_reports_refusal(tmp_path: Path) -> None:
+    blocked = tmp_path / "blocked"
+    blocked.mkdir()
+    blocked.chmod(0o555)
+    log = blocked / "nested" / "dispatch.log"
+    try:
+        proc, logged, _header, count, blob = _run(
+            tmp_path,
+            ["204"],
+            mode=0o644,
+            extra_env={"MM_HOST_LOG": str(log)},
+        )
+    finally:
+        blocked.chmod(0o755)
+    assert proc.returncode != 0
+    assert count == 0
+    assert logged == ""
+    assert "refused token_file_mode=644" in proc.stderr
     assert TOKEN not in blob
 
 

@@ -31,7 +31,7 @@ GitHub evaluates `schedule` in UTC. Sydney daylight saving starts Sunday 4 Oct 2
 
 ## DST wall clock
 
-`CRON_TZ=Australia/Sydney` plus `30 6 * * 1-5` is 06:30 local on both sides of the change:
+Debian and Ubuntu's default cron (vixie) does not honour `CRON_TZ`. It schedules `30 6 * * 1-5` in the system timezone. The Sydney wall-clock guarantee is step 2 (`timedatectl set-timezone Australia/Sydney`), not the `CRON_TZ` line in `ops/host/crontab`. `CRON_TZ` stays for cron implementations that read it. With the system timezone set to Australia/Sydney, 06:30 local is the same wall clock on both sides of the change:
 
 | Sydney date | Weekday | Offset | UTC instant of 06:30 local |
 |---|---|---|---|
@@ -65,7 +65,7 @@ Mon 5 Oct 2026 is also NSW Labour Day (first Monday in October). The host cronta
    git clone https://github.com/ElChopa11/market-memory.git /opt/market-memory
    ```
    If the clone path differs, edit the single path in `ops/host/crontab` and nowhere else.
-5. **Create a fine-grained personal access token.** Resource owner: the account that can dispatch this repo. Repository access: **only** `ElChopa11/market-memory`. Permissions: **Actions: Read and write**. No Contents, no Secrets, no Administration, no other repositories. This token is not a GitHub Actions secret and is not committed.
+5. **Create a fine-grained personal access token.** Resource owner: the account that can dispatch this repo. Repository access: **only** `ElChopa11/market-memory`. Permissions: **Actions: Read and write**. No Contents, no Secrets, no Administration, no other repositories. Set the expiration to at least 90 days so the token is still valid past capture 11 on 12 Oct 2026. This token is not a GitHub Actions secret and is not committed.
 6. **Write the token to a 0600 file** owned by the user that will own the crontab.
    ```bash
    sudo mkdir -p /etc/market-memory
@@ -80,33 +80,37 @@ Mon 5 Oct 2026 is also NSW Labour Day (first Monday in October). The host cronta
    crontab /opt/market-memory/ops/host/crontab
    crontab -l
    ```
-   The listing must show `CRON_TZ=Australia/Sydney` and `30 6 * * 1-5` running `dispatch-sydney-morning.sh`.
-8. **Dry test** (no HTTP POST, no workflow run, no DM).
+   The listing must show `CRON_TZ=Australia/Sydney`, `MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token`, `MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log`, and `30 6 * * 1-5` running `dispatch-sydney-morning.sh`. Vixie cron ignores `CRON_TZ` and uses the system timezone from step 2.
+8. **Create the log directory owned by the cron user** before any dry test or live fire. The 06:30 job runs as this user and writes the crontab's `MM_HOST_LOG`.
    ```bash
-   mkdir -p "$HOME/mm-host"
-   MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token \
-   MM_HOST_LOG="$HOME/mm-host/sydney-morning-dispatch.log" \
-   /opt/market-memory/ops/host/dispatch-sydney-morning.sh --dry-run
+   sudo mkdir -p /var/log/market-memory
+   sudo chown "$USER" /var/log/market-memory
+   chmod 755 /var/log/market-memory
    ```
-   Stdout is the event name, workflow file, ref `main`, and `i_mean_it_deliver=true`. The log line contains `dry-run` and `http=skipped`. Neither stdout nor the log contains the token. `crontab -l` still has the real line without `--dry-run`.
+   `$USER` must be the user that owns the crontab from step 7. That user must be able to create `sydney-morning-dispatch.log` in this directory.
+9. **Dry test** (no HTTP POST, no workflow run, no DM). This uses `env -i` and the assignment lines from the crontab, which is the environment the 06:30 job gets. It writes the crontab log path, not a home-directory log.
+   ```bash
+   tz="$(timedatectl show -p Timezone --value)"
+   printf '%s\n' "$tz"
+   test "$tz" = "Australia/Sydney"
+   mapfile -t cron_env < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' /opt/market-memory/ops/host/crontab)
+   env -i PATH="/usr/bin:/bin" "${cron_env[@]}" \
+     /opt/market-memory/ops/host/dispatch-sydney-morning.sh --dry-run
+   ```
+   The first line printed is `Australia/Sydney`. If it is anything else, `test` exits nonzero and the script is not run: vixie cron would fire `30 6` in that other zone. Stdout then shows the event name, workflow file, ref `main`, and `i_mean_it_deliver=true`. The log line in `/var/log/market-memory/sydney-morning-dispatch.log` contains `dry-run` and `http=skipped`. Neither stdout nor the log contains the token. `crontab -l` still has the real line without `--dry-run`.
 
-A live fire is a separate step from the dry test. Run it once, on a weekday, only when you want a real Principal DM:
+A live fire is a separate step from the dry test. Run it once, on a weekday, only when you want a real Principal DM. Same environment as the crontab:
 
 ```bash
-MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token \
-MM_HOST_LOG="$HOME/mm-host/sydney-morning-dispatch.log" \
-/opt/market-memory/ops/host/dispatch-sydney-morning.sh
+tz="$(timedatectl show -p Timezone --value)"
+printf '%s\n' "$tz"
+test "$tz" = "Australia/Sydney"
+mapfile -t cron_env < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' /opt/market-memory/ops/host/crontab)
+env -i PATH="/usr/bin:/bin" "${cron_env[@]}" \
+  /opt/market-memory/ops/host/dispatch-sydney-morning.sh
 ```
 
-Success appends a log line `result=http:204` (or another HTTP 2xx). The log records the UTC timestamp, the attempt number, and the HTTP status. It does not record the token. Network errors and HTTP 5xx sleep 60 seconds and retry once. HTTP 4xx does not retry. A non-2xx exit is nonzero.
-
-Point the installed crontab at the same log if you want the morning fire recorded there:
-
-```
-MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log
-```
-
-Create that directory writable by the cron user before relying on the default path `/var/log/market-memory/sydney-morning-dispatch.log`.
+Success appends a log line `result=http:204` (or another HTTP 2xx) to `/var/log/market-memory/sydney-morning-dispatch.log`. The log records the UTC timestamp, the attempt number, and the HTTP status. It does not record the token. Network errors and HTTP 5xx sleep 60 seconds and retry once. HTTP 4xx does not retry. A non-2xx exit is nonzero. If that log path cannot be created or written, the same line goes to stderr and the POST, including the retry, still runs.
 
 ## How to verify a fire from GitHub
 

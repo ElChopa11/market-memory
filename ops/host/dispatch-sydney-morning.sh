@@ -7,6 +7,8 @@
 #
 # The token is read from a 0600 file and is never written to stdout, stderr,
 # or the dispatch log. One retry after 60s on network error or HTTP 5xx only.
+# A log-write failure is non-fatal: the line goes to stderr and the POST
+# (including the retry) still runs.
 set -euo pipefail
 
 TOKEN_FILE="${MM_HOST_TOKEN_FILE:-/etc/market-memory/github-dispatch.token}"
@@ -26,10 +28,14 @@ elif [[ -n "${1:-}" ]]; then
 fi
 
 log_line() {
-  local ts
+  local ts line
   ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  mkdir -p "$(dirname -- "$LOG_FILE")"
-  printf '%s %s\n' "$ts" "$1" >>"$LOG_FILE"
+  line="$(printf '%s %s' "$ts" "$1")"
+  if mkdir -p -- "$(dirname -- "$LOG_FILE")" 2>/dev/null \
+    && printf '%s\n' "$line" >>"$LOG_FILE" 2>/dev/null; then
+    return 0
+  fi
+  printf '%s\n' "$line" >&2
 }
 
 refuse() {

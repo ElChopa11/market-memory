@@ -4,9 +4,14 @@
 #   timezone: Australia/Sydney
 #   local_time: "06:30"
 #   weekdays: [Mon, Tue, Wed, Thu, Fri]
-# CRON_TZ keeps 06:30 Sydney wall time across DST (AEST UTC+10 / AEDT UTC+11).
-# Do not convert this line to UTC. The GitHub Actions crons stay as they are.
+# Debian and Ubuntu ship vixie cron. It does not honour CRON_TZ. It schedules
+# `30 6` in the system timezone. The Sydney wall-clock guarantee is
+# `timedatectl set-timezone Australia/Sydney` (runbook step 2), not CRON_TZ.
+# CRON_TZ is kept for cron implementations that read it. Do not convert the
+# job line to UTC. The GitHub Actions crons stay as they are.
 # Install: crontab /opt/market-memory/ops/host/crontab
 # Setup: docs/runbooks/host-dispatch.md
 CRON_TZ=Australia/Sydney
+MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token
+MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log
 30 6 * * 1-5 /opt/market-memory/ops/host/dispatch-sydney-morning.sh

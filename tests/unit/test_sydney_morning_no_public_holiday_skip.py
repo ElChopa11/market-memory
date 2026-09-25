@@ -41,7 +41,7 @@ def _job_fields() -> list[str]:
     jobs = []
     for line in CRONTAB.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
-        if not stripped or stripped.startswith("#") or stripped.startswith("CRON_TZ="):
+        if not stripped or stripped.startswith("#") or "=" in stripped.split()[0]:
             continue
         jobs.append(stripped.split())
     assert len(jobs) == 1
@@ -56,9 +56,10 @@ def _cron_dow(local: datetime) -> int:
 def host_cron_fires(local: datetime) -> bool:
     """True when the installed host crontab would fire at this Sydney wall time.
 
-    CRON_TZ=Australia/Sydney, so the five fields are that zone's wall clock.
-    ``*`` matches every day-of-month and month. ``1-5`` is Mon–Fri. There is
-    no holiday field.
+    The five fields are Australia/Sydney wall clock when the system timezone
+    is Australia/Sydney. Debian/Ubuntu vixie cron ignores CRON_TZ and uses
+    system time. ``*`` matches every day-of-month and month. ``1-5`` is
+    Mon–Fri. There is no holiday field.
     """
     assert local.tzinfo == SYD
     minute, hour, dom, month, dow = _job_fields()[:5]
