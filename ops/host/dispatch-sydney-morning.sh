@@ -9,15 +9,24 @@
 # or the dispatch log. One retry after 60s on network error or HTTP 5xx only.
 # A log-write failure is non-fatal: the line goes to stderr and the POST
 # (including the retry) still runs.
+#
+# Optional Healthchecks.io dead-man, owned by this host (not the Actions
+# brief-and-deliver ping). The ping URL is read from a file and is never
+# written to stdout, stderr, or the dispatch log. Missing or empty file:
+# no ping, log hc=skipped, dispatch unchanged. The ping runs only after the
+# final dispatch result. A ping error does not change the exit code and does
+# not cause another POST. --dry-run does not ping.
 set -euo pipefail
 
 TOKEN_FILE="${MM_HOST_TOKEN_FILE:-/etc/market-memory/github-dispatch.token}"
 LOG_FILE="${MM_HOST_LOG:-/var/log/market-memory/sydney-morning-dispatch.log}"
+HC_URL_FILE="${MM_HOST_HC_URL_FILE:-/etc/market-memory/healthchecks-host.url}"
 REPO="${MM_HOST_REPO:-ElChopa11/market-memory}"
 WORKFLOW="${MM_HOST_WORKFLOW:-hybrid-sydney-morning.yml}"
 REF="${MM_HOST_REF:-main}"
 RETRY_SLEEP="${MM_HOST_RETRY_SLEEP:-60}"
 CURL_BIN="${MM_HOST_CURL:-curl}"
+HC_MAX_TIME=10
 
 DRY=0
 if [[ "${1:-}" == "--dry-run" ]]; then
@@ -74,7 +83,7 @@ fi
 URL="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches"
 
 if [[ "$DRY" -eq 1 ]]; then
-  log_line "dry-run event=workflow_dispatch workflow=${WORKFLOW} ref=${REF} input=i_mean_it_deliver http=skipped"
+  log_line "dry-run event=workflow_dispatch workflow=${WORKFLOW} ref=${REF} input=i_mean_it_deliver http=skipped hc=skipped"
   echo "dry-run event=workflow_dispatch workflow=${WORKFLOW} ref=${REF} input=i_mean_it_deliver=true"
   echo "url=${URL}"
   exit 0
@@ -86,12 +95,16 @@ PAYLOAD="$(printf '{"ref":"%s","inputs":{"i_mean_it_deliver":"true"}}' "$REF")"
 
 HDR=""
 BODY=""
+HC_CFG=""
 cleanup() {
   if [[ -n "${HDR}" ]]; then
     rm -f -- "$HDR"
   fi
   if [[ -n "${BODY}" ]]; then
     rm -f -- "$BODY"
+  fi
+  if [[ -n "${HC_CFG}" ]]; then
+    rm -f -- "$HC_CFG"
   fi
 }
 trap cleanup EXIT
@@ -129,9 +142,97 @@ post_once() {
   printf 'http:%s' "$http"
 }
 
+# Ping URL stays in the curl config file, never in argv, stdout, stderr, or the log.
+# Sets global hc to a status token. Returns 0. Does not run in a subshell:
+# HC_CFG must stay visible to the EXIT trap.
+hc_outcome() {
+  local result="$1"
+  local url="" target="" http="" rc=0 base="" query=""
+  hc="error"
+  if [[ ! -f "$HC_URL_FILE" || ! -s "$HC_URL_FILE" ]]; then
+    hc="skipped"
+    return 0
+  fi
+  if [[ ! -r "$HC_URL_FILE" ]]; then
+    hc="read_error"
+    return 0
+  fi
+  url="$(tr -d '[:space:]' <"$HC_URL_FILE")" || {
+    hc="read_error"
+    return 0
+  }
+  if [[ -z "$url" ]]; then
+    hc="skipped"
+    return 0
+  fi
+  # https only. Reject quotes, spaces, and shell metacharacters so the
+  # curl config cannot break out and the log cannot contain the URL.
+  local hc_url_re='^https://[A-Za-z0-9._~:/?#&=%-]+$'
+  if [[ ! "$url" =~ $hc_url_re ]]; then
+    hc="bad_url"
+    return 0
+  fi
+  target="$url"
+  if [[ "$result" != http:2* ]]; then
+    base="${url%%\?*}"
+    base="${base%/}"
+    if [[ "$url" == *"?"* ]]; then
+      query="${url#*\?}"
+      target="${base}/fail?${query}"
+    else
+      target="${base}/fail"
+    fi
+  fi
+  HC_CFG="$(mktemp)" || {
+    HC_CFG=""
+    hc="error"
+    return 0
+  }
+  chmod 600 "$HC_CFG" || true
+  if ! printf 'url = "%s"\n' "$target" >"$HC_CFG"; then
+    rm -f -- "$HC_CFG"
+    HC_CFG=""
+    hc="error"
+    return 0
+  fi
+  set +e
+  # -q: do not read curlrc (a verbose rc would echo the URL).
+  # stderr discarded: curl errors include the URL.
+  http="$("$CURL_BIN" -q --silent --proto '=https' \
+    --max-time "$HC_MAX_TIME" \
+    --output /dev/null \
+    --write-out '%{http_code}' \
+    --config "$HC_CFG" 2>/dev/null)"
+  rc=$?
+  rm -f -- "$HC_CFG"
+  HC_CFG=""
+  if [[ "$rc" -ne 0 ]]; then
+    if [[ "$rc" =~ ^[0-9]+$ ]]; then
+      hc="network:${rc}"
+    else
+      hc="network:error"
+    fi
+    return 0
+  fi
+  if [[ "$http" =~ ^[0-9]{3}$ ]]; then
+    hc="$http"
+    return 0
+  fi
+  hc="error"
+  return 0
+}
+
+log_attempt() {
+  local extra="${1:-}"
+  local line="dispatch attempt=${attempt} event=workflow_dispatch workflow=${WORKFLOW} ref=${REF} result=${result}"
+  if [[ -n "$extra" ]]; then
+    line="${line} ${extra}"
+  fi
+  log_line "$line"
+}
+
 attempt=1
 result="$(post_once)"
-log_line "dispatch attempt=${attempt} event=workflow_dispatch workflow=${WORKFLOW} ref=${REF} result=${result}"
 
 need_retry=0
 case "$result" in
@@ -141,11 +242,30 @@ case "$result" in
 esac
 
 if [[ "$need_retry" -eq 1 ]]; then
+  # Log the first attempt before the retry sleep. The ping waits until the
+  # final POST so it cannot delay either dispatch.
+  log_attempt
   sleep "$RETRY_SLEEP"
   attempt=2
   result="$(post_once)"
-  log_line "dispatch attempt=${attempt} event=workflow_dispatch workflow=${WORKFLOW} ref=${REF} result=${result}"
 fi
+
+# Ping failure must not trip set -e and must not change the dispatch exit.
+hc=""
+set +e
+hc_outcome "$result"
+hc_rc=$?
+set -e
+if [[ "$hc_rc" -ne 0 || -z "${hc}" ]]; then
+  hc="error"
+fi
+case "$hc" in
+  skipped|bad_url|read_error|error|network:error) ;;
+  network:[0-9]*) ;;
+  [0-9][0-9][0-9]) ;;
+  *) hc="error" ;;
+esac
+log_attempt "hc=${hc}"
 
 case "$result" in
   http:2*)

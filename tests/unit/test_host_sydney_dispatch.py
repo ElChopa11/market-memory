@@ -20,6 +20,7 @@ CRONTAB = ROOT / "ops" / "host" / "crontab"
 RUNBOOK = ROOT / "docs" / "runbooks" / "host-dispatch.md"
 WORKFLOW = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
 TOKEN = "ghp_HOSTDISPATCHTESTTOKEN"
+HC_URL = "https://hc-ping.example/host-secret-uuid"
 
 
 def _crontab_job() -> list[str]:
@@ -42,6 +43,7 @@ def test_crontab_uses_catalog_sydney_morning_anchor() -> None:
     assert "does not honour CRON_TZ" in text
     assert "MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token" in text
     assert "MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log" in text
+    assert "MM_HOST_HC_URL_FILE=/etc/market-memory/healthchecks-host.url" in text
     jobs = _crontab_job()
     assert len(jobs) == 1
     fields = jobs[0].split()
@@ -127,11 +129,22 @@ def _fake_curl(path: Path) -> None:
     path.write_text(
         """#!/usr/bin/env bash
 set -euo pipefail
+printf '%s\\n' "--- invocation ---" >> "$MM_FAKE_CURL_LOG"
 printf '%s\\n' "$@" >> "$MM_FAKE_CURL_LOG"
+prev=""
 for arg in "$@"; do
   if [[ "$arg" == @* ]]; then
     cp "${arg#@}" "$MM_FAKE_CURL_HEADER"
   fi
+  if [[ "$prev" == "--config" || "$prev" == "-K" ]]; then
+    if [[ -n "${MM_FAKE_CURL_CONFIGS:-}" ]]; then
+      printf '\\n---\\n' >> "$MM_FAKE_CURL_CONFIGS"
+      cat "$arg" >> "$MM_FAKE_CURL_CONFIGS"
+    fi
+    # A verbose curl error names the URL. The script must discard that stderr.
+    cat "$arg" >&2
+  fi
+  prev="$arg"
 done
 echo x >> "$MM_FAKE_CURL_COUNT"
 n=$(wc -l < "$MM_FAKE_CURL_COUNT")
@@ -163,6 +176,8 @@ def _run(tmp_path: Path, codes: list[str], *, extra_env: dict[str, str] | None =
             "MM_FAKE_CURL_HEADER": str(tmp_path / "header"),
             "MM_FAKE_CURL_COUNT": str(tmp_path / "count"),
             "MM_FAKE_CURL_CODES": str(tmp_path / "codes"),
+            "MM_FAKE_CURL_CONFIGS": str(tmp_path / "curl-configs"),
+            "MM_HOST_HC_URL_FILE": str(tmp_path / "hc.url"),
         }
     )
     (tmp_path / "codes").write_text("\n".join(codes) + "\n", encoding="utf-8")
@@ -303,3 +318,247 @@ def test_other_workflow_is_refused(tmp_path: Path) -> None:
     assert count == 0
     assert "workflow_not_allowlisted" in logged
     assert TOKEN not in blob
+
+
+def _write_hc(tmp_path: Path, text: str, mode: int = 0o600) -> None:
+    path = tmp_path / "hc.url"
+    path.write_text(text, encoding="utf-8")
+    os.chmod(path, mode)
+
+
+def _curl_args(tmp_path: Path) -> str:
+    path = tmp_path / "curl-args.log"
+    return path.read_text(encoding="utf-8") if path.is_file() else ""
+
+
+def _curl_configs(tmp_path: Path) -> str:
+    path = tmp_path / "curl-configs"
+    return path.read_text(encoding="utf-8") if path.is_file() else ""
+
+
+def _invocations(tmp_path: Path) -> list[str]:
+    parts = _curl_args(tmp_path).split("--- invocation ---\n")
+    return [part for part in parts if part.strip()]
+
+
+def _assert_url_hidden(blob: str, tmp_path: Path, url: str = HC_URL) -> None:
+    assert url not in blob
+    assert url not in _curl_args(tmp_path)
+
+
+def test_missing_hc_file_skips_ping_and_leaves_dispatch_unchanged(tmp_path: Path) -> None:
+    proc, logged, _header, count, blob = _run(tmp_path, ["204"])
+    assert proc.returncode == 0
+    assert count == 1
+    assert "result=http:204" in logged
+    assert "hc=skipped" in logged
+    assert "attempt=2" not in logged
+    assert _curl_configs(tmp_path) == ""
+    assert len(_invocations(tmp_path)) == 1
+    assert "api.github.com" in _invocations(tmp_path)[0]
+    _assert_url_hidden(blob, tmp_path)
+    assert TOKEN not in blob
+
+
+def test_empty_hc_file_skips_ping(tmp_path: Path) -> None:
+    _write_hc(tmp_path, "")
+    proc, logged, _header, count, blob = _run(tmp_path, ["204"])
+    assert proc.returncode == 0
+    assert count == 1
+    assert "result=http:204" in logged
+    assert "hc=skipped" in logged
+    assert _curl_configs(tmp_path) == ""
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_whitespace_hc_file_skips_ping(tmp_path: Path) -> None:
+    _write_hc(tmp_path, "\n  \n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["204"])
+    assert proc.returncode == 0
+    assert count == 1
+    assert "hc=skipped" in logged
+    assert _curl_configs(tmp_path) == ""
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_success_ping_after_2xx_hides_url(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["204", "200"])
+    assert proc.returncode == 0
+    assert count == 2
+    assert "result=http:204" in logged
+    assert "hc=200" in logged
+    assert "attempt=2" not in logged
+    invocations = _invocations(tmp_path)
+    assert len(invocations) == 2
+    assert "api.github.com" in invocations[0]
+    assert "--config" not in invocations[0]
+    assert "--config" in invocations[1]
+    assert "--max-time" in invocations[1]
+    assert "\n10\n" in invocations[1]
+    assert "--proto" in invocations[1]
+    assert "=https" in invocations[1]
+    assert "i_mean_it_deliver" not in invocations[1]
+    configs = _curl_configs(tmp_path)
+    assert f'url = "{HC_URL}"' in configs
+    assert "/fail" not in configs
+    _assert_url_hidden(blob, tmp_path)
+    assert TOKEN not in blob
+
+
+def test_4xx_pings_fail_and_exits_nonzero(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["422", "200"])
+    assert proc.returncode == 1
+    assert count == 2
+    assert "result=http:422" in logged
+    assert "hc=200" in logged
+    assert "attempt=2" not in logged
+    assert f'url = "{HC_URL}/fail"' in _curl_configs(tmp_path)
+    invocations = _invocations(tmp_path)
+    assert "api.github.com" in invocations[0]
+    assert "--config" in invocations[1]
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_4xx_fail_url_keeps_query(tmp_path: Path) -> None:
+    url = HC_URL + "?rid=1"
+    _write_hc(tmp_path, url + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["422", "200"])
+    assert proc.returncode == 1
+    assert count == 2
+    assert f'url = "{HC_URL}/fail?rid=1"' in _curl_configs(tmp_path)
+    assert url not in blob
+    assert url not in _curl_args(tmp_path)
+
+
+def test_ping_failure_does_not_change_success_exit_or_repost(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["204", "network:28"])
+    assert proc.returncode == 0
+    assert count == 2
+    assert "result=http:204" in logged
+    assert "hc=network:28" in logged
+    assert "attempt=2" not in logged
+    assert "dispatch failed" not in proc.stderr
+    assert len(_invocations(tmp_path)) == 2
+    assert "api.github.com" in _invocations(tmp_path)[0]
+    assert "--config" in _invocations(tmp_path)[1]
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_ping_failure_after_4xx_keeps_nonzero_exit(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["422", "network:7"])
+    assert proc.returncode == 1
+    assert count == 2
+    assert "result=http:422" in logged
+    assert "hc=network:7" in logged
+    assert "attempt=2" not in logged
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_dry_run_does_not_ping_when_url_file_exists(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["204"], args=["--dry-run"])
+    assert proc.returncode == 0
+    assert count == 0
+    assert "dry-run" in logged
+    assert "http=skipped" in logged
+    assert "hc=skipped" in logged
+    assert _curl_configs(tmp_path) == ""
+    assert _curl_args(tmp_path) == ""
+    _assert_url_hidden(blob, tmp_path)
+    assert HC_URL not in proc.stdout
+    assert HC_URL not in proc.stderr
+
+
+def test_non_https_url_is_not_pinged(tmp_path: Path) -> None:
+    insecure = "http://hc-ping.example/host-secret-uuid"
+    _write_hc(tmp_path, insecure + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["204"])
+    assert proc.returncode == 0
+    assert count == 1
+    assert "result=http:204" in logged
+    assert "hc=bad_url" in logged
+    assert insecure not in blob
+    assert insecure not in _curl_args(tmp_path)
+    assert _curl_configs(tmp_path) == ""
+
+
+def test_loose_url_file_mode_still_pings(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n", mode=0o644)
+    proc, logged, _header, count, blob = _run(tmp_path, ["204", "200"])
+    assert proc.returncode == 0
+    assert count == 2
+    assert "hc=200" in logged
+    assert "refused" not in logged
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_retry_pings_success_only_after_final_2xx(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["503", "204", "200"])
+    assert proc.returncode == 0
+    assert count == 3
+    lines = [line for line in logged.splitlines() if line.strip()]
+    assert "attempt=1" in lines[0] and "result=http:503" in lines[0]
+    assert "hc=" not in lines[0]
+    assert "attempt=2" in lines[1] and "result=http:204" in lines[1] and "hc=200" in lines[1]
+    invocations = _invocations(tmp_path)
+    assert len(invocations) == 3
+    assert "api.github.com" in invocations[0]
+    assert "api.github.com" in invocations[1]
+    assert "--config" not in invocations[0]
+    assert "--config" not in invocations[1]
+    assert "--config" in invocations[2]
+    configs = _curl_configs(tmp_path)
+    assert f'url = "{HC_URL}"' in configs
+    assert "/fail" not in configs
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_retry_then_non_2xx_pings_fail(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["503", "503", "200"])
+    assert proc.returncode == 1
+    assert count == 3
+    lines = [line for line in logged.splitlines() if line.strip()]
+    assert "hc=" not in lines[0]
+    assert "attempt=2" in lines[1] and "result=http:503" in lines[1] and "hc=200" in lines[1]
+    assert f'url = "{HC_URL}/fail"' in _curl_configs(tmp_path)
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_refused_dispatch_does_not_ping(tmp_path: Path) -> None:
+    _write_hc(tmp_path, HC_URL + "\n")
+    proc, logged, _header, count, blob = _run(tmp_path, ["204"], mode=0o644)
+    assert proc.returncode != 0
+    assert count == 0
+    assert "token_file_mode=644" in logged
+    assert "hc=" not in logged
+    assert _curl_configs(tmp_path) == ""
+    _assert_url_hidden(blob, tmp_path)
+
+
+def test_runbook_documents_optional_host_healthchecks() -> None:
+    text = RUNBOOK.read_text(encoding="utf-8")
+    assert "30 6 * * 1-5" in text
+    assert "Australia/Sydney" in text
+    assert "15 minutes" in text
+    assert "healthchecks-host.url" in text
+    assert "MM_HOST_HC_URL_FILE=/etc/market-memory/healthchecks-host.url" in text
+    assert "hc=skipped" in text
+    assert "git -C /opt/market-memory pull" in text
+    assert "crontab /opt/market-memory/ops/host/crontab" in text
+    assert "Do not `echo` the URL" in text
+    assert "/fail" in text
+    assert "#129" in text
+    assert "HEALTHCHECKS_PING_URL" in text
+    script = SCRIPT.read_text(encoding="utf-8")
+    assert 'MM_HOST_HC_URL_FILE:-/etc/market-memory/healthchecks-host.url' in script
+    assert "HC_MAX_TIME=10" in script
+    assert "--proto '=https'" in script
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert workflow.count('cron: "30 20 * * 0-4"') == 1
+    assert workflow.count('cron: "30 22 * * 0-4"') == 1

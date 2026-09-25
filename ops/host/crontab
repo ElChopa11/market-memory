@@ -14,4 +14,7 @@
 CRON_TZ=Australia/Sydney
 MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token
 MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log
+# Optional. Missing or empty file: dispatch unchanged, log hc=skipped.
+# The ping URL is not a GitHub secret and is not written to the dispatch log.
+MM_HOST_HC_URL_FILE=/etc/market-memory/healthchecks-host.url
 30 6 * * 1-5 /opt/market-memory/ops/host/dispatch-sydney-morning.sh

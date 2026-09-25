@@ -80,7 +80,7 @@ Mon 5 Oct 2026 is also NSW Labour Day (first Monday in October). The host cronta
    crontab /opt/market-memory/ops/host/crontab
    crontab -l
    ```
-   The listing must show `CRON_TZ=Australia/Sydney`, `MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token`, `MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log`, and `30 6 * * 1-5` running `dispatch-sydney-morning.sh`. Vixie cron ignores `CRON_TZ` and uses the system timezone from step 2.
+   The listing must show `CRON_TZ=Australia/Sydney`, `MM_HOST_TOKEN_FILE=/etc/market-memory/github-dispatch.token`, `MM_HOST_LOG=/var/log/market-memory/sydney-morning-dispatch.log`, `MM_HOST_HC_URL_FILE=/etc/market-memory/healthchecks-host.url`, and `30 6 * * 1-5` running `dispatch-sydney-morning.sh`. Vixie cron ignores `CRON_TZ` and uses the system timezone from step 2.
 8. **Create the log directory owned by the cron user** before any dry test or live fire. The 06:30 job runs as this user and writes the crontab's `MM_HOST_LOG`.
    ```bash
    sudo mkdir -p /var/log/market-memory
@@ -97,7 +97,7 @@ Mon 5 Oct 2026 is also NSW Labour Day (first Monday in October). The host cronta
    env -i PATH="/usr/bin:/bin" "${cron_env[@]}" \
      /opt/market-memory/ops/host/dispatch-sydney-morning.sh --dry-run
    ```
-   The first line printed is `Australia/Sydney`. If it is anything else, `test` exits nonzero and the script is not run: vixie cron would fire `30 6` in that other zone. Stdout then shows the event name, workflow file, ref `main`, and `i_mean_it_deliver=true`. The log line in `/var/log/market-memory/sydney-morning-dispatch.log` contains `dry-run` and `http=skipped`. Neither stdout nor the log contains the token. `crontab -l` still has the real line without `--dry-run`.
+   The first line printed is `Australia/Sydney`. If it is anything else, `test` exits nonzero and the script is not run: vixie cron would fire `30 6` in that other zone. Stdout then shows the event name, workflow file, ref `main`, and `i_mean_it_deliver=true`. The log line in `/var/log/market-memory/sydney-morning-dispatch.log` contains `dry-run`, `http=skipped`, and `hc=skipped`. A dry run does not call Healthchecks, including when `/etc/market-memory/healthchecks-host.url` is present. Neither stdout nor the log contains the token or the ping URL. `crontab -l` still has the real line without `--dry-run`.
 
 A live fire is a separate step from the dry test. Run it once, on a weekday, only when you want a real Principal DM. Same environment as the crontab:
 
@@ -111,6 +111,67 @@ env -i PATH="/usr/bin:/bin" "${cron_env[@]}" \
 ```
 
 Success appends a log line `result=http:204` (or another HTTP 2xx) to `/var/log/market-memory/sydney-morning-dispatch.log`. The log records the UTC timestamp, the attempt number, and the HTTP status. It does not record the token. Network errors and HTTP 5xx sleep 60 seconds and retry once. HTTP 4xx does not retry. A non-2xx exit is nonzero. If that log path cannot be created or written, the same line goes to stderr and the POST, including the retry, still runs.
+
+When `/etc/market-memory/healthchecks-host.url` is missing or empty, that final log line also contains `hc=skipped`. The script makes no Healthchecks request, and the exit code is the dispatch result. When the file holds an https URL and the ping itself returns HTTP 200, the line contains `hc=200`. The ping URL is not in the log.
+
+## Host Healthchecks ping (optional)
+
+This check belongs to the host. It is a different Healthchecks.io check from the Actions ping on `brief-and-deliver` ([#129](https://github.com/ElChopa11/market-memory/pull/129), secret `HEALTHCHECKS_PING_URL`). Do not edit `.github/workflows/hybrid-sydney-morning.yml` for this. Do not put this URL in a GitHub or Actions secret.
+
+A success ping means the host got a final HTTP 2xx from `workflow_dispatch`. A `/fail` ping means the final dispatch result was not HTTP 2xx. Silence past the grace period means the host never sent a success ping (the job did not run, the script refused before the POST, or the URL file was missing or empty). Once the URL file is installed, read the two checks together:
+
+- Host check up and Actions check down: the host dispatched, and Actions did not deliver.
+- Host check down, and the host log has no `result=http:2xx`: the host did not dispatch.
+
+Until the URL file contains the https URL, this script does not ping. The Healthchecks check then stays silent and alerts after the grace period even when the dispatch itself succeeded. The host log line `hc=skipped` is the record of that case.
+
+The URL file is optional. If it is missing or empty, the dispatch POSTs exactly as it does without this check: one retry on network error or HTTP 5xx, no retry on HTTP 4xx, same exit code. The final log line records `hc=skipped`.
+
+When the file contains an https URL:
+
+- After a final HTTP 2xx, the script GETs that URL.
+- After a final non-2xx, including HTTP 4xx (no retry) and HTTP 5xx or a network error after the single retry, the script GETs the same URL with `/fail` on the path.
+- The ping is https only, with a 10 second timeout. It runs after the final POST. It does not run before the POST and it does not run between the two POSTs.
+- A ping error or timeout does not change the dispatch exit code and does not cause another POST. The log records `hc=network:<rc>` (curl's exit status) or `hc=` plus the ping's HTTP status, for example `hc=200`.
+- `--dry-run` does not read the URL file and does not ping.
+
+A mode other than `600` does not refuse the dispatch. The script does not refuse because of this file.
+
+### Create the check
+
+In Healthchecks.io, create a check. Do not reuse the Actions check.
+
+- Schedule: Cron
+- Cron expression: `30 6 * * 1-5`
+- Timezone: `Australia/Sydney`
+- Grace time: 15 minutes
+
+That is weekdays at 06:30 Australia/Sydney, the same wall clock as `grok.sydney_morning`. Healthchecks alerts if no success ping arrives by 06:45 Australia/Sydney. A request to the `/fail` URL alerts immediately.
+
+### Write the URL file
+
+The ping URL stays on the host. It is not committed.
+
+```bash
+sudo mkdir -p /etc/market-memory
+sudo touch /etc/market-memory/healthchecks-host.url
+sudo chown "$USER" /etc/market-memory/healthchecks-host.url
+chmod 600 /etc/market-memory/healthchecks-host.url
+```
+
+Open `/etc/market-memory/healthchecks-host.url` in an editor and paste the success ping URL as a single line, with no quotes. Do not `echo` the URL. Do not pass it on the command line. Either of those stores it in shell history.
+
+### Host that is already installed
+
+The 06:30 job runs the script and the crontab that are on the host. A merge does not update them. On the host, after this change is on `main`:
+
+```bash
+git -C /opt/market-memory pull
+crontab /opt/market-memory/ops/host/crontab
+crontab -l
+```
+
+`crontab -l` must include `MM_HOST_HC_URL_FILE=/etc/market-memory/healthchecks-host.url`. Then re-run the step 9 dry run. The dry run does not ping. The log line contains `dry-run` and `hc=skipped`, and it does not contain the ping URL.
 
 ## How to verify a fire from GitHub
 
