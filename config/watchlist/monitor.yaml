@@ -45,6 +45,13 @@ rounds:
       - PONSUSD
       - CHIPIUSD
       - DOGEUSD
+      # Exact HL symbols from config/ingest/mvp_retain.yaml.
+      # JUP, LIT, NIL are bound perps. DRV is price-only spot (spotMetaAndAssetCtxs).
+      # LIT is Lighter. It is not Litecoin (LTC / LTCUSD / CRYPTO:LTC).
+      - JUP
+      - LIT
+      - NIL
+      - DRV
   base:
     local_time: "23:00"
     tz: Australia/Sydney
@@ -206,7 +213,7 @@ resolution:
     note: "HL perp USD; coin VVV present on HL per Intel snapshot. Principal display VVVUSD."
   ZECUSD: { status: resolved, qualified_id: "CRYPTO:ZEC", venue: hyperliquid, note: "identity resolved; venue not guessed" }
   XMRUSD: { status: resolved, qualified_id: "CRYPTO:XMR", venue: hyperliquid, note: "identity resolved; venue not guessed" }
-  LTCUSD: { status: resolved, qualified_id: "CRYPTO:LTC", venue: hyperliquid, note: "identity resolved; venue not guessed" }
+  LTCUSD: { status: resolved, qualified_id: "CRYPTO:LTC", venue: hyperliquid, note: "Litecoin. identity resolved; venue not guessed. Not Lighter. Lighter is ticker LIT, qualified_id HL:LIT, membership_key LIT." }
   CASHCAT: { status: resolved, qualified_id: "WATCHLIST:CASHCAT", venue: unspecified, note: "risk-blocked; state only" }
   PONSUSD: { status: resolved, qualified_id: "WATCHLIST:PONSUSD", venue: unspecified, note: "risk-blocked; state only" }
   CHIPIUSD:
@@ -221,6 +228,45 @@ resolution:
       Principal confirmed CHIPIUSD display → HL:CHIP (perp, USD). Intel snapshot:
       CHIPI absent on HL meta, CHIP present. Do not invent a CHIPI listing.
   DOGEUSD: { status: resolved, qualified_id: "CRYPTO:DOGE", venue: hyperliquid, note: "identity resolved; venue not guessed" }
+  JUP:
+    status: resolved
+    qualified_id: HL:JUP
+    venue: hyperliquid
+    kind: perp
+    quote: USD
+    coin: JUP
+    note: "HL perp. Exact retain symbol JUP (membership JUPUSDC in config/ingest/mvp_retain.yaml). Not in universe.yaml."
+  LIT:
+    status: resolved
+    qualified_id: HL:LIT
+    venue: hyperliquid
+    kind: perp
+    quote: USD
+    coin: LIT
+    not:
+      - LTC
+      - LTCUSD
+      - CRYPTO:LTC
+      - Litecoin
+    note: "Lighter. HL perp symbol LIT (membership LITUSDC). Not Litecoin. Litecoin remains ticker LTCUSD, membership_key LTC, qualified_id CRYPTO:LTC."
+  NIL:
+    status: resolved
+    qualified_id: HL:NIL
+    venue: hyperliquid
+    kind: perp
+    quote: USD
+    coin: NIL
+    note: "HL perp. Exact retain symbol NIL (membership NILUSDC in config/ingest/mvp_retain.yaml). Not in universe.yaml."
+  DRV:
+    status: resolved
+    qualified_id: HL:DRV
+    venue: hyperliquid
+    kind: spot
+    quote: USDC
+    coin: DRV
+    pair: DRV/USDC
+    spot_index: 700
+    note: "Price-only HL spot via spotMetaAndAssetCtxs. Pair DRV/USDC. Live spot universe name @700 (tokens DRV, USDC). Not a perp."
   SPX: { status: resolved, qualified_id: "INDEX:SPX", venue: index }
   NQ1!: { status: resolved, qualified_id: "CME:NQ1!", venue: cme }
   QQQ: { status: resolved, qualified_id: "NASDAQ:QQQ", venue: nasdaq }
@@ -304,6 +350,10 @@ names:
   - { ticker: PONSUSD, membership_key: PONS, tape_alias: PONS, round: crypto, tier: blocked, cluster: meme_t3 }
   - { ticker: CHIPIUSD, membership_key: CHIP, tape_alias: CHIP, round: crypto, tier: monitor, cluster: meme_t3, resolution_note: "display CHIPIUSD → HL:CHIP; no CHIPI listing invented" }
   - { ticker: DOGEUSD, membership_key: DOGE, tape_alias: DOGE, round: crypto, tier: monitor, cluster: meme_t3 }
+  - { ticker: JUP, membership_key: JUP, tape_alias: JUP, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: LIT, membership_key: LIT, tape_alias: LIT, round: crypto, tier: monitor, cluster: crypto_alt, resolution_note: "Lighter; not Litecoin (LTC / LTCUSD / CRYPTO:LTC)" }
+  - { ticker: NIL, membership_key: NIL, tape_alias: NIL, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: DRV, membership_key: DRV, tape_alias: DRV, round: crypto, tier: monitor, cluster: crypto_alt, resolution_note: "HL spot DRV/USDC spot_index 700; price-only mid; not a perp" }
   - { ticker: SPX, membership_key: SPX, tape_alias: SPX, round: base, tier: monitor, cluster: index_futures }
   - { ticker: NQ1!, membership_key: NQ1!, tape_alias: NQ1!, round: base, tier: monitor, cluster: index_futures }
   - { ticker: QQQ, membership_key: QQQ, tape_alias: QQQ, round: base, tier: monitor, cluster: index_futures }
