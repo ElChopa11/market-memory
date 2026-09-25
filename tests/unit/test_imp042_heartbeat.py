@@ -36,7 +36,10 @@ def test_delta_math_ok_late_and_early_off_anchor() -> None:
     assert classify_delta(120, 300) == "ok"
     delta, status = classify_fire(anchor, fired_early, 300)
     assert delta == -3480
-    assert status == "late"
+    assert status == "early"
+    assert classify_delta(-300, 300) == "ok"
+    assert classify_delta(-301, 300) == "early"
+    assert classify_delta(301, 300) == "late"
     assert window_closed(anchor, datetime(2026, 9, 18, 13, 16, tzinfo=UTC), 900) is True
     assert window_closed(anchor, datetime(2026, 9, 18, 13, 10, tzinfo=UTC), 900) is False
 
@@ -163,8 +166,8 @@ def test_stamp_fire_is_secondary_log_not_a_pass() -> None:
     fired = datetime(2026, 9, 18, 12, 2, tzinfo=UTC)
     record = stamp_fire(routine, fired_at=fired, run_id="obs-2202", as_of_knowledge=fired, source="observed")
     assert record.delta_seconds == -3480
-    assert record.status == "late"
-    # A late fire is a completion (not a miss) — BRIEF-TAG class, not SCHED-001.
+    assert record.status == "early"
+    # An early fire is a completion (not a miss) — BRIEF-TAG class, not SCHED-001.
     result = miss_sweep(
         catalog.__class__(
             routines=(routine,),
@@ -177,3 +180,5 @@ def test_stamp_fire_is_secondary_log_not_a_pass() -> None:
         lookback_days=1,
     )
     assert not any(row.routine_id == "grok.us_pre_market" for row in result.misses)
+    assert any(row["run_id"] == "obs-2202" and row["status"] == "early" for row in result.early)
+    assert result.late == ()

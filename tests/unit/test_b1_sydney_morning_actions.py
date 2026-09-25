@@ -155,6 +155,8 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     assert "scheduled_for: ${{ steps.stamp.outputs.scheduled_for }}" in stage1
     assert "write_deliver_receipt" not in stage1
     assert "already_delivered" not in stage1
+    assert "concurrency:" in text
+    assert "group: hybrid-sydney-morning" in text
     assert text.count("cancel-in-progress:") == 1
     assert "cancel-in-progress: false" in text
     assert "repository_dispatch" not in text
