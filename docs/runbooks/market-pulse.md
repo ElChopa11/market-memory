@@ -174,6 +174,10 @@ Standing source-health (Data desk, not this brief): [source-health.md](source-he
 - No execution, signing, wallets, or risk-service calls from briefing.
 - Pre-market footer is informational only (no decision / no order intent).
 
+## Sydney morning close (brief v2, one message)
+
+`lab brief close` is the morning Telegram body. The renderer applies the standing rule (a line that says the same thing every morning is not information): no `KEY TAKEAWAY`, no overnight reference block, empty sections omitted, `obs none` once in the header, zero-and-unchanged metrics on one `gaps:` line, basis only once a prior capture exists. The eight price rows stay, with source, delta, quality, and proxy labels. The send is one message of at most 4096 characters. Cards are deferred. Specs: [docs/specs/brief-v2.md](../specs/brief-v2.md), [docs/specs/brief-card-split-deferred.md](../specs/brief-card-split-deferred.md), [docs/specs/brief-format-freeze.md](../specs/brief-format-freeze.md).
+
 ## Optional DB index
 
 If Postgres is up and you omit `--no-db`, a `brief` row is written (kind, session_date, content_hash, artifact path). Markdown under `briefs/` remains the human artifact. Generated dated files are gitignored except an explicit committed sample on the DoD path.

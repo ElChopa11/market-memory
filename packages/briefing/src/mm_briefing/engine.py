@@ -184,6 +184,7 @@ def generate_close(
     hl: tuple[HLInstrumentState, ...],
     theses: tuple[ThesisHook, ...],
     generated_at: datetime | None = None,
+    prior_reader: object | None = None,
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
     freshness = load_freshness_config(settings.macro)
@@ -221,6 +222,7 @@ def generate_close(
         data_quality=quality,
         session_tz=settings.schedule.session_timezone,
         lab_tz=settings.schedule.lab_timezone,
+        prior_reader=prior_reader,
     )
 
 

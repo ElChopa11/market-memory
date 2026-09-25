@@ -1,0 +1,27 @@
+# US Close Brief — 2026-09-25
+
+UTC 2026-09-25T04:07:03+00:00 | New York 2026-09-25T00:07:03-04:00 (EDT) | Sydney 2026-09-25T14:07:03+10:00 (AEST)
+As-of knowledge: 2026-09-25T04:07:03+00:00
+Data health: 33% | Equities ⚪ unavailable | Rates ⚪ unavailable | USD ⚪ unavailable | Oil ⚪ unavailable | Crypto 🟢 fresh | Hyperliquid 🟢 fresh
+obs none
+
+| Symbol | Last | Δ | Source | Quality | Label |
+|---|---:|---:|---|---|---|
+| SPY | n/a | n/a | polygon | unavailable | SPY ETF (proxy for S&P 500; not ES futures) |
+| QQQ | n/a | n/a | polygon | unavailable | QQQ ETF (proxy for Nasdaq-100; not NQ futures) |
+| US10Y | n/a | n/a | fred | unavailable | US 10Y yield |
+| UUP | n/a | n/a | polygon | unavailable | UUP ETF (USD proxy; not DX futures / DXY) |
+| USO | n/a | n/a | polygon | unavailable | USO ETF (WTI oil proxy; not CL futures) |
+| VIX | n/a | n/a | polygon | unavailable | CBOE VIX (structurally unavailable without Cboe entitlement) |
+| BTC | 84174.50 | n/a | hyperliquid.info /info | fresh | HL BTC-USDC perp mid (not CoinGecko spot) |
+| ETH | 2676.55 | n/a | hyperliquid.info /info | fresh | HL ETH-USDC perp mid (not CoinGecko spot) |
+
+## Positioning
+
+BTC Funding: 0.000013
+BTC Open interest: 39226.95958
+BTC Mid: 84174.5
+ETH Funding: 0.000013
+ETH Open interest: 1065120.0612
+ETH Mid: 2676.55
+gaps: BTC Liquidations (window sum), ETH Liquidations (window sum)

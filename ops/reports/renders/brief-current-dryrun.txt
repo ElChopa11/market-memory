@@ -1,0 +1,77 @@
+# US Close Brief — 2026-09-25
+
+Generated (UTC): 2026-09-25T04:07:03+00:00
+Generated (America/New_York): 2026-09-25T00:07:03-04:00 (EDT)
+Generated (Australia/Sydney): 2026-09-25T14:07:03+10:00 (AEST)
+US session status: overnight_closed — Overnight — US cash session closed (DST=EDT)
+As-of knowledge: 2026-09-25T04:07:03+00:00 (ingested_at watermark; never published_at alone)
+Data quality: unavailable
+
+## What moved
+
+| Slot | Symbol | Last | Prior close | Change | prior US close (session) | Source | As-of | Quality |
+|---|---|---:|---:|---:|---|---|---|---|
+| equity-index proxy | ES | n/a | n/a | n/a | SPY ETF (proxy for S&P 500; not ES futures) | polygon | 2026-09-25T04:07:03+00:00 | unavailable |
+| equity-index proxy | NQ | n/a | n/a | n/a | QQQ ETF (proxy for Nasdaq-100; not NQ futures) | polygon | 2026-09-25T04:07:03+00:00 | unavailable |
+| rates | US10Y | n/a | n/a | n/a | US 10Y yield | fred | 2026-09-25T04:07:03+00:00 | unavailable |
+| USD | DXY | n/a | n/a | n/a | UUP ETF (USD proxy; not DX futures / DXY) | polygon | 2026-09-25T04:07:03+00:00 | unavailable |
+| oil | CL | n/a | n/a | n/a | USO ETF (WTI oil proxy; not CL futures) | polygon | 2026-09-25T04:07:03+00:00 | unavailable |
+| vol | VIX | n/a | n/a | n/a | CBOE VIX (structurally unavailable without Cboe entitlement) | polygon | 2026-09-25T04:07:03+00:00 | unavailable |
+| crypto | BTC | 84174.50 | n/a | n/a | HL BTC-USDC perp mid (not CoinGecko spot) | hyperliquid.info /info | 2026-09-25T04:07:03+00:00 | fresh |
+| crypto | ETH | 2676.55 | n/a | n/a | HL ETH-USDC perp mid (not CoinGecko spot) | hyperliquid.info /info | 2026-09-25T04:07:03+00:00 | fresh |
+
+Overnight reference:
+
+- ES [equity-index proxy] (SPY ETF (proxy for S&P 500; not ES futures)): last n/a / n/a [quality=unavailable; source=polygon; as-of=2026-09-25T04:07:03+00:00; obs none]
+- NQ [equity-index proxy] (QQQ ETF (proxy for Nasdaq-100; not NQ futures)): last n/a / n/a [quality=unavailable; source=polygon; as-of=2026-09-25T04:07:03+00:00; obs none]
+- US10Y [rates] (US 10Y yield): last n/a / n/a [quality=unavailable; source=fred; as-of=2026-09-25T04:07:03+00:00; obs none]
+- DXY [USD] (UUP ETF (USD proxy; not DX futures / DXY)): last n/a / n/a [quality=unavailable; source=polygon; as-of=2026-09-25T04:07:03+00:00; obs none]
+- CL [oil] (USO ETF (WTI oil proxy; not CL futures)): last n/a / n/a [quality=unavailable; source=polygon; as-of=2026-09-25T04:07:03+00:00; obs none]
+- VIX [vol] (CBOE VIX (structurally unavailable without Cboe entitlement)): last n/a / n/a [quality=unavailable; source=polygon; as-of=2026-09-25T04:07:03+00:00; obs none]
+- BTC [crypto] (HL BTC-USDC perp mid (not CoinGecko spot)): last 84174.50 / n/a [quality=fresh; source=hyperliquid.info /info; as-of=2026-09-25T04:07:03+00:00; obs none]
+- ETH [crypto] (HL ETH-USDC perp mid (not CoinGecko spot)): last 2676.55 / n/a [quality=fresh; source=hyperliquid.info /info; as-of=2026-09-25T04:07:03+00:00; obs none]
+
+## What was unexpected
+
+- Nothing crossed the unexpected-move rules.
+
+## Lab right/wrong hooks
+
+- No indexed theses to score against this session.
+
+## Assumption changes
+
+- No named macro assumption flipped vs the overnight tape
+
+## Monitor into Asia / Europe / next US
+
+- Asia: BTC/ETH funding, OI, and liquidation prints vs US cash close levels.
+- Europe: whether the USD/yields overnight path re-asserts before next US pre-open.
+- No dated catalysts remaining in the look-ahead window.
+
+## Hyperliquid into the next session
+
+### BTC (quality=fresh; source=hyperliquid.info /info)
+
+- Instrument as-of knowledge: 2026-09-25T04:07:03+00:00
+- Funding: 0.000013 (obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); as-of 2026-09-25T04:07:03+00:00; market_time null (snapshot; capture is as_of_knowledge / ingested_at))
+- Open interest: 39226.95958 (Δ n/a; obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); as-of 2026-09-25T04:07:03+00:00; market_time null (snapshot; capture is as_of_knowledge / ingested_at))
+- Mid: 84174.5 (obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); as-of 2026-09-25T04:07:03+00:00; market_time null (snapshot; capture is as_of_knowledge / ingested_at))
+- Basis mark−oracle: -11.3 (mark obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); oracle obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs))
+- Liquidations (window sum): 0 (obs none)
+- Levels: basis_mark_minus_oracle=-11.3
+
+### ETH (quality=fresh; source=hyperliquid.info /info)
+
+- Instrument as-of knowledge: 2026-09-25T04:07:03+00:00
+- Funding: 0.000013 (obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); as-of 2026-09-25T04:07:03+00:00; market_time null (snapshot; capture is as_of_knowledge / ingested_at))
+- Open interest: 1065120.0612 (Δ n/a; obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); as-of 2026-09-25T04:07:03+00:00; market_time null (snapshot; capture is as_of_knowledge / ingested_at))
+- Mid: 2676.55 (obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); as-of 2026-09-25T04:07:03+00:00; market_time null (snapshot; capture is as_of_knowledge / ingested_at))
+- Basis mark−oracle: -0.8 (mark obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs); oracle obs none (https://api.hyperliquid.xyz/info type=metaAndAssetCtxs))
+- Liquidations (window sum): 0 (obs none)
+- Levels: basis_mark_minus_oracle=-0.8
+
+
+---
+**Informational only — no decision, no recommendation, no order intent.**
+This brief does not change universe membership, size a trade, submit an order, or approve risk.

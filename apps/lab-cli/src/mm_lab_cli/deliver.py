@@ -369,6 +369,9 @@ def append_dm_status_lines(
     return f"{block}\n"
 
 
+append_brief_status_lines = append_dm_status_lines
+
+
 def apply_sydney_morning_late_line(
     markdown: str,
     *,
@@ -376,7 +379,7 @@ def apply_sydney_morning_late_line(
     sent_at: datetime,
     run_id: str | None,
 ) -> str:
-    """Append the LATE line once. The same markdown when this send is not late."""
+    """Append the LATE line once, through :func:`append_dm_status_lines`."""
     try:
         line = sydney_morning_late_line(scheduled_for, sent_at, run_id)
     except ValueError:

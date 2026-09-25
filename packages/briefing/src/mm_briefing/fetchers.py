@@ -759,6 +759,7 @@ class LiveMacroFetcher:
                     source="polygon",
                     as_of=captured,
                     source_url=base,
+                    structural_unavailable=True,
                 )
             )
             note_parts.append(f"polygon structural unavailable for {slot}: {reason}")
@@ -770,6 +771,7 @@ class LiveMacroFetcher:
             for symbol, meta in symbols.items():
                 slot = str(symbol).upper()
                 label = _polygon_label(slot, meta)
+                ticker = _polygon_ticker(meta)
                 out.append(
                     AssetPrint(
                         symbol=slot,
@@ -781,6 +783,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=base,
+                        quoted_symbol=ticker or None,
                     )
                 )
             note_parts.extend(missing_env_notes(env_name, source="Polygon"))
@@ -810,6 +813,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=base,
+                        quoted_symbol=ticker or None,
                     )
                 )
                 continue
@@ -837,6 +841,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=url,
+                        quoted_symbol=ticker or None,
                     )
                 )
                 continue
@@ -864,6 +869,7 @@ class LiveMacroFetcher:
                         source="polygon",
                         as_of=captured,
                         source_url=url,
+                        quoted_symbol=ticker or None,
                     )
                 )
                 continue
@@ -1088,6 +1094,7 @@ def _parse_polygon_aggs(
         open=last_open,
         as_of=last_time,
         source_url=source_url,
+        quoted_symbol=ticker or None,
     )
 
 

@@ -208,7 +208,51 @@ def render_close(
     data_quality: str,
     session_tz: str = "America/New_York",
     lab_tz: str = "Australia/Sydney",
+    prior_reader: object | None = None,
 ) -> BriefDocument:
+    """US close / Sydney morning brief. One message. Standing rule is inside the renderer.
+
+    ``prior_reader`` is the Neon MVP prior-capture seam (#122). None, capture 1,
+    and a read failure are all "no prior" and must not fail the brief.
+    """
+    from mm_briefing.morning import render_morning_close
+
+    return render_morning_close(
+        generated_at=generated_at,
+        as_of=as_of,
+        overnight=overnight,
+        session=session,
+        calendar=calendar,
+        unexpected=unexpected,
+        theses=theses,
+        assumptions=assumptions,
+        hl=hl,
+        data_quality=data_quality,
+        session_tz=session_tz,
+        lab_tz=lab_tz,
+        prior_reader=prior_reader,
+    )
+
+
+def render_close_legacy(
+    *,
+    generated_at: datetime,
+    as_of: datetime,
+    overnight: MacroSnapshot,
+    session: MacroSnapshot,
+    calendar: tuple[CalendarEvent, ...],
+    unexpected: tuple[str, ...],
+    theses: tuple[ThesisHook, ...],
+    assumptions: tuple[str, ...],
+    hl: tuple[HLInstrumentState, ...],
+    data_quality: str,
+    session_tz: str = "America/New_York",
+    lab_tz: str = "Australia/Sydney",
+) -> BriefDocument:
+    """Pre-template US close body, kept so a comparison dry-run uses the same inputs.
+
+    Not the morning send path. ``lab brief close`` uses :func:`render_close`.
+    """
     session_date = session_date_for(as_of)
     ny = generated_at.astimezone(NY_TZ)
     syd = generated_at.astimezone(SYDNEY_TZ)

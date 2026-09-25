@@ -102,6 +102,12 @@ def slot_label(symbol: str) -> str:
     return SLOT_FOR_SYMBOL.get(symbol.upper(), "other")
 
 
+def display_symbol(row: AssetPrint) -> str:
+    """Symbol column: the proxy ticker that was quoted, otherwise the slot symbol."""
+    quoted = (row.quoted_symbol or "").strip()
+    return quoted or row.symbol
+
+
 @dataclass(frozen=True)
 class AssetPrint:
     symbol: str
@@ -115,6 +121,10 @@ class AssetPrint:
     as_of: datetime | None = None
     observation_id: str | None = None
     source_url: str | None = None
+    # Polygon ETF ticker actually quoted (SPY/QQQ/UUP/USO). Slot id stays on ``symbol``.
+    quoted_symbol: str | None = None
+    # Entitlement gap (VIX). Listed on the price row and excluded from the health denominator.
+    structural_unavailable: bool = False
 
     @property
     def change(self) -> float | None:

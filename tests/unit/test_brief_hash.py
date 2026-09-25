@@ -50,7 +50,9 @@ def test_frozen_close_hash_is_deterministic() -> None:
     assert "US Close Brief — 2026-03-10" in first.markdown
     assert "THESIS-0001" in first.markdown
     assert "lab wrong (so far)" in first.markdown
-    assert "Monitor into Asia" in first.markdown
+    assert "Overnight reference" not in first.markdown
+    assert "KEY TAKEAWAY" not in first.markdown
+    assert "Monitor into Asia" not in first.markdown
 
 
 def test_preopen_markdown_matches_committed_golden() -> None:
