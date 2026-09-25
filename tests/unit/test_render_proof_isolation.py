@@ -20,7 +20,9 @@ import yaml
 
 from mm_ingest.mvp_retain import PRIOR_CAPTURE_SQL, PROOF_CAPTURE_KIND
 from mm_briefing import render_proof
-from tests.unit.test_morning_capture import FRIDAY_PRIOR, SATURDAY_PROOF, MemStore
+
+FRIDAY_PRIOR = "2026-09-25T20:32:00+00:00"
+SATURDAY_PROOF = "2026-09-26T04:00:00+00:00"
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
@@ -260,12 +262,20 @@ def _install_forbidden(monkeypatch, called: list[str]) -> None:
     monkeypatch.setattr(subprocess, "run", _run)
 
 
-def _install_fixture_http(monkeypatch) -> None:
+def _install_fixture_http(
+    monkeypatch,
+    *,
+    polygon_status: dict[str, int] | None = None,
+    fred_body: dict | None = None,
+) -> None:
     polygon = json.loads((FIXTURE_DIR / "morning_polygon_aggs.json").read_text(encoding="utf-8"))
-    fred = json.loads((FIXTURE_DIR / "morning_fred_rolled.json").read_text(encoding="utf-8"))
+    fred = fred_body if fred_body is not None else json.loads(
+        (FIXTURE_DIR / "morning_fred_rolled.json").read_text(encoding="utf-8")
+    )
     hl_body = json.loads(
         (FIXTURE_DIR / "morning_hl_meta_and_asset_ctxs.json").read_text(encoding="utf-8")
     )
+    status_for = polygon_status or {}
     original = httpx.Client
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -273,6 +283,9 @@ def _install_fixture_http(monkeypatch) -> None:
         if host == "api.polygon.io":
             for ticker, body in polygon.items():
                 if f"/ticker/{ticker}/" in request.url.path:
+                    status = status_for.get(ticker, 200)
+                    if status != 200:
+                        return httpx.Response(status, json={"status": "ERROR"})
                     return httpx.Response(200, json=body)
             return httpx.Response(404, json={"status": "NOT_FOUND"})
         if host == "api.stlouisfed.org":
@@ -309,6 +322,25 @@ def _prior_captured_at(rows: list[dict], anchor_date: str, before: str, *, drop_
             continue
         candidates.append(str(captured))
     return max(candidates) if candidates else None
+
+
+class _MemStore:
+    """In-memory stand-in for the morning prior query. Same kind filter as PRIOR_CAPTURE_SQL."""
+
+    def __init__(self) -> None:
+        self.rows: list[dict] = []
+        self.writes = 0
+
+    def prior_captured_at(self, anchor_date: str, before: str) -> str | None:
+        candidates = [
+            str(row["captured_at"])
+            for row in self.rows
+            if row.get("capture_kind") != PROOF_CAPTURE_KIND
+            and row.get("anchor_date") != anchor_date
+            and row.get("captured_at")
+            and str(row["captured_at"]) < before
+        ]
+        return max(candidates) if candidates else None
 
 
 def _seeded_rows() -> list[dict]:
@@ -390,6 +422,18 @@ def test_render_proof_forbidden_writers_raise_and_sentinels_are_unread(monkeypat
     assert "lines=" in captured.out
     assert "US Close unavailable" not in captured.out
     assert summary.is_file()
+    summary_text = summary.read_text(encoding="utf-8")
+    tail = [line for line in summary_text.splitlines() if line.startswith(("HL ", "Polygon ", "FRED "))]
+    assert tail == [
+        "HL ok as-of 2026-09-25",
+        "Polygon SPY ok as-of 2026-09-24",
+        "Polygon QQQ ok as-of 2026-09-24",
+        "Polygon UUP ok as-of 2026-09-24",
+        "Polygon USO ok as-of 2026-09-24",
+        "FRED DGS10 ok as-of 2026-09-24",
+    ]
+    assert "RENDER_PROOF FAIL" not in captured.out
+    assert "SOURCE DOWN" not in summary_text
     _, parsed = _workflow()
     text = WORKFLOW.read_text(encoding="utf-8")
     assert "uv run python -m mm_briefing.render_proof" in _job_text(text)
@@ -493,7 +537,7 @@ def test_render_proof_writes_zero_rows_and_prior_ignores_proof_and_render(
     monkeypatch, capsys, tmp_path
 ) -> None:
     rows = _seeded_rows()
-    store = MemStore()
+    store = _MemStore()
     store.rows.extend(rows)
     before = list(store.rows)
     called: list[str] = []
@@ -548,3 +592,127 @@ def test_render_proof_writes_zero_rows_and_prior_ignores_proof_and_render(
         PRIOR_BEFORE,
         drop_proof=True,
     ) is None
+
+
+def test_render_proof_missing_env_exits_nonzero(monkeypatch, capsys, tmp_path) -> None:
+    """Polygon and FRED keys are unwired. The job must not exit 0."""
+    monkeypatch.delenv("POLYGON_API_KEY", raising=False)
+    monkeypatch.delenv("FRED_API_KEY", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    _install_fixture_http(monkeypatch)
+    monkeypatch.setattr(render_proof, "utcnow", lambda: AS_OF)
+    monkeypatch.chdir(ROOT)
+
+    rc = render_proof.main()
+    captured = capsys.readouterr()
+    text = summary.read_text(encoding="utf-8")
+    assert rc == 1
+    assert "RENDER_PROOF FAIL: POLYGON missing_env" in captured.out
+    assert "RENDER_PROOF FAIL: FRED missing_env" in captured.out
+    assert "RENDER_PROOF FAIL: POLYGON missing_env" in text
+    assert "RENDER_PROOF FAIL: FRED missing_env" in text
+    assert "SOURCE DOWN" not in captured.out
+    assert "SOURCE DOWN" not in text
+    assert "POLYGON missing_env" in captured.out
+    assert "FRED missing_env" in captured.out
+    tail = text.rstrip().splitlines()[-6:]
+    assert tail == [
+        "HL ok as-of 2026-09-25",
+        "Polygon SPY missing_env as-of none",
+        "Polygon QQQ missing_env as-of none",
+        "Polygon UUP missing_env as-of none",
+        "Polygon USO missing_env as-of none",
+        "FRED DGS10 missing_env as-of none",
+    ]
+    assert FIXTURE_TOKEN not in captured.out
+
+
+def test_render_proof_source_down_still_renders_and_names_the_reason(monkeypatch, capsys, tmp_path) -> None:
+    """Key is present. HTTP failure and empty data render, and the summary names them."""
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setenv("POLYGON_API_KEY", FIXTURE_TOKEN)
+    monkeypatch.setenv("FRED_API_KEY", FIXTURE_TOKEN)
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    _install_fixture_http(
+        monkeypatch,
+        polygon_status={"SPY": 404},
+        fred_body={"observations": [{"date": "2026-09-24", "value": "."}]},
+    )
+    monkeypatch.setattr(render_proof, "utcnow", lambda: AS_OF)
+    monkeypatch.chdir(ROOT)
+
+    rc = render_proof.main()
+    captured = capsys.readouterr()
+    text = summary.read_text(encoding="utf-8")
+    assert rc == 0
+    assert "RENDER_PROOF FAIL" not in captured.out
+    assert "US Close unavailable" in captured.out
+    assert "SOURCE DOWN: Polygon SPY http_404" in text
+    assert "SOURCE DOWN: FRED DGS10 empty" in text
+    assert "SOURCE DOWN: Polygon SPY http_404" in captured.out
+    assert "SOURCE DOWN: FRED DGS10 empty" in captured.out
+    tail = [line for line in text.splitlines() if line.startswith(("HL ", "Polygon ", "FRED "))]
+    assert tail[-6:] == [
+        "HL ok as-of 2026-09-25",
+        "Polygon SPY down as-of none",
+        "Polygon QQQ ok as-of 2026-09-24",
+        "Polygon UUP ok as-of 2026-09-24",
+        "Polygon USO ok as-of 2026-09-24",
+        "FRED DGS10 down as-of none",
+    ]
+    assert text.rstrip().splitlines()[-6:] == tail[-6:]
+
+
+def test_render_proof_timeout_is_source_down_not_missing_env() -> None:
+    from datetime import datetime, timezone
+
+    from mm_briefing.models import AssetPrint, MacroSnapshot
+
+    moment = datetime(2026, 9, 25, 8, 30, tzinfo=timezone.utc)
+    assets = []
+    for symbol, ticker in (("ES", "SPY"), ("NQ", "QQQ"), ("DXY", "UUP"), ("CL", "USO")):
+        last = None if symbol == "ES" else 1.0
+        assets.append(
+            AssetPrint(
+                symbol=symbol,
+                name=ticker,
+                last=last,
+                prior_close=1.0 if last is not None else None,
+                source="polygon",
+                as_of=moment,
+                quoted_symbol=ticker,
+            )
+        )
+    assets.append(
+        AssetPrint(
+            symbol="US10Y",
+            name="US10Y",
+            last=None,
+            prior_close=None,
+            source="fred",
+            as_of=moment,
+        )
+    )
+    snapshot = MacroSnapshot(
+        as_of=moment,
+        prior_us_close=moment,
+        assets=tuple(assets),
+        data_quality="unavailable",
+        source="live",
+        notes=(
+            "polygon unavailable (error_class=timeout) for 1 slot(s): ES",
+            "fred failed for 1 series (error_class=timeout)",
+        ),
+    )
+    sources = render_proof.proof_sources(snapshot, ())
+    assert render_proof.fail_lines(sources) == ()
+    assert "SOURCE DOWN: Polygon SPY timeout" in render_proof.down_lines(sources)
+    assert "SOURCE DOWN: FRED DGS10 timeout" in render_proof.down_lines(sources)
+    by_name = {row.name: row for row in sources}
+    assert by_name["Polygon SPY"].status == "down"
+    assert by_name["Polygon QQQ"].status == "ok"
+    assert by_name["FRED DGS10"].status == "down"
+    assert by_name["HL"].status == "down"

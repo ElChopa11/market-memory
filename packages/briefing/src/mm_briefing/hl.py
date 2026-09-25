@@ -172,11 +172,12 @@ def hl_from_live_info(
     try:
         ctxs = client.meta_and_asset_ctxs()
     except HyperliquidInfoError as exc:
+        detail = str(exc).rsplit(": ", 1)[-1].strip() or exc.__class__.__name__
         return ensure_hl_instruments(
             (),
             instruments=wanted,
             as_of=captured,
-            source=f"{LIVE_INFO_SOURCE} unavailable ({exc.__class__.__name__})",
+            source=f"{LIVE_INFO_SOURCE} unavailable ({detail})",
         )
     envelopes = normalize_asset_snapshot(
         ctxs,

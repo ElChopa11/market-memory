@@ -320,6 +320,7 @@ def generate_from_sources(
     alert_settings: AlertSettings | None = None,
     live: bool = False,
     hl_client=None,
+    live_trace: dict[str, Any] | None = None,
 ) -> tuple[BriefDocument | None, AlertDecision | None]:
     if fixture is not None:
         return generate_from_fixture(
@@ -371,6 +372,9 @@ def generate_from_sources(
         finally:
             if owns_client:
                 client.close()
+    if live_trace is not None:
+        live_trace["snapshot"] = session_snap if kind == "close" else overnight
+        live_trace["hl"] = hl
     if kind == "preopen":
         return (
             generate_preopen(
