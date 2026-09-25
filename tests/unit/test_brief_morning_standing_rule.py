@@ -956,6 +956,93 @@ def test_perp_with_no_print_is_a_gap_and_not_zero() -> None:
     assert "SOL Funding" not in gaps
 
 
+def test_polygon_missing_us_close_is_unavailable_not_the_fetch_date() -> None:
+    """No equity bar: do not print the New York date of a 04:30 EDT fetch."""
+    generated = datetime(2026, 9, 25, 8, 30, tzinfo=UTC)
+    assets = []
+    for symbol in ASSET_ORDER:
+        assets.append(
+            _print(
+                symbol,
+                last=None,
+                prior=None,
+                quality="unavailable",
+                as_of=None,
+                source="polygon" if symbol not in {"US10Y", "BTC", "ETH"} else "fred",
+            )
+        )
+    session = MacroSnapshot(
+        as_of=generated,
+        prior_us_close=PRIOR_CLOSE,
+        assets=tuple(assets),
+        data_quality="unavailable",
+        source="live",
+        notes=("missing env POLYGON_API_KEY; Polygon unavailable",),
+    )
+    text = render_morning_close(
+        generated_at=generated,
+        as_of=generated,
+        overnight=session,
+        session=session,
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="unavailable",
+    ).markdown
+    assert "US Close unavailable" in text
+    assert "US Close 2026-09-25" not in text
+    assert "EQUITY T-1 BY DESIGN" not in text
+    assert "NY 2026-09-25 04:30 EDT" in text
+
+
+def test_polygon_bars_us_close_matches_t1_bar_date() -> None:
+    """Bars on the prior session name that date on the top line and the T-1 header."""
+    generated = datetime(2026, 9, 25, 8, 30, tzinfo=UTC)
+    bar = datetime(2026, 9, 24, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol not in {"ES", "NQ", "DXY", "CL"}:
+            continue
+        assets[index] = _print(
+            symbol,
+            last=100.0,
+            prior=99.0,
+            source="polygon",
+            quality="fresh",
+            name=assets[index].name,
+            quoted_symbol=assets[index].quoted_symbol,
+            as_of=bar,
+        )
+    session = MacroSnapshot(
+        as_of=generated,
+        prior_us_close=PRIOR_CLOSE,
+        assets=tuple(assets),
+        data_quality="ok",
+        source="polygon",
+    )
+    text = render_morning_close(
+        generated_at=generated,
+        as_of=generated,
+        overnight=session,
+        session=session,
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="ok",
+    ).markdown
+    assert "US Close 2026-09-24" in text
+    assert "EQUITY T-1 BY DESIGN (close 2026-09-24)" in text
+    assert "US Close 2026-09-25" not in text
+    close = re.search(r"US Close (\d{4}-\d{2}-\d{2})", text)
+    header = re.search(r"EQUITY T-1 BY DESIGN \(close (\d{4}-\d{2}-\d{2})\)", text)
+    assert close is not None and header is not None
+    assert close.group(1) == header.group(1) == "2026-09-24"
+
+
 def test_us_close_and_t1_header_name_one_session() -> None:
     expected = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
     assets = list(_eight())

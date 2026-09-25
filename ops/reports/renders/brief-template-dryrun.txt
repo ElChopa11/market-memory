@@ -1,5 +1,5 @@
 ```
-US Close 2026-09-25
+US Close unavailable
 
 UTC 2026-09-25 08:30Z
 NY 2026-09-25 04:30 EDT

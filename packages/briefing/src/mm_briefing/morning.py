@@ -117,7 +117,10 @@ def render_morning_close(
 ) -> BriefDocument:
     """Render the morning brief. ``overnight`` is not reprinted (no reference block)."""
     del overnight  # the price table is the session print; the reference block is gone
-    session_date = _us_close_date(session.assets, as_of)
+    shared_bar = _shared_session_date(session.assets)
+    # Filing key only. The rendered top line uses the equity bar date, or
+    # "US Close unavailable" when Polygon has no bar. Never the fetch's NY date.
+    session_date = shared_bar if shared_bar is not None else session_date_for(as_of)
     ny = generated_at.astimezone(NY_TZ)
     syd = generated_at.astimezone(SYDNEY_TZ)
     presentation = load_presentation_config()
@@ -126,7 +129,7 @@ def render_morning_close(
         hl,
         config=presentation,
     )
-    lines: list[str] = [f"US Close {session_date.isoformat()}", ""]
+    lines: list[str] = [_us_close_line(shared_bar), ""]
     kept_leads = [lead for lead in lead_lines if not _lead_restates_generated_at(lead, generated_at)]
     for lead in kept_leads:
         lines.extend(_phone_wrap(lead))
@@ -352,13 +355,14 @@ def _shared_session_date(assets: tuple[AssetPrint, ...]) -> date | None:
     return days[0]
 
 
-def _us_close_date(assets: tuple[AssetPrint, ...], knowledge_as_of: datetime) -> date:
-    """Top-line session. When the T-1 header prints, this is that same date."""
-    shared = _shared_session_date(assets)
-    expected = expected_equity_session(knowledge_as_of)
-    if shared is not None and shared == expected:
-        return shared
-    return session_date_for(knowledge_as_of)
+def _us_close_line(shared: date | None) -> str:
+    """Top line. The date is the shared equity bar date, or unavailable.
+
+    A fetch with no Polygon bars does not use the New York calendar date.
+    """
+    if shared is None:
+        return "US Close unavailable"
+    return f"US Close {shared.isoformat()}"
 
 
 def _equity_t1_lines(assets: tuple[AssetPrint, ...], knowledge_as_of: datetime) -> list[str]:

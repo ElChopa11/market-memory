@@ -224,6 +224,8 @@ def test_committed_dryrun_is_the_live_failure_render() -> None:
     text = TEMPLATE.read_text(encoding="utf-8")
     assert "RECORDED DATA" not in text
     assert "Earlier pair" not in text
+    assert text.startswith("```\nUS Close unavailable\n")
+    assert "US Close 2026-09-25" not in text
     assert "POLYGON missing_env" in text
     assert "FRED missing_env" in text
     assert len([line for line in text.splitlines() if "US10Y" in line]) == 1
