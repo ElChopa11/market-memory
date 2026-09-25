@@ -29,6 +29,7 @@ WORKFLOW = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
 FIXTURE_DIR = ROOT / "tests" / "fixtures" / "briefing"
 AS_OF = datetime(2026, 9, 25, 8, 30, tzinfo=timezone.utc)
 FIXTURE_TOKEN = "fixture"
+_REAL_HTTPX_CLIENT = httpx.Client
 MONDAY_ANCHOR_DATE = "2026-09-28"
 PRIOR_BEFORE = "2026-09-27T20:32:00+00:00"
 ALLOWED_SECRETS = frozenset({"POLYGON_API_KEY", "FRED_API_KEY"})
@@ -276,7 +277,7 @@ def _install_fixture_http(
         (FIXTURE_DIR / "morning_hl_meta_and_asset_ctxs.json").read_text(encoding="utf-8")
     )
     status_for = polygon_status or {}
-    original = httpx.Client
+    original = _REAL_HTTPX_CLIENT
 
     def handler(request: httpx.Request) -> httpx.Response:
         host = request.url.host
@@ -609,10 +610,10 @@ def test_render_proof_missing_env_exits_nonzero(monkeypatch, capsys, tmp_path) -
     captured = capsys.readouterr()
     text = summary.read_text(encoding="utf-8")
     assert rc == 1
-    assert "RENDER_PROOF FAIL: POLYGON missing_env" in captured.out
-    assert "RENDER_PROOF FAIL: FRED missing_env" in captured.out
-    assert "RENDER_PROOF FAIL: POLYGON missing_env" in text
-    assert "RENDER_PROOF FAIL: FRED missing_env" in text
+    assert "RENDER_PROOF FAIL: polygon missing_env" in captured.out
+    assert "RENDER_PROOF FAIL: fred missing_env" in captured.out
+    assert "RENDER_PROOF FAIL: polygon missing_env" in text
+    assert "RENDER_PROOF FAIL: fred missing_env" in text
     assert "SOURCE DOWN" not in captured.out
     assert "SOURCE DOWN" not in text
     assert "POLYGON missing_env" in captured.out
@@ -716,3 +717,48 @@ def test_render_proof_timeout_is_source_down_not_missing_env() -> None:
     assert by_name["Polygon QQQ"].status == "ok"
     assert by_name["FRED DGS10"].status == "down"
     assert by_name["HL"].status == "down"
+
+
+_MARKET_SENTINEL = "sentinel-market-data-key-not-a-secret"
+
+
+def test_render_proof_missing_env_fails_red_but_source_down_stays_green(monkeypatch, capsys, tmp_path) -> None:
+    """Fifth isolation bar: a missing key is red; a wired source that is down stays green."""
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+    monkeypatch.setattr(render_proof, "utcnow", lambda: AS_OF)
+    monkeypatch.setattr("mm_briefing.fetchers.time.sleep", lambda *_args, **_kwargs: None)
+    monkeypatch.chdir(ROOT)
+    _install_fixture_http(monkeypatch)
+
+    monkeypatch.delenv("POLYGON_API_KEY", raising=False)
+    monkeypatch.setenv("FRED_API_KEY", _MARKET_SENTINEL)
+    polygon_rc = render_proof.main()
+    polygon_out = capsys.readouterr().out
+    assert polygon_rc != 0
+    assert "RENDER_PROOF FAIL: polygon missing_env" in polygon_out
+    assert "RENDER_PROOF FAIL: fred missing_env" not in polygon_out
+
+    monkeypatch.setenv("POLYGON_API_KEY", _MARKET_SENTINEL)
+    monkeypatch.delenv("FRED_API_KEY", raising=False)
+    fred_rc = render_proof.main()
+    fred_out = capsys.readouterr().out
+    assert fred_rc != 0
+    assert "RENDER_PROOF FAIL: fred missing_env" in fred_out
+    assert "RENDER_PROOF FAIL: polygon missing_env" not in fred_out
+
+    monkeypatch.setenv("POLYGON_API_KEY", _MARKET_SENTINEL)
+    monkeypatch.setenv("FRED_API_KEY", _MARKET_SENTINEL)
+    _install_fixture_http(monkeypatch, polygon_status={"SPY": 503})
+    down_rc = render_proof.main()
+    down = capsys.readouterr()
+    summary_text = summary.read_text(encoding="utf-8")
+    assert down_rc == 0
+    assert "RENDER_PROOF FAIL" not in down.out
+    unavailable = [
+        line for line in down.out.splitlines() if "unavailable" in line and "http_5xx" in line
+    ]
+    assert unavailable == ["Polygon SPY unavailable (http_5xx)"]
+    assert "SOURCE DOWN: Polygon SPY http_5xx" in summary_text
+    assert _MARKET_SENTINEL not in down.out
+    assert _MARKET_SENTINEL not in summary_text

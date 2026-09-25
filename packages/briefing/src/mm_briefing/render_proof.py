@@ -100,10 +100,17 @@ def proof_sources(snapshot: MacroSnapshot, hl: tuple[HLInstrumentState, ...]) ->
 def fail_lines(sources: tuple[ProofSource, ...]) -> tuple[str, ...]:
     lines: list[str] = []
     if any(row.name.startswith("Polygon ") and row.status == "missing_env" for row in sources):
-        lines.append("RENDER_PROOF FAIL: POLYGON missing_env")
+        lines.append("RENDER_PROOF FAIL: polygon missing_env")
     if any(row.name.startswith("FRED ") and row.status == "missing_env" for row in sources):
-        lines.append("RENDER_PROOF FAIL: FRED missing_env")
+        lines.append("RENDER_PROOF FAIL: fred missing_env")
     return tuple(lines)
+
+
+def unavailable_lines(sources: tuple[ProofSource, ...]) -> tuple[str, ...]:
+    """Down sources stay in the render. The reason is the HTTP class, timeout, or empty."""
+    return tuple(
+        f"{row.name} unavailable ({row.reason})" for row in sources if row.status == "down" and row.reason
+    )
 
 
 def down_lines(sources: tuple[ProofSource, ...]) -> tuple[str, ...]:
@@ -121,9 +128,13 @@ def emit_render_proof(
     sources: tuple[ProofSource, ...] = (),
 ) -> None:
     """Print the message and, on Actions, the step summary. Counts are len(text) and splitlines()."""
-    chars = len(text)
-    lines = len(text.splitlines())
-    print(text)
+    shown = text
+    extra = unavailable_lines(sources)
+    if extra:
+        shown = text.rstrip("\n") + "\n" + "\n".join(extra) + "\n"
+    chars = len(shown)
+    lines = len(shown.splitlines())
+    print(shown)
     print(f"characters={chars}")
     print(f"lines={lines}")
     for line in down_lines(sources):
@@ -141,7 +152,7 @@ def emit_render_proof(
         f"lines={lines}",
         "",
         "````",
-        text.rstrip("\n"),
+        shown.rstrip("\n"),
         "````",
         "",
         *status_lines(sources),
