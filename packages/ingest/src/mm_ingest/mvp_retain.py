@@ -62,7 +62,6 @@ SPOT_INFO_TYPE = "spotMetaAndAssetCtxs"
 PRICE_ONLY_SYMBOL = "DRV"
 SPOT_PAIR_INDEX = 700
 CAPTURE_TIMEOUT_S = 90.0
-EXPECTED_INSTRUMENTS = 37
 # Empty grouped-daily (cash session shut) tries earlier weekdays. Not a holiday list.
 GROUPED_EMPTY_WALK = 8
 NY_TZ = ZoneInfo("America/New_York")
@@ -128,6 +127,15 @@ class MvpRetainSpec:
     @property
     def instrument_count(self) -> int:
         return len(self.bound_symbols) + 1 + len(self.equity_symbols)
+
+    @property
+    def expected_rows(self) -> int:
+        """Observation rows for a full capture: bound metrics, DRV mid, equity closes."""
+        return (
+            len(self.bound_symbols) * len(self.bound_metrics)
+            + len(self.price_only_metrics)
+            + len(self.equity_symbols)
+        )
 
 
 def load_mvp_retain_spec(path: Path | None = None) -> MvpRetainSpec:
@@ -874,13 +882,33 @@ def capture_exists_line(anchor_date: date) -> str:
     return f"CAPTURE: exists for {anchor_date.isoformat()}, not rewritten"
 
 
-def capture_rows_line(*, rows: int, captured_at: str, prior_captured_at: str | None, instruments: int) -> str:
+def capture_rows_line(
+    *,
+    rows: int,
+    expected_rows: int,
+    captured_at: str,
+    prior_captured_at: str | None,
+    instruments: int,
+) -> str:
     prior = prior_captured_at or "none"
-    return f"CAPTURE: {rows}/{instruments} rows @ {captured_at} · prior {prior}"
+    return (
+        f"CAPTURE: {rows}/{expected_rows} rows ({instruments} instruments) "
+        f"@ {captured_at} · prior {prior}"
+    )
 
 
-def capture_proof_line(*, rows: int, captured_at: str, capture_id: str, instruments: int) -> str:
-    return f"CAPTURE_PROOF: {rows}/{instruments} rows @ {captured_at} capture_id {capture_id}"
+def capture_proof_line(
+    *,
+    rows: int,
+    expected_rows: int,
+    captured_at: str,
+    capture_id: str,
+    instruments: int,
+) -> str:
+    return (
+        f"CAPTURE_PROOF: {rows}/{expected_rows} rows ({instruments} instruments) "
+        f"@ {captured_at} capture_id {capture_id}"
+    )
 
 
 def capture_proof_failed_line(reason: str) -> str:
@@ -1081,6 +1109,13 @@ def _run_bounded(
     *,
     proof: bool = False,
 ) -> MorningCaptureResult:
+    """Hard wall clock for one capture. ``fn`` is the whole body.
+
+    That body is the anchor check, both Hyperliquid calls, every Polygon
+    grouped-daily read, the Neon write, and the read-back. ``thread.join``
+    is the cap. A still-running body becomes ``FAILED timeout`` and the
+    caller delivers anyway. The thread is a daemon, so process exit stops it.
+    """
     if timeout_s <= 0:
         return _failed_result("timeout", proof=proof)
     box: dict[str, Any] = {}
@@ -1243,6 +1278,7 @@ def _morning_capture_body(
     polygon = polygon_adapter
     try:
         try:
+            resolved = spec or load_mvp_retain_spec()
             if owned_hl or owned_poly:
                 from mm_ingest.equities.polygon import PolygonEquitiesAdapter
                 from mm_ingest.hl_info import HyperliquidInfoClient
@@ -1252,7 +1288,7 @@ def _morning_capture_body(
                 if owned_poly:
                     polygon = PolygonEquitiesAdapter(timeout=20.0, max_attempts=2)
             envelopes = capture_mvp_retain(
-                spec or load_mvp_retain_spec(),
+                resolved,
                 hl_client=hl,
                 polygon_adapter=polygon,
                 session_date=us_cash_session_date(captured),
@@ -1281,9 +1317,8 @@ def _morning_capture_body(
             hl.close()
         if owned_poly and polygon is not None:
             polygon.close()
-    instruments = EXPECTED_INSTRUMENTS
-    if spec is not None:
-        instruments = spec.instrument_count
+    instruments = resolved.instrument_count
+    expected_rows = resolved.expected_rows
     prior_iso = as_utc(prior).isoformat() if prior is not None else None
     if proof:
         ident = str(capture_id)
@@ -1291,6 +1326,7 @@ def _morning_capture_body(
         exclusion = proof_prior_exclusion_sql(ident) + "\n" + proof_anchor_exclusion_sql(ident)
         line = capture_proof_line(
             rows=rows,
+            expected_rows=expected_rows,
             captured_at=captured_iso,
             capture_id=ident,
             instruments=instruments,
@@ -1301,6 +1337,7 @@ def _morning_capture_body(
         exclusion = None
         line = capture_rows_line(
             rows=rows,
+            expected_rows=expected_rows,
             captured_at=captured_iso,
             prior_captured_at=prior_iso,
             instruments=instruments,

@@ -21,7 +21,7 @@ from mm_desks.deliver_receipt import ALREADY_DELIVERED, decide_deliver, write_de
 from mm_ingest.mvp_retain import (
     ANCHOR_EXISTS_SQL,
     CAPTURE_ROWS_SQL,
-    EXPECTED_INSTRUMENTS,
+    CAPTURE_TIMEOUT_S,
     PRIOR_CAPTURE_SQL,
     PROOF_CAPTURE_KIND,
     morning_capture_if_sending,
@@ -162,6 +162,24 @@ def test_sydney_anchor_date_and_us_session() -> None:
     assert us_cash_session_date(NOW).isoformat() == "2026-09-24"
 
 
+def _line(rows: int, when: datetime, prior: str = "none") -> str:
+    spec = load_mvp_retain_spec()
+    return (
+        f"CAPTURE: {rows}/{spec.expected_rows} rows ({spec.instrument_count} instruments) "
+        f"@ {when.isoformat()} · prior {prior}"
+    )
+
+
+def test_expected_rows_follow_membership() -> None:
+    spec = load_mvp_retain_spec()
+    assert spec.expected_rows == (
+        len(spec.bound_symbols) * len(spec.bound_metrics)
+        + len(spec.price_only_metrics)
+        + len(spec.equity_symbols)
+    )
+    assert spec.instrument_count == len(spec.bound_symbols) + 1 + len(spec.equity_symbols)
+
+
 def test_happy_path_line_uses_readback_count() -> None:
     store = MemStore()
     result = _capture(store)
@@ -170,7 +188,7 @@ def test_happy_path_line_uses_readback_count() -> None:
     assert result.capture_rows == 75
     assert result.captured_at == NOW.isoformat()
     assert result.prior_captured_at is None
-    assert result.line == f"CAPTURE: 75/{EXPECTED_INSTRUMENTS} rows @ {NOW.isoformat()} · prior none"
+    assert result.line == _line(75, NOW)
     assert result.anchor_date == "2026-09-25"
     assert {row["anchor_date"] for row in store.rows} == {"2026-09-25"}
     assert {row["captured_at"] for row in store.rows} == {NOW.isoformat()}
@@ -183,7 +201,7 @@ def test_readback_lower_than_written_shows_the_real_count() -> None:
     assert store.writes == 1
     assert len(store.rows) == 75
     assert result.capture_rows == 10
-    assert result.line == f"CAPTURE: 10/37 rows @ {NOW.isoformat()} · prior none"
+    assert result.line == _line(10, NOW)
 
 
 def test_empty_grouped_daily_keeps_prior_session_closes_and_counts_them() -> None:
@@ -245,7 +263,7 @@ def test_empty_grouped_daily_keeps_prior_session_closes_and_counts_them() -> Non
     )
     assert result.wrote is True
     assert "FAILED" not in result.line
-    assert result.line == f"CAPTURE: 75/37 rows @ {now.isoformat()} · prior none"
+    assert result.line == _line(75, now)
     assert result.capture_rows == 75
     assert hl.calls == ["metaAndAssetCtxs", "spotMetaAndAssetCtxs"]
     assert poly.dates == [shut, prior]
@@ -273,7 +291,7 @@ def test_partial_polygon_persists_null_closes_and_reports_readback() -> None:
     assert len(closes) == 17
     assert all(row.get("value") is None for row in closes)
     assert result.capture_rows == len(store.rows)
-    assert result.line.startswith(f"CAPTURE: {len(store.rows)}/37 rows @")
+    assert result.line.startswith(f"CAPTURE: {len(store.rows)}/{load_mvp_retain_spec().expected_rows} rows (")
 
 
 def test_dsn_missing_is_failed_and_dm_still_sends(tmp_path, monkeypatch, capsys) -> None:
@@ -303,6 +321,7 @@ def test_db_error_is_failed_and_dm_still_sends(tmp_path, monkeypatch, capsys) ->
 
 
 def test_timeout_is_failed_timeout_and_dm_still_sends(tmp_path, monkeypatch, capsys) -> None:
+    assert CAPTURE_TIMEOUT_S == 90
     store = MemStore()
     store.fail = "slow"
     result = _capture(store, timeout_s=0.05)
@@ -313,6 +332,24 @@ def test_timeout_is_failed_timeout_and_dm_still_sends(tmp_path, monkeypatch, cap
     assert len(posted) == 1
     assert "CAPTURE: FAILED timeout" in posted[0]["text"] or escape_markdown_v2(result.line) in posted[0]["text"]
     assert text.count("CAPTURE: FAILED timeout") == 1
+
+
+def test_polygon_stall_is_inside_the_capture_cap_and_dm_still_sends(tmp_path, monkeypatch, capsys) -> None:
+    """Grouped-daily sits inside the same wall clock as the Neon write."""
+
+    class _Stall(Poly):
+        def grouped_daily(self, session_date):
+            time.sleep(2)
+            return super().grouped_daily(session_date)
+
+    store = MemStore()
+    result = _capture(store, timeout_s=0.05, poly=_Stall())
+    assert result.line == "CAPTURE: FAILED timeout"
+    assert result.wrote is False
+    assert store.writes == 0
+    rc, _text, posted = _post_pack(monkeypatch, capsys, tmp_path, capture_line=result.line)
+    assert rc == 0
+    assert len(posted) == 1
 
 
 def test_second_run_same_anchor_does_not_write() -> None:
@@ -399,7 +436,7 @@ def test_readback_query_failure_is_mismatch() -> None:
 def test_status_lines_are_late_then_deadman_then_capture() -> None:
     late = "LATE: grok.sydney_morning fired +2h 46m past anchor. run_id x."
     deadman = "DEADMAN: ping ok"
-    capture = f"CAPTURE: 75/37 rows @ {NOW.isoformat()} · prior none"
+    capture = _line(75, NOW)
     text = append_dm_status_lines(BRIEF, late=late, deadman=deadman, capture=capture)
     assert text.index(late) < text.index(deadman) < text.index(capture)
     without_deadman = append_dm_status_lines(BRIEF, late=late, capture=capture)
@@ -410,7 +447,7 @@ def test_status_lines_are_late_then_deadman_then_capture() -> None:
 def test_live_send_orders_late_deadman_then_capture(tmp_path, monkeypatch, capsys) -> None:
     """#129 DEADMAN stays between LATE and CAPTURE on the one DM."""
     monkeypatch.delenv("HEALTHCHECKS_PING_URL", raising=False)
-    line = f"CAPTURE: 75/37 rows @ {NOW.isoformat()} · prior none"
+    line = _line(75, NOW)
     sent = datetime(2026, 9, 24, 23, 16, 50, tzinfo=UTC)
     rc, text, posted = _post_pack(monkeypatch, capsys, tmp_path, capture_line=line, sent_at=sent)
     assert rc == 0
@@ -423,7 +460,7 @@ def test_live_send_orders_late_deadman_then_capture(tmp_path, monkeypatch, capsy
 def test_live_send_appends_capture_on_the_same_dm(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setattr("mm_lab_cli.deadman._http_get", lambda url, timeout: (200, "OK"))
     monkeypatch.setenv("HEALTHCHECKS_PING_URL", "https://hc-ping.example/secret-uuid-not-for-logs")
-    line = f"CAPTURE: 75/37 rows @ {NOW.isoformat()} · prior none"
+    line = _line(75, NOW)
     rc, text, posted = _post_pack(monkeypatch, capsys, tmp_path, capture_line=line, sent_at=NOW)
     assert rc == 0
     assert len(posted) == 1
@@ -499,7 +536,11 @@ def test_proof_same_anchor_does_not_block_the_morning_write() -> None:
     assert proof.capture_rows == 75
     assert proof.capture_id == PROOF_ID
     assert proof.line == (
-        f"CAPTURE_PROOF: 75/37 rows @ {proof_now.isoformat()} capture_id {PROOF_ID}"
+        (
+            f"CAPTURE_PROOF: 75/{load_mvp_retain_spec().expected_rows} rows "
+            f"({load_mvp_retain_spec().instrument_count} instruments) "
+            f"@ {proof_now.isoformat()} capture_id {PROOF_ID}"
+        )
     )
     assert {row["capture_kind"] for row in store.rows} == {PROOF_CAPTURE_KIND}
     assert {row["capture_id"] for row in store.rows} == {PROOF_ID}
@@ -509,7 +550,10 @@ def test_proof_same_anchor_does_not_block_the_morning_write() -> None:
     assert real.wrote is True
     assert store.writes == 2
     assert "exists" not in real.line
-    assert real.line.startswith(f"CAPTURE: 75/37 rows @ {MONDAY_NOW.isoformat()}")
+    assert real.line.startswith(
+        f"CAPTURE: 75/{load_mvp_retain_spec().expected_rows} rows "
+        f"({load_mvp_retain_spec().instrument_count} instruments) @ {MONDAY_NOW.isoformat()}"
+    )
     morning_rows = [row for row in store.rows if row.get("capture_kind") != PROOF_CAPTURE_KIND]
     assert len(morning_rows) == 75
     assert {row["anchor_date"] for row in morning_rows} == {"2026-09-28"}
