@@ -31,7 +31,7 @@ def test_lab_watchlist_scan_no_send(tmp_path: Path, capsys) -> None:
     assert payload["send"] is False
     assert payload["no_send"] is True
     assert payload["desk"] == "research"
-    assert payload["n"] == 39
+    assert payload["n"] == 43
     sha = tmp_path / "research" / "watchlist" / "2026-09-18" / "watchlist.sha256"
     md = tmp_path / "research" / "watchlist" / "2026-09-18" / "watchlist.md"
     assert sha.is_file()
