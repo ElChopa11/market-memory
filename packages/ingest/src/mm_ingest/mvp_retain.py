@@ -123,6 +123,7 @@ class MvpRetainSpec:
     venue_queue: frozenset[str]
     blocked: frozenset[str]
     monitor: frozenset[str]
+    universe: frozenset[str]
 
     @property
     def instrument_count(self) -> int:
@@ -170,6 +171,7 @@ def load_mvp_retain_spec(path: Path | None = None) -> MvpRetainSpec:
         venue_queue=frozenset(str(s).upper() for s in (data.get("venue_queue") or [])),
         blocked=frozenset(str(s).upper() for s in (tiers.get("blocked") or [])),
         monitor=frozenset(str(s).upper() for s in (tiers.get("monitor") or [])),
+        universe=frozenset(str(s).upper() for s in (tiers.get("universe") or [])),
     )
     _validate_spec(spec)
     _validate_calls(data.get("calls"))
@@ -207,10 +209,18 @@ def _validate_spec(spec: MvpRetainSpec) -> None:
     expected_queue = {"SPX", "NQ1!", "CL1!", "BTC1!", "SAMSUN", "KOSDA"}
     if spec.venue_queue != expected_queue:
         raise ValueError("venue queue drifted from the six non-grouped names")
-    if spec.blocked != {"CASHCAT", "PONS"}:
-        raise ValueError("blocked tier must be CASHCAT and PONS")
-    if spec.monitor != {"JUP", "NIL", "DRV"}:
-        raise ValueError("monitor tier must be JUP, NIL, and DRV")
+    if spec.blocked & spec.monitor or spec.blocked & spec.universe:
+        raise ValueError("blocked names must stay out of monitor and universe")
+    if spec.monitor & spec.universe:
+        raise ValueError("watch tiers must be disjoint")
+    assigned = spec.blocked | spec.monitor | spec.universe
+    if assigned != retain:
+        missing = sorted(retain - assigned)
+        extra = sorted(assigned - retain)
+        raise ValueError(
+            "every retained symbol must have exactly one watch tier"
+            f"; missing={missing}; extra={extra}"
+        )
     overlap = set(spec.bound_symbols) & set(spec.equity_symbols)
     if overlap or spec.price_only_symbol in spec.equity_symbols:
         raise ValueError("HL symbols and equity tickers must not overlap")
@@ -767,11 +777,18 @@ def _policy_payload(
     resolution: str,
     raw: dict[str, Any],
 ) -> dict[str, Any]:
-    tier = None
-    if symbol in spec.blocked:
-        tier = "blocked"
-    elif symbol in spec.monitor:
-        tier = "monitor"
+    matched = [
+        name
+        for name, members in (
+            ("universe", spec.universe),
+            ("monitor", spec.monitor),
+            ("blocked", spec.blocked),
+        )
+        if symbol in members
+    ]
+    if len(matched) != 1:
+        raise ValueError(f"{symbol} must have exactly one watch tier")
+    tier = matched[0]
     return {
         "retain_series": SERIES,
         "forward_only": True,
