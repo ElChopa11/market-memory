@@ -23,6 +23,9 @@ class PriorCaptureValue:
     value: float | None
     captured_at: datetime | None = None
     prior_captured_at: datetime | None = None
+    # Vendor bar date (equity ``market_time``) or FRED observation date.
+    # Absent means the change cell cannot tell whether the print rolled.
+    observation_as_of: datetime | None = None
 
 
 class PriorCaptureReader(Protocol):
@@ -56,6 +59,7 @@ def prior_value_from_retain(
     value: str | float | None,
     captured_at: datetime | None,
     prior_captured_at: datetime | None,
+    observation_as_of: datetime | None = None,
 ) -> PriorCaptureValue | None:
     """Build a prior reading from a #122 retain row.
 
@@ -78,6 +82,7 @@ def prior_value_from_retain(
         value=parsed,
         captured_at=captured_at,
         prior_captured_at=prior_captured_at,
+        observation_as_of=observation_as_of,
     )
 
 
@@ -95,6 +100,11 @@ def read_prior(
         return None
     if found is None:
         return None
-    if found.prior_captured_at is None and found.captured_at is None and found.value is None:
+    if (
+        found.prior_captured_at is None
+        and found.captured_at is None
+        and found.value is None
+        and found.observation_as_of is None
+    ):
         return None
     return found

@@ -20,6 +20,7 @@ Standing rule: a line that says the same thing every morning is not information.
 - Prior values are read through `mm_briefing.prior` (`captured_at`, `prior_captured_at` on #122 retain rows). Capture 1 and a read failure are no prior: basis omitted, `changed` falls back to non-zero only. The brief does not fail.
 - Messages 3 and 4 render only panels that can be filled from data that exists today. Transmission chain, cluster leadership, Δ5D/Δ20D, z30d, and the quadrant legend are omitted. Message 5 prints Hyperliquid metrics that pass the gaps rule.
 - The eight price rows stay, with source, delta, quality, the proxy ticker in the Symbol column, and the proxy label. A staleness flag (`stale (Nd)`) renders when it fires.
+- A change cell follows the observation as-of, not value equality. The same equity vendor bar date as the prior capture prints `no new session since <date>`. The same FRED observation date prints `no new print since <date>`. A new as-of with an identical value prints `0.00%` or `+0.0bp`. Crypto rows always print the computed change. No prior keeps the existing numeric delta.
 - `LATE`, `DEADMAN`, and `CAPTURE` are appended in that order by `append_brief_status_lines` and stay at the end of the single message. DEADMAN is the `DEADMAN: MISSING` line from the Healthchecks start ping (#129) when that ping is not HTTP 200. CAPTURE is still supplied by the PR that owns that line.
 
 ## Why it stages

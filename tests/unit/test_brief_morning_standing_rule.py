@@ -350,6 +350,172 @@ def test_eight_price_rows_carry_source_delta_quality_and_proxy_labels() -> None:
     assert "| ES |" not in text
 
 
+def _delta_cell(markdown: str, symbol: str) -> str:
+    line = _price_line(markdown, symbol)
+    cells = [cell.strip() for cell in line.strip("|").split("|")]
+    return cells[2]
+
+
+def _close_prior(symbol: str, *, observation_as_of: datetime | None, value: float | None = 100.0) -> PriorCaptureValue:
+    return PriorCaptureValue(
+        instrument=symbol,
+        metric="close",
+        value=value,
+        captured_at=AS_OF - timedelta(days=1),
+        prior_captured_at=AS_OF - timedelta(days=2),
+        observation_as_of=observation_as_of,
+    )
+
+
+def test_same_equity_bar_date_prints_no_new_session() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    earlier_same_day = datetime(2026, 9, 22, 13, 30, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=500.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("ES", "close"): _close_prior("ES", observation_as_of=earlier_same_day)}
+        ),
+    )
+    delta = _delta_cell(text, "SPY")
+    assert delta == "no new session since 2026-09-22"
+    assert "0.00%" not in delta
+    assert "+0.0bp" not in delta
+
+
+def test_new_equity_bar_date_with_same_close_prints_zero_percent() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=512.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("ES", "close"): _close_prior("ES", observation_as_of=bar - timedelta(days=1), value=512.0)}
+        ),
+    )
+    delta = _delta_cell(text, "SPY")
+    assert "0.00%" in delta
+    assert "no new session since" not in delta
+
+
+def test_same_fred_observation_date_prints_no_new_print() -> None:
+    obs = datetime(2026, 9, 18, 0, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[2] = _print(
+        "US10Y",
+        last=4.25,
+        prior=4.20,
+        unit="%",
+        source="fred",
+        name="US 10Y yield",
+        as_of=obs,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("US10Y", "close"): _close_prior("US10Y", observation_as_of=obs, value=4.25)}
+        ),
+    )
+    delta = _delta_cell(text, "US10Y")
+    assert delta == "no new print since 2026-09-18"
+    assert "0.00%" not in delta
+    assert "+0.0bp" not in delta
+
+
+def test_new_fred_observation_date_with_same_yield_prints_zero_bp() -> None:
+    obs = datetime(2026, 9, 18, 0, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[2] = _print(
+        "US10Y",
+        last=4.25,
+        prior=4.25,
+        unit="%",
+        source="fred",
+        name="US 10Y yield",
+        as_of=obs,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("US10Y", "close"): _close_prior("US10Y", observation_as_of=obs - timedelta(days=1), value=4.25)}
+        ),
+    )
+    delta = _delta_cell(text, "US10Y")
+    assert delta == "+0.0bp"
+    assert "no new print since" not in delta
+
+
+def test_no_prior_keeps_numeric_change_cell() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=512.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(assets=tuple(assets), prior_reader=None)
+    delta = _delta_cell(text, "SPY")
+    assert "0.00%" in delta
+    assert "no new session since" not in text
+    assert "no new print since" not in text
+
+
+def test_crypto_change_cell_ignores_a_repeated_as_of() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[6] = _print("BTC", last=100.0, prior=100.0, source="hyperliquid", as_of=bar)
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader({("BTC", "close"): _close_prior("BTC", observation_as_of=bar)}),
+    )
+    delta = _delta_cell(text, "BTC")
+    assert "0.00%" in delta
+    assert "no new session since" not in delta
+    assert "no new print since" not in delta
+
+
+def test_missing_observation_as_of_does_not_infer_a_stall_from_equal_values() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=512.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader({("ES", "close"): _close_prior("ES", observation_as_of=None, value=512.0)}),
+    )
+    delta = _delta_cell(text, "SPY")
+    assert "0.00%" in delta
+    assert "no new session since" not in delta
+
+
 def test_staleness_flag_renders_when_it_fires() -> None:
     assets = list(_eight())
     assets[2] = _print(

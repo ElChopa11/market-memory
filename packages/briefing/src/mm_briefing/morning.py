@@ -6,8 +6,9 @@ The send path is one Telegram message. Card split stays deferred.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
+from mm_common.time import as_utc
 from mm_briefing.divergences import fmt_pct, fmt_px
 from mm_briefing.freshness import format_quality_with_age
 from mm_briefing.health import load_presentation_config, score_data_health
@@ -49,6 +50,13 @@ FORBIDDEN_RENDER_FRAGMENTS = (
 )
 
 _STATIC_ASSUMPTION = "No named macro assumption flipped vs the overnight tape"
+
+# Price-row Δ is decided by the observation date, not by whether the number moved.
+_CRYPTO_SLOTS = frozenset({"BTC", "ETH"})
+_SESSION_SLOTS = frozenset({"ES", "NQ", "DXY", "CL"})
+_CLOSE_METRIC = "close"
+NO_NEW_SESSION_PREFIX = "no new session since"
+NO_NEW_PRINT_PREFIX = "no new print since"
 
 # (reader metric, label, value getter name)
 _POSITION_METRICS = (
@@ -97,7 +105,7 @@ def render_morning_close(
     if not _has_observation(session, hl):
         lines.append("obs none")
     lines.append("")
-    lines.extend(_price_rows(session.assets, knowledge_as_of=as_of))
+    lines.extend(_price_rows(session.assets, knowledge_as_of=as_of, prior_reader=prior_reader))
     positioning = _positioning(hl, prior_reader=prior_reader, knowledge_as_of=as_of)
     if positioning:
         lines.extend(["", "## Positioning", ""])
@@ -133,7 +141,12 @@ def render_morning_close(
     )
 
 
-def _price_rows(assets: tuple[AssetPrint, ...], *, knowledge_as_of: datetime) -> list[str]:
+def _price_rows(
+    assets: tuple[AssetPrint, ...],
+    *,
+    knowledge_as_of: datetime,
+    prior_reader: PriorCaptureReader | None,
+) -> list[str]:
     by_symbol = {row.symbol.upper(): row for row in assets}
     lines = [
         "| Symbol | Last | Δ | Source | Quality | Label |",
@@ -151,10 +164,7 @@ def _price_rows(assets: tuple[AssetPrint, ...], *, knowledge_as_of: datetime) ->
                 source="none",
                 as_of=knowledge_as_of,
             )
-        if row.unit == "%":
-            delta = f"{row.change_bp:+.1f}bp" if row.change_bp is not None else "n/a"
-        else:
-            delta = fmt_pct(row.change_pct)
+        delta = _change_cell(row, prior_reader)
         quality = format_quality_with_age(
             row.data_quality,
             observation_as_of=row.as_of,
@@ -164,6 +174,46 @@ def _price_rows(assets: tuple[AssetPrint, ...], *, knowledge_as_of: datetime) ->
             f"| {display_symbol(row)} | {fmt_px(row.last)} | {delta} | {row.source} | {quality} | {_label(row)} |"
         )
     return lines
+
+
+def _observation_date(value: datetime | date | None) -> date | None:
+    """UTC calendar date of a vendor bar or FRED observation. Same rule as freshness age."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return as_utc(value).date()
+    return value
+
+
+def _numeric_delta(row: AssetPrint) -> str:
+    if row.unit == "%":
+        return f"{row.change_bp:+.1f}bp" if row.change_bp is not None else "n/a"
+    return fmt_pct(row.change_pct)
+
+
+def _change_cell(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> str:
+    """Δ cell. Same observation date as the prior capture is not a 0.00% move.
+
+    Equities use the vendor bar date (``market_time``). FRED uses the
+    observation date. A later as-of with an unchanged value is a real zero.
+    Crypto always prints the computed change. No prior keeps that change.
+    """
+    numeric = _numeric_delta(row)
+    symbol = row.symbol.upper()
+    if symbol in _CRYPTO_SLOTS or row.last is None:
+        return numeric
+    prior = read_prior(prior_reader, symbol, _CLOSE_METRIC)
+    if prior is None or prior.observation_as_of is None or row.as_of is None:
+        return numeric
+    current_day = _observation_date(row.as_of)
+    prior_day = _observation_date(prior.observation_as_of)
+    if current_day is None or prior_day is None or current_day != prior_day:
+        return numeric
+    if symbol == "US10Y" or (row.source or "").lower() == "fred":
+        return f"{NO_NEW_PRINT_PREFIX} {current_day.isoformat()}"
+    if symbol in _SESSION_SLOTS:
+        return f"{NO_NEW_SESSION_PREFIX} {current_day.isoformat()}"
+    return numeric
 
 
 def _label(row: AssetPrint) -> str:
