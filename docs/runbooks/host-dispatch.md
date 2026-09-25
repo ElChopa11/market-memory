@@ -40,6 +40,8 @@ GitHub evaluates `schedule` in UTC. Sydney daylight saving starts Sunday 4 Oct 2
 
 The crontab expression does not change. Both dates are weekdays (`1-5`). Sunday 4 Oct is the transition and is not a host fire. `zoneinfo` on the repo's test clock shows `2026-10-02 06:30+10:00` and `2026-10-05 06:30+11:00`.
 
+Mon 5 Oct 2026 is also NSW Labour Day (first Monday in October). The host crontab has no holiday list. That Monday matches `30 6 * * 1-5` at 06:30 Australia/Sydney, the same catalog anchor as any other Monday. The stamp, the brief, and the deliver path do not consult a public-holiday calendar.
+
 ## What the Principal does
 
 1. **Create the host.** A small Linux VPS (Debian or Ubuntu). No trading credentials. No copy of `live.yaml` secrets. No Telegram bot token on this machine.
