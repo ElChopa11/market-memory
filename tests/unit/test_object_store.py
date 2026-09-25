@@ -17,8 +17,10 @@ from mm_memory.object_store import (
     InMemoryObjectStore,
     NullObjectStore,
     ObjectStoreConfigError,
+    S3ObjectStore,
     object_store_from_env,
     raw_object_key,
+    s3_region_from_env,
 )
 
 
@@ -133,6 +135,26 @@ def test_in_memory_restart_loses_bytes_durable_path_does_not(tmp_path: Path) -> 
     durable_pointer = durable.put_json("raw/btc.json", payload)
     restarted_fs = FilesystemObjectStore(root=tmp_path)
     assert restarted_fs.get_bytes(durable_pointer.key) == canonical_json(payload).encode("utf-8")
+
+
+def test_s3_region_defaults_us_east_1_and_honours_s3_region(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("S3_REGION", raising=False)
+    monkeypatch.delenv("AWS_DEFAULT_REGION", raising=False)
+    monkeypatch.delenv("AWS_REGION", raising=False)
+    assert s3_region_from_env() == "us-east-1"
+
+    monkeypatch.delenv("MM_OBJECT_STORE", raising=False)
+    monkeypatch.setenv("MINIO_ENDPOINT", "https://example.r2.cloudflarestorage.com")
+    monkeypatch.setenv("MINIO_ACCESS_KEY", "test-access")
+    monkeypatch.setenv("MINIO_SECRET_KEY", "test-secret")
+    monkeypatch.delenv("MINIO_BUCKET", raising=False)
+    monkeypatch.delenv("S3_BUCKET", raising=False)
+    monkeypatch.setenv("S3_REGION", "auto")
+    store = object_store_from_env()
+    assert isinstance(store, S3ObjectStore)
+    assert store.bucket == "market-memory"
+    assert store.region == "auto"
+    assert store._client.meta.region_name == "auto"
 
 
 def test_from_env_unknown_backend_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -82,6 +82,69 @@ Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — l
 
 The Hyperliquid client **refuses** user-private types (`clearinghouseState`, `userFills`, `openOrders`, …). There is no `hl_trade` module. Phase 5b adds public `l2Book` to the allowlist.
 
+## History backfill (one-off, CLI only)
+
+Paper only. No live trading. No Telegram on this path.
+
+**CLI-only.** There is no GitHub Actions trigger. No `workflow_dispatch`, no `repository_dispatch`, and no `schedule`. A morning-deliver PAT cannot reach `lab history-backfill`. `hybrid-sydney-morning.yml` is not part of this path.
+
+**DO NOT RUN** until the Principal says so. On a fresh database the sequence is `uv run lab migrate` first, then this command, then recurring ingest-persist (a separate change). This command does not migrate, does not brief, and does not deliver.
+
+### Principal machine
+
+1. Clone or sync this repo on the Principal's machine.
+2. Python 3.12.
+3. `uv sync --all-packages`.
+
+### Environment
+
+Names only. This file does not contain example secrets.
+
+| Name | Role |
+|---|---|
+| `POSTGRES_DSN` | Market Memory Postgres. Direct Neon host (`*.neon.tech`, no `-pooler`, `sslmode=require`). |
+| `POLYGON_API_KEY` | Polygon daily bars. |
+| `FRED_API_KEY` | Full DGS10 and DGS2. |
+| `MINIO_ENDPOINT` | Durable object-store endpoint. `S3_ENDPOINT` is the same slot. |
+| `MINIO_ACCESS_KEY` | Object-store access key. `MINIO_ROOT_USER` or `AWS_ACCESS_KEY_ID` is the same slot. |
+| `MINIO_SECRET_KEY` | Object-store secret. `MINIO_ROOT_PASSWORD` or `AWS_SECRET_ACCESS_KEY` is the same slot. |
+
+Leave `MINIO_BUCKET` unset. The code default bucket name is `market-memory`. `S3_BUCKET` is the same slot if a name is set. For Cloudflare R2, export `S3_REGION=auto`. `s3_region_from_env` also reads `AWS_DEFAULT_REGION` and `AWS_REGION`. Unset means `us-east-1` (local MinIO). No `TELEGRAM_*`. No Hyperliquid key. Candles use public `/info`.
+
+Missing `POLYGON_API_KEY` or `FRED_API_KEY` prints a refuse line and exits 2 before any HTTP call. An incomplete object store exits 2 the same way. A zero-bar response is a fetch error: the command prints JSON and exits 1 without opening Postgres.
+
+### Command
+
+```bash
+uv run lab history-backfill
+```
+
+The command prints one JSON object with `"phase": "plan"`, then fetches. When that fetch has no errors it persists and prints a second JSON object with `"phase": "fetch"` and a `persist` object (`created`, `duplicates`, `contradicted`).
+
+Exit 0 when there are no fetch errors and every Hyperliquid coin has at least 60 daily sessions. Exit 1 when the fetch records errors, or when any coin is below that minimum after the commit. Exit 2 when a vendor key or the object store is missing, before HTTP and before Postgres.
+
+This command has no `--no-db` flag and no `--fixture` flag.
+
+### Environment `neon-write`
+
+`neon-write` may exist under repository Settings → Environments. It is **not a gate**. Required reviewers are unavailable on this free private plan, so that Environment cannot hold an approval. The earlier line that this repository is public, and that required reviewers are therefore available, was wrong. This repository is private.
+
+Delete `neon-write` so the name does not imply protection. No workflow in this change references it. A soft `i_mean_it_backfill` input is not a security gate and is not used.
+
+What one successful run requests:
+
+| Source | Endpoint | Window | Approx calls | Rate limit |
+|---|---|---|---|---|
+| Polygon | `GET /v2/aggs/ticker/{ticker}/range/1/day/{start}/{end}` `adjusted=true` `limit=50000` | 730 calendar days. Tickers are the brief tape slots in `config/briefing/macro.yaml` (`live.polygon.symbols`): SPY, QQQ, UUP, USO. VIX is structural and is not called. | 4 (one GET per ticker; no `next_url` follow) | `config/ingest.yaml` is 5 req/min. Four calls fit in one minute. Not multi-minute. A larger ticker list sleeps via `MinutePacer` because `RateLimitBudget` only refuses. `http_get` still backs off on 429. |
+| FRED | `GET /fred/series/observations` | Full series for DGS10 and DGS2 (`limit` omitted; API default 100000). The ingest helper's default `limit=5` is unchanged. The live brief fetch stays `limit=2`. | 2 | 20 req/min in config. One page each. |
+| Hyperliquid | `POST /info` `candleSnapshot` interval `1d` | 90 calendar days on enabled perps (BTC, ETH, UNI, AAVE). Open time is field `t` (unix ms). `T` is the close time. | 4 (one POST per coin; under the 500-row page) | 60 req/min. Not multi-minute. |
+
+2s10s is DGS10 minus DGS2. This command does not write a spread row. It does not write Δ1D/Δ5D/Δ20D or z30d columns. Those are later reads over the stored daily closes (`ohlcv_close`, `candle_close`) and the two yield series.
+
+Idempotency is a data-integrity fact, not a reason to keep an Actions trigger. A second run with the same values does not insert a second observation. `claim_hash` is SHA-256 of source, instrument, metric, market time, value, and extras. It does not include `ingested_at`. `ObservationRepository.put_observation` selects on `claim_hash` and otherwise inserts `ON CONFLICT DO NOTHING` on `observation_claim_hash_uidx`. `persist_history_envelopes` skips the raw-object put when that claim already exists. A revised print is a new `claim_hash` plus a `contradicts` link, not an in-place update. History is not deleted.
+
+A run that returns zero bars does not open Postgres. A run that stores HL candles but any coin is under 60 sessions exits 1 after the commit so the gap is visible. The log is the JSON from `lab history-backfill`. It is not a `research_run` row.
+
 ## Phase 5b feeds
 
 See [polygon-hl-structure.md](polygon-hl-structure.md): Polygon OHLCV + corporate actions (env `POLYGON_API_KEY`); HL basis / L2 / predicted funding; optional CoinGecko/Binance public spot DQ; FRED + fixture calendar. Missing keys → `unavailable` + `error_class`; never invent.
