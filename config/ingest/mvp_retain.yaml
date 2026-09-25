@@ -1,0 +1,74 @@
+# Forward-only MVP retain allowlist. Principal lock 2026-09-24.
+# Store-only policy. Not sizing. Not a monitor.yaml edit. Not universe promotion.
+# Live Neon persist stays gated. PR 114 history backfill is not wired here.
+schema: mvp_retain_v1
+forward_only: true
+history_backfill: false
+fixed_slot_window: false
+series: mvp_retain
+
+# Three HTTP calls. Call 3 is the DRV spot mid (Principal 2026-09-24 evening).
+calls:
+  - id: hl_meta_and_asset_ctxs
+    transport: hyperliquid.info
+    method: POST
+    info_type: metaAndAssetCtxs
+  - id: polygon_grouped_daily
+    transport: polygon
+    method: GET
+    path: /v2/aggs/grouped/locale/us/market/stocks/{date}
+    params:
+      adjusted: true
+      include_otc: false
+  - id: hl_spot_meta_and_asset_ctxs
+    transport: hyperliquid.info
+    method: POST
+    info_type: spotMetaAndAssetCtxs
+    pair: DRV/USDC
+    spot_index: 700
+    metrics: [mid_px]
+
+hl:
+  bound_perps:
+    quadrant_eligible: true
+    metrics: [open_interest, funding, mid_px]
+    names:
+      - {membership: BTCUSDC, symbol: BTC}
+      - {membership: ETHUSDC, symbol: ETH}
+      - {membership: SOLUSDC, symbol: SOL}
+      - {membership: JUPUSDC, symbol: JUP}
+      - {membership: HYPEUSDC, symbol: HYPE}
+      - {membership: LITUSDC, symbol: LIT}
+      - {membership: NEARUSDC, symbol: NEAR}
+      - {membership: ARBUSDC, symbol: ARB}
+      - {membership: UNIUSDC, symbol: UNI}
+      - {membership: VVVUSDC, symbol: VVV}
+      - {membership: ZECUSDC, symbol: ZEC}
+      - {membership: DOGEUSDC, symbol: DOGE}
+      - {membership: XMRUSDC, symbol: XMR}
+      - {membership: CASHCAT, symbol: CASHCAT}
+      - {membership: PONSUSDC, symbol: PONS}
+      - {membership: CHIPUSDC, symbol: CHIP}
+      - {membership: LTCUSDC, symbol: LTC}
+      - {membership: NILUSDC, symbol: NIL}
+      - {membership: PURRUSDC, symbol: PURR}
+  price_only:
+    - membership: DRVUSDC
+      symbol: DRV
+      pair: DRV/USDC
+      # Live spot universe name is "@700" (tokens DRV, USDC). Not a perp.
+      spot_index: 700
+      metrics: [mid_px]
+      quadrant_eligible: false
+  dropped: [KNT, KNTQ, KNTUSDC]
+  tiers:
+    blocked: [CASHCAT, PONS]
+    monitor: [JUP, NIL, DRV]
+
+polygon:
+  metric: close
+  adjusted: true
+  tickers: [QQQ, CRCL, TSLA, SPCX, NVDA, BB, GLXY, IBIT, BMNR, MRNA, GOOG, HOOD, NOW, CBRS, MSTR, STRC, AMD]
+
+# Out of scope for this retain path (other venue). PURR is an HL bound perp, not here.
+venue_queue: [SPX, "NQ1!", "CL1!", "BTC1!", SAMSUN, KOSDA]
