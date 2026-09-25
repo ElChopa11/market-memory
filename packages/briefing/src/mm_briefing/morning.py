@@ -493,6 +493,7 @@ def _price_rows(
     """
     by_symbol = {row.symbol.upper(): row for row in assets}
     by_hl = {state.instrument.upper(): state for state in hl}
+    equity_close = _shared_session_date(assets)
     body: list[str] = []
     gaps: list[str] = []
     for symbol in ASSET_ORDER:
@@ -513,20 +514,41 @@ def _price_rows(
         marker = ""
         if not delta.startswith((NO_NEW_SESSION_PREFIX, NO_NEW_PRINT_PREFIX)):
             marker = _row_quality_marker(row, knowledge_as_of)
+        asof = _us10y_asof_label(row, equity_close, delta)
         head = f"{display_symbol(row)} {fmt_px(row.last)}"
-        if not delta and not marker:
+        if not delta and not marker and not asof:
             body.append(head)
             continue
-        same = f"{head} {delta}".rstrip() + (f" {marker}" if marker else "")
+        dated = f"{delta}{asof}" if delta else asof.strip()
+        same = f"{head} {dated}".rstrip() + (f" {marker}" if marker else "")
         if len(same) <= PHONE_LINE_MAX:
             body.append(same)
         else:
             body.append(head)
-            rest = delta if not marker else f"{delta} {marker}"
-            body.append(rest if len(rest) <= PHONE_LINE_MAX else f" {delta}")
+            rest = dated if not marker else f"{dated} {marker}"
+            body.append(rest if len(rest) <= PHONE_LINE_MAX else f" {dated}")
             if marker and len(rest) > PHONE_LINE_MAX:
                 body.append(marker)
     return body, gaps
+
+
+def _us10y_asof_label(row: AssetPrint, equity_close: date | None, delta: str) -> str:
+    """`` (as of MM-DD)`` when the FRED print is not the equity close date.
+
+    The date is ``AssetPrint.as_of``, the stamp already used by
+    ``no new print since`` and by the render_proof FRED status line.
+    ``render_proof`` prints this same morning render. A matching date, a
+    missing date, or a cell that already names the observation date stays
+    as it is. The header date is the shared equity bar date.
+    """
+    if row.symbol.upper() != "US10Y":
+        return ""
+    if delta.startswith(NO_NEW_PRINT_PREFIX):
+        return ""
+    fred_day = _observation_date(row.as_of)
+    if fred_day is None or equity_close is None or fred_day == equity_close:
+        return ""
+    return f" (as of {fred_day.strftime('%m-%d')})"
 
 
 def _hl_price_line(symbol: str, state: HLInstrumentState | None) -> tuple[str | None, str | None]:

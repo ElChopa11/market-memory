@@ -19,7 +19,7 @@ from mm_briefing.hl import hl_from_live_info
 from mm_briefing.models import MORNING_HL_PERPS
 from mm_briefing.morning import PHONE_LINE_MAX
 from mm_briefing.prior import MapPriorCaptureReader, PriorCaptureValue
-from mm_delivery.format import TELEGRAM_MAX_MESSAGE_CHARS
+from mm_delivery.format import TELEGRAM_MAX_MESSAGE_CHARS, chunk_markdown_v2
 from mm_ingest.hl_info import HyperliquidInfoClient
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -185,3 +185,37 @@ def test_fixture_fred_did_not_roll_us10y_no_new_print() -> None:
     assert text.count("US10Y") == 1
     assert "stale Rates" in text
     assert text == GOLDEN_UNROLLED.read_text(encoding="utf-8")
+
+
+def test_us10y_asof_label_when_fred_date_differs_from_equity_close() -> None:
+    """FRED 2026-09-23 lags the 2026-09-24 equity close on the header."""
+    text, snap = render_fixture_morning(fred_path=FRED_UNROLLED)
+    us10y = snap.by_symbol()["US10Y"]
+    assert us10y.source == "fred"
+    assert us10y.as_of is not None
+    assert us10y.as_of.date().isoformat() == "2026-09-23"
+    assert "US Close 2026-09-24" in text
+    assert "EQUITY T-1 BY DESIGN (close 2026-09-24)" in text
+    fence = _fence_lines(text)
+    us10y_lines = [line for line in fence if "US10Y" in line]
+    assert us10y_lines == ["US10Y 4.11 +2.0bp (as of 09-23)"]
+
+
+def test_us10y_no_asof_label_when_dates_match() -> None:
+    text, snap = render_fixture_morning(fred_path=FRED_ROLLED)
+    us10y = snap.by_symbol()["US10Y"]
+    assert us10y.as_of is not None
+    assert us10y.as_of.date().isoformat() == "2026-09-24"
+    fence = _fence_lines(text)
+    us10y_lines = [line for line in fence if "US10Y" in line]
+    assert us10y_lines == ["US10Y 4.15 +4.0bp"]
+    assert all("(as of" not in line for line in us10y_lines)
+
+
+def test_us10y_asof_label_keeps_single_message_within_limits() -> None:
+    text, _snap = render_fixture_morning(fred_path=FRED_UNROLLED)
+    _assert_common(text)
+    assert len(chunk_markdown_v2(text)) == 1
+    assert text.count("```") == 2
+    fence = _fence_lines(text)
+    assert [line for line in fence if "US10Y" in line] == ["US10Y 4.11 +2.0bp (as of 09-23)"]

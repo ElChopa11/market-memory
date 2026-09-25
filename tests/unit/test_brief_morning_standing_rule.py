@@ -571,7 +571,7 @@ def test_new_fred_observation_date_with_same_yield_prints_zero_bp() -> None:
         ),
     )
     delta = _delta_cell(text, "US10Y")
-    assert delta == "+0.0bp"
+    assert delta == "+0.0bp (as of 09-18)"
     assert "no new print since" not in delta
 
 
