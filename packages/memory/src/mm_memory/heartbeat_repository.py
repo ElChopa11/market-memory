@@ -12,8 +12,6 @@ from mm_common.ids import new_ulid
 from mm_common.time import as_utc, parse_utc
 from mm_memory.models import ScheduleHeartbeat
 
-RANK = {"ok": 4, "late": 3, "skipped": 2, "wrong_anchor": 1, "missed": 0}
-
 
 def _ts(value: datetime | str) -> datetime:
     if isinstance(value, datetime):
@@ -22,15 +20,25 @@ def _ts(value: datetime | str) -> datetime:
 
 
 def persist_heartbeat(session: Session, row: Mapping[str, Any]) -> str:
-    """Idempotent on (routine_id, scheduled_anchor_ts). Higher-rank status wins."""
+    """Insert one row per (routine_id, scheduled_anchor_ts, run_id).
+
+    A different run_id is a new row. The same run_id returns the existing id
+    and does not replace that row's bytes. Miss-sweep still treats any fire
+    for the anchor as closing the window; it does not need the table to keep
+    only one row.
+    """
     routine_id = str(row["routine_id"])
     anchor = _ts(row["scheduled_anchor_ts"])
+    run_id = str(row.get("run_id") or new_ulid())
     existing = session.scalar(
         select(ScheduleHeartbeat).where(
             ScheduleHeartbeat.routine_id == routine_id,
             ScheduleHeartbeat.scheduled_anchor_ts == anchor,
+            ScheduleHeartbeat.run_id == run_id,
         )
     )
+    if existing is not None:
+        return existing.id
     fired_raw = row.get("fired_at_ts")
     fired = None if fired_raw in (None, "") else _ts(fired_raw)
     status = str(row.get("status") or "missed")
@@ -44,37 +52,17 @@ def persist_heartbeat(session: Session, row: Mapping[str, Any]) -> str:
         nested["cli"] = str(row["cli"])
     if row.get("reason"):
         nested["reason"] = str(row["reason"])
-    payload = {
-        "run_id": str(row.get("run_id") or new_ulid()),
-        "fired_at_ts": fired,
-        "delta_seconds": None if row.get("delta_seconds") is None else int(row["delta_seconds"]),
-        "status": status,
-        "as_of_knowledge": as_of,
-        "source": str(row.get("source") or "lab"),
-        "payload_json": nested,
-    }
-    if existing is not None:
-        if RANK.get(status, 0) >= RANK.get(existing.status, 0):
-            existing.run_id = payload["run_id"]
-            existing.fired_at_ts = payload["fired_at_ts"]
-            existing.delta_seconds = payload["delta_seconds"]
-            existing.status = payload["status"]
-            existing.as_of_knowledge = payload["as_of_knowledge"]
-            existing.source = payload["source"]
-            existing.payload_json = payload["payload_json"]
-        session.flush()
-        return existing.id
     record = ScheduleHeartbeat(
         id=new_ulid(),
         routine_id=routine_id,
-        run_id=payload["run_id"],
+        run_id=run_id,
         scheduled_anchor_ts=anchor,
-        fired_at_ts=payload["fired_at_ts"],
-        delta_seconds=payload["delta_seconds"],
-        status=payload["status"],
-        as_of_knowledge=payload["as_of_knowledge"],
-        source=payload["source"],
-        payload_json=payload["payload_json"],
+        fired_at_ts=fired,
+        delta_seconds=None if row.get("delta_seconds") is None else int(row["delta_seconds"]),
+        status=status,
+        as_of_knowledge=as_of,
+        source=str(row.get("source") or "lab"),
+        payload_json=nested,
     )
     session.add(record)
     session.flush()

@@ -1,0 +1,12 @@
+# External clock for grok.sydney_morning.
+# Anchor read from config/schedules/routines.yaml:
+#   id: grok.sydney_morning
+#   timezone: Australia/Sydney
+#   local_time: "06:30"
+#   weekdays: [Mon, Tue, Wed, Thu, Fri]
+# CRON_TZ keeps 06:30 Sydney wall time across DST (AEST UTC+10 / AEDT UTC+11).
+# Do not convert this line to UTC. The GitHub Actions crons stay as they are.
+# Install: crontab /opt/market-memory/ops/host/crontab
+# Setup: docs/runbooks/host-dispatch.md
+CRON_TZ=Australia/Sydney
+30 6 * * 1-5 /opt/market-memory/ops/host/dispatch-sydney-morning.sh

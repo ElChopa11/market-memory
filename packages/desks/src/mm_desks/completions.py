@@ -22,7 +22,6 @@ from mm_desks.scheduler import (
     Completion,
     Catalog,
     FIRE_STATUSES,
-    STATUS_RANK,
     load_catalog,
     stamp_fire,
     completion_from_mapping,
@@ -61,29 +60,40 @@ def resolve_completions_dir(
 
 
 def completion_filename(record: Completion) -> str:
+    """One file per trigger. Anchor stays in the name; run_id keeps writers apart.
+
+    Legacy rows are ``{routine}__{anchor}.json`` (one file per anchor). Those
+    still load. New writes use ``{routine}__{anchor}__{run_id}.json`` so a
+    second trigger cannot replace the first trigger's bytes.
+    """
     anchor = as_utc(record.scheduled_anchor_ts).strftime("%Y%m%dT%H%M%SZ")
     safe = _SAFE_ID.sub("_", record.routine_id).strip("._") or "routine"
-    return f"{safe}__{anchor}.json"
+    run = _SAFE_ID.sub("_", record.run_id).strip("._") or "run"
+    return f"{safe}__{anchor}__{run}.json"
 
 
 def write_completion(record: Completion, *, dest_dir: Path) -> Path:
-    """Idempotent on (routine_id, scheduled_anchor_ts). Higher-rank status wins.
+    """Append-only per run_id. Never replaces an existing file.
 
-    Refuses ``wrong_anchor`` — that is a stamp refusal, not a row.
+    A second trigger for the same anchor writes a different file. A retry of
+    the same run_id leaves the first file's bytes in place. Refuses
+    ``wrong_anchor`` — that is a stamp refusal, not a row.
     """
     if record.status not in FIRE_STATUSES and record.status != "missed":
         raise ValueError(f"refusing to write completion status {record.status!r}")
     dest_dir.mkdir(parents=True, exist_ok=True)
     path = dest_dir / completion_filename(record)
     if path.is_file():
-        try:
-            existing = completion_from_mapping(json.loads(path.read_text(encoding="utf-8")))
-        except (OSError, json.JSONDecodeError, KeyError, ValueError, TypeError):
-            existing = None
-        rank = STATUS_RANK
-        if existing is not None and rank.get(record.status, 0) < rank.get(existing.status, 0):
-            return path
-    path.write_text(json.dumps(record.canonical(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return path
+    body = json.dumps(record.canonical(), indent=2, sort_keys=True) + "\n"
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(body, encoding="utf-8")
+    try:
+        os.link(tmp, path)
+    except FileExistsError:
+        return path
+    finally:
+        tmp.unlink(missing_ok=True)
     return path
 
 

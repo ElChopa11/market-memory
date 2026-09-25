@@ -6,7 +6,9 @@ Miss sweep (`lab schedule miss-check`) is still the control: **closed window + n
 
 ## Location
 
-Canonical: `ops/reports/scheduler/completions/{routine_id}__{YYYYMMDDTHHMMSSZ}.json`
+Canonical (one file per trigger): `ops/reports/scheduler/completions/{routine_id}__{YYYYMMDDTHHMMSSZ}__{run_id}.json`
+
+Legacy rows written before the per-run_id fix remain `{routine_id}__{YYYYMMDDTHHMMSSZ}.json` and still load. A new trigger does not replace those bytes.
 
 Override: `--completions-dir` or `MM_SCHEDULE_COMPLETIONS_DIR`.
 
@@ -27,7 +29,7 @@ Override: `--completions-dir` or `MM_SCHEDULE_COMPLETIONS_DIR`.
 | `fired_at_ts` | Actual fire time (UTC) |
 | `scheduled_anchor_ts` | Catalog anchor |
 | `delta_seconds` | Offset vs anchor (negative = early) |
-| `status` | Timing class: `ok` / `late` (a fire). Not process exit. Unscheduled weekday writes **no row** (stamp refused), never `late`. |
+| `status` | Timing class: `ok` / `early` / `late` (a fire). Not process exit. `early` is a fire before the anchor, outside grace. Unscheduled weekday writes **no row** (stamp refused), never `late` or `early`. |
 | `exit_status` | CLI process exit (0 or nonzero). Failed is still a fire. |
 | `payload_path` | briefs/ payload if any |
 | `cli` | Invoked command |
@@ -36,7 +38,7 @@ Override: `--completions-dir` or `MM_SCHEDULE_COMPLETIONS_DIR`.
 
 1. CI / fixture clock: `--fixture tests/fixtures/scheduler/ci_clock.yaml` does **not** load this directory (isolated). Pass `--completions-dir` to merge disk rows into a fixture catalog (tests).
 2. Operator / Hive box: `lab schedule miss-check --no-db` loads this directory (and DB unless `--no-db`).
-3. Same `(routine_id, scheduled_anchor_ts)` key as the table. Higher-rank timing status wins (`ok` > `late` > `skipped` > `missed`). A refused wrong-anchor stamp is not a row.
+3. Disk evidence is append-only per `run_id`. Two triggers on the same anchor are two files; the earlier file is not rewritten. Miss-sweep still indexes one row per `(routine_id, scheduled_anchor_ts)` for the closed-window check (best rank: `ok` > `late` > `early` > `skipped` > `missed`) and does not delete the other files. The optional `schedule_heartbeat` table uses the same per-run_id key. A refused wrong-anchor stamp is not a row. Deliver receipts stay one per anchor (`already_delivered`).
 4. `lab schedule miss-check --baseline-before today` writes `ops/reports/scheduler/known-missed-baseline.yaml` (pre-today Australia/Sydney windows labeled, not deleted).
 
 Hive clocks (catalog in `config/schedules/routines.yaml`):

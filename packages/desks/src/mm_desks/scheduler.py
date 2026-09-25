@@ -22,7 +22,7 @@ from mm_common.time import OPS_TZ, as_utc, in_ops_tz, parse_utc
 
 UTC = timezone.utc
 WEEKDAY_NAMES = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-STATUSES = ("ok", "late", "missed", "skipped", "wrong_anchor")
+STATUSES = ("ok", "early", "late", "missed", "skipped", "wrong_anchor")
 FAMILIES = ("lab", "grok_bot")
 CANARY_MARKERS = ("canary",)
 DEFAULT_LATE_AFTER = 300
@@ -35,8 +35,8 @@ BASELINE_REL = Path("ops") / "reports" / "scheduler" / "known-missed-baseline.ya
 BASELINE_ENV = "MM_SCHEDULE_BASELINE_FILE"
 KNOWN_MISSED_LABEL = "known-missed"
 WRONG_ANCHOR_REASON = "fired_on_unscheduled_weekday"
-STATUS_RANK = {"ok": 4, "late": 3, "skipped": 2, "wrong_anchor": 1, "missed": 0}
-FIRE_STATUSES = frozenset({"ok", "late", "skipped"})
+STATUS_RANK = {"ok": 5, "late": 4, "early": 3, "skipped": 2, "wrong_anchor": 1, "missed": 0}
+FIRE_STATUSES = frozenset({"ok", "early", "late", "skipped"})
 
 
 class WrongAnchorError(ValueError):
@@ -205,6 +205,7 @@ class SweepResult:
     wrong_anchor: tuple[dict[str, Any], ...] = ()
     baseline_path: str | None = None
     baseline_before: str | None = None
+    early: tuple[dict[str, Any], ...] = ()
 
     def with_artifact(self, path: str) -> SweepResult:
         return SweepResult(
@@ -222,6 +223,7 @@ class SweepResult:
             wrong_anchor=self.wrong_anchor,
             baseline_path=self.baseline_path,
             baseline_before=self.baseline_before,
+            early=self.early,
         )
 
     @property
@@ -237,6 +239,7 @@ class SweepResult:
             "n_missed": len(self.misses),
             "n_known_missed": len(self.known_missed),
             "n_ok": len(self.ok),
+            "n_early": len(self.early),
             "n_late": len(self.late),
             "n_pending": len(self.pending),
             "n_skipped": len(self.skipped),
@@ -245,6 +248,7 @@ class SweepResult:
             "misses": [row.canonical() for row in self.misses],
             "known_missed": [row.canonical() for row in self.known_missed],
             "ok": list(self.ok),
+            "early": list(self.early),
             "late": list(self.late),
             "pending": list(self.pending),
             "skipped": list(self.skipped),
@@ -262,12 +266,19 @@ def delta_seconds(anchor: datetime, fired: datetime) -> int:
 
 
 def classify_delta(delta: int, late_after_seconds: int) -> str:
-    """ok if |delta| within grace; late if a fire exists on a scheduled day but off-anchor.
+    """ok inside grace; early if the fire is before the anchor; late if after.
 
-    Wrong-day / unscheduled weekday is *not* late — use scheduled_slot + stamp_fire.
+    Grace is symmetric: ``|delta| <= late_after_seconds`` is ``ok``. Outside
+    grace, a negative delta (fired before the anchor) is ``early`` and a
+    positive delta is ``late``. Wrong-day / unscheduled weekday is neither —
+    use scheduled_slot + stamp_fire (no completion row).
     """
-    if abs(int(delta)) <= int(late_after_seconds):
+    grace = int(late_after_seconds)
+    signed = int(delta)
+    if abs(signed) <= grace:
         return "ok"
+    if signed < 0:
+        return "early"
     return "late"
 
 
@@ -703,6 +714,7 @@ def miss_sweep(
     labeled: list[Miss] = []
     pending: list[dict[str, Any]] = []
     ok: list[dict[str, Any]] = []
+    early: list[dict[str, Any]] = []
     late: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     wrong: list[dict[str, Any]] = []
@@ -741,6 +753,8 @@ def miss_sweep(
                 }
                 if hit.status == "ok":
                     ok.append(payload)
+                elif hit.status == "early":
+                    early.append(payload)
                 elif hit.status == "late":
                     late.append(payload)
                 elif hit.status == "skipped":
@@ -795,6 +809,7 @@ def miss_sweep(
         wrong_anchor=tuple(wrong),
         baseline_path=None if baseline_path is None else str(baseline_path),
         baseline_before=None if baseline_before is None else baseline_before.isoformat(),
+        early=tuple(early),
     )
 
 

@@ -41,9 +41,9 @@ Catalog composition:
 
 Hive clock → `lab brief` / `lab deliver` / `lab schedule heartbeat` writes a JSON row:
 
-`ops/reports/scheduler/completions/{routine_id}__{anchor}.json`
+`ops/reports/scheduler/completions/{routine_id}__{anchor}__{run_id}.json`
 
-Fields: `run_id`, `routine_id` (configured trigger), `fired_at_ts` (actual time), `delta_seconds` (offset vs catalog anchor), `status` (timing `ok`/`late`), `exit_status` (CLI process; failed is still a fire), `payload_path` if a briefs/ artifact exists.
+Legacy files `{routine_id}__{anchor}.json` still load. A second trigger writes a new file and does not replace the first. Fields: `run_id`, `routine_id` (configured trigger), `fired_at_ts` (actual time), `delta_seconds` (offset vs catalog anchor), `status` (timing `ok` / `early` / `late`), `exit_status` (CLI process; failed is still a fire), `payload_path` if a briefs/ artifact exists. `early` means the fire is before the anchor and outside the grace window.
 
 Anchor is catalog `local_time` on the fire's **local calendar date** in the routine timezone (Hive clocks: Australia/Sydney). If that weekday is not in the catalog, **write no completion row** (`lab schedule heartbeat` exits 2, `wrote: false`). Do not classify as `late`. Silence (no CLI) and a failed CLI that still stamped a scheduled-day fire stay distinct from a successful fire with a bad stamp.
 
@@ -97,7 +97,7 @@ This section does not change `.github/workflows/hybrid-sydney-morning.yml`. Both
 
 Actions is the execution path. `stage1-stamp` in `.github/workflows/hybrid-sydney-morning.yml` is the clock proof for `grok.sydney_morning` (fire → stamp → exit). It does not brief and it does not deliver. `brief-and-deliver` runs after that stamp on the same scheduled run. See the next section.
 
-- `on.schedule` two crons while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC), and the 08:30 prove/backup is `30 22 * * 0-4` UTC (Sun–Thu 22:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps. Neither cron is removed.
+- `on.schedule` two crons while AEST is in force: weekday 06:30 Australia/Sydney is `30 20 * * 0-4` UTC (Sun–Thu 20:30 UTC), and the 08:30 prove/backup is `30 22 * * 0-4` UTC (Sun–Thu 22:30 UTC). No ±900s skip. The AEDT companion cron is not scheduled. Every fire stamps. Neither cron is removed. GitHub evaluates those crons in UTC, so the 4 Oct 2026 DST start shifts both by one Sydney hour. They stay. An external host cron (`CRON_TZ=Australia/Sydney`, catalog 06:30 weekdays) dispatches this same workflow; see [host-dispatch.md](host-dispatch.md). The second trigger on an anchor that already has a deliver receipt is `already_delivered` (one DM).
 - `on.workflow_dispatch` for a Principal canary. Manual dispatch stamps the same way as the cron (no skip).
 - Job runs `uv run lab schedule heartbeat --routine-id grok.sydney_morning --no-db --source github.actions` (no Telegram; never `--send`).
 - **Durable path:** the job commits the completion JSON to the branch the workflow ran on (`github.ref_name`) with an auditable message (`routine_id`, `run_id`, `scheduled_for`, `actual`, `delta_seconds`, `status`), using `permissions: contents: write` and rebase-retry on non-fast-forward. Completions are **not** gitignored.

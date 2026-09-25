@@ -172,7 +172,8 @@ def test_receipt_filename_matches_completion_anchor_token() -> None:
         as_of_knowledge=anchor,
     )
     token = "20260923T203000Z"
-    assert completion_filename(record) == f"{ROUTINE}__{token}.json"
+    assert completion_filename(record) == f"{ROUTINE}__{token}__r.json"
+    assert token in completion_filename(record)
     assert receipt_filename(ROUTINE, ANCHOR_A) == f"{ROUTINE}__{token}.deliver.json"
     assert receipt_filename(ROUTINE, ANCHOR_A_Z) == receipt_filename(ROUTINE, ANCHOR_A)
 
