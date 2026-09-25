@@ -1,8 +1,10 @@
 """Stage A data-health score. Coverage of observed states, not a confidence bar.
 
-A structural miss (VIX entitlement) is listed on the price row and excluded
-from the denominator. Icons are data state only. If nothing is scored, the
-morning renderer omits the line. It does not print INSUFFICIENT DATA.
+A structural miss (VIX entitlement) is excluded from the denominator while
+``structural_unavailable`` stays set. The morning renderer clears that flag
+when the last is missing, so the slot is scored ``unavailable`` and listed.
+Icons are data state only. If nothing is scored, the morning renderer omits
+the line. It does not print INSUFFICIENT DATA.
 """
 
 from __future__ import annotations

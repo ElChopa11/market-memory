@@ -13,4 +13,4 @@ The Telegram message does not repeat these labels. They do not change from one m
 | BTC | BTC | HL BTC-USDC perp mid (not CoinGecko spot) |
 | ETH | ETH | HL ETH-USDC perp mid (not CoinGecko spot) |
 
-Funding in the message is the Hyperliquid hourly rate, annualised (`hourly × 24 × 365`). The interest baseline in the Hyperliquid funding note is 0.01% per 8 hours, which is 0.00125% per hour (`0.0000125`). Open interest is rounded to a whole number. Basis is shown only beside the prior capture.
+Funding in the message is the Hyperliquid hourly rate, annualised (`hourly × 24 × 365`), and only when it is off the interest baseline. That baseline is 0.01% per 8 hours (`0.0001`), paid each hour at one eighth: `0.0000125` per hour. A 6-decimal print within half of `1e-6` of that rate (`0.000012` and `0.000013`) is the baseline and is not a row. Open interest is rounded to a whole number. Basis is shown only beside the prior capture. A slot with no last, including VIX, is named on the `gaps:` line.

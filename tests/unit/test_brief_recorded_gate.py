@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from mm_briefing.models import AssetPrint, HLInstrumentState, HLMetric, MacroSnapshot
-from mm_briefing.morning import _change_cell, render_morning_close
+from mm_briefing.morning import PHONE_LINE_MAX, _change_cell, render_morning_close
 from mm_briefing.prior import MapPriorCaptureReader, PriorCaptureValue
 from mm_briefing.render import render_close_legacy
 from mm_delivery.config import load_telegram_settings
@@ -153,12 +153,11 @@ def gate_markdown(payload: dict | None = None) -> str:
     )
     fred_cell = _change_cell(fred_row, fred_prior)
     closing = (
-        (
-            "Recorded earlier pair, not this session: "
-            f"{fred['prior_generated_at']} → {fred['current_generated_at']}. "
-            "FRED observation date did not roll."
-        ),
-        f"{'US10Y':<6} {float(us10y['last']):>10.2f}  {fred_cell}",
+        "Earlier pair, not this session.",
+        "2026-09-23T23:02:17Z",
+        "2026-09-24T06:58:31Z",
+        "FRED date did not roll.",
+        f"US10Y {float(us10y['last']):.2f} {fred_cell}",
     )
     doc = render_morning_close(
         generated_at=generated,
@@ -173,9 +172,9 @@ def gate_markdown(payload: dict | None = None) -> str:
         data_quality="unavailable",
         prior_reader=_prior_reader(payload),
         lead_lines=(
-            f"Sessions: {prior['generated_at']} → {current['generated_at']}",
+            "Prior 2026-09-24T06:58:31Z",
+            "Now 2026-09-24T23:17:25Z",
             "RECORDED DATA, --no-send",
-            "Missing: VIX — no recorded value. Cboe entitlement; structurally unavailable on the Polygon stocks plan.",
         ),
         closing_lines=closing,
     )
@@ -228,17 +227,35 @@ def test_recorded_gate_matches_committed_telegram_bytes() -> None:
     assert len(text) <= TELEGRAM_MAX_MESSAGE_CHARS
     assert len(text.splitlines()) < 80
     assert "RECORDED DATA, --no-send" in text
-    assert "Sessions: 2026-09-24T06:58:31+00:00 → 2026-09-24T23:17:25+00:00" in text
+    assert "Prior 2026-09-24T06:58:31Z" in text
+    assert "Now 2026-09-24T23:17:25Z" in text
     assert "no new session since 2026-09-23" in text
     assert "no new print since 2026-09-22" in text
     assert "+15.0bp" in text
     assert "767.81" in text
     assert "84314.50" in text
-    assert "11.39% ann" in text
+    assert "11.39% ann" not in text
     assert "0.000013" not in text
+    assert "Health 43%" in text
+    assert "Equities stale" in text
+    assert "Vol unavailable" in text
+    assert "Rates fresh" in text
+    assert "100%" not in text
+    assert "VIX " not in text
+    assert "gaps:" in text and "VIX" in text.split("gaps:", 1)[1]
+    assert "BTC Funding" in text and "ETH Funding" in text
     assert "As-of knowledge" not in text
     assert "| Symbol |" not in text
-    assert "Missing: VIX" in text
+    assert "Missing: VIX" not in text
+    assert "#" not in text.replace("```", "")
+    in_fence = False
+    for line in text.splitlines():
+        if line.strip() == "```":
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            assert len(line) <= PHONE_LINE_MAX, line
+            assert not line.startswith("#")
     assert "SPY ETF" not in text
     assert CURRENT.read_text(encoding="utf-8") == legacy_markdown(payload)
     assert "Overnight reference" in CURRENT.read_text(encoding="utf-8")

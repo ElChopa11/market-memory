@@ -6,7 +6,9 @@ The send path is one Telegram message. Card split stays deferred.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date, datetime
+from decimal import Decimal
 
 from mm_common.time import as_utc
 from mm_briefing.divergences import fmt_pct, fmt_px
@@ -65,11 +67,24 @@ _POSITION_METRICS = (
     ("open_interest", "Open interest"),
     ("liquidations", "Liquidations (window sum)"),
 )
-_PRIOR_REQUIRED_METRICS = frozenset({"funding", "open_interest"})
-# metaAndAssetCtxs ``funding`` matches the hourly payment. HL's formula is an
-# 8h rate paid each hour at one eighth; the interest baseline is 0.00125%/hour
-# (0.0000125). Annualised percent = hourly rate × 24 × 365 × 100.
+_PRIOR_REQUIRED_METRICS = frozenset({"open_interest"})
+# Hyperliquid funding docs: the interest component is 0.01% per 8 hours
+# (0.0001). The formula is an 8h rate, paid each hour at one eighth.
+# https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding
+# Baseline hourly rate = 0.0001 / 8 = 0.0000125 (0.00125% per hour).
+# Recorded asset-ctx prints use 6 decimal places. A print is on baseline when
+# it is within half of 1e-6 of 0.0000125. Compared in Decimal: float subtraction
+# treats 0.000012 as just outside that window. 0.000012 and 0.000013 are on
+# baseline. 0.000014 is the first 6-decimal print off baseline.
+HL_FUNDING_INTEREST_8H = 0.0001
+HL_FUNDING_PAYMENTS_PER_8H = 8
+HL_FUNDING_BASELINE_HOURLY = HL_FUNDING_INTEREST_8H / HL_FUNDING_PAYMENTS_PER_8H
+HL_FUNDING_PRINT_QUANTUM = 1e-6
+_HL_FUNDING_BASELINE = Decimal("0.0001") / Decimal(HL_FUNDING_PAYMENTS_PER_8H)
+_HL_FUNDING_HALF_QUANTUM = Decimal(str(HL_FUNDING_PRINT_QUANTUM)) / Decimal(2)
 _FUNDING_HOURS_PER_YEAR = 24 * 365
+# Monospace block. A phone wraps past this. Asserted on the gate render.
+PHONE_LINE_MAX = 42
 
 
 def render_morning_close(
@@ -96,54 +111,59 @@ def render_morning_close(
     ny = generated_at.astimezone(NY_TZ)
     syd = generated_at.astimezone(SYDNEY_TZ)
     presentation = load_presentation_config()
-    health = score_data_health(session.assets, hl, config=presentation)
-    lines: list[str] = [f"# US Close Brief — {session_date.isoformat()}", ""]
+    health = score_data_health(
+        _assets_for_health(session.assets, prior_reader),
+        hl,
+        config=presentation,
+    )
+    lines: list[str] = [f"US Close {session_date.isoformat()}", ""]
     for lead in lead_lines:
-        text = lead.strip()
-        if text:
-            lines.append(text)
+        lines.extend(_phone_wrap(lead))
     if lead_lines:
         lines.append("")
-    lines.append(
-        (
-            f"UTC {iso(generated_at)} | New York {iso(ny)} ({ny.tzname() or session_tz}) | "
-            f"Sydney {iso(syd)} ({syd.tzname() or lab_tz})"
-        )
-    )
-    health_line = health.morning_line(icons=presentation.icons)
-    if health_line:
-        lines.append(health_line)
+    lines.extend(_clock_lines(generated_at, ny, syd))
+    lines.extend(_health_lines(health))
     if not _has_observation(session, hl):
         lines.append("obs none")
     lines.append("")
-    lines.extend(_price_rows(session.assets, knowledge_as_of=as_of, prior_reader=prior_reader))
-    positioning = _positioning(hl, prior_reader=prior_reader, knowledge_as_of=as_of)
-    if positioning:
-        lines.extend(["", "## Positioning", ""])
-        lines.extend(positioning)
+    price_lines, price_gaps = _price_rows(
+        session.assets, knowledge_as_of=as_of, prior_reader=prior_reader
+    )
+    lines.extend(price_lines)
+    positioning, pos_gaps = _positioning(hl, prior_reader=prior_reader, knowledge_as_of=as_of)
+    gaps = [*price_gaps, *pos_gaps]
+    if positioning or gaps:
+        lines.append("")
+        if positioning:
+            lines.append("Positioning")
+            lines.extend(positioning)
+        if gaps:
+            lines.extend(_phone_wrap("gaps: " + ", ".join(gaps)))
     unexpected_lines = _live_notes(unexpected)
     if unexpected_lines:
-        lines.extend(["", "## Unexpected", ""])
+        lines.extend(["", "Unexpected", ""])
         lines.extend(f"- {note}" for note in unexpected_lines)
     thesis_lines = _thesis_lines(theses)
     if thesis_lines:
-        lines.extend(["", "## Lab hooks", ""])
+        lines.extend(["", "Lab hooks", ""])
         lines.extend(thesis_lines)
     assumption_lines = _live_notes(assumptions, drop=_STATIC_ASSUMPTION)
     if assumption_lines:
-        lines.extend(["", "## Assumptions", ""])
+        lines.extend(["", "Assumptions", ""])
         lines.extend(f"- {note}" for note in assumption_lines)
     catalyst_lines = _catalyst_lines(calendar)
     if catalyst_lines:
-        lines.extend(["", "## Catalysts", ""])
+        lines.extend(["", "Catalysts", ""])
         lines.extend(catalyst_lines)
     extras = [line.rstrip() for line in closing_lines if line.strip()]
     if extras:
         lines.append("")
-        lines.extend(extras)
-    # One pre block. MarkdownV2 does not render pipe tables; the fence is the
-    # fixed-width message Telegram shows. Status lines appended later stay outside.
-    markdown = "```\n" + "\n".join(lines).rstrip() + "\n```\n"
+        for extra in extras:
+            lines.extend(_phone_wrap(extra))
+    fitted = [wrapped for line in lines for wrapped in (_phone_wrap(line) or [""])]
+    # One pre block. MarkdownV2 does not render pipe tables or # headings.
+    # Headings are plain short lines. Status lines appended later stay outside.
+    markdown = "```\n" + "\n".join(fitted).rstrip() + "\n```\n"
     return BriefDocument(
         kind="close",
         session_date=session_date,
@@ -158,39 +178,155 @@ def render_morning_close(
     )
 
 
+def _clock_lines(generated_at: datetime, ny: datetime, syd: datetime) -> list[str]:
+    ny_name = ny.tzname() or "NY"
+    syd_name = syd.tzname() or "SYD"
+    return [
+        f"UTC {generated_at.strftime('%Y-%m-%d %H:%MZ')}",
+        f"NY {ny.strftime('%Y-%m-%d %H:%M')} {ny_name}",
+        f"SYD {syd.strftime('%Y-%m-%d %H:%M')} {syd_name}",
+    ]
+
+
+def _health_lines(health) -> list[str]:
+    """One state per domain. Stale and missing are named, not called fresh."""
+    if health.insufficient or health.pct is None:
+        return []
+    lines = [f"Health {health.pct}%"]
+    for row in health.domains:
+        if row.excluded:
+            continue
+        lines.append(f"{row.label} {row.state}")
+    return lines
+
+
+def _assets_for_health(
+    assets: tuple[AssetPrint, ...],
+    prior_reader: PriorCaptureReader | None,
+) -> tuple[AssetPrint, ...]:
+    """Health states for the morning line.
+
+    A missing last is unavailable, including a structural slot, so it is
+    listed and weighted 0. It is not omitted and not fresh. An observation
+    date that did not roll since the prior capture is stale. That phrase is
+    the right change cell; the health line must not call the slot fresh.
+    Stale is not a failure. Crypto is never marked stale for a repeated as-of.
+    """
+    adjusted: list[AssetPrint] = []
+    for row in assets:
+        if row.last is None:
+            adjusted.append(replace(row, data_quality="unavailable", structural_unavailable=False))
+            continue
+        if _did_not_roll(row, prior_reader):
+            adjusted.append(replace(row, data_quality="stale"))
+            continue
+        adjusted.append(row)
+    return tuple(adjusted)
+
+
+def _did_not_roll(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> bool:
+    symbol = row.symbol.upper()
+    if symbol in _CRYPTO_SLOTS or row.last is None:
+        return False
+    prior = read_prior(prior_reader, symbol, _CLOSE_METRIC)
+    if prior is None or prior.observation_as_of is None or row.as_of is None:
+        return False
+    current_day = _observation_date(row.as_of)
+    prior_day = _observation_date(prior.observation_as_of)
+    return current_day is not None and current_day == prior_day
+
+
+def funding_on_baseline(rate: float) -> bool:
+    """True when the hourly print is the HL interest baseline, at 6-decimal precision.
+
+    The inclusive window is half of 1e-6 around 0.0000125. Both neighbors that
+    a 6-decimal print can take, 0.000012 and 0.000013, are on baseline.
+    0.000014 is off.
+    """
+    return abs(Decimal(str(rate)) - _HL_FUNDING_BASELINE) <= _HL_FUNDING_HALF_QUANTUM
+
+
+def _phone_wrap(text: str) -> list[str]:
+    """Break a line so each piece is at most PHONE_LINE_MAX characters.
+
+    Leading spaces stay on every piece, so a nested bullet keeps its indent.
+    """
+    raw = text.rstrip()
+    if raw == "":
+        return [""]
+    if len(raw) <= PHONE_LINE_MAX:
+        return [raw]
+    indent = raw[: len(raw) - len(raw.lstrip(" "))]
+    body = raw[len(indent) :]
+    width = PHONE_LINE_MAX - len(indent)
+    if width < 8:
+        indent = ""
+        body = raw.lstrip(" ")
+        width = PHONE_LINE_MAX
+    pieces = _wrap_words(body, width)
+    return [f"{indent}{piece}" if piece else indent[:PHONE_LINE_MAX] for piece in pieces]
+
+
+def _wrap_words(body: str, width: int) -> list[str]:
+    words = [word for word in body.split(" ") if word]
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        while len(word) > width:
+            if current:
+                lines.append(current)
+                current = ""
+            lines.append(word[:width])
+            word = word[width:]
+        if not word:
+            continue
+        trial = word if not current else f"{current} {word}"
+        if len(trial) <= width:
+            current = trial
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines or [""]
+
+
 def _price_rows(
     assets: tuple[AssetPrint, ...],
     *,
     knowledge_as_of: datetime,
     prior_reader: PriorCaptureReader | None,
-) -> list[str]:
-    """Headline block. Source, quality, and label are not columns.
+) -> tuple[list[str], list[str]]:
+    """Headline rows. A slot with no last goes to the gaps list, not a row.
 
-    Telegram MarkdownV2 does not render pipe tables, so the rows sit in a
-    preformatted fence. A quality marker is appended only when the row is
-    not fresh. Labels live in ``docs/specs/brief-row-labels.md``.
+    Labels live in ``docs/specs/brief-row-labels.md``. A quality marker is
+    appended only when the row is not fresh and the change cell is not
+    already the no-new-session / no-new-print phrase.
     """
     by_symbol = {row.symbol.upper(): row for row in assets}
-    body = [f"{'Symbol':<6} {'Last':>10}  Change"]
+    body: list[str] = []
+    gaps: list[str] = []
     for symbol in ASSET_ORDER:
         row = by_symbol.get(symbol)
-        if row is None:
-            row = AssetPrint(
-                symbol=symbol,
-                name=symbol,
-                last=None,
-                prior_close=None,
-                data_quality="unavailable",
-                source="none",
-                as_of=knowledge_as_of,
-            )
+        if row is None or row.last is None:
+            gaps.append(symbol if row is None else display_symbol(row))
+            continue
         delta = _change_cell(row, prior_reader)
-        marker = _row_quality_marker(row, knowledge_as_of)
-        line = f"{display_symbol(row):<6} {fmt_px(row.last):>10}  {delta}"
-        if marker:
-            line += f"  {marker}"
-        body.append(line)
-    return body
+        marker = ""
+        if not delta.startswith((NO_NEW_SESSION_PREFIX, NO_NEW_PRINT_PREFIX)):
+            marker = _row_quality_marker(row, knowledge_as_of)
+        head = f"{display_symbol(row)} {fmt_px(row.last)}"
+        same = f"{head} {delta}" + (f" {marker}" if marker else "")
+        if len(same) <= PHONE_LINE_MAX:
+            body.append(same)
+        else:
+            body.append(head)
+            rest = delta if not marker else f"{delta} {marker}"
+            body.append(rest if len(rest) <= PHONE_LINE_MAX else f" {delta}")
+            if marker and len(rest) > PHONE_LINE_MAX:
+                body.append(marker)
+    return body, gaps
 
 
 def _observation_date(value: datetime | date | None) -> date | None:
@@ -268,10 +404,10 @@ def _positioning(
     *,
     prior_reader: PriorCaptureReader | None,
     knowledge_as_of: datetime,
-) -> list[str]:
+) -> tuple[list[str], list[str]]:
     del knowledge_as_of
     if not hl:
-        return []
+        return [], []
     lines: list[str] = []
     gaps: list[str] = []
     for state in hl:
@@ -282,22 +418,18 @@ def _positioning(
             current = _metric_value(state, metric_name)
             prior = read_prior(prior_reader, state.instrument, metric_name)
             if _show_metric(metric_name, current, prior):
-                lines.append(_metric_line(state, metric_name, label, current, prior))
+                lines.extend(_metric_lines(state, metric_name, label, current, prior))
             else:
                 gaps.append(f"{state.instrument} {label}")
         basis_prior = read_prior(prior_reader, state.instrument, "basis")
         if basis_prior is not None:
             current_basis = basis_mark_oracle(state)
-            lines.append(
-                f"{state.instrument} Basis mark−oracle: {_fmt_num(current_basis)} "
-                f"(prior {_fmt_num(basis_prior.value)})"
-            )
+            lines.append(f"{state.instrument} basis {_fmt_num(current_basis)}")
+            lines.append(f" prior {_fmt_num(basis_prior.value)}")
         level_txt = _level_text(state)
         if level_txt:
-            lines.append(f"{state.instrument} Levels: {level_txt}")
-    if gaps:
-        lines.append("gaps: " + ", ".join(gaps))
-    return lines
+            lines.extend(_phone_wrap(f"{state.instrument} levels {level_txt}"))
+    return lines, gaps
 
 
 def _show_metric(
@@ -307,9 +439,13 @@ def _show_metric(
 ) -> bool:
     """Non-zero, or changed versus the prior capture.
 
-    Funding and open interest with no prior are gaps, even when non-zero.
+    Open interest with no prior is a gap, even when non-zero.
+    Funding is shown only when the hourly print is off the HL interest
+    baseline. On baseline it is the same number every quiet morning.
     A zero that matches the prior stays on the gaps line.
     """
+    if metric_name == "funding":
+        return current is not None and not funding_on_baseline(current)
     if metric_name in _PRIOR_REQUIRED_METRICS and prior is None:
         return False
     if _nonzero(current):
@@ -348,28 +484,29 @@ def _metric_value(state: HLInstrumentState, metric_name: str) -> float | None:
         return None
 
 
-def _metric_line(
+def _metric_lines(
     state: HLInstrumentState,
     metric_name: str,
     label: str,
     current: float | None,
     prior: PriorCaptureValue | None,
-) -> str:
-    if metric_name == "funding":
-        text = f"{state.instrument} {label}: {format_funding_annualised(current)}"
-        if prior is not None:
-            text += f" (prior {format_funding_annualised(prior.value)})"
-    elif metric_name == "open_interest":
-        text = f"{state.instrument} {label}: {_fmt_oi(current)}"
-        if prior is not None and prior.value is not None and current is not None and prior.value != 0:
-            delta = (current - prior.value) / prior.value * 100.0
-            text += f" (prior {_fmt_oi(prior.value)}, Δ {delta:+.2f}%)"
-    else:
-        text = f"{state.instrument} {label}: {_fmt_num(current)}"
+) -> list[str]:
     obs = _metric_obs(state, metric_name)
-    if obs:
-        text += f" obs {obs}"
-    return text
+    obs_suffix = f" obs {obs}" if obs else ""
+    if metric_name == "funding":
+        lines = [f"{state.instrument} fund {format_funding_annualised(current)}"]
+        if prior is not None:
+            lines.append(f" prior {format_funding_annualised(prior.value)}")
+    elif metric_name == "open_interest":
+        lines = [f"{state.instrument} OI {_fmt_oi(current)}"]
+        if prior is not None and prior.value not in (None, 0) and current is not None:
+            delta = (current - prior.value) / prior.value * 100.0
+            lines.append(f" prior {_fmt_oi(prior.value)} {delta:+.2f}%")
+    else:
+        lines = [f"{state.instrument} {label} {_fmt_num(current)}"]
+    if obs_suffix:
+        lines[-1] += obs_suffix
+    return lines
 
 
 def _fmt_num(value: float | None) -> str:

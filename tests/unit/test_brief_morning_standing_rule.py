@@ -19,11 +19,17 @@ from mm_briefing.models import (
     MacroSnapshot,
     ThesisHook,
 )
-from mm_briefing.morning import FORBIDDEN_RENDER_FRAGMENTS
+from mm_briefing.morning import (
+    FORBIDDEN_RENDER_FRAGMENTS,
+    HL_FUNDING_BASELINE_HOURLY,
+    PHONE_LINE_MAX,
+    funding_on_baseline,
+)
 from mm_briefing.prior import MapPriorCaptureReader, PriorCaptureValue, prior_value_from_retain
 from mm_briefing.render import render_close
 from mm_delivery.format import TELEGRAM_MAX_MESSAGE_CHARS, chunk_markdown_v2
 from mm_delivery.payload import prepare_payload
+from mm_ingest.mvp_retain import capture_rows_line
 from mm_lab_cli.deadman import DEADMAN_MISSING_LINE
 from mm_lab_cli.deliver import append_brief_status_lines
 
@@ -35,7 +41,15 @@ GENERATED = AS_OF
 PRIOR_CLOSE = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
 
 LATE = "LATE: grok.sydney_morning fired +2h 46m past anchor. run_id actions-b1-1."
-CAPTURE = "CAPTURE: grok.sydney_morning capture 1 of 11. run_id actions-b1-1."
+CAPTURE = capture_rows_line(
+    rows=75,
+    expected_rows=75,
+    captured_at="2026-09-24T23:17:25+00:00",
+    prior_captured_at="2026-09-24T06:58:31+00:00",
+    instruments=37,
+)
+_ROW_HEADS = {"SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"}
+_SECTION_HEADS = {"Positioning", "Unexpected", "Lab hooks", "Assumptions", "Catalysts"}
 
 
 def _print(
@@ -182,12 +196,48 @@ def _render(
     return doc.markdown
 
 
-def _price_line(markdown: str, symbol: str) -> str:
-    prefix = f"{symbol:<6} "
+def _fence_lines(markdown: str) -> list[str]:
+    lines: list[str] = []
+    in_fence = False
     for line in markdown.splitlines():
-        if line.startswith(prefix):
-            return line
+        if line.strip() == "```":
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            lines.append(line)
+    return lines
+
+
+def _assert_phone(markdown: str) -> None:
+    for line in _fence_lines(markdown):
+        assert len(line) <= PHONE_LINE_MAX, line
+        assert not line.startswith("#")
+
+
+def _is_continuation(line: str) -> bool:
+    if not line or line.startswith("gaps:"):
+        return False
+    head = line.split(" ", 1)[0]
+    if head in _ROW_HEADS or head in _SECTION_HEADS:
+        return False
+    if head in {"UTC", "NY", "SYD", "Health", "Equities", "Rates", "USD", "Oil", "Vol", "Crypto", "Hyperliquid", "obs"}:
+        return False
+    return True
+
+
+def _row_text(markdown: str, symbol: str) -> str:
+    lines = _fence_lines(markdown)
+    for index, line in enumerate(lines):
+        if line.split(" ", 1)[0] != symbol:
+            continue
+        if index + 1 < len(lines) and _is_continuation(lines[index + 1]):
+            return f"{line} {lines[index + 1].strip()}"
+        return line
     raise AssertionError(f"missing price row for {symbol}\n{markdown}")
+
+
+def _price_line(markdown: str, symbol: str) -> str:
+    return _row_text(markdown, symbol)
 
 
 def test_empty_sections_are_omitted_not_rendered_as_none() -> None:
@@ -205,20 +255,10 @@ def test_empty_sections_are_omitted_not_rendered_as_none() -> None:
 
 def test_obs_none_is_one_header_state() -> None:
     text = _render(hl=(_hl("BTC", liquidations=()),))
-    body = text.strip().removeprefix("```").removesuffix("```")
-    assert body.count("obs none") == 1
-    rows: list[str] = []
-    in_rows = False
-    for line in body.splitlines():
-        if line.startswith("Symbol"):
-            in_rows = True
-            continue
-        if in_rows and not line.strip():
-            break
-        if in_rows:
-            rows.append(line)
-    assert rows
-    assert all("obs none" not in line for line in rows)
+    lines = _fence_lines(text)
+    assert lines.count("obs none") == 1
+    assert all(line.strip() == "obs none" or "obs none" not in line for line in lines)
+    _assert_phone(text)
 
 
 def test_obs_none_absent_when_an_observation_id_exists() -> None:
@@ -245,15 +285,16 @@ def test_no_overnight_reference_block() -> None:
 
 
 def test_zero_metric_moves_to_gaps_and_returns_when_nonzero() -> None:
-    zero = _render(hl=(_hl("BTC", funding="0", oi="0", mid="0", liquidations=()),))
-    assert "Liquidations (window sum): 0" not in zero
-    assert "BTC Funding:" not in zero
-    assert "gaps: " in zero
-    assert "BTC Liquidations (window sum)" in zero.split("gaps: ", 1)[1]
+    zero = _render(hl=(_hl("BTC", funding="0.0000125", oi="0", mid="0", liquidations=()),))
+    assert "Liquidations (window sum)" not in zero.split("gaps:", 1)[0]
+    assert "fund " not in zero
+    assert "gaps:" in zero
+    assert "BTC Liquidations (window sum)" in _joined(zero)
+    assert "BTC Funding" in _joined(zero)
 
-    back = _render(hl=(_hl("BTC", funding="0", oi="0", mid="0", liquidations=("2.5",)),))
-    assert "BTC Liquidations (window sum): 2.5" in back
-    gaps = back.split("gaps: ", 1)[1] if "gaps: " in back else ""
+    back = _render(hl=(_hl("BTC", funding="0.0000125", oi="0", mid="0", liquidations=("2.5",)),))
+    assert "BTC Liquidations (window sum) 2.5" in back
+    gaps = back.split("gaps:", 1)[1] if "gaps:" in back else ""
     assert "Liquidations (window sum)" not in gaps
 
 
@@ -273,7 +314,8 @@ def test_basis_omitted_without_prior_and_shown_with_prior_value() -> None:
         }
     )
     shown = _render(hl=(_hl("BTC", mark="110", oracle="100"),), prior_reader=prior)
-    assert "BTC Basis mark−oracle: 10 (prior 7.5)" in shown
+    assert "BTC basis 10" in shown
+    assert " prior 7.5" in shown
 
 
 def test_unchanged_zero_stays_on_gaps_and_changed_zero_returns() -> None:
@@ -288,8 +330,8 @@ def test_unchanged_zero_stays_on_gaps_and_changed_zero_returns() -> None:
         hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=()),),
         prior_reader=MapPriorCaptureReader({("BTC", "liquidations"): same}),
     )
-    assert "Liquidations (window sum):" not in quiet
-    assert "BTC Liquidations (window sum)" in quiet.split("gaps: ", 1)[1]
+    assert "Liquidations (window sum)" not in quiet.split("gaps:", 1)[0]
+    assert "BTC Liquidations (window sum)" in _joined(quiet)
 
     changed = PriorCaptureValue(
         instrument="BTC",
@@ -302,7 +344,7 @@ def test_unchanged_zero_stays_on_gaps_and_changed_zero_returns() -> None:
         hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=()),),
         prior_reader=MapPriorCaptureReader({("BTC", "liquidations"): changed}),
     )
-    assert "BTC Liquidations (window sum): 0" in moved
+    assert "BTC Liquidations (window sum) 0" in moved
 
 
 def test_prior_read_failure_does_not_fail_the_brief() -> None:
@@ -311,10 +353,10 @@ def test_prior_read_failure_does_not_fail_the_brief() -> None:
             raise RuntimeError("neon unavailable")
 
     text = _render(hl=(_hl("BTC"),), prior_reader=_Boom())
-    assert "US Close Brief" in text
-    assert "Basis" not in text
-    assert "BTC Funding:" not in text
-    assert "BTC Funding" in text.split("gaps: ", 1)[1]
+    assert "US Close 2026-09-22" in text
+    assert "basis" not in text
+    assert "BTC fund " in text
+    assert " prior " not in text
 
 
 def test_capture_one_retain_row_is_no_prior() -> None:
@@ -349,14 +391,23 @@ def test_funding_and_oi_with_prior_are_annualised_and_rounded() -> None:
             ),
         }
     )
-    text = _render(
+    on_baseline = _render(
         hl=(_hl("BTC", funding="0.000013", oi="38843.42252", mid="1", liquidations=()),),
         prior_reader=prior,
     )
-    assert "BTC Funding: 11.39% ann (prior 0.88% ann)" in text
-    assert "0.000013" not in text
-    assert "BTC Open interest: 38,843 (prior 36,569, Δ +6.22%)" in text
-    assert "38843.42252" not in text
+    assert "11.39% ann" not in on_baseline
+    assert "0.000013" not in on_baseline
+    assert "BTC Funding" in on_baseline.split("gaps:", 1)[1]
+    assert "BTC OI 38,843" in on_baseline
+    assert " prior 36,569 +6.22%" in on_baseline
+    assert "38843.42252" not in on_baseline
+
+    off = _render(
+        hl=(_hl("BTC", funding="0.000014", oi="38843.42252", mid="1", liquidations=()),),
+        prior_reader=prior,
+    )
+    assert "BTC fund 12.26% ann" in off
+    assert " prior 0.88% ann" in off
 
 
 def test_no_key_takeaway_and_fixed_lines_absent() -> None:
@@ -380,28 +431,31 @@ def test_eight_price_rows_keep_symbol_last_and_change_only() -> None:
     text = _render()
     assert "```" in text
     assert "| Symbol |" not in text
-    assert "Source" not in text.split("```", 1)[0]
+    assert "#" not in "".join(_fence_lines(text))
     symbols = []
-    in_fence = False
-    for line in text.splitlines():
-        if line.strip() == "```":
-            in_fence = not in_fence
-            continue
-        if in_fence and line[:6].strip() in {"SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"}:
-            symbols.append(line[:6].strip())
-            assert _delta_cell(text, line[:6].strip())
+    for line in _fence_lines(text):
+        head = line.split(" ", 1)[0]
+        if head in _ROW_HEADS:
+            symbols.append(head)
+            assert _delta_cell(text, head)
     assert symbols == ["SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"]
     assert "proxy" not in text
     assert "not ES futures" not in text
+    _assert_phone(text)
     labels = (ROOT / "docs/specs/brief-row-labels.md").read_text(encoding="utf-8")
     assert "SPY ETF (proxy for S&P 500; not ES futures)" in labels
     assert "QQQ ETF (proxy for Nasdaq-100; not NQ futures)" in labels
 
 
+def _joined(markdown: str) -> str:
+    return " ".join(line.strip() for line in markdown.splitlines() if line.strip() and line.strip() != "```")
+
+
 def _delta_cell(markdown: str, symbol: str) -> str:
-    line = _price_line(markdown, symbol)
-    # "{symbol:<6} {last:>10}  {delta}" then an optional quality marker.
-    return line[19:].strip()
+    parts = _row_text(markdown, symbol).split(" ", 2)
+    if len(parts) < 3:
+        return ""
+    return parts[2]
 
 
 def _close_prior(symbol: str, *, observation_as_of: datetime | None, value: float | None = 100.0) -> PriorCaptureValue:
@@ -590,12 +644,12 @@ def test_messages_3_and_4_omitted_message_5_keeps_live_metrics() -> None:
     assert "2s10s" not in text
     assert "CLUSTER LEADERSHIP" not in text
     assert "z30d" not in text
-    assert "## Positioning" in text
-    assert "BTC Funding:" not in text
-    assert "BTC Funding" in text.split("gaps: ", 1)[1]
-    assert "ETH Funding" in text.split("gaps: ", 1)[1]
-    assert "ETH Open interest" in text.split("gaps: ", 1)[1]
-    assert "Mid" not in text.split("## Positioning", 1)[1]
+    assert "Positioning" in text
+    assert "## Positioning" not in text
+    assert "BTC fund 109.50% ann" in text
+    assert "ETH fund 0.00% ann" in text
+    assert "ETH Open interest" in _joined(text)
+    assert "Mid" not in text.split("Positioning", 1)[1]
 
 
 def test_real_varying_sections_still_render() -> None:
@@ -623,11 +677,111 @@ def test_real_varying_sections_still_render() -> None:
             ),
         ),
     )
-    assert "ES session +1.05% vs overnight +0.52%" in text
-    assert "THESIS-0001" in text
-    assert "USD overnight direction did not hold into the cash close" in text
-    assert "FOMC speaker" in text
+    joined = _joined(text)
+    assert "ES session +1.05% vs overnight +0.52%" in joined
+    assert "THESIS-0001" in joined
+    assert "USD overnight direction did not hold into the cash close" in joined
+    assert "FOMC speaker" in joined
+    assert "  - Hypothesis: Funding fade" in text
+    _assert_phone(text)
     assert "Monitor into Asia" not in text
+
+
+def test_funding_baseline_boundary() -> None:
+    assert HL_FUNDING_BASELINE_HOURLY == 0.0001 / 8
+    assert funding_on_baseline(0.0000125)
+    assert funding_on_baseline(0.000012)
+    assert funding_on_baseline(0.000013)
+    assert not funding_on_baseline(0.000014)
+    assert not funding_on_baseline(0.000001)
+    assert not funding_on_baseline(0.0001)
+
+
+def test_missing_last_moves_to_gaps() -> None:
+    assets = list(_eight())
+    assets[5] = _print(
+        "VIX",
+        last=None,
+        prior=None,
+        quality="unavailable",
+        structural=True,
+        name="CBOE VIX",
+    )
+    text = _render(assets=tuple(assets))
+    assert not any(line.startswith("VIX ") or line == "VIX" for line in _fence_lines(text))
+    assert "VIX" in text.split("gaps:", 1)[1]
+    assert "n/a" not in text
+    _assert_phone(text)
+
+
+def test_repeated_session_is_stale_on_the_health_line_and_not_fresh() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    later = bar + timedelta(days=1)
+    assets = list(_eight())
+    session_slots = {"ES", "NQ", "DXY", "CL"}
+    names = {
+        "ES": ("SPY ETF (proxy for S&P 500; not ES futures)", "SPY"),
+        "NQ": ("QQQ ETF (proxy for Nasdaq-100; not NQ futures)", "QQQ"),
+        "DXY": ("UUP ETF (USD proxy; not DX futures / DXY)", "UUP"),
+        "CL": ("USO ETF (WTI oil proxy; not CL futures)", "USO"),
+    }
+    priors = {}
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol in session_slots:
+            label, quoted = names[symbol]
+            assets[index] = _print(
+                symbol,
+                last=100.0,
+                prior=99.0,
+                source="polygon",
+                quality="fresh",
+                name=label,
+                quoted_symbol=quoted,
+                as_of=bar,
+            )
+            priors[(symbol, "close")] = _close_prior(symbol, observation_as_of=bar, value=99.0)
+        elif symbol == "US10Y":
+            assets[index] = _print(
+                "US10Y",
+                last=4.25,
+                prior=4.20,
+                unit="%",
+                source="fred",
+                quality="fresh",
+                name="US 10Y yield",
+                as_of=later,
+            )
+            priors[("US10Y", "close")] = _close_prior("US10Y", observation_as_of=bar, value=4.20)
+        elif symbol == "VIX":
+            assets[index] = _print(
+                "VIX",
+                last=None,
+                prior=None,
+                quality="fresh",
+                structural=True,
+                name="CBOE VIX",
+            )
+        elif symbol in {"BTC", "ETH"}:
+            assets[index] = _print(symbol, last=100.0, prior=100.0, source="hyperliquid", quality="fresh", as_of=bar)
+            priors[(symbol, "close")] = _close_prior(symbol, observation_as_of=bar, value=100.0)
+    text = _render(
+        assets=tuple(assets),
+        hl=(_hl("BTC", funding="0.000013", quality="ok"),),
+        prior_reader=MapPriorCaptureReader(priors),
+    )
+    assert "Health 43%" in text
+    assert "Equities stale" in text
+    assert "Rates fresh" in text
+    assert "USD stale" in text
+    assert "Oil stale" in text
+    assert "Vol unavailable" in text
+    assert "Crypto fresh" in text
+    assert "Hyperliquid fresh" in text
+    assert "100%" not in text
+    assert "Equities fresh" not in text
+    assert "no new session since 2026-09-22" in text
+    assert "Vol fresh" not in text
+    _assert_phone(text)
 
 
 def test_as_of_knowledge_line_is_not_in_the_morning_message() -> None:
@@ -659,4 +813,10 @@ def test_eleven_capture_brief_is_one_message_status_lines_last() -> None:
     assert len(chunks[0]) <= TELEGRAM_MAX_MESSAGE_CHARS
     sent = chunks[0]
     assert sent.rfind("LATE") < sent.rfind("DEADMAN") < sent.rfind("CAPTURE")
-    assert sent.rstrip().endswith("CAPTURE: grok\\.sydney\\_morning capture 1 of 11\\. run\\_id actions\\-b1\\-1\\.")
+    assert "(37 instruments)" in message
+    assert r"\(37 instruments\)" in sent
+    assert "DEADMAN: MISSING" in sent
+    fence_end = message.rfind("```")
+    tail = message[fence_end:]
+    assert LATE in tail and DEADMAN_MISSING_LINE in tail and CAPTURE in tail
+    _assert_phone(doc.markdown)
