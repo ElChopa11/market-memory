@@ -1,0 +1,36 @@
+[
+  {
+    "universe": [
+      {"name": "BTC", "maxLeverage": 40},
+      {"name": "ETH", "maxLeverage": 25},
+      {"name": "SOL", "maxLeverage": 20},
+      {"name": "HYPE", "maxLeverage": 10},
+      {"name": "NEAR", "maxLeverage": 10},
+      {"name": "ARB", "maxLeverage": 10},
+      {"name": "UNI", "maxLeverage": 10},
+      {"name": "VVV", "maxLeverage": 5},
+      {"name": "ZEC", "maxLeverage": 10},
+      {"name": "DOGE", "maxLeverage": 10},
+      {"name": "XMR", "maxLeverage": 5},
+      {"name": "CHIP", "maxLeverage": 3},
+      {"name": "LTC", "maxLeverage": 10},
+      {"name": "PURR", "maxLeverage": 3}
+    ]
+  },
+  [
+    {"midPx": "80000", "markPx": "80010", "prevDayPx": "78000", "oraclePx": "80000", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "3000", "markPx": "3001", "prevDayPx": "2900", "oraclePx": "3000", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "117.365", "markPx": "117.19", "prevDayPx": "114.08", "oraclePx": "117.2", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "40", "markPx": "40", "prevDayPx": "39", "oraclePx": "40", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "5", "markPx": "5", "prevDayPx": "4", "oraclePx": "5", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "0.5", "markPx": "0.5", "prevDayPx": "0.4", "oraclePx": "0.5", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "10", "markPx": "10", "prevDayPx": "9", "oraclePx": "10", "funding": "0.000014", "openInterest": "1000"},
+    {"midPx": "2", "markPx": "2", "prevDayPx": "1", "oraclePx": "2", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "50", "markPx": "50", "prevDayPx": "40", "oraclePx": "50", "funding": "0.000001", "openInterest": "1000"},
+    {"midPx": "0.2", "markPx": "0.2", "prevDayPx": "0.1", "oraclePx": "0.2", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "150", "markPx": "150", "prevDayPx": "140", "oraclePx": "150", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "0.05", "markPx": "0.05", "prevDayPx": "0.04", "oraclePx": "0.05", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "80", "markPx": "80", "prevDayPx": "70", "oraclePx": "80", "funding": "0.0000125", "openInterest": "1000"},
+    {"midPx": "0.08", "markPx": "0.08", "prevDayPx": "0.07", "oraclePx": "0.08", "funding": "0.0000125", "openInterest": "1000"}
+  ]
+]

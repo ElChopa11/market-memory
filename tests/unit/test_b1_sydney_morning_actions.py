@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
 GITIGNORE = ROOT / ".gitignore"
@@ -80,7 +82,8 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     assert 'cron: "30 20 * * 0-4"' not in brief
     assert 'cron: "30 22 * * 0-4"' not in brief
     deliver_if = (
-        "if: (github.event_name != 'workflow_dispatch' || inputs.mode != 'capture_proof') && "
+        "if: (github.event_name != 'workflow_dispatch' || "
+        "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && "
         "(github.event_name == 'schedule' || "
         "(github.event_name == 'workflow_dispatch' && "
         "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))"
@@ -93,7 +96,7 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     assert "default: false" in text
     assert text.count("default: false") == 1
     assert "i_mean_it_stage2" not in text
-    # Stamp is not gated on i_mean_it_deliver. mode=capture_proof is the only skip.
+    # Stamp is not gated on i_mean_it_deliver. capture_proof and render_proof skip it.
     assert "i_mean_it_deliver" not in stage1
     assert stage1.count("\n    if:") == 1
     assert "inputs.mode != 'capture_proof'" in stage1
@@ -191,6 +194,84 @@ def test_brief_and_deliver_runbook_lists_secret_names() -> None:
     index = (ROOT / "ops" / "reports" / "scheduler" / "README.md").read_text(encoding="utf-8")
     assert sentence in index
     assert sentence in COMPLETIONS_README.read_text(encoding="utf-8")
+
+
+def _stamp_runs(event: str, mode: str | None) -> bool:
+    return event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
+
+
+def _brief_runs(event: str, mode: str | None, *, deliver: bool) -> bool:
+    mode_ok = event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
+    deliver_ok = event == "schedule" or (event == "workflow_dispatch" and deliver)
+    return mode_ok and deliver_ok
+
+
+def _capture_runs(event: str, mode: str | None) -> bool:
+    return event == "workflow_dispatch" and mode == "capture_proof"
+
+
+def _render_runs(event: str, mode: str | None) -> bool:
+    return event == "workflow_dispatch" and mode == "render_proof"
+
+
+def test_render_proof_skips_stamp_brief_capture_and_has_no_send_secrets() -> None:
+    text = _workflow_text()
+    parsed = yaml.safe_load(text)
+    jobs = parsed["jobs"]
+    on_block = parsed[True] if True in parsed else parsed["on"]
+    options = on_block["workflow_dispatch"]["inputs"]["mode"]["options"]
+    assert options == ["normal", "capture_proof", "render_proof"]
+    stamp = jobs["stage1-stamp"]["if"]
+    brief = jobs["brief-and-deliver"]["if"]
+    capture = jobs["capture-proof"]["if"]
+    render = jobs["render-proof"]["if"]
+    assert stamp == (
+        "github.event_name != 'workflow_dispatch' || "
+        "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')"
+    )
+    assert brief == (
+        "(github.event_name != 'workflow_dispatch' || "
+        "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && "
+        "(github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && "
+        "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))"
+    )
+    assert capture == "github.event_name == 'workflow_dispatch' && inputs.mode == 'capture_proof'"
+    assert render == "github.event_name == 'workflow_dispatch' && inputs.mode == 'render_proof'"
+    assert _stamp_runs("schedule", None) is True
+    assert _stamp_runs("workflow_dispatch", "normal") is True
+    assert _stamp_runs("workflow_dispatch", "render_proof") is False
+    assert _brief_runs("schedule", "normal", deliver=False) is True
+    assert _brief_runs("workflow_dispatch", "render_proof", deliver=True) is False
+    assert _brief_runs("workflow_dispatch", "render_proof", deliver=False) is False
+    assert _capture_runs("workflow_dispatch", "render_proof") is False
+    assert _capture_runs("workflow_dispatch", "capture_proof") is True
+    assert _render_runs("workflow_dispatch", "render_proof") is True
+    assert _render_runs("workflow_dispatch", "capture_proof") is False
+    assert _render_runs("schedule", "render_proof") is False
+    assert "needs" not in jobs["render-proof"]
+    assert jobs["render-proof"].get("needs") is None
+    job_text = text[text.index("\n  render-proof:\n") :]
+    assert "TELEGRAM" not in job_text
+    assert "HEALTHCHECKS" not in job_text
+    assert "POSTGRES" not in job_text
+    assert "lab deliver" not in job_text
+    assert "lab retain" not in job_text
+    assert "stamp_cli_fire" not in job_text
+    assert "write_deliver_receipt" not in job_text
+    assert "git commit" not in job_text
+    assert "git push" not in job_text
+    assert "lab brief close --live --no-db" in job_text
+    assert "--send" not in job_text
+    steps = jobs["render-proof"]["steps"]
+    envs = [step["env"] for step in steps if "env" in step]
+    assert envs == [
+        {
+            "POLYGON_API_KEY": "${{ secrets.POLYGON_API_KEY }}",
+            "FRED_API_KEY": "${{ secrets.FRED_API_KEY }}",
+        }
+    ]
+    assert text.count("group: hybrid-sydney-morning") == 1
+    assert text.count("cancel-in-progress:") == 1
 
 
 def test_completions_are_not_gitignored() -> None:

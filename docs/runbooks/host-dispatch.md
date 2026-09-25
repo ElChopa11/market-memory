@@ -112,6 +112,22 @@ env -i PATH="/usr/bin:/bin" "${cron_env[@]}" \
 
 Success appends a log line `result=http:204` (or another HTTP 2xx) to `/var/log/market-memory/sydney-morning-dispatch.log`. The log records the UTC timestamp, the attempt number, and the HTTP status. It does not record the token. Network errors and HTTP 5xx sleep 60 seconds and retry once. HTTP 4xx does not retry. A non-2xx exit is nonzero. If that log path cannot be created or written, the same line goes to stderr and the POST, including the retry, still runs.
 
+## Render proof dispatch
+
+This is not the 06:30 host cron. It does not change `ops/host/dispatch-sydney-morning.sh`. It queues in the same `hybrid-sydney-morning` concurrency group, so it does not overlap a morning run. The token is the existing 0600 dispatch file. Do not print it.
+
+```bash
+curl -sS -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${MM_HOST_DISPATCH_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  -H "Content-Type: application/json" \
+  "https://api.github.com/repos/ElChopa11/market-memory/actions/workflows/hybrid-sydney-morning.yml/dispatches" \
+  -d '{"ref":"cursor/brief-v2-standing-rule-afcc","inputs":{"mode":"render_proof","i_mean_it_deliver":"false"}}'
+```
+
+`MM_HOST_DISPATCH_TOKEN` is the contents of `/etc/market-memory/github-dispatch.token`. The run prints the close text, the character count, and the line count. It does not stamp, capture, deliver, or ping.
+
 ## How to verify a fire from GitHub
 
 1. Open Actions → **hybrid-sydney-morning** on `ElChopa11/market-memory`, or:

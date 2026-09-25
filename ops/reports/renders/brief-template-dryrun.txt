@@ -1,0 +1,32 @@
+```
+US Close unavailable
+
+UTC 2026-09-25 08:30Z
+NY 2026-09-25 04:30 EDT
+SYD 2026-09-25 18:30 AEST
+POLYGON missing_env
+FRED missing_env
+Health 29% n/a Equities Rates USD Oil Vol
+obs none
+
+BTC 84425.50 +0.84%
+ETH 2691.85 +0.78%
+SOL 117.365 +2.67%
+HYPE 93.6335 +1.33%
+NEAR 4.6463 +9.10%
+ARB 0.22065 +3.30%
+UNI 9.2067 +1.02%
+VVV 31.65 +3.59%
+ZEC 1583.55 +4.90%
+DOGE 0.096328 +2.89%
+XMR 574.065 +2.97%
+CHIP 0.047292 +12.91%
+LTC 71.351 +4.96%
+PURR 0.134275 +1.60%
+
+Positioning
+UNI fund 19.76% ann
+ZEC fund 41.28% ann
+LTC fund 14.64% ann
+gaps: SPY, QQQ, US10Y, UUP, USO, VIX
+```

@@ -160,18 +160,24 @@ def hl_from_live_info(
     *,
     instruments: tuple[str, ...] = HL_BRIEF_INSTRUMENTS,
     captured_at: datetime,
+    include_liquidations: bool = True,
 ) -> tuple[HLInstrumentState, ...]:
-    """Snapshot via allowlisted public /info types. Does not invent missing fields."""
+    """Snapshot via allowlisted public /info types. Does not invent missing fields.
+
+    ``prevDayPx`` is read from the same ``metaAndAssetCtxs`` body. The close
+    path sets ``include_liquidations`` false so that one call is the whole fetch.
+    """
     wanted = tuple(symbol.upper() for symbol in instruments)
     captured = as_utc(captured_at)
     try:
         ctxs = client.meta_and_asset_ctxs()
     except HyperliquidInfoError as exc:
+        detail = str(exc).rsplit(": ", 1)[-1].strip() or exc.__class__.__name__
         return ensure_hl_instruments(
             (),
             instruments=wanted,
             as_of=captured,
-            source=f"{LIVE_INFO_SOURCE} unavailable ({exc.__class__.__name__})",
+            source=f"{LIVE_INFO_SOURCE} unavailable ({detail})",
         )
     envelopes = normalize_asset_snapshot(
         ctxs,
@@ -207,29 +213,49 @@ def hl_from_live_info(
         else:
             qualities[symbol] = worst_quality(qualities[symbol], "partial" if grouped[symbol] else "unavailable")
 
-    liquidations: dict[str, list[HLMetric]] = {symbol: [] for symbol in wanted}
-    for coin in wanted:
-        try:
-            trades = client.recent_trades(coin)
-        except HyperliquidInfoError:
+    for symbol, raw_prev in _prev_day_px_by_name(ctxs).items():
+        if symbol not in grouped:
             continue
-        for envelope in normalize_liquidations(trades, ingested_at=captured):
-            if envelope.instrument.upper() != coin:
+        grouped[symbol]["prev_day_px"] = HLMetric(
+            instrument=symbol,
+            metric="prev_day_px",
+            value=raw_prev,
+            observation_id=None,
+            claim_hash=None,
+            data_quality="ok",
+            market_time=captured,
+            as_of_knowledge=captured,
+            source_url=f"{HL_BASE_URL} type=metaAndAssetCtxs",
+        )
+        qualities[symbol] = worst_quality(
+            "ok" if qualities[symbol] == "unavailable" else qualities[symbol],
+            "ok",
+        )
+
+    liquidations: dict[str, list[HLMetric]] = {symbol: [] for symbol in wanted}
+    if include_liquidations:
+        for coin in wanted:
+            try:
+                trades = client.recent_trades(coin)
+            except HyperliquidInfoError:
                 continue
-            value = envelope.identity.value
-            liquidations[coin].append(
-                HLMetric(
-                    instrument=coin,
-                    metric="liquidation",
-                    value=None if value is None else str(value),
-                    observation_id=None,
-                    claim_hash=envelope.claim_hash,
-                    data_quality=envelope.data_quality.value,
-                    market_time=envelope.market_time,
-                    as_of_knowledge=envelope.as_of_knowledge or envelope.ingested_at,
-                    source_url=f"{HL_BASE_URL} type=recentTrades",
+            for envelope in normalize_liquidations(trades, ingested_at=captured):
+                if envelope.instrument.upper() != coin:
+                    continue
+                value = envelope.identity.value
+                liquidations[coin].append(
+                    HLMetric(
+                        instrument=coin,
+                        metric="liquidation",
+                        value=None if value is None else str(value),
+                        observation_id=None,
+                        claim_hash=envelope.claim_hash,
+                        data_quality=envelope.data_quality.value,
+                        market_time=envelope.market_time,
+                        as_of_knowledge=envelope.as_of_knowledge or envelope.ingested_at,
+                        source_url=f"{HL_BASE_URL} type=recentTrades",
+                    )
                 )
-            )
 
     out: list[HLInstrumentState] = []
     for symbol in wanted:
@@ -248,6 +274,92 @@ def hl_from_live_info(
                 data_quality=quality,
                 as_of_knowledge=captured,
                 source=LIVE_INFO_SOURCE,
+            )
+        )
+    return tuple(out)
+
+
+def _prev_day_px_by_name(meta_and_ctxs: Any) -> dict[str, str]:
+    """``prevDayPx`` from the metaAndAssetCtxs body the snapshot call already fetched."""
+    if not isinstance(meta_and_ctxs, list) or len(meta_and_ctxs) < 2:
+        return {}
+    meta, rows = meta_and_ctxs[0], meta_and_ctxs[1]
+    universe = meta.get("universe", []) if isinstance(meta, dict) else []
+    if not isinstance(rows, list):
+        return {}
+    out: dict[str, str] = {}
+    for idx, asset in enumerate(universe):
+        if not isinstance(asset, dict) or idx >= len(rows):
+            continue
+        ctx = rows[idx]
+        if not isinstance(ctx, dict):
+            continue
+        raw = ctx.get("prevDayPx")
+        if raw is None or raw == "":
+            continue
+        out[str(asset.get("name", "")).upper()] = str(raw)
+    return out
+
+
+def hl_states_from_ctx_snapshot(
+    payload: dict[str, Any],
+    *,
+    captured_at: datetime,
+) -> tuple[HLInstrumentState, ...]:
+    """Build close-path states from a stored metaAndAssetCtxs extract. No network."""
+    captured = as_utc(captured_at)
+    order = tuple(str(name).upper() for name in (payload.get("order") or ()))
+    ctxs = payload.get("ctx") or {}
+    out: list[HLInstrumentState] = []
+    field_map = (
+        ("mid_px", "midPx"),
+        ("prev_day_px", "prevDayPx"),
+        ("funding", "funding"),
+        ("open_interest", "openInterest"),
+        ("mark_px", "markPx"),
+        ("oracle_px", "oraclePx"),
+    )
+    for symbol in order:
+        spec = ctxs.get(symbol) if isinstance(ctxs, dict) else None
+        if not isinstance(spec, dict):
+            out.append(
+                HLInstrumentState(
+                    instrument=symbol,
+                    metrics={},
+                    liquidations=(),
+                    levels=(),
+                    data_quality="unavailable",
+                    as_of_knowledge=captured,
+                    source=LIVE_INFO_SOURCE,
+                )
+            )
+            continue
+        metrics: dict[str, HLMetric] = {}
+        for metric_name, key in field_map:
+            raw = spec.get(key)
+            if raw is None or raw == "":
+                continue
+            metrics[metric_name] = HLMetric(
+                instrument=symbol,
+                metric=metric_name,
+                value=str(raw),
+                observation_id=None,
+                claim_hash=None,
+                data_quality="ok",
+                market_time=captured,
+                as_of_knowledge=captured,
+                source_url=f"{HL_BASE_URL} type=metaAndAssetCtxs",
+            )
+        quality = "ok" if metrics.get("mid_px") is not None else "unavailable"
+        out.append(
+            HLInstrumentState(
+                instrument=symbol,
+                metrics=metrics,
+                liquidations=(),
+                levels=_levels_from_obs([], metrics),
+                data_quality=quality,
+                as_of_knowledge=captured,
+                source=str(payload.get("source") or LIVE_INFO_SOURCE),
             )
         )
     return tuple(out)

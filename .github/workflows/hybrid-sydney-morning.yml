@@ -55,6 +55,10 @@
 # (the default) still stamps on every dispatch, then this job when
 # i_mean_it_deliver is true. mode=capture_proof skips stamp, brief, deliver,
 # Telegram, receipts, and the dead-man ping, and runs job capture-proof only.
+# mode=render_proof skips stamp, brief, deliver, capture, receipts, and the
+# ping, and runs job render-proof only. That job is the lab brief close
+# --live --no-db render path. It prints the message and does not stamp or
+# send. It shares concurrency group hybrid-sydney-morning.
 # Both crons stay. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
 #
 # Secret names only (Principal adds values): TELEGRAM_BOT_TOKEN (second bot),
@@ -81,7 +85,7 @@ on:
         description: >-
           Principal prove: stamp, then brief and POST to the Principal DM.
           Default false — Run workflow cannot send. The schedule path ignores this input.
-          Ignored when mode is capture_proof.
+          Ignored when mode is capture_proof or render_proof.
         type: boolean
         default: false
         required: false
@@ -89,11 +93,13 @@ on:
         description: >-
           normal (default) is the morning stamp and, when i_mean_it_deliver is true, the brief and DM.
           capture_proof writes one Neon proof capture and skips stamp, brief, deliver, Telegram, receipts, and the ping.
+          render_proof prints one live close and skips stamp, receipt, capture, deliver, Telegram, and the ping.
         type: choice
         default: normal
         options:
           - normal
           - capture_proof
+          - render_proof
         required: false
 
 # Push completion JSON and deliver receipts back to the run branch (GITHUB_TOKEN).
@@ -107,8 +113,8 @@ concurrency:
 
 jobs:
   stage1-stamp:
-    # mode=capture_proof skips the stamp. Schedule and mode=normal still stamp.
-    if: github.event_name != 'workflow_dispatch' || inputs.mode != 'capture_proof'
+    # mode=capture_proof and mode=render_proof skip the stamp. Schedule and mode=normal still stamp.
+    if: github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')
     runs-on: ubuntu-latest
     outputs:
       scheduled_for: ${{ steps.stamp.outputs.scheduled_for }}
@@ -339,7 +345,7 @@ jobs:
     needs: stage1-stamp
     # Schedule ignores the input (#104 path). Dispatch runs only on explicit true
     # (boolean inputs context, or string 'true' on the event payload). Default false matches neither.
-    if: (github.event_name != 'workflow_dispatch' || inputs.mode != 'capture_proof') && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))
+    if: (github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -767,3 +773,30 @@ jobs:
             cat /tmp/retain-proof.txt
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$rc"
+
+  # Render-only proof. Same workflow concurrency group as the morning run
+  # (hybrid-sydney-morning, cancel-in-progress false), so this dispatch queues
+  # behind a morning run instead of overlapping it. No stamp, receipt check,
+  # capture, Neon write, deliver, or send.
+  render-proof:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'render_proof'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        run: uv sync --all-packages
+
+      - name: Render close (lab brief close --live --no-db, no stamp, no send)
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          set -euo pipefail
+          uv run python -m mm_briefing.render_proof

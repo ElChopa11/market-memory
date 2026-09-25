@@ -1,0 +1,52 @@
+{
+  "note": "Parsed from GitHub Actions artifacts sydney-morning-brief-<run_id>/close.md. Values are the recorded prints. Nothing here is filled in.",
+  "parse_mode": "MarkdownV2",
+  "fred_pair": {
+    "prior_run_id": "35931476917",
+    "prior_generated_at": "2026-09-23T23:02:17+00:00",
+    "current_run_id": "35967088240",
+    "current_generated_at": "2026-09-24T06:58:31+00:00",
+    "us10y": {
+      "last": "4.96",
+      "prior_close": "4.96",
+      "as_of": "2026-09-22T00:00:00+00:00",
+      "prior_observation_as_of": "2026-09-22T00:00:00+00:00"
+    }
+  },
+  "gate_prior": {
+    "run_id": "35967088240",
+    "generated_at": "2026-09-24T06:58:31+00:00",
+    "closes": {
+      "ES": {"value": "767.81", "observation_as_of": "2026-09-23T04:00:00+00:00"},
+      "NQ": {"value": "741.21", "observation_as_of": "2026-09-23T04:00:00+00:00"},
+      "US10Y": {"value": "4.96", "observation_as_of": "2026-09-22T00:00:00+00:00"},
+      "DXY": {"value": "28.65", "observation_as_of": "2026-09-23T04:00:00+00:00"},
+      "CL": {"value": "148.83", "observation_as_of": "2026-09-23T04:00:00+00:00"},
+      "BTC": {"value": "84118.50", "observation_as_of": "2026-09-24T06:58:31+00:00"},
+      "ETH": {"value": "2687.95", "observation_as_of": "2026-09-24T06:58:31+00:00"}
+    },
+    "hl": {
+      "BTC": {"funding": "0.000001", "open_interest": "36568.77092", "basis": "-37.1"},
+      "ETH": {"funding": "0.000013", "open_interest": "1075429.9362", "basis": "0.07"}
+    }
+  },
+  "gate_current": {
+    "run_id": "36071921289",
+    "generated_at": "2026-09-24T23:17:25+00:00",
+    "as_of_knowledge": "2026-09-24T23:17:23+00:00",
+    "rows": [
+      {"symbol": "ES", "quoted_symbol": "SPY", "name": "SPY ETF (proxy for S&P 500; not ES futures)", "last": "767.81", "prior_close": "773.38", "unit": "usd", "source": "polygon", "as_of": "2026-09-23T04:00:00+00:00", "data_quality": "fresh"},
+      {"symbol": "NQ", "quoted_symbol": "QQQ", "name": "QQQ ETF (proxy for Nasdaq-100; not NQ futures)", "last": "741.21", "prior_close": "747.46", "unit": "usd", "source": "polygon", "as_of": "2026-09-23T04:00:00+00:00", "data_quality": "fresh"},
+      {"symbol": "US10Y", "name": "US 10Y yield", "last": "5.11", "prior_close": "4.96", "unit": "%", "source": "fred", "as_of": "2026-09-23T00:00:00+00:00", "data_quality": "fresh"},
+      {"symbol": "DXY", "quoted_symbol": "UUP", "name": "UUP ETF (USD proxy; not DX futures / DXY)", "last": "28.65", "prior_close": "28.48", "unit": "usd", "source": "polygon", "as_of": "2026-09-23T04:00:00+00:00", "data_quality": "fresh"},
+      {"symbol": "CL", "quoted_symbol": "USO", "name": "USO ETF (WTI oil proxy; not CL futures)", "last": "148.83", "prior_close": "144.08", "unit": "usd", "source": "polygon", "as_of": "2026-09-23T04:00:00+00:00", "data_quality": "fresh"},
+      {"symbol": "VIX", "name": "CBOE VIX (structurally unavailable without Cboe entitlement)", "last": null, "prior_close": null, "unit": "idx", "source": "polygon", "as_of": "2026-09-24T23:17:23+00:00", "data_quality": "unavailable", "structural_unavailable": true},
+      {"symbol": "BTC", "name": "HL BTC-USDC perp mid (not CoinGecko spot)", "last": "84314.50", "prior_close": null, "unit": "usd", "source": "hyperliquid.info /info", "as_of": "2026-09-24T23:17:25+00:00", "data_quality": "fresh"},
+      {"symbol": "ETH", "name": "HL ETH-USDC perp mid (not CoinGecko spot)", "last": "2686.25", "prior_close": null, "unit": "usd", "source": "hyperliquid.info /info", "as_of": "2026-09-24T23:17:25+00:00", "data_quality": "fresh"}
+    ],
+    "hl": {
+      "BTC": {"funding": "0.000013", "open_interest": "38843.42252", "mid_px": "84314.5", "basis": "-22.4"},
+      "ETH": {"funding": "0.000013", "open_interest": "1064527.441", "mid_px": "2686.25", "basis": "-0.48"}
+    }
+  }
+}

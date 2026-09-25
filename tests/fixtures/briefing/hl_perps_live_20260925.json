@@ -1,0 +1,135 @@
+{
+  "fetched_at": "2026-09-25T08:12:29.242626+00:00",
+  "source": "hyperliquid.info /info type=metaAndAssetCtxs",
+  "order": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "HYPE",
+    "NEAR",
+    "ARB",
+    "UNI",
+    "VVV",
+    "ZEC",
+    "DOGE",
+    "XMR",
+    "CHIP",
+    "LTC",
+    "PURR"
+  ],
+  "missing": [],
+  "ctx": {
+    "BTC": {
+      "midPx": "84096.5",
+      "prevDayPx": "84374.0",
+      "funding": "0.0000125",
+      "openInterest": "39668.27456",
+      "markPx": "84090.0",
+      "oraclePx": "84106.6"
+    },
+    "ETH": {
+      "midPx": "2677.45",
+      "prevDayPx": "2688.0",
+      "funding": "0.0000125",
+      "openInterest": "1068371.7206000008",
+      "markPx": "2677.3",
+      "oraclePx": "2677.73"
+    },
+    "SOL": {
+      "midPx": "116.495",
+      "prevDayPx": "115.22",
+      "funding": "0.0000125",
+      "openInterest": "5955368.3599999985",
+      "markPx": "116.4868",
+      "oraclePx": "116.525"
+    },
+    "HYPE": {
+      "midPx": "93.0205",
+      "prevDayPx": "93.37",
+      "funding": "0.0000125",
+      "openInterest": "20971588.0600000359",
+      "markPx": "93.016",
+      "oraclePx": "93.01"
+    },
+    "NEAR": {
+      "midPx": "4.54335",
+      "prevDayPx": "4.3268",
+      "funding": "0.0000125",
+      "openInterest": "77459759.8000000268",
+      "markPx": "4.5428",
+      "oraclePx": "4.542"
+    },
+    "ARB": {
+      "midPx": "0.21738",
+      "prevDayPx": "0.2159",
+      "funding": "0.0000125",
+      "openInterest": "149654202.2000000477",
+      "markPx": "0.21733",
+      "oraclePx": "0.21732"
+    },
+    "UNI": {
+      "midPx": "9.14685",
+      "prevDayPx": "9.1856",
+      "funding": "0.0000129863",
+      "openInterest": "12553655.7999999989",
+      "markPx": "9.1454",
+      "oraclePx": "9.137"
+    },
+    "VVV": {
+      "midPx": "31.5525",
+      "prevDayPx": "31.006",
+      "funding": "0.000044225",
+      "openInterest": "2145748.8999999999",
+      "markPx": "31.544",
+      "oraclePx": "31.514"
+    },
+    "ZEC": {
+      "midPx": "1584.85",
+      "prevDayPx": "1518.0",
+      "funding": "0.0000598155",
+      "openInterest": "535425.9399999992",
+      "markPx": "1580.8",
+      "oraclePx": "1579.2"
+    },
+    "DOGE": {
+      "midPx": "0.095509",
+      "prevDayPx": "0.094348",
+      "funding": "0.0000125",
+      "openInterest": "1237373638.0",
+      "markPx": "0.095491",
+      "oraclePx": "0.095445"
+    },
+    "XMR": {
+      "midPx": "571.3",
+      "prevDayPx": "559.82",
+      "funding": "0.0000125",
+      "openInterest": "155974.2160000001",
+      "markPx": "571.145",
+      "oraclePx": "570.675"
+    },
+    "CHIP": {
+      "midPx": "0.046764",
+      "prevDayPx": "0.042604",
+      "funding": "0.0000125",
+      "openInterest": "295911020.0",
+      "markPx": "0.046789",
+      "oraclePx": "0.046755"
+    },
+    "LTC": {
+      "midPx": "71.2885",
+      "prevDayPx": "69.049",
+      "funding": "0.0000180066",
+      "openInterest": "677317.14",
+      "markPx": "71.278",
+      "oraclePx": "71.22"
+    },
+    "PURR": {
+      "midPx": "0.13287",
+      "prevDayPx": "0.13331",
+      "funding": "0.0000125",
+      "openInterest": "126618170.0",
+      "markPx": "0.13292",
+      "oraclePx": "0.132585"
+    }
+  }
+}

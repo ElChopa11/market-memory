@@ -33,6 +33,7 @@ from mm_briefing.hl import (
     hl_has_metrics,
 )
 from mm_briefing.models import (
+    MORNING_HL_PERPS,
     AlertDecision,
     BriefDocument,
     HLInstrumentState,
@@ -184,6 +185,7 @@ def generate_close(
     hl: tuple[HLInstrumentState, ...],
     theses: tuple[ThesisHook, ...],
     generated_at: datetime | None = None,
+    prior_reader: object | None = None,
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
     freshness = load_freshness_config(settings.macro)
@@ -221,6 +223,7 @@ def generate_close(
         data_quality=quality,
         session_tz=settings.schedule.session_timezone,
         lab_tz=settings.schedule.lab_timezone,
+        prior_reader=prior_reader,
     )
 
 
@@ -317,6 +320,7 @@ def generate_from_sources(
     alert_settings: AlertSettings | None = None,
     live: bool = False,
     hl_client=None,
+    live_trace: dict[str, Any] | None = None,
 ) -> tuple[BriefDocument | None, AlertDecision | None]:
     if fixture is not None:
         return generate_from_fixture(
@@ -353,11 +357,24 @@ def generate_from_sources(
             client = HyperliquidInfoClient()
             owns_client = True
         try:
-            hl = hl_from_live_info(client, captured_at=generated)
+            # Close uses the one metaAndAssetCtxs body for all morning perps.
+            # recentTrades stays on the pre-open path only.
+            if kind == "close":
+                hl = hl_from_live_info(
+                    client,
+                    instruments=MORNING_HL_PERPS,
+                    captured_at=generated,
+                    include_liquidations=False,
+                )
+            else:
+                hl = hl_from_live_info(client, captured_at=generated)
             hl_origin = LIVE_INFO_SOURCE
         finally:
             if owns_client:
                 client.close()
+    if live_trace is not None:
+        live_trace["snapshot"] = session_snap if kind == "close" else overnight
+        live_trace["hl"] = hl
     if kind == "preopen":
         return (
             generate_preopen(

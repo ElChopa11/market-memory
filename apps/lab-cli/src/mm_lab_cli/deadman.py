@@ -135,13 +135,14 @@ def emit_deadman_log(ping: DeadmanPing, url: str | None) -> None:
 
 
 def apply_deadman_missing_line(markdown: str) -> str:
-    """Append ``DEADMAN: MISSING`` once, after any LATE line already on the markdown."""
-    line = DEADMAN_MISSING_LINE
-    if markdown.endswith("\n"):
-        return f"{markdown}{line}\n"
-    if markdown:
-        return f"{markdown}\n{line}\n"
-    return f"{line}\n"
+    """Append ``DEADMAN: MISSING`` once, after any LATE line already on the markdown.
+
+    The send path passes this line into ``append_brief_status_lines`` with LATE
+    and CAPTURE so the three stay in that order. This helper is the same append.
+    """
+    from mm_lab_cli.deliver import append_brief_status_lines
+
+    return append_brief_status_lines(markdown, deadman=DEADMAN_MISSING_LINE)
 
 
 def _ping_and_log(url: str | None, *, kind: str, http_get: HttpGet | None = None) -> DeadmanPing:

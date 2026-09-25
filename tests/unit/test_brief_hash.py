@@ -47,10 +47,13 @@ def test_frozen_close_hash_is_deterministic() -> None:
     assert first.content_hash == second.content_hash
     expected = EXPECTED_CLOSE.read_text(encoding="utf-8").strip()
     assert first.content_hash == expected
-    assert "US Close Brief — 2026-03-10" in first.markdown
+    assert "US Close 2026-03-10" in first.markdown
     assert "THESIS-0001" in first.markdown
-    assert "lab wrong (so far)" in first.markdown
-    assert "Monitor into Asia" in first.markdown
+    joined = " ".join(line.strip() for line in first.markdown.splitlines())
+    assert "lab wrong (so far)" in joined
+    assert "Overnight reference" not in first.markdown
+    assert "KEY TAKEAWAY" not in first.markdown
+    assert "Monitor into Asia" not in first.markdown
 
 
 def test_preopen_markdown_matches_committed_golden() -> None:

@@ -7,7 +7,31 @@ MARKDOWN_V2_SPECIAL = set(r"_*[]()~`>#+-=|{}.!\\")
 
 
 def escape_markdown_v2(text: str) -> str:
-    """Escape Telegram MarkdownV2 reserved characters. Does not invent content."""
+    """Escape Telegram MarkdownV2 reserved characters. Does not invent content.
+
+    A fenced block (a line that is exactly ```) is a pre block. Inside it only
+    ``\\`` and `` ` `` are escaped, so a fixed-width headline survives. Outside
+    the fence every reserved character is escaped. Telegram does not render
+    pipe tables; a fence is how a column block stays aligned.
+    """
+    if "```" not in text:
+        return _escape_plain(text)
+    lines = text.split("\n")
+    out: list[str] = []
+    in_fence = False
+    for line in lines:
+        if line.strip() == "```":
+            in_fence = not in_fence
+            out.append("```")
+            continue
+        if in_fence:
+            out.append(line.replace("\\", "\\\\").replace("`", "\\`"))
+        else:
+            out.append(_escape_plain(line))
+    return "\n".join(out)
+
+
+def _escape_plain(text: str) -> str:
     out: list[str] = []
     for ch in text:
         if ch in MARKDOWN_V2_SPECIAL:

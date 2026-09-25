@@ -139,6 +139,7 @@ Deliver receipt is first-writer-wins on the stamp's `scheduled_anchor_ts` (`sche
 | `mode=normal` (default) and `i_mean_it_deliver` false | `stage1-stamp` runs. `brief-and-deliver` does not run. No send. |
 | `mode=normal` and `i_mean_it_deliver` true | `stage1-stamp` runs first, then the same brief+DM gate as a scheduled fire. |
 | `mode=capture_proof` | Job `capture-proof` only. No stamp, no brief, no Telegram, no receipt, no ping. See [mvp-retain.md](mvp-retain.md). |
+| `mode=render_proof` | Job `render-proof` only. No stamp, no receipt, no capture, no Neon write, no deliver, no Telegram, no ping. Prints `lab brief close --live --no-db`. See [host-dispatch.md](host-dispatch.md). |
 
 Principal prove (once): Actions → **hybrid-sydney-morning** → **Run workflow** → branch of this change → set `i_mean_it_deliver` true. Default false cannot send.
 

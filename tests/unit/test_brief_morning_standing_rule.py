@@ -1,0 +1,1136 @@
+"""Morning brief standing rule: a line that repeats every morning is not information.
+
+The eleven-capture send is one Telegram message. Status lines stay last.
+"""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+from mm_briefing.config import load_briefing_settings
+from mm_briefing.engine import generate_from_fixture, load_fixture_file
+from mm_briefing.models import (
+    ASSET_ORDER,
+    MORNING_HL_PERPS,
+    AssetPrint,
+    CalendarEvent,
+    HLInstrumentState,
+    HLMetric,
+    MacroSnapshot,
+    ThesisHook,
+)
+from mm_briefing.health import DomainHealth, HealthReport
+from mm_briefing.morning import (
+    FORBIDDEN_RENDER_FRAGMENTS,
+    HL_FUNDING_BASELINE_HOURLY,
+    PHONE_LINE_MAX,
+    _health_lines,
+    funding_on_baseline,
+    render_morning_close,
+)
+from mm_briefing.prior import MapPriorCaptureReader, PriorCaptureValue, prior_value_from_retain
+from mm_briefing.render import render_close
+from mm_delivery.format import TELEGRAM_MAX_MESSAGE_CHARS, chunk_markdown_v2
+from mm_delivery.payload import prepare_payload
+from mm_ingest.mvp_retain import capture_rows_line
+from mm_lab_cli.deadman import DEADMAN_MISSING_LINE
+from mm_lab_cli.deliver import append_brief_status_lines
+
+UTC = timezone.utc
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURE = ROOT / "tests" / "fixtures" / "briefing" / "frozen_day.json"
+AS_OF = datetime(2026, 9, 22, 20, 15, tzinfo=UTC)
+GENERATED = AS_OF
+PRIOR_CLOSE = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
+
+LATE = "LATE: grok.sydney_morning fired +2h 46m past anchor. run_id actions-b1-1."
+CAPTURE = capture_rows_line(
+    rows=75,
+    expected_rows=75,
+    captured_at="2026-09-24T23:17:25+00:00",
+    prior_captured_at="2026-09-24T06:58:31+00:00",
+    instruments=37,
+)
+_ROW_HEADS = {"SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"}
+_SECTION_HEADS = {"Positioning", "Unexpected", "Lab hooks", "Assumptions", "Catalysts"}
+
+
+def _print(
+    symbol: str,
+    *,
+    last: float | None = 1.0,
+    prior: float | None = 1.0,
+    source: str = "fixture",
+    quality: str = "ok",
+    name: str | None = None,
+    unit: str = "px",
+    as_of: datetime | None = None,
+    quoted_symbol: str | None = None,
+    observation_id: str | None = None,
+    structural: bool = False,
+) -> AssetPrint:
+    return AssetPrint(
+        symbol=symbol,
+        name=name or symbol,
+        last=last,
+        prior_close=prior,
+        unit=unit,
+        data_quality=quality,
+        source=source,
+        as_of=as_of or AS_OF,
+        quoted_symbol=quoted_symbol,
+        observation_id=observation_id,
+        structural_unavailable=structural,
+    )
+
+
+def _session(assets: tuple[AssetPrint, ...]) -> MacroSnapshot:
+    return MacroSnapshot(
+        as_of=AS_OF,
+        prior_us_close=PRIOR_CLOSE,
+        assets=assets,
+        data_quality="ok",
+        source="fixture",
+    )
+
+
+def _eight() -> tuple[AssetPrint, ...]:
+    rows = []
+    for symbol in ASSET_ORDER:
+        unit = "%" if symbol == "US10Y" else "px"
+        last = 4.25 if symbol == "US10Y" else 100.0
+        prior = 4.20 if symbol == "US10Y" else 99.0
+        rows.append(
+            _print(
+                symbol,
+                last=last,
+                prior=prior,
+                unit=unit,
+                source="polygon" if symbol not in {"US10Y", "BTC", "ETH"} else ("fred" if symbol == "US10Y" else "hyperliquid"),
+                name={
+                    "ES": "SPY ETF (proxy for S&P 500; not ES futures)",
+                    "NQ": "QQQ ETF (proxy for Nasdaq-100; not NQ futures)",
+                    "DXY": "UUP ETF (USD proxy; not DX futures / DXY)",
+                    "CL": "USO ETF (WTI oil proxy; not CL futures)",
+                }.get(symbol, symbol),
+                quoted_symbol={"ES": "SPY", "NQ": "QQQ", "DXY": "UUP", "CL": "USO"}.get(symbol),
+            )
+        )
+    return tuple(rows)
+
+
+def _hl(
+    instrument: str,
+    *,
+    funding: str | None = "0.000100",
+    oi: str | None = "10",
+    mid: str | None = "100",
+    mark: str | None = "101",
+    oracle: str | None = "100",
+    liquidations: tuple[str, ...] = (),
+    obs: bool = False,
+    quality: str = "ok",
+) -> HLInstrumentState:
+    metrics: dict[str, HLMetric] = {}
+    for name, value in (
+        ("funding", funding),
+        ("open_interest", oi),
+        ("mid_px", mid),
+        ("mark_px", mark),
+        ("oracle_px", oracle),
+    ):
+        if value is None and name in {"mark_px", "oracle_px"}:
+            continue
+        metrics[name] = HLMetric(
+            instrument=instrument,
+            metric=name,
+            value=value,
+            observation_id=f"obs-{instrument}-{name}" if obs else None,
+            claim_hash=None,
+            data_quality=quality,
+            as_of_knowledge=AS_OF,
+        )
+    liqs = tuple(
+        HLMetric(
+            instrument=instrument,
+            metric="liquidation",
+            value=size,
+            observation_id=f"obs-{instrument}-liq" if obs else None,
+            claim_hash=None,
+            data_quality=quality,
+            as_of_knowledge=AS_OF,
+        )
+        for size in liquidations
+    )
+    return HLInstrumentState(
+        instrument=instrument,
+        metrics=metrics,
+        liquidations=liqs,
+        levels=(),
+        data_quality=quality,
+        as_of_knowledge=AS_OF,
+        source="hyperliquid.info",
+    )
+
+
+def _render(
+    *,
+    assets: tuple[AssetPrint, ...] | None = None,
+    hl: tuple[HLInstrumentState, ...] = (),
+    calendar: tuple[CalendarEvent, ...] = (),
+    unexpected: tuple[str, ...] = (),
+    theses: tuple[ThesisHook, ...] = (),
+    assumptions: tuple[str, ...] = ("No named macro assumption flipped vs the overnight tape",),
+    prior_reader=None,
+) -> str:
+    doc = render_close(
+        generated_at=GENERATED,
+        as_of=AS_OF,
+        overnight=_session(assets or _eight()),
+        session=_session(assets or _eight()),
+        calendar=calendar,
+        unexpected=unexpected,
+        theses=theses,
+        assumptions=assumptions,
+        hl=hl,
+        data_quality="ok",
+        prior_reader=prior_reader,
+    )
+    return doc.markdown
+
+
+def _fence_lines(markdown: str) -> list[str]:
+    lines: list[str] = []
+    in_fence = False
+    for line in markdown.splitlines():
+        if line.strip() == "```":
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            lines.append(line)
+    return lines
+
+
+def _assert_phone(markdown: str) -> None:
+    for line in _fence_lines(markdown):
+        assert len(line) <= PHONE_LINE_MAX, line
+        assert not line.startswith("#")
+
+
+def _is_continuation(line: str) -> bool:
+    if not line or line.startswith("gaps:"):
+        return False
+    head = line.split(" ", 1)[0]
+    if head in _ROW_HEADS or head in _SECTION_HEADS:
+        return False
+    if head in {"UTC", "NY", "SYD", "Health", "Equities", "Rates", "USD", "Oil", "Vol", "Crypto", "Hyperliquid", "obs"}:
+        return False
+    return True
+
+
+def _row_text(markdown: str, symbol: str) -> str:
+    lines = _fence_lines(markdown)
+    for index, line in enumerate(lines):
+        if line.split(" ", 1)[0] != symbol:
+            continue
+        if index + 1 < len(lines) and _is_continuation(lines[index + 1]):
+            return f"{line} {lines[index + 1].strip()}"
+        return line
+    raise AssertionError(f"missing price row for {symbol}\n{markdown}")
+
+
+def _price_line(markdown: str, symbol: str) -> str:
+    return _row_text(markdown, symbol)
+
+
+def test_empty_sections_are_omitted_not_rendered_as_none() -> None:
+    text = _render(hl=())
+    assert "## Unexpected" not in text
+    assert "## Lab hooks" not in text
+    assert "## Assumptions" not in text
+    assert "## Catalysts" not in text
+    assert "## Positioning" not in text
+    lowered = text.lower()
+    assert "none scheduled" not in lowered
+    assert "- none" not in lowered
+    assert "no configured rule fired" not in lowered
+
+
+def test_obs_none_is_one_header_state() -> None:
+    text = _render(hl=(_hl("BTC", liquidations=()),))
+    lines = _fence_lines(text)
+    assert lines.count("obs none") == 1
+    assert all(line.strip() == "obs none" or "obs none" not in line for line in lines)
+    _assert_phone(text)
+
+
+def test_obs_none_absent_when_an_observation_id_exists() -> None:
+    prior = MapPriorCaptureReader(
+        {
+            ("BTC", "funding"): PriorCaptureValue(
+                instrument="BTC",
+                metric="funding",
+                value=0.0001,
+                captured_at=AS_OF,
+                prior_captured_at=AS_OF - timedelta(days=1),
+            )
+        }
+    )
+    text = _render(hl=(_hl("BTC", obs=True),), prior_reader=prior)
+    assert "obs none" not in text
+    assert "obs obs-BTC-funding" in text
+
+
+def test_no_overnight_reference_block() -> None:
+    text = _render()
+    assert "Overnight reference" not in text
+    assert "What changed since prior US close" not in text
+
+
+def test_zero_metric_moves_to_gaps_and_returns_when_nonzero() -> None:
+    zero = _render(hl=(_hl("BTC", funding="0.0000125", oi="0", mid="0", liquidations=()),))
+    assert "Liquidations" not in zero
+    assert "Open interest" not in zero
+    assert "fund " not in zero
+    assert "gaps:" not in zero
+    assert "Funding" not in zero
+
+    back = _render(hl=(_hl("BTC", funding="0.0000125", oi="0", mid="0", liquidations=("2.5",)),))
+    assert "BTC Liquidations (window sum) 2.5" in back
+    gaps = back.split("gaps:", 1)[1] if "gaps:" in back else ""
+    assert "Liquidations (window sum)" not in gaps
+
+
+def test_basis_omitted_without_prior_and_shown_with_prior_value() -> None:
+    bare = _render(hl=(_hl("BTC", mark="110", oracle="100"),))
+    assert "Basis" not in bare
+
+    prior = MapPriorCaptureReader(
+        {
+            ("BTC", "basis"): PriorCaptureValue(
+                instrument="BTC",
+                metric="basis",
+                value=7.5,
+                captured_at=AS_OF,
+                prior_captured_at=AS_OF - timedelta(days=1),
+            )
+        }
+    )
+    shown = _render(hl=(_hl("BTC", mark="110", oracle="100"),), prior_reader=prior)
+    assert "BTC basis 10" in shown
+    assert " prior 7.5" in shown
+
+
+def test_unchanged_zero_stays_on_gaps_and_changed_zero_returns() -> None:
+    same = PriorCaptureValue(
+        instrument="BTC",
+        metric="liquidations",
+        value=0.0,
+        captured_at=AS_OF,
+        prior_captured_at=AS_OF - timedelta(days=1),
+    )
+    quiet = _render(
+        hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=("0",)),),
+        prior_reader=MapPriorCaptureReader({("BTC", "liquidations"): same}),
+    )
+    assert "Liquidations (window sum)" not in quiet.split("gaps:", 1)[0]
+    assert "BTC Liquidations (window sum)" in _joined(quiet)
+    unobserved = _render(hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=()),))
+    assert "Liquidations" not in unobserved
+
+    changed = PriorCaptureValue(
+        instrument="BTC",
+        metric="liquidations",
+        value=4.0,
+        captured_at=AS_OF,
+        prior_captured_at=AS_OF - timedelta(days=1),
+    )
+    moved = _render(
+        hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=("0",)),),
+        prior_reader=MapPriorCaptureReader({("BTC", "liquidations"): changed}),
+    )
+    assert "BTC Liquidations (window sum) 0" in moved
+
+
+def test_prior_read_failure_does_not_fail_the_brief() -> None:
+    class _Boom:
+        def read(self, instrument: str, metric: str):
+            raise RuntimeError("neon unavailable")
+
+    text = _render(hl=(_hl("BTC"),), prior_reader=_Boom())
+    assert "US Close 2026-09-22" in text
+    assert "basis" not in text
+    assert "BTC fund " in text
+    assert " prior " not in text
+
+
+def test_capture_one_retain_row_is_no_prior() -> None:
+    assert (
+        prior_value_from_retain(
+            instrument="BTC",
+            metric="basis",
+            value="10",
+            captured_at=AS_OF,
+            prior_captured_at=None,
+        )
+        is None
+    )
+
+
+def test_funding_and_oi_with_prior_are_annualised_and_rounded() -> None:
+    prior = MapPriorCaptureReader(
+        {
+            ("BTC", "funding"): PriorCaptureValue(
+                instrument="BTC",
+                metric="funding",
+                value=0.000001,
+                captured_at=AS_OF,
+                prior_captured_at=AS_OF - timedelta(days=1),
+            ),
+            ("BTC", "open_interest"): PriorCaptureValue(
+                instrument="BTC",
+                metric="open_interest",
+                value=36568.77092,
+                captured_at=AS_OF,
+                prior_captured_at=AS_OF - timedelta(days=1),
+            ),
+        }
+    )
+    on_baseline = _render(
+        hl=(_hl("BTC", funding="0.000013", oi="38843.42252", mid="1", liquidations=()),),
+        prior_reader=prior,
+    )
+    assert "11.39% ann" not in on_baseline
+    assert "0.000013" not in on_baseline
+    assert "Funding" not in on_baseline
+    assert "BTC OI +6.22%" in on_baseline
+    assert "38,843" not in on_baseline
+    assert " prior 36,569" not in on_baseline
+    assert "38843.42252" not in on_baseline
+
+    off = _render(
+        hl=(_hl("BTC", funding="0.000014", oi="38843.42252", mid="1", liquidations=()),),
+        prior_reader=prior,
+    )
+    assert "BTC fund 12.26% ann" in off
+    assert " prior 0.88% ann" in off
+
+
+def test_no_key_takeaway_and_fixed_lines_absent() -> None:
+    text = _render(
+        hl=(_hl("BTC"),),
+        unexpected=(),
+        theses=(),
+        assumptions=("No named macro assumption flipped vs the overnight tape",),
+    )
+    for fragment in FORBIDDEN_RENDER_FRAGMENTS:
+        assert fragment not in text
+    assert "KEY TAKEAWAY" not in text
+    assert "Nothing crossed the unexpected-move rules" not in text
+    assert "No indexed theses to score against this session" not in text
+    assert "No named macro assumption flipped vs the overnight tape" not in text
+    assert "Monitor into Asia" not in text
+    assert "Monitor into Europe" not in text
+
+
+def test_eight_price_rows_keep_symbol_last_and_change_only() -> None:
+    text = _render()
+    assert "```" in text
+    assert "| Symbol |" not in text
+    assert "#" not in "".join(_fence_lines(text))
+    symbols = []
+    for line in _fence_lines(text):
+        head = line.split(" ", 1)[0]
+        if head in _ROW_HEADS:
+            symbols.append(head)
+            assert _delta_cell(text, head)
+    assert symbols == ["SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"]
+    assert "proxy" not in text
+    assert "not ES futures" not in text
+    _assert_phone(text)
+    labels = (ROOT / "docs/specs/brief-row-labels.md").read_text(encoding="utf-8")
+    assert "SPY ETF (proxy for S&P 500; not ES futures)" in labels
+    assert "QQQ ETF (proxy for Nasdaq-100; not NQ futures)" in labels
+
+
+def _joined(markdown: str) -> str:
+    return " ".join(line.strip() for line in markdown.splitlines() if line.strip() and line.strip() != "```")
+
+
+def _delta_cell(markdown: str, symbol: str) -> str:
+    parts = _row_text(markdown, symbol).split(" ", 2)
+    if len(parts) < 3:
+        return ""
+    return parts[2]
+
+
+def _close_prior(symbol: str, *, observation_as_of: datetime | None, value: float | None = 100.0) -> PriorCaptureValue:
+    return PriorCaptureValue(
+        instrument=symbol,
+        metric="close",
+        value=value,
+        captured_at=AS_OF - timedelta(days=1),
+        prior_captured_at=AS_OF - timedelta(days=2),
+        observation_as_of=observation_as_of,
+    )
+
+
+def test_same_equity_bar_date_prints_no_new_session() -> None:
+    # Knowledge is 2026-09-22 16:15 ET, so the expected bar is 2026-09-21.
+    # 2026-09-18 is older than that. Same-day-as-prior is not the stall test.
+    bar = datetime(2026, 9, 18, 20, 0, tzinfo=UTC)
+    earlier_same_day = datetime(2026, 9, 18, 13, 30, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=500.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("ES", "close"): _close_prior("ES", observation_as_of=earlier_same_day)}
+        ),
+    )
+    delta = _delta_cell(text, "SPY")
+    assert delta == "no new session since 2026-09-18"
+    assert "EQUITY T-1" not in text
+    assert "0.00%" not in delta
+    assert "+0.0bp" not in delta
+
+
+def test_new_equity_bar_date_with_same_close_prints_zero_percent() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=512.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("ES", "close"): _close_prior("ES", observation_as_of=bar - timedelta(days=1), value=512.0)}
+        ),
+    )
+    delta = _delta_cell(text, "SPY")
+    assert "0.00%" in delta
+    assert "no new session since" not in delta
+
+
+def test_same_fred_observation_date_prints_no_new_print() -> None:
+    obs = datetime(2026, 9, 18, 0, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[2] = _print(
+        "US10Y",
+        last=4.25,
+        prior=4.20,
+        unit="%",
+        source="fred",
+        name="US 10Y yield",
+        as_of=obs,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("US10Y", "close"): _close_prior("US10Y", observation_as_of=obs, value=4.25)}
+        ),
+    )
+    delta = _delta_cell(text, "US10Y")
+    assert delta == "no new print since 2026-09-18"
+    assert "0.00%" not in delta
+    assert "+0.0bp" not in delta
+
+
+def test_new_fred_observation_date_with_same_yield_prints_zero_bp() -> None:
+    obs = datetime(2026, 9, 18, 0, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[2] = _print(
+        "US10Y",
+        last=4.25,
+        prior=4.25,
+        unit="%",
+        source="fred",
+        name="US 10Y yield",
+        as_of=obs,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader(
+            {("US10Y", "close"): _close_prior("US10Y", observation_as_of=obs - timedelta(days=1), value=4.25)}
+        ),
+    )
+    delta = _delta_cell(text, "US10Y")
+    assert delta == "+0.0bp (as of 09-18)"
+    assert "no new print since" not in delta
+
+
+def test_no_prior_keeps_numeric_change_cell() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=512.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(assets=tuple(assets), prior_reader=None)
+    delta = _delta_cell(text, "SPY")
+    assert "0.00%" in delta
+    assert "no new session since" not in text
+    assert "no new print since" not in text
+
+
+def test_crypto_change_cell_ignores_a_repeated_as_of() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[6] = _print("BTC", last=100.0, prior=100.0, source="hyperliquid", as_of=bar)
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader({("BTC", "close"): _close_prior("BTC", observation_as_of=bar)}),
+    )
+    delta = _delta_cell(text, "BTC")
+    assert "0.00%" in delta
+    assert "no new session since" not in delta
+    assert "no new print since" not in delta
+
+
+def test_missing_observation_as_of_does_not_infer_a_stall_from_equal_values() -> None:
+    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    assets[0] = _print(
+        "ES",
+        last=512.0,
+        prior=512.0,
+        source="polygon",
+        name="SPY ETF (proxy for S&P 500; not ES futures)",
+        quoted_symbol="SPY",
+        as_of=bar,
+    )
+    text = _render(
+        assets=tuple(assets),
+        prior_reader=MapPriorCaptureReader({("ES", "close"): _close_prior("ES", observation_as_of=None, value=512.0)}),
+    )
+    delta = _delta_cell(text, "SPY")
+    assert "0.00%" in delta
+    assert "no new session since" not in delta
+
+
+def test_staleness_flag_renders_when_it_fires() -> None:
+    assets = list(_eight())
+    assets[2] = _print(
+        "US10Y",
+        last=4.25,
+        prior=4.20,
+        unit="%",
+        source="fred",
+        quality="stale",
+        as_of=AS_OF - timedelta(days=4),
+        name="US 10Y yield",
+    )
+    text = _render(assets=tuple(assets))
+    us10y = _price_line(text, "US10Y")
+    assert "stale (4d)" in us10y
+    spy = _price_line(text, "SPY")
+    assert "stale" not in spy
+
+
+def test_messages_3_and_4_omitted_message_5_keeps_live_metrics() -> None:
+    text = _render(hl=(_hl("BTC", funding="0.000125", liquidations=("1",)), _hl("ETH", funding="0", oi=None, mid="1")))
+    assert "MACRO TRANSMISSION" not in text
+    assert "CRYPTO TAPE" not in text
+    assert "2s10s" not in text
+    assert "CLUSTER LEADERSHIP" not in text
+    assert "z30d" not in text
+    assert "Positioning" in text
+    assert "## Positioning" not in text
+    assert "BTC fund 109.50% ann" in text
+    assert "ETH fund 0.00% ann" in text
+    assert "Open interest" not in text
+    assert "Mid" not in text.split("Positioning", 1)[1]
+
+
+def test_real_varying_sections_still_render() -> None:
+    when = AS_OF + timedelta(hours=12)
+    text = _render(
+        unexpected=("ES session +1.05% vs overnight +0.52%",),
+        theses=(
+            ThesisHook(
+                slug="THESIS-0001",
+                status="paper",
+                instrument="BTC",
+                invalidation_summary="Daily close below 64000",
+                expected_direction="short",
+                verdict_hook="lab wrong (so far): expected short BTC, session +2.01%",
+                hypothesis="Funding fade",
+            ),
+        ),
+        assumptions=("USD overnight direction did not hold into the cash close",),
+        calendar=(
+            CalendarEvent(
+                when=when,
+                name="FOMC speaker",
+                importance="medium",
+                notes="Into the next session",
+            ),
+        ),
+    )
+    joined = _joined(text)
+    assert "ES session +1.05% vs overnight +0.52%" in joined
+    assert "THESIS-0001" in joined
+    assert "USD overnight direction did not hold into the cash close" in joined
+    assert "FOMC speaker" in joined
+    assert "  - Hypothesis: Funding fade" in text
+    _assert_phone(text)
+    assert "Monitor into Asia" not in text
+
+
+def test_funding_baseline_boundary() -> None:
+    assert HL_FUNDING_BASELINE_HOURLY == 0.0001 / 8
+    assert funding_on_baseline(0.0000125)
+    assert funding_on_baseline(0.000012)
+    assert funding_on_baseline(0.000013)
+    assert not funding_on_baseline(0.000014)
+    assert not funding_on_baseline(0.000001)
+    assert not funding_on_baseline(0.0001)
+
+
+def test_missing_last_moves_to_gaps() -> None:
+    assets = list(_eight())
+    assets[5] = _print(
+        "VIX",
+        last=None,
+        prior=None,
+        quality="unavailable",
+        structural=True,
+        name="CBOE VIX",
+    )
+    text = _render(assets=tuple(assets))
+    assert not any(line.startswith("VIX ") or line == "VIX" for line in _fence_lines(text))
+    assert "VIX" in text.split("gaps:", 1)[1]
+    for line in _fence_lines(text):
+        if line.startswith("Health") or line.startswith("n/a "):
+            continue
+        assert "n/a" not in line
+    _assert_phone(text)
+
+
+def test_repeated_session_is_stale_on_the_health_line_and_not_fresh() -> None:
+    # Older than the expected 2026-09-21 bar. Expected T-1 is not this case.
+    bar = datetime(2026, 9, 18, 20, 0, tzinfo=UTC)
+    later = datetime(2026, 9, 23, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    session_slots = {"ES", "NQ", "DXY", "CL"}
+    names = {
+        "ES": ("SPY ETF (proxy for S&P 500; not ES futures)", "SPY"),
+        "NQ": ("QQQ ETF (proxy for Nasdaq-100; not NQ futures)", "QQQ"),
+        "DXY": ("UUP ETF (USD proxy; not DX futures / DXY)", "UUP"),
+        "CL": ("USO ETF (WTI oil proxy; not CL futures)", "USO"),
+    }
+    priors = {}
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol in session_slots:
+            label, quoted = names[symbol]
+            assets[index] = _print(
+                symbol,
+                last=100.0,
+                prior=99.0,
+                source="polygon",
+                quality="fresh",
+                name=label,
+                quoted_symbol=quoted,
+                as_of=bar,
+            )
+            priors[(symbol, "close")] = _close_prior(symbol, observation_as_of=bar, value=99.0)
+        elif symbol == "US10Y":
+            assets[index] = _print(
+                "US10Y",
+                last=4.25,
+                prior=4.20,
+                unit="%",
+                source="fred",
+                quality="fresh",
+                name="US 10Y yield",
+                as_of=later,
+            )
+            priors[("US10Y", "close")] = _close_prior("US10Y", observation_as_of=bar, value=4.20)
+        elif symbol == "VIX":
+            assets[index] = _print(
+                "VIX",
+                last=None,
+                prior=None,
+                quality="fresh",
+                structural=True,
+                name="CBOE VIX",
+            )
+        elif symbol in {"BTC", "ETH"}:
+            assets[index] = _print(symbol, last=100.0, prior=100.0, source="hyperliquid", quality="fresh", as_of=bar)
+            priors[(symbol, "close")] = _close_prior(symbol, observation_as_of=bar, value=100.0)
+    text = _render(
+        assets=tuple(assets),
+        hl=(_hl("BTC", funding="0.000013", quality="ok"),),
+        prior_reader=MapPriorCaptureReader(priors),
+    )
+    assert "Health 43% stale Equities USD Oil; n/a Vol" in text
+    assert "Rates fresh" not in text
+    assert "Crypto fresh" not in text
+    assert "Hyperliquid fresh" not in text
+    assert "100%" not in text
+    assert "fresh" not in text
+    assert "no new session since 2026-09-18" in text
+    assert "EQUITY T-1" not in text
+    health_lines = [line for line in _fence_lines(text) if line.startswith("Health") or line.startswith("n/a ")]
+    assert len(health_lines) <= 2
+    _assert_phone(text)
+
+
+def _health_report(states: tuple[tuple[str, str, str], ...], pct: int) -> HealthReport:
+    domains = tuple(
+        DomainHealth(domain_id, label, state, False, "") for domain_id, label, state in states
+    )
+    return HealthReport("test", domains, pct, len(domains), (), False)
+
+
+def test_health_line_is_exceptions_only_or_100() -> None:
+    mixed = _health_report(
+        (
+            ("equities", "Equities", "stale"),
+            ("rates", "Rates", "fresh"),
+            ("usd", "USD", "stale"),
+            ("oil", "Oil", "stale"),
+            ("vol", "Vol", "unavailable"),
+            ("crypto", "Crypto", "fresh"),
+            ("hyperliquid", "Hyperliquid", "fresh"),
+        ),
+        43,
+    )
+    assert _health_lines(mixed) == ["Health 43% stale Equities USD Oil; n/a Vol"]
+    fresh = _health_report(
+        (
+            ("equities", "Equities", "fresh"),
+            ("rates", "Rates", "fresh"),
+            ("usd", "USD", "fresh"),
+            ("oil", "Oil", "fresh"),
+            ("vol", "Vol", "fresh"),
+            ("crypto", "Crypto", "fresh"),
+            ("hyperliquid", "Hyperliquid", "fresh"),
+        ),
+        100,
+    )
+    assert _health_lines(fresh) == ["Health 100%"]
+    crowded = _health_report(
+        (
+            ("equities", "Equities", "degraded"),
+            ("rates", "Rates", "degraded"),
+            ("usd", "USD", "degraded"),
+            ("oil", "Oil", "degraded"),
+            ("vol", "Vol", "degraded"),
+            ("crypto", "Crypto", "degraded"),
+            ("hyperliquid", "Hyperliquid", "degraded"),
+        ),
+        50,
+    )
+    lines = _health_lines(crowded)
+    assert len(lines) <= 2
+    assert all(len(line) <= PHONE_LINE_MAX for line in lines)
+    assert lines[0].startswith("Health 50% degraded ")
+    rendered = _render(hl=(_hl("BTC"), _hl("ETH")))
+    assert "Health 100%" in rendered
+    assert " fresh" not in rendered
+
+
+def test_now_lead_matching_the_utc_clock_is_dropped() -> None:
+    doc = render_morning_close(
+        generated_at=GENERATED,
+        as_of=AS_OF,
+        overnight=_session(_eight()),
+        session=_session(_eight()),
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="ok",
+        lead_lines=(
+            f"Now {GENERATED.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+            "Prior 2026-09-21T20:00:00Z",
+        ),
+    )
+    assert "Now " not in doc.markdown
+    assert f"UTC {GENERATED.strftime('%Y-%m-%d %H:%MZ')}" in doc.markdown
+    assert "Prior 2026-09-21T20:00:00Z" in doc.markdown
+
+
+def test_earlier_pair_block_is_absent_from_a_live_close() -> None:
+    """The two-run FRED note is a recorded-gate closing line, not the live brief."""
+    assert "Earlier pair" not in _render()
+    settings = load_briefing_settings(ROOT)
+    doc, _ = generate_from_fixture("close", load_fixture_file(FIXTURE), settings=settings)
+    assert doc is not None
+    assert "Earlier pair" not in doc.markdown
+
+
+def test_expected_t1_equities_are_a_header_and_not_stale() -> None:
+    expected = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol not in {"ES", "NQ", "DXY", "CL"}:
+            continue
+        assets[index] = _print(
+            symbol,
+            last=100.0,
+            prior=99.0,
+            source="polygon",
+            quality="fresh",
+            name=assets[index].name,
+            quoted_symbol=assets[index].quoted_symbol,
+            as_of=expected,
+        )
+    text = _render(assets=tuple(assets), hl=(_hl("BTC", funding="0.0000125", quality="ok"),))
+    assert "EQUITY T-1 BY DESIGN (close 2026-09-21)" in text
+    assert "no new session since" not in text
+    assert "SPY 100.00 +1.01%" in text
+    assert "Health 100%" in text
+    assert "stale" not in text
+
+
+def test_oi_change_is_printed_only_beside_a_prior() -> None:
+    bare = _render(hl=(_hl("BTC", oi="110"),))
+    assert "OI" not in bare
+    assert "Open interest" not in bare
+    shown = _render(
+        hl=(_hl("BTC", oi="110"),),
+        prior_reader=MapPriorCaptureReader(
+            {
+                ("BTC", "open_interest"): PriorCaptureValue(
+                    instrument="BTC",
+                    metric="open_interest",
+                    value=100.0,
+                    captured_at=AS_OF,
+                    prior_captured_at=AS_OF - timedelta(days=1),
+                )
+            }
+        ),
+    )
+    assert "BTC OI +10.00%" in shown
+    assert "BTC OI 110" not in shown
+
+
+def test_hyperliquid_health_uses_the_worst_morning_perp() -> None:
+    states = tuple(
+        _hl(name, quality="unavailable" if name == "PURR" else "ok", funding="0.0000125")
+        for name in MORNING_HL_PERPS
+    )
+    text = _render(hl=states)
+    assert "Health 86% n/a Hyperliquid" in text
+    assert len(MORNING_HL_PERPS) == 14
+
+
+def test_perp_with_no_print_is_a_gap_and_not_zero() -> None:
+    empty = HLInstrumentState(
+        instrument="SOL",
+        metrics={},
+        liquidations=(),
+        levels=(),
+        data_quality="unavailable",
+        as_of_knowledge=AS_OF,
+    )
+    text = _render(hl=(empty,))
+    assert "SOL 0" not in text
+    assert "0.00%" not in text.split("gaps:", 1)[1]
+    gaps = text.split("gaps:", 1)[1]
+    assert "SOL" in gaps
+    assert "SOL Funding" not in gaps
+
+
+def test_polygon_missing_us_close_is_unavailable_not_the_fetch_date() -> None:
+    """No equity bar: do not print the New York date of a 04:30 EDT fetch."""
+    generated = datetime(2026, 9, 25, 8, 30, tzinfo=UTC)
+    assets = []
+    for symbol in ASSET_ORDER:
+        assets.append(
+            _print(
+                symbol,
+                last=None,
+                prior=None,
+                quality="unavailable",
+                as_of=None,
+                source="polygon" if symbol not in {"US10Y", "BTC", "ETH"} else "fred",
+            )
+        )
+    session = MacroSnapshot(
+        as_of=generated,
+        prior_us_close=PRIOR_CLOSE,
+        assets=tuple(assets),
+        data_quality="unavailable",
+        source="live",
+        notes=("missing env POLYGON_API_KEY; Polygon unavailable",),
+    )
+    text = render_morning_close(
+        generated_at=generated,
+        as_of=generated,
+        overnight=session,
+        session=session,
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="unavailable",
+    ).markdown
+    assert "US Close unavailable" in text
+    assert "US Close 2026-09-25" not in text
+    assert "EQUITY T-1 BY DESIGN" not in text
+    assert "NY 2026-09-25 04:30 EDT" in text
+
+
+def test_polygon_bars_us_close_matches_t1_bar_date() -> None:
+    """Bars on the prior session name that date on the top line and the T-1 header."""
+    generated = datetime(2026, 9, 25, 8, 30, tzinfo=UTC)
+    bar = datetime(2026, 9, 24, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol not in {"ES", "NQ", "DXY", "CL"}:
+            continue
+        assets[index] = _print(
+            symbol,
+            last=100.0,
+            prior=99.0,
+            source="polygon",
+            quality="fresh",
+            name=assets[index].name,
+            quoted_symbol=assets[index].quoted_symbol,
+            as_of=bar,
+        )
+    session = MacroSnapshot(
+        as_of=generated,
+        prior_us_close=PRIOR_CLOSE,
+        assets=tuple(assets),
+        data_quality="ok",
+        source="polygon",
+    )
+    text = render_morning_close(
+        generated_at=generated,
+        as_of=generated,
+        overnight=session,
+        session=session,
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="ok",
+    ).markdown
+    assert "US Close 2026-09-24" in text
+    assert "EQUITY T-1 BY DESIGN (close 2026-09-24)" in text
+    assert "US Close 2026-09-25" not in text
+    close = re.search(r"US Close (\d{4}-\d{2}-\d{2})", text)
+    header = re.search(r"EQUITY T-1 BY DESIGN \(close (\d{4}-\d{2}-\d{2})\)", text)
+    assert close is not None and header is not None
+    assert close.group(1) == header.group(1) == "2026-09-24"
+
+
+def test_us_close_and_t1_header_name_one_session() -> None:
+    expected = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol not in {"ES", "NQ", "DXY", "CL"}:
+            continue
+        assets[index] = _print(
+            symbol,
+            last=100.0,
+            prior=99.0,
+            source="polygon",
+            quality="fresh",
+            name=assets[index].name,
+            quoted_symbol=assets[index].quoted_symbol,
+            as_of=expected,
+        )
+    text = _render(assets=tuple(assets))
+    close = re.search(r"US Close (\d{4}-\d{2}-\d{2})", text)
+    header = re.search(r"EQUITY T-1 BY DESIGN \(close (\d{4}-\d{2}-\d{2})\)", text)
+    assert close is not None and header is not None
+    assert close.group(1) == header.group(1)
+
+
+def test_us10y_appears_on_exactly_one_line() -> None:
+    session = _session(_eight())
+    text = render_morning_close(
+        generated_at=GENERATED,
+        as_of=AS_OF,
+        overnight=session,
+        session=session,
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="ok",
+        closing_lines=(
+            "Earlier pair, not this session.",
+            "FRED date did not roll.",
+            "US10Y 4.96 no new print since 2026-09-18",
+        ),
+    ).markdown
+    assert "Earlier pair" not in text
+    assert "FRED date did not roll" not in text
+    us10y_lines = [line for line in _fence_lines(text) if "US10Y" in line]
+    assert len(us10y_lines) == 1
+
+
+def test_baseline_funding_is_not_a_gap() -> None:
+    text = _render(hl=(_hl("BTC", funding="0.0000125", oi=None),))
+    assert "fund " not in text
+    assert "Funding" not in text
+    assert "BTC Funding" not in text
+
+
+def test_as_of_knowledge_line_is_not_in_the_morning_message() -> None:
+    text = _render()
+    assert "As-of knowledge" not in text
+
+
+def test_eleven_capture_brief_is_one_message_status_lines_last() -> None:
+    settings = load_briefing_settings(ROOT)
+    fixture = load_fixture_file(FIXTURE)
+    doc, _ = generate_from_fixture("close", fixture, settings=settings)
+    assert doc is not None
+    message = append_brief_status_lines(
+        doc.markdown,
+        late=LATE,
+        deadman=DEADMAN_MISSING_LINE,
+        capture=CAPTURE,
+    )
+    assert message.rstrip().endswith("\n".join((LATE, DEADMAN_MISSING_LINE, CAPTURE)))
+    tail = message.strip().splitlines()[-3:]
+    assert tail == [LATE, DEADMAN_MISSING_LINE, CAPTURE]
+    assert len(message) <= TELEGRAM_MAX_MESSAGE_CHARS
+    payload = prepare_payload(message)
+    assert payload.reason == "no_send"
+    assert payload.send is False
+    chunks = chunk_markdown_v2(message)
+    assert chunks == payload.chunks
+    assert len(chunks) == 1
+    assert len(chunks[0]) <= TELEGRAM_MAX_MESSAGE_CHARS
+    sent = chunks[0]
+    assert sent.rfind("LATE") < sent.rfind("DEADMAN") < sent.rfind("CAPTURE")
+    assert "(37 instruments)" in message
+    assert r"\(37 instruments\)" in sent
+    assert "DEADMAN: MISSING" in sent
+    fence_end = message.rfind("```")
+    tail = message[fence_end:]
+    assert LATE in tail and DEADMAN_MISSING_LINE in tail and CAPTURE in tail
+    _assert_phone(doc.markdown)
