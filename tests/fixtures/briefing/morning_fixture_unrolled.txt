@@ -1,0 +1,35 @@
+```
+US Close 2026-09-24
+
+UTC 2026-09-25 08:30Z
+NY 2026-09-25 04:30 EDT
+SYD 2026-09-25 18:30 AEST
+Health 71% stale Rates; n/a Vol
+EQUITY T-1 BY DESIGN (close 2026-09-24)
+obs none
+
+SPY 510.00 +2.00%
+QQQ 404.00 +1.00%
+US10Y 4.11 no new print since 2026-09-23
+UUP 28.28 +1.00%
+USO 71.40 +2.00%
+BTC 80000.00 +2.56%
+ETH 3000.00 +3.45%
+SOL 117.365 +2.88%
+HYPE 40 +2.56%
+NEAR 5 +25.00%
+ARB 0.5 +25.00%
+UNI 10 +11.11%
+VVV 2 +100.00%
+ZEC 50 +25.00%
+DOGE 0.2 +100.00%
+XMR 150 +7.14%
+CHIP 0.05 +25.00%
+LTC 80 +14.29%
+PURR 0.08 +14.29%
+
+Positioning
+UNI fund 12.26% ann
+ZEC fund 0.88% ann
+gaps: VIX
+```
