@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from argparse import Namespace
 from datetime import datetime, timedelta
@@ -16,6 +17,12 @@ from mm_delivery.inbound import handle_inbound
 from mm_delivery.payload import SEND_ENABLED
 from mm_desks.orchestrator import PIPELINE, run_from_fixture
 from mm_lab_cli.completion import add_completion_args, fired_at_from_args, stamp_cli_fire
+from mm_lab_cli.deadman import (
+    HEALTHCHECKS_PING_URL_ENV,
+    apply_deadman_missing_line,
+    ping_deadman_start,
+    ping_deadman_success,
+)
 from mm_lab_cli.env_preflight import SEND_FROZEN_MSG, prepare_deliver
 
 
@@ -382,6 +389,12 @@ def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
             sent_at=utcnow(),
             run_id=getattr(args, "run_id", "") or "",
         )
+        # /start only on the path that will send. Anything but HTTP 200 OK
+        # appends one DEADMAN line after LATE. The URL is not logged.
+        secret = os.environ.get(HEALTHCHECKS_PING_URL_ENV)
+        start = ping_deadman_start(secret)
+        if start.outcome != "OK":
+            markdown = apply_deadman_missing_line(markdown)
     result = deliver(
         markdown,
         desk=desk,
@@ -399,6 +412,13 @@ def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
     payload["no_send"] = not live
     payload["to_principal_dm"] = to_dm
     payload.update(extra)
+    # Success ping only after a send that will exit 0 with sent true.
+    # A failed send leaves the success URL unpinged so the vendor alarm can fire.
+    if live and result.sent:
+        secret = os.environ.get(HEALTHCHECKS_PING_URL_ENV)
+        success = ping_deadman_success(secret)
+        payload["deadman_ping"] = success.outcome
+        payload["deadman_ping_at"] = success.pinged_at
     print(json.dumps(payload, sort_keys=True, indent=2))
     if live and not result.sent:
         return 2, _payload_path(payload)

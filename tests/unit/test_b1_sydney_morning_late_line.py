@@ -107,6 +107,9 @@ def _post_pack(monkeypatch, capsys, tmp_path: Path, *, sent_at: datetime, live: 
     monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "test-token")
     monkeypatch.setenv(PRINCIPAL_DM_CHAT_ID_ENV, DM_CHAT)
+    # Isolate the LATE line from the dead-man ping: a stub OK start does not append DEADMAN.
+    monkeypatch.setenv("HEALTHCHECKS_PING_URL", "https://hc-ping.example/late-line-stub")
+    monkeypatch.setattr("mm_lab_cli.deadman._http_get", lambda url, timeout: (200, "OK"))
     monkeypatch.setattr("mm_lab_cli.deliver.utcnow", lambda: sent_at)
     posted: list[dict[str, str]] = []
 
@@ -159,6 +162,8 @@ def _post_pack(monkeypatch, capsys, tmp_path: Path, *, sent_at: datetime, live: 
     captured = capsys.readouterr()
     assert "test-token" not in captured.out
     assert "test-token" not in captured.err
+    assert "hc-ping.example" not in captured.out
+    assert "hc-ping.example" not in captured.err
     payload_path = tmp_path / "out" / "briefs" / "2026-09-24" / "telegram-payload.json"
     assert payload_path.is_file()
     envelope = json.loads(payload_path.read_text(encoding="utf-8"))
@@ -214,6 +219,7 @@ def test_dry_run_does_not_append_a_late_line(tmp_path: Path, monkeypatch, capsys
     rc, text, posted = _post_pack(monkeypatch, capsys, tmp_path, sent_at=sent, live=False)
     assert rc == 0
     assert "LATE:" not in text
+    assert "DEADMAN:" not in text
     assert posted == []
 
 
