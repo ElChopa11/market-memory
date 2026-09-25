@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import httpx
 import yaml
@@ -245,6 +247,9 @@ def _install_send(monkeypatch, posted: list[dict]) -> None:
 
 def _prepare(monkeypatch, tmp_path, *, token: str | None, dm: str | None, polygon: str | None, fred: str | None, group: str | None) -> Path:
     monkeypatch.chdir(ROOT)
+    # Expiry uses the system clock, not the brief as-of. Freeze it inside the
+    # allowed Sydney window so tests 3–6 stay green after 2026-09-28.
+    monkeypatch.setattr(send_proof, "utc_now", lambda: AS_OF)
     monkeypatch.setattr(render_proof, "utcnow", lambda: AS_OF)
     monkeypatch.setattr("mm_briefing.fetchers.time.sleep", lambda *_args, **_kwargs: None)
     _install_fixture_http(monkeypatch)
@@ -492,3 +497,57 @@ def test_main_deliver_path_unchanged() -> None:
     for name in ("stage1-stamp", "brief-and-deliver"):
         assert _without_send_proof_gate(current[name]) == snap["jobs"][name]
         assert current[name]["steps"] == snap["jobs"][name]["steps"]
+
+
+def test_send_proof_refuses_after_expiry(monkeypatch, capsys, tmp_path) -> None:
+    from mm_briefing.fetchers import LiveMacroFetcher
+
+    posted: list[dict] = []
+    _prepare(
+        monkeypatch,
+        tmp_path,
+        token=BOT_TOKEN,
+        dm=DM_CHAT,
+        polygon=MARKET_TOKEN,
+        fred=MARKET_TOKEN,
+        group=GROUP_CHAT,
+    )
+    _install_send(monkeypatch, posted)
+    for key in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID_PRINCIPAL_DM", "POLYGON_API_KEY", "FRED_API_KEY"):
+        assert os.environ.get(key)
+
+    last_second = datetime(2026, 9, 28, 13, 59, 59, tzinfo=timezone.utc)
+    monkeypatch.setattr(send_proof, "utc_now", lambda: last_second)
+    rc = send_proof.main()
+    capsys.readouterr()
+    assert rc == 0
+    assert len(posted) == 1
+
+    def _expired(moment: datetime) -> None:
+        posted.clear()
+        hits: list[str] = []
+
+        def _boom(name: str):
+            def _inner(*_args, **_kwargs):
+                hits.append(name)
+                raise AssertionError(f"{name} must not run after send_proof expiry")
+
+            return _inner
+
+        monkeypatch.setattr(LiveMacroFetcher, "_fetch_polygon", _boom("polygon"))
+        monkeypatch.setattr(LiveMacroFetcher, "_fetch_fred", _boom("fred"))
+        monkeypatch.setattr("mm_briefing.engine.hl_from_live_info", _boom("hl"))
+        monkeypatch.setattr(send_proof, "utc_now", lambda: moment)
+        refused = send_proof.main()
+        payload = _json_result(capsys.readouterr().out)
+        sydney = moment.astimezone(ZoneInfo("Australia/Sydney")).date().isoformat()
+        assert refused != 0
+        assert posted == []
+        assert hits == []
+        assert payload["sent"] is False
+        assert payload["reason"] == "send_proof_expired"
+        assert payload["sydney_date"] == sydney
+        assert sydney > "2026-09-28"
+
+    _expired(datetime(2026, 9, 28, 14, 0, 0, tzinfo=timezone.utc))
+    _expired(datetime(2099, 1, 1, 0, 0, tzinfo=timezone.utc))

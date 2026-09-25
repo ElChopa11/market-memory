@@ -1,5 +1,10 @@
 """Send the render_proof morning close once to the Principal DM.
 
+The first act is the expiry gate. Today's date is the system UTC clock
+converted with ``zoneinfo`` ``Australia/Sydney``. It is not a dispatch input,
+env var, or event field. A Sydney date after ``SEND_PROOF_LAST_SYDNEY_DATE``
+exits before any secret is read and before any fetch or send.
+
 The brief text is ``build_close_proof`` (the same function ``render_proof``
 uses). A Polygon or FRED missing-key failure is ``fail_lines`` and a non-zero
 exit before any send.
@@ -25,7 +30,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from mm_briefing.render_proof import build_close_proof, fail_lines
 from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
@@ -34,9 +41,21 @@ from mm_delivery.deliver import deliver
 from mm_lab_cli.deliver import append_brief_status_lines
 
 CAPTURE_LINE = "CAPTURE: n/a (send_proof)"
+SEND_PROOF_LAST_SYDNEY_DATE = date(2026, 9, 28)
+_SYDNEY = ZoneInfo("Australia/Sydney")
+
+
+def utc_now() -> datetime:
+    """System UTC. Tests replace this seam. Production does not read a date input."""
+    return datetime.now(timezone.utc)
 
 
 def main() -> int:
+    today = utc_now().astimezone(_SYDNEY).date()
+    if today > SEND_PROOF_LAST_SYDNEY_DATE:
+        _emit_expired(today)
+        return 1
+
     text, sources = build_close_proof()
     failed = fail_lines(sources)
     if failed:
@@ -65,6 +84,20 @@ def main() -> int:
         message_length=message_length,
     )
     return 0 if result.sent else 1
+
+
+def _emit_expired(today: date) -> None:
+    payload = {
+        "reason": "send_proof_expired",
+        "sent": False,
+        "sydney_date": today.isoformat(),
+    }
+    print(json.dumps(payload, sort_keys=True))
+    line = f"send_proof sent=false reason=send_proof_expired sydney_date={today.isoformat()}"
+    print(line)
+    raw = os.environ.get("GITHUB_STEP_SUMMARY")
+    if raw:
+        Path(raw).write_text(line + "\n", encoding="utf-8")
 
 
 def _emit(*, sent: bool, http_status: int | None, reason: str, message_length: int) -> None:
