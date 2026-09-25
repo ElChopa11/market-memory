@@ -338,6 +338,22 @@ Next Actions Sydney brief: a partial Polygon fill with `error_class=rate_limited
 
 ---
 
+## 2026-09-24 — dispatch PAT on the shared multi-agent box
+
+Principal addendum, same day as the thin `repository_dispatch` draft. Process lesson. Inventory: [ops/reports/status/surfaces-inventory.md](../../ops/reports/status/surfaces-inventory.md). Caller contract: [docs/runbooks/scheduler.md](../../docs/runbooks/scheduler.md).
+
+| Field | Value |
+|---|---|
+| **Date** | 2026-09-24 |
+| **run_id** | *(pending — none invented)* |
+| **Desk** | Ops |
+| **What happened** | `/home/box/agent-data/infra/github-sm-dispatch.pat` is a standing fine-grained PAT on the **shared multi-agent box** (browser sessions, screenshot history, six agents). Mode 0600 stops accidents. It does not stop a deliberate same-user read. Same class as the 2026-09-19 Grok Secrets card lesson: file mode plus an instruction is not capability isolation. |
+| **Lesson** | This standing file is tolerable **only because** the blast radius is constrained to **one** `repository_dispatch` event type (`sydney-morning-deliver`, thin morning deliver), and migrate/backfill are CLI-only with no token-reachable trigger. That constraint is the reason. Mode bits are not the reason. **Allowed reader:** only Coord/Don’s Sydney Morning Grok routine, and only when firing that one event. No other desk, routine, or process may read it. **Rotation triggers (any one → rotate immediately):** any box incident; any screenshot of a terminal that might show the path or the value; any agent found reading paths under `agent-data/`. |
+| **Does not** | Authorise putting the PAT in chat, the Secrets card, or `secret-request`. Authorise Contents write on the PAT. Authorise migrate or backfill Actions triggers. Claim that mode 0600 is a hard boundary. |
+| **Overrides prior** | No — process lesson. `run_id` pending. Not a literature prior. |
+
+---
+
 ## How this file grows
 
 1. Close the idea or incident with [templates/post-mortem.md](../../templates/post-mortem.md) (or an incident-close pack that cites `run_id`).

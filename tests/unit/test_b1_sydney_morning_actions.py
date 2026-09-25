@@ -156,6 +156,12 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
     assert text.count("cancel-in-progress:") == 1
     assert "cancel-in-progress: false" in text
     assert "repository_dispatch" not in text
+    assert "sydney-morning-deliver" not in text
+    # Grok clock calls this file. The event type stays on the caller workflow.
+    assert "workflow_call:" in text
+    assert text.count("workflow_call:") == 1
+    assert "required: true" in text
+    assert "|| inputs.i_mean_it_deliver == true" in brief
     assert "MM_LOG_RATE_LIMIT_HEADERS" in brief
     assert "outside_anchor_window" not in stage1
 

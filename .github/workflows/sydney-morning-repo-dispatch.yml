@@ -1,0 +1,47 @@
+# Grok clock → Actions deliver (architecture path a).
+#
+# One trigger: repository_dispatch type sydney-morning-deliver.
+# No inputs. client_payload is ignored. Deliver is hardcoded by calling
+# hybrid-sydney-morning.yml with i_mean_it_deliver: true (same stamp, brief,
+# Principal DM, and deliver-receipt gate as a scheduled fire on main).
+#
+# hybrid-sydney-morning.yml keeps the AEST crons and workflow_dispatch.
+# This file does not add a cron, a workflow_dispatch, or a second event type.
+# Migrate, backfill, and ingest must not list sydney-morning-deliver.
+#
+# repository_dispatch runs only after this file is on the default branch.
+# A draft PR does not arm the event. Do not fire a live dispatch from review.
+#
+# Stamp and receipt commit-back use this workflow's GITHUB_TOKEN
+# (contents: write), the same token hybrid already uses. The sealed
+# dispatch PAT is not that token and needs no Contents permission.
+#
+# Hive SEND_FROZEN. TELEGRAM_CHAT_ID stays unset. Paper only.
+
+name: sydney-morning-repo-dispatch
+
+on:
+  repository_dispatch:
+    types: [sydney-morning-deliver]
+
+# Caller job must grant contents: write. A called workflow can only downgrade
+# the GITHUB_TOKEN it receives. Stamp push and receipt push both need write.
+permissions:
+  contents: write
+
+# Same repository-level group as hybrid-sydney-morning so a cron run and a
+# clock dispatch queue together. cancel-in-progress stays false (a waiting
+# run is not a skip). Do not also set jobs.<id>.concurrency to this group:
+# a nested lock on the same group can stall the caller.
+concurrency:
+  group: hybrid-sydney-morning
+  cancel-in-progress: false
+
+jobs:
+  stamp-brief-deliver:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/hybrid-sydney-morning.yml
+    with:
+      i_mean_it_deliver: true
+    secrets: inherit

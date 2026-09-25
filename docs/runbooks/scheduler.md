@@ -117,7 +117,7 @@ Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → sele
 
 ## B1 brief-and-deliver (same workflow, after the stamp)
 
-Job `brief-and-deliver` has `needs: stage1-stamp`. It runs when `github.event_name == 'schedule'`, or when `github.event_name == 'workflow_dispatch'` and `i_mean_it_deliver` is true. The input is a boolean and defaults to false. Both AEST crons stay (`30 20 * * 0-4` and `30 22 * * 0-4`). No ±900s guard. No `i_mean_it_stage2` input. `stage1-stamp` has no `if`, so a manual prove still stamps first.
+Job `brief-and-deliver` has `needs: stage1-stamp`. It runs when `github.event_name == 'schedule'`, or when `github.event_name == 'workflow_dispatch'` and `i_mean_it_deliver` is true, or when `workflow_call` receives `i_mean_it_deliver: true`. The workflow_dispatch input is a boolean and defaults to false. The `workflow_call` input is required and has no false default. Both AEST crons stay (`30 20 * * 0-4` and `30 22 * * 0-4`). No ±900s guard. No `i_mean_it_stage2` input. `stage1-stamp` has no `if`, so a manual prove still stamps first.
 
 | Scheduled run | What happens |
 |---|---|
@@ -140,6 +140,78 @@ Deliver receipt is first-writer-wins on the stamp's `scheduled_anchor_ts` (`sche
 | `i_mean_it_deliver` true | `stage1-stamp` runs first, then the same brief+DM gate as a scheduled fire. |
 
 Principal prove (once): Actions → **hybrid-sydney-morning** → **Run workflow** → branch of this change → set `i_mean_it_deliver` true. Default false cannot send.
+
+## Grok clock path — `repository_dispatch` (`sydney-morning-deliver`)
+
+Architecture path (a). Grok is a clock. It wakes Actions. It does not hold a Telegram token and it does not brief on the box. Hive group send stays SEND_FROZEN. `TELEGRAM_CHAT_ID` stays unset. Paper only.
+
+`.github/workflows/sydney-morning-repo-dispatch.yml` is the only workflow that listens for this event. `hybrid-sydney-morning.yml` still owns both AEST crons and `workflow_dispatch`. The clock file adds no cron and no `workflow_dispatch`.
+
+| Item | Contract |
+|---|---|
+| Event type | `sydney-morning-deliver` (the only `types:` value) |
+| Inputs | None. `client_payload` is ignored. |
+| Deliver | Hardcoded `workflow_call` into `hybrid-sydney-morning.yml` with `i_mean_it_deliver: true` and `secrets: inherit` |
+| Jobs | Same `stage1-stamp` then `brief-and-deliver` as a scheduled fire, including the deliver receipt gate on `main` |
+| Where it runs | `repository_dispatch` runs the workflow on the default branch only, after this file is on `main` |
+| Token permissions | Caller grants `contents: write` so stamp and receipt commit-back can push with `GITHUB_TOKEN` |
+| Queue | Concurrency group `hybrid-sydney-morning`, `cancel-in-progress: false`, shared with the cron workflow |
+
+A cron fire and a clock fire for the same `scheduled_anchor_ts` share one receipt. The second path exits 0 `already_delivered` and does not POST.
+
+Migrate, backfill, and ingest do not accept `sydney-morning-deliver`. Do not add this `repository_dispatch` type to those workflows.
+
+### Sealed PAT (Principal writes the value)
+
+Don and agents never write the value. Never commit it. Never put it in chat, the Grok Secrets card, or a workflow secret from this change. This PR does not create the file and does not fire a dispatch.
+
+| Item | Value |
+|---|---|
+| Path | `/home/box/agent-data/infra/github-sm-dispatch.pat` |
+| Mode | `0600`, Principal-created |
+| Resource | Fine-grained PAT for `ElChopa11/market-memory` only |
+| Actions | Actions: Read and write |
+| Contents | Contents: No access |
+| Use | Only `POST /repos/ElChopa11/market-memory/dispatches` with `"event_type":"sydney-morning-deliver"` |
+
+Contents stays closed on the PAT because stamp and receipt commit-back already use the workflow `GITHUB_TOKEN` (`contents: write` inside Actions). The PAT is the clock's dispatch credential, not the git credential.
+
+### Who may read
+
+The only reader is Coord/Don’s **Sydney Morning** Grok routine, and only while it fires `sydney-morning-deliver`.
+
+Desks must not open `agent-data/infra/`. No other desk, routine, or process may read the file.
+
+Mode `0600` stops an accidental open. It is not a hard boundary. The standing file is tolerable because the blast radius is one `repository_dispatch` event type, and migrate/backfill stay CLI-only with no token-reachable trigger. House lesson: [config/knowledge/house-lessons.md](../../config/knowledge/house-lessons.md) (2026-09-24). Inventory: [ops/reports/status/surfaces-inventory.md](../../ops/reports/status/surfaces-inventory.md).
+
+Rotate immediately on any one of: a box incident; a screenshot of a terminal that might show the path or the value; an agent found reading paths under `agent-data/`.
+
+### Caller retry (Grok routine is out of scope)
+
+This section is the contract for the caller. Implementing the Grok routine is out of scope.
+
+Expected success is HTTP 204. Any 2xx counts as accepted (the Actions run was created).
+
+On non-2xx, make 3 attempts with backoff:
+
+1. Attempt 1 at clock fire.
+2. Wait 30s, attempt 2.
+3. Wait 90s, attempt 3.
+
+After the third non-2xx, in-window escalate while that Sydney morning window is still open. Do not wait for the next calendar day.
+
+HTTP 500 after the clock time has passed is did-not-fire. GitHub did not create the Actions run. Treat every non-2xx the same way: no stamp and no deliver happened. Do not log the PAT or the `Authorization` header.
+
+```bash
+# Clock or Principal shell. Do not echo the file.
+curl -sS -o /dev/null -w "%{http_code}\n" \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $(cat /home/box/agent-data/infra/github-sm-dispatch.pat)" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/ElChopa11/market-memory/dispatches \
+  -d '{"event_type":"sydney-morning-deliver"}'
+```
 
 **Secret names (Actions; Principal adds values):**
 

@@ -15,7 +15,12 @@
 #
 # brief-and-deliver (needs stage1-stamp): runs on schedule, or on
 # workflow_dispatch only when input i_mean_it_deliver is true (boolean,
-# default false). Before brief or Telegram, look for a deliver receipt keyed
+# default false), or on workflow_call when that same input is true.
+# The Grok clock workflow calls this file with the input hardcoded true
+# (no false default on that caller). github.event_name inside a called
+# workflow is the caller's event, so the boolean input is the deliver
+# gate for that path. This file does not own that clock trigger.
+# Before brief or Telegram, look for a deliver receipt keyed
 # on the stamp's scheduled_anchor_ts (scheduled_for — not wall clock, not
 # run_id) under ops/reports/scheduler/completions/receipts/. Receipt present
 # → exit 0, already_delivered, no Telegram. No receipt → lab brief close
@@ -57,6 +62,15 @@ on:
         type: boolean
         default: false
         required: false
+  workflow_call:
+    inputs:
+      i_mean_it_deliver:
+        description: >-
+          Required. The Grok clock workflow hardcodes true so brief-and-deliver
+          matches a scheduled fire, including the deliver receipt gate.
+          There is no false default on this input.
+        type: boolean
+        required: true
 
 # Push completion JSON and deliver receipts back to the run branch (GITHUB_TOKEN).
 # No Telegram secrets. Receipt commit-back is a separate hard scope from the stamp.
@@ -297,9 +311,11 @@ jobs:
 
   brief-and-deliver:
     needs: stage1-stamp
-    # Schedule ignores the input (#104 path). Dispatch runs only on explicit true
+    # Schedule ignores the input (#104 path). workflow_dispatch runs only on explicit true
     # (boolean inputs context, or string 'true' on the event payload). Default false matches neither.
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true'))
+    # On workflow_call, github.event_name is the caller's event, so the boolean
+    # input itself is the deliver gate. The Grok clock caller hardcodes true.
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')) || inputs.i_mean_it_deliver == true || inputs.i_mean_it_deliver == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
