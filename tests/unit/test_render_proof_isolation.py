@@ -64,16 +64,19 @@ SECRET_RE = re.compile(
 )
 STAMP_IF = (
     "github.event_name != 'workflow_dispatch' || "
-    "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')"
+    "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof') && "
+    "inputs.mode != 'send_proof'"
 )
 BRIEF_IF = (
     "(github.event_name != 'workflow_dispatch' || "
     "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && "
     "(github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && "
     "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))"
+    " && inputs.mode != 'send_proof'"
 )
 CAPTURE_JOB_IF = "github.event_name == 'workflow_dispatch' && inputs.mode == 'capture_proof'"
 RENDER_JOB_IF = "github.event_name == 'workflow_dispatch' && inputs.mode == 'render_proof'"
+SEND_JOB_IF = "github.event_name == 'workflow_dispatch' && inputs.mode == 'send_proof'"
 STEP_READY = "steps.gate.outputs.ready == 'true'"
 STEP_RECEIPT = "success() && steps.gate.outputs.ready == 'true'"
 STEP_SEND_PATH = (
@@ -140,15 +143,17 @@ def _job_runs(expr: str | None, event: str, mode: str | None, *, deliver: bool =
     if expr is None:
         raise AssertionError("job has no if")
     if expr == STAMP_IF:
-        return event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
+        return event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof", "send_proof"}
     if expr == BRIEF_IF:
         mode_ok = event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
         deliver_ok = event == "schedule" or (event == "workflow_dispatch" and deliver)
-        return mode_ok and deliver_ok
+        return mode_ok and deliver_ok and mode != "send_proof"
     if expr == CAPTURE_JOB_IF:
         return event == "workflow_dispatch" and mode == "capture_proof"
     if expr == RENDER_JOB_IF:
         return event == "workflow_dispatch" and mode == "render_proof"
+    if expr == SEND_JOB_IF:
+        return event == "workflow_dispatch" and mode == "send_proof"
     raise AssertionError(f"unrecognised job if: {expr}")
 
 

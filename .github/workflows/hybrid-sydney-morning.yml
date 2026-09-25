@@ -85,7 +85,7 @@ on:
         description: >-
           Principal prove: stamp, then brief and POST to the Principal DM.
           Default false — Run workflow cannot send. The schedule path ignores this input.
-          Ignored when mode is capture_proof or render_proof.
+          Ignored when mode is capture_proof, render_proof, or send_proof.
         type: boolean
         default: false
         required: false
@@ -94,12 +94,14 @@ on:
           normal (default) is the morning stamp and, when i_mean_it_deliver is true, the brief and DM.
           capture_proof writes one Neon proof capture and skips stamp, brief, deliver, Telegram, receipts, and the ping.
           render_proof prints one live close and skips stamp, receipt, capture, deliver, Telegram, and the ping.
+          send_proof sends that same close once to the Principal DM and skips stamp, receipt, capture, Neon, and the ping.
         type: choice
         default: normal
         options:
           - normal
           - capture_proof
           - render_proof
+          - send_proof
         required: false
 
 # Push completion JSON and deliver receipts back to the run branch (GITHUB_TOKEN).
@@ -113,8 +115,8 @@ concurrency:
 
 jobs:
   stage1-stamp:
-    # mode=capture_proof and mode=render_proof skip the stamp. Schedule and mode=normal still stamp.
-    if: github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')
+    # mode=capture_proof, mode=render_proof, and mode=send_proof skip the stamp. Schedule and mode=normal still stamp.
+    if: github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof') && inputs.mode != 'send_proof'
     runs-on: ubuntu-latest
     outputs:
       scheduled_for: ${{ steps.stamp.outputs.scheduled_for }}
@@ -345,7 +347,7 @@ jobs:
     needs: stage1-stamp
     # Schedule ignores the input (#104 path). Dispatch runs only on explicit true
     # (boolean inputs context, or string 'true' on the event payload). Default false matches neither.
-    if: (github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))
+    if: (github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true'))) && inputs.mode != 'send_proof'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -740,6 +742,34 @@ jobs:
           echo "::error::DELIVER RECEIPT COMMIT-BACK FAILED: receipt JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. Job FAILS; a later trigger may retry only if this receipt is not on the branch."
           echo "::error::local receipt path: ${RECEIPT_PATH} scheduled_for=${SCHEDULED_FOR} run_id=${RUN_ID}"
           exit 1
+
+  # One Principal DM of the render_proof close. No stamp, receipt, Neon, or ping.
+  # Needs no other job. TELEGRAM_CHAT_ID is not mapped.
+  send-proof:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'send_proof'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID_PRINCIPAL_DM: ${{ secrets.TELEGRAM_CHAT_ID_PRINCIPAL_DM }}
+      POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      MM_DELIVERY_ENV_FILE: /tmp/mm-actions-brief-no-delivery.env
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        run: uv sync --all-packages
+
+      - name: Send one Principal DM (render_proof close, no stamp, no receipt, no ping)
+        run: |
+          set -euo pipefail
+          uv run python -m mm_briefing.send_proof
 
   # Weekend Neon proof. Same runner and the same retain path as the morning
   # job. Does not stamp, brief, deliver, write a receipt, or ping.

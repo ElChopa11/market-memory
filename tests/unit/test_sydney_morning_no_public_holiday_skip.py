@@ -23,12 +23,13 @@ UTC = timezone.utc
 CRONTAB = ROOT / "ops" / "host" / "crontab"
 WORKFLOW = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
 ROUTINE = "grok.sydney_morning"
-# True for schedule and for every dispatch except mode=capture_proof or
-# mode=render_proof. The host payload omits mode, so the workflow default
-# (normal) still stamps. No holiday, date, or quiet-hours clause.
+# True for schedule and for every dispatch except mode=capture_proof,
+# mode=render_proof, or mode=send_proof. The host payload omits mode, so the
+# workflow default (normal) still stamps. No holiday, date, or quiet-hours clause.
 STAGE1_IF = (
     "github.event_name != 'workflow_dispatch' || "
-    "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')"
+    "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof') && "
+    "inputs.mode != 'send_proof'"
 )
 
 
@@ -36,13 +37,21 @@ def _stage1_stamp_runs(expr: str, *, event_name: str, mode: str | None) -> bool:
     """Evaluate the one allowed stage1 if. Any other expression is refused.
 
     ``mode is None`` is an omitted workflow_dispatch input. That is not
-    capture_proof or render_proof, so the stamp runs. A schedule event ignores mode.
+    capture_proof, render_proof, or send_proof, so the stamp runs. A schedule
+    event ignores mode.
     """
     left, sep, right = expr.partition(" || ")
     assert sep == " || ", expr
     assert left == "github.event_name != 'workflow_dispatch'", expr
-    assert right == "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')", expr
-    return event_name != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
+    assert right == (
+        "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof') && "
+        "inputs.mode != 'send_proof'"
+    ), expr
+    return event_name != "workflow_dispatch" or mode not in {
+        "capture_proof",
+        "render_proof",
+        "send_proof",
+    }
 
 
 # Paths that decide whether the morning job runs or what it stamps.
@@ -173,6 +182,7 @@ def test_brief_and_deliver_do_not_special_case_labour_day(tmp_path) -> None:
     assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode=None) is True
     assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="capture_proof") is False
     assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="render_proof") is False
+    assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="send_proof") is False
     assert "github.event_name == 'schedule'" in brief
     assert "i_mean_it_deliver" in brief
     for rel in PATHS:

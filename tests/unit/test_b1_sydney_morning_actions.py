@@ -87,6 +87,7 @@ def test_hybrid_sydney_morning_brief_and_deliver_contract() -> None:
         "(github.event_name == 'schedule' || "
         "(github.event_name == 'workflow_dispatch' && "
         "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))"
+        " && inputs.mode != 'send_proof'"
     )
     assert deliver_if in brief
     assert brief.count("i_mean_it_deliver") >= 1
@@ -197,13 +198,13 @@ def test_brief_and_deliver_runbook_lists_secret_names() -> None:
 
 
 def _stamp_runs(event: str, mode: str | None) -> bool:
-    return event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
+    return event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof", "send_proof"}
 
 
 def _brief_runs(event: str, mode: str | None, *, deliver: bool) -> bool:
     mode_ok = event != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
     deliver_ok = event == "schedule" or (event == "workflow_dispatch" and deliver)
-    return mode_ok and deliver_ok
+    return mode_ok and deliver_ok and mode != "send_proof"
 
 
 def _capture_runs(event: str, mode: str | None) -> bool:
@@ -220,20 +221,22 @@ def test_render_proof_skips_stamp_brief_capture_and_has_no_send_secrets() -> Non
     jobs = parsed["jobs"]
     on_block = parsed[True] if True in parsed else parsed["on"]
     options = on_block["workflow_dispatch"]["inputs"]["mode"]["options"]
-    assert options == ["normal", "capture_proof", "render_proof"]
+    assert options == ["normal", "capture_proof", "render_proof", "send_proof"]
     stamp = jobs["stage1-stamp"]["if"]
     brief = jobs["brief-and-deliver"]["if"]
     capture = jobs["capture-proof"]["if"]
     render = jobs["render-proof"]["if"]
     assert stamp == (
         "github.event_name != 'workflow_dispatch' || "
-        "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')"
+        "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof') && "
+        "inputs.mode != 'send_proof'"
     )
     assert brief == (
         "(github.event_name != 'workflow_dispatch' || "
         "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && "
         "(github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && "
         "(inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))"
+        " && inputs.mode != 'send_proof'"
     )
     assert capture == "github.event_name == 'workflow_dispatch' && inputs.mode == 'capture_proof'"
     assert render == "github.event_name == 'workflow_dispatch' && inputs.mode == 'render_proof'"
