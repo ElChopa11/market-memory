@@ -65,6 +65,25 @@ uv run lab what-did-we-know --at 2026-09-10T00:00:00Z
 uv run lab what-did-we-know --at 2026-09-10T00:05:00Z --instrument BTC --metric mid_px
 ```
 
+## Actions persist (gated; ingest only)
+
+GitHub Actions does not ingest on the Sydney morning cron. `.github/workflows/hybrid-sydney-morning.yml` stays `--no-db` on the heartbeat and on `brief-and-deliver`. Persistence is a separate workflow: `.github/workflows/ingest-persist.yml`.
+
+**DO NOT RUN** until `lab migrate` has been applied to the target database and the Principal has said OK.
+
+| Control | Behaviour |
+|---|---|
+| Trigger | `workflow_dispatch` only. No `schedule`. No cron. Thursday cannot fire it. |
+| Input | `i_mean_it_persist` (boolean, default **false**). The job does not run unless it is true. |
+| Command | `uv run lab ingest --window 7d` with **no** `--no-db` and **no** `--no-objects`. |
+| Secrets | `POSTGRES_DSN`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`. Names only. |
+| Bucket | `MINIO_BUCKET` is not set. Code default bucket name is `market-memory`. |
+| Region | `S3_REGION=auto` is job env (not a secret) so the R2 client signs with region `auto`. |
+
+`brief-and-deliver` does not `need` this job and still passes `--no-db`, so a failed ingest write cannot fail the Thursday brief or the Principal DM.
+
+`lab ingest --window 7d` (no `--fixture`) is Hyperliquid only (`ingest_from_client`). **(a)** `fundingHistory` and `candleSnapshot` (interval `1h` from `config/ingest.yaml`) use the 7-day window. Timestamp fields are `time` and `t`. Snapshot types (`allMids`, `metaAndAssetCtxs`, `recentTrades`, `l2Book`, `predictedFundings`) are one call-time row; the window does not multiply them. Polygon and FRED are not called, so this command writes no equity history and no FRED series. It does not write Δ1D/Δ5D/Δ20D. Seven days of hourly `candle_close` is not 20 daily sessions, and the brief still passes `--no-db`, so day-one brief Δ columns stay unavailable. Detail is on the ingest-persist PR.
+
 `what_did_we_know(T)` returns observations with `as_of_knowledge <= T`. A claim with exchange `published_at`/`market_time` at 00:00 but ingested at 00:05 is **unknown** at 00:00. A snapshot ingested at T is known at T via the knowledge watermark; its `market_time` is **not** the operator window clock.
 
 ## What is ingested (read-only `/info`)
@@ -78,7 +97,7 @@ uv run lab what-did-we-know --at 2026-09-10T00:05:00Z --instrument BTC --metric 
 | Prices (window) | `candleSnapshot` | `candle_close` |
 | Liquidations | `recentTrades` when a `liquidation` object is present | `liquidation` |
 
-Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked ingest membership in `config/universe.yaml`). ETH, UNI, and AAVE remain ingested as **watch-only** (no thesis-priority membership); BTC is the crypto **in-universe** name. Equities on that universe file ingest via the **Polygon** adapter in Phase 5b (`mm_ingest.equities`; default vendor locked). SMH and XLF are watch-only; NVDA, AVGO, MSFT, META, JPM, XOM are in-universe. Membership is Principal language, not a Quant verdict. Settings: `config/ingest.yaml`.
+Instruments come from `config/instruments/perps.yaml` (BTC, ETH, UNI, AAVE — locked ingest membership in `config/universe.yaml`). ETH, UNI, and AAVE remain ingested as **watch-only** (no thesis-priority membership); BTC is the crypto **in-universe** name. Equities on that universe file have a **Polygon** adapter in Phase 5b (`mm_ingest.equities`; default vendor locked). The live `lab ingest` command without `--fixture` does not call it. SMH and XLF are watch-only; NVDA, AVGO, MSFT, META, JPM, XOM are in-universe. Membership is Principal language, not a Quant verdict. Settings: `config/ingest.yaml`.
 
 The Hyperliquid client **refuses** user-private types (`clearinghouseState`, `userFills`, `openOrders`, …). There is no `hl_trade` module. Phase 5b adds public `l2Book` to the allowlist.
 
