@@ -8,11 +8,13 @@ from __future__ import annotations
 import importlib
 import json
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
+from mm_common.enums import DataQuality
 from mm_common.env import PRINCIPAL_DM_CHAT_ID_ENV
 from mm_common.http import ERROR_NONE
+from mm_common.time import from_unix_ms
 from mm_delivery.format import escape_markdown_v2
 from mm_delivery.telegram import TelegramApiResult
 from mm_desks.deliver_receipt import ALREADY_DELIVERED, decide_deliver, write_deliver_receipt
@@ -26,6 +28,7 @@ from mm_ingest.mvp_retain import (
     proof_anchor_exclusion_sql,
     proof_count_sql,
     proof_prior_exclusion_sql,
+    load_mvp_retain_spec,
     run_morning_capture,
     run_proof_capture,
     sydney_anchor_date,
@@ -181,6 +184,83 @@ def test_readback_lower_than_written_shows_the_real_count() -> None:
     assert len(store.rows) == 75
     assert result.capture_rows == 10
     assert result.line == f"CAPTURE: 10/37 rows @ {NOW.isoformat()} · prior none"
+
+
+def test_empty_grouped_daily_keeps_prior_session_closes_and_counts_them() -> None:
+    """A shut US session is an empty grouped-daily body, not a holiday calendar.
+
+    The earlier session's vendor bar time stays on market_time. as_of_knowledge
+    stays the capture. Crypto still runs. The DM line counts the equity rows.
+    """
+    spec = load_mvp_retain_spec()
+    shut = date(2026, 9, 28)
+    prior = date(2026, 9, 25)
+    now = datetime(2026, 9, 28, 20, 32, tzinfo=UTC)
+    assert us_cash_session_date(now) == shut
+    bar = datetime(2026, 9, 25, 20, 0, tzinfo=UTC)
+    bar_ms = int(bar.timestamp() * 1000)
+
+    class _ShutPoly:
+        def __init__(self) -> None:
+            self.dates: list[date] = []
+            self.closed = False
+
+        def grouped_daily(self, session_date: date):
+            self.dates.append(session_date)
+            if session_date == shut:
+                return {"results": [], "resultsCount": 0}, ERROR_NONE
+            if session_date == prior:
+                results = [
+                    {"T": ticker, "c": 100 + index, "t": bar_ms}
+                    for index, ticker in enumerate(spec.equity_symbols)
+                ]
+                return {"results": results}, ERROR_NONE
+            return {"results": []}, ERROR_NONE
+
+        def close(self) -> None:
+            self.closed = True
+
+    class _Crypto(HL):
+        def __init__(self) -> None:
+            super().__init__()
+            self.calls: list[str] = []
+
+        def meta_and_asset_ctxs(self):
+            self.calls.append("metaAndAssetCtxs")
+            return []
+
+        def spot_meta_and_asset_ctxs(self):
+            self.calls.append("spotMetaAndAssetCtxs")
+            return []
+
+    store = MemStore()
+    hl = _Crypto()
+    poly = _ShutPoly()
+    result = _capture(
+        store,
+        now=now,
+        scheduled_for="2026-09-27T20:30:00Z",
+        hl=hl,
+        poly=poly,
+    )
+    assert result.wrote is True
+    assert "FAILED" not in result.line
+    assert result.line == f"CAPTURE: 75/37 rows @ {now.isoformat()} · prior none"
+    assert result.capture_rows == 75
+    assert hl.calls == ["metaAndAssetCtxs", "spotMetaAndAssetCtxs"]
+    assert poly.dates == [shut, prior]
+    closes = [env for env in store.last_envelopes if env.metric == "close"]
+    assert len(closes) == 17
+    assert all(env.market_time == from_unix_ms(bar_ms) for env in closes)
+    assert all(env.as_of_knowledge == now for env in closes)
+    assert all(env.ingested_at == now for env in closes)
+    assert all(env.market_time < env.as_of_knowledge for env in closes)
+    assert all(env.data_quality is DataQuality.STALE for env in closes)
+    assert all(env.identity.value is not None for env in closes)
+    assert {env.payload["session_date"] for env in closes} == {"2026-09-25"}
+    assert {env.payload["requested_session_date"] for env in closes} == {"2026-09-28"}
+    crypto = [env for env in store.last_envelopes if env.metric != "close"]
+    assert len(crypto) == 58
 
 
 def test_partial_polygon_persists_null_closes_and_reports_readback() -> None:

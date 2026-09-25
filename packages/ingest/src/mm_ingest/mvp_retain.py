@@ -63,6 +63,8 @@ PRICE_ONLY_SYMBOL = "DRV"
 SPOT_PAIR_INDEX = 700
 CAPTURE_TIMEOUT_S = 90.0
 EXPECTED_INSTRUMENTS = 37
+# Empty grouped-daily (cash session shut) tries earlier weekdays. Not a holiday list.
+GROUPED_EMPTY_WALK = 8
 NY_TZ = ZoneInfo("America/New_York")
 _CASH_CLOSE = time(16, 0)
 
@@ -255,6 +257,7 @@ def build_retain_envelopes(
     captured_at: datetime,
     prior_captured_at: datetime | None = None,
     session_date: date | None = None,
+    requested_session: date | None = None,
     spot_meta_and_asset_ctxs: Any | None = None,
     grouped_error: str | None = None,
 ) -> list[ObservationEnvelope]:
@@ -295,6 +298,7 @@ def build_retain_envelopes(
             grouped_error=grouped_error,
             captured_at=captured,
             session_date=session_date,
+            requested_session=requested_session,
         )
     )
     _stamp_interval(envelopes, captured_at=captured, prior_captured_at=prior_captured_at)
@@ -312,11 +316,16 @@ def capture_mvp_retain(
     capture_kind: str = SNAPSHOT_CAPTURE_KIND,
     capture_id: str | None = None,
 ) -> list[ObservationEnvelope]:
-    """Perp meta, one grouped-daily read, then spot meta for DRV. No Postgres."""
+    """Perp meta, grouped-daily, then spot meta for DRV. No Postgres.
+
+    An empty grouped-daily body walks earlier weekdays until a body has bars.
+    That walk is not a holiday calendar. A Polygon error does not raise and
+    does not skip the crypto calls.
+    """
     if isinstance(session_date, datetime) or not isinstance(session_date, date):
         raise TypeError("capture_mvp_retain takes one session date")
     ctxs = hl_client.meta_and_asset_ctxs()
-    grouped, error = polygon_adapter.grouped_daily(session_date)
+    grouped, error, used_session = _read_grouped_session(polygon_adapter, session_date)
     spot = hl_client.spot_meta_and_asset_ctxs()
     token = _CAPTURE_TAG.set((capture_kind, capture_id))
     try:
@@ -327,7 +336,8 @@ def capture_mvp_retain(
             grouped_error=error,
             captured_at=captured_at,
             prior_captured_at=prior_captured_at,
-            session_date=session_date,
+            session_date=used_session,
+            requested_session=session_date,
             spot_meta_and_asset_ctxs=spot,
         )
     finally:
@@ -539,6 +549,42 @@ def _token_names(meta: dict[str, Any], token_ids: list[Any]) -> list[str] | None
     return [by_index.get(token_id, "") for token_id in token_ids]
 
 
+def _previous_weekday(day: date) -> date:
+    nxt = day - timedelta(days=1)
+    while nxt.weekday() >= 5:
+        nxt = nxt - timedelta(days=1)
+    return nxt
+
+
+def _grouped_results_empty(payload: Any) -> bool:
+    if not isinstance(payload, dict):
+        return True
+    results = payload.get("results")
+    return not isinstance(results, list) or len(results) == 0
+
+
+def _read_grouped_session(polygon_adapter: Any, session_date: date) -> tuple[Any, str, date]:
+    """Grouped-daily for ``session_date``, then earlier weekdays while the body is empty.
+
+    The first body that contains bars wins. Its calendar date is the session
+    stored on the equity rows. A transport error stops the walk and does not raise.
+    """
+    day = session_date
+    last_payload: Any = None
+    for _ in range(GROUPED_EMPTY_WALK):
+        try:
+            payload, error = polygon_adapter.grouped_daily(day)
+        except Exception:
+            return None, "fetch", session_date
+        if error not in (None, "", ERROR_NONE):
+            return None, str(error), session_date
+        last_payload = payload
+        if not _grouped_results_empty(payload):
+            return payload, ERROR_NONE, day
+        day = _previous_weekday(day)
+    return last_payload, ERROR_NONE, session_date
+
+
 def _equity_envelopes(
     spec: MvpRetainSpec,
     *,
@@ -546,9 +592,15 @@ def _equity_envelopes(
     grouped_error: str | None,
     captured_at: datetime,
     session_date: date | None,
+    requested_session: date | None = None,
 ) -> list[ObservationEnvelope]:
     failed = grouped_error not in (None, "", ERROR_NONE)
     rows = {} if failed else _filter_grouped(grouped_daily, set(spec.equity_symbols))
+    used_earlier = (
+        session_date is not None
+        and requested_session is not None
+        and session_date < requested_session
+    )
     out: list[ObservationEnvelope] = []
     for ticker in spec.equity_symbols:
         row = rows.get(ticker)
@@ -565,6 +617,8 @@ def _equity_envelopes(
             resolution = f"grouped_daily_{grouped_error}"
         elif row is None:
             resolution = "absent_from_grouped_daily"
+        elif used_earlier:
+            resolution = "grouped_daily_prior_session"
         payload = _policy_payload(
             spec,
             symbol=ticker,
@@ -574,8 +628,11 @@ def _equity_envelopes(
         )
         if session_date is not None:
             payload["session_date"] = session_date.isoformat()
+        if used_earlier and requested_session is not None:
+            payload["requested_session_date"] = requested_session.isoformat()
         if failed:
             payload["error_class"] = grouped_error
+        stale = used_earlier and not missing and not failed
         out.append(
             _envelope(
                 source_name="polygon",
@@ -588,6 +645,7 @@ def _equity_envelopes(
                 payload=payload,
                 missing_fields=missing,
                 venue="equity",
+                quality=DataQuality.STALE if stale else None,
             )
         )
     return out
@@ -659,6 +717,7 @@ def _envelope(
     payload: dict[str, Any],
     missing_fields: tuple[str, ...],
     venue: str,
+    quality: DataQuality | None = None,
 ) -> ObservationEnvelope:
     captured = as_utc(captured_at)
     captured_iso = captured.isoformat()
@@ -688,7 +747,7 @@ def _envelope(
         historical=False,
         missing_fields=missing_fields,
         venue=venue,
-        data_quality=DataQuality.PARTIAL if missing_fields else None,
+        data_quality=DataQuality.PARTIAL if missing_fields else quality,
     )
 
 

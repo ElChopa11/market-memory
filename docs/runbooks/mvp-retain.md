@@ -10,6 +10,8 @@ The DM line uses the **read-back** row count:
 
 `captured_at` is the actual capture time (UTC) and is lockstep on `published_at`, `ingested_at`, and `as_of_knowledge`. `prior_captured_at` is the latest capture for a different anchor date, or null. When it is earlier, each row stores `interval_seconds`. The anchor date is the Sydney calendar date of the stamp's `SCHEDULED_FOR`.
 
+Every weekday captures. There is no holiday calendar. Crypto is read on every capture. When the US cash session's grouped-daily body is empty, equity closes come from the most recent earlier weekday whose body has bars. `market_time` is that vendor bar time. `as_of_knowledge` stays the capture time. Those equity rows are `STALE`. An empty equity lane does not fail the capture and does not change the DM line to `CAPTURE: FAILED`.
+
 The deliver receipt field `capture_rows` is that same read-back count, or null when the capture failed or was not rewritten.
 
 ## Proof of write
