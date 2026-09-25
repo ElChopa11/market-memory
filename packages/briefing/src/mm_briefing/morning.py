@@ -12,7 +12,7 @@ from mm_common.time import as_utc
 from mm_briefing.divergences import fmt_pct, fmt_px
 from mm_briefing.freshness import format_quality_with_age
 from mm_briefing.health import load_presentation_config, score_data_health
-from mm_briefing.hl import basis_mark_oracle, funding_value, liquidation_size_sum, oi_change_pct
+from mm_briefing.hl import basis_mark_oracle, funding_value, liquidation_size_sum
 from mm_briefing.models import (
     ASSET_ORDER,
     AssetPrint,
@@ -58,13 +58,18 @@ _CLOSE_METRIC = "close"
 NO_NEW_SESSION_PREFIX = "no new session since"
 NO_NEW_PRINT_PREFIX = "no new print since"
 
-# (reader metric, label, value getter name)
+# (reader metric, label). Mid is the headline last, so it is not repeated here.
+# Funding and open interest need a prior capture; otherwise they are gaps.
 _POSITION_METRICS = (
     ("funding", "Funding"),
     ("open_interest", "Open interest"),
-    ("mid_px", "Mid"),
     ("liquidations", "Liquidations (window sum)"),
 )
+_PRIOR_REQUIRED_METRICS = frozenset({"funding", "open_interest"})
+# metaAndAssetCtxs ``funding`` matches the hourly payment. HL's formula is an
+# 8h rate paid each hour at one eighth; the interest baseline is 0.00125%/hour
+# (0.0000125). Annualised percent = hourly rate × 24 × 365 × 100.
+_FUNDING_HOURS_PER_YEAR = 24 * 365
 
 
 def render_morning_close(
@@ -82,6 +87,8 @@ def render_morning_close(
     session_tz: str = "America/New_York",
     lab_tz: str = "Australia/Sydney",
     prior_reader: PriorCaptureReader | None = None,
+    lead_lines: tuple[str, ...] = (),
+    closing_lines: tuple[str, ...] = (),
 ) -> BriefDocument:
     """Render the morning brief. ``overnight`` is not reprinted (no reference block)."""
     del overnight  # the price table is the session print; the reference block is gone
@@ -90,15 +97,19 @@ def render_morning_close(
     syd = generated_at.astimezone(SYDNEY_TZ)
     presentation = load_presentation_config()
     health = score_data_health(session.assets, hl, config=presentation)
-    lines: list[str] = [
-        f"# US Close Brief — {session_date.isoformat()}",
-        "",
+    lines: list[str] = [f"# US Close Brief — {session_date.isoformat()}", ""]
+    for lead in lead_lines:
+        text = lead.strip()
+        if text:
+            lines.append(text)
+    if lead_lines:
+        lines.append("")
+    lines.append(
         (
             f"UTC {iso(generated_at)} | New York {iso(ny)} ({ny.tzname() or session_tz}) | "
             f"Sydney {iso(syd)} ({syd.tzname() or lab_tz})"
-        ),
-        f"As-of knowledge: {iso(as_of)}",
-    ]
+        )
+    )
     health_line = health.morning_line(icons=presentation.icons)
     if health_line:
         lines.append(health_line)
@@ -126,7 +137,13 @@ def render_morning_close(
     if catalyst_lines:
         lines.extend(["", "## Catalysts", ""])
         lines.extend(catalyst_lines)
-    markdown = "\n".join(lines).rstrip() + "\n"
+    extras = [line.rstrip() for line in closing_lines if line.strip()]
+    if extras:
+        lines.append("")
+        lines.extend(extras)
+    # One pre block. MarkdownV2 does not render pipe tables; the fence is the
+    # fixed-width message Telegram shows. Status lines appended later stay outside.
+    markdown = "```\n" + "\n".join(lines).rstrip() + "\n```\n"
     return BriefDocument(
         kind="close",
         session_date=session_date,
@@ -147,11 +164,14 @@ def _price_rows(
     knowledge_as_of: datetime,
     prior_reader: PriorCaptureReader | None,
 ) -> list[str]:
+    """Headline block. Source, quality, and label are not columns.
+
+    Telegram MarkdownV2 does not render pipe tables, so the rows sit in a
+    preformatted fence. A quality marker is appended only when the row is
+    not fresh. Labels live in ``docs/specs/brief-row-labels.md``.
+    """
     by_symbol = {row.symbol.upper(): row for row in assets}
-    lines = [
-        "| Symbol | Last | Δ | Source | Quality | Label |",
-        "|---|---:|---:|---|---|---|",
-    ]
+    body = [f"{'Symbol':<6} {'Last':>10}  Change"]
     for symbol in ASSET_ORDER:
         row = by_symbol.get(symbol)
         if row is None:
@@ -165,15 +185,12 @@ def _price_rows(
                 as_of=knowledge_as_of,
             )
         delta = _change_cell(row, prior_reader)
-        quality = format_quality_with_age(
-            row.data_quality,
-            observation_as_of=row.as_of,
-            reference_as_of=knowledge_as_of,
-        )
-        lines.append(
-            f"| {display_symbol(row)} | {fmt_px(row.last)} | {delta} | {row.source} | {quality} | {_label(row)} |"
-        )
-    return lines
+        marker = _row_quality_marker(row, knowledge_as_of)
+        line = f"{display_symbol(row):<6} {fmt_px(row.last):>10}  {delta}"
+        if marker:
+            line += f"  {marker}"
+        body.append(line)
+    return body
 
 
 def _observation_date(value: datetime | date | None) -> date | None:
@@ -185,10 +202,40 @@ def _observation_date(value: datetime | date | None) -> date | None:
     return value
 
 
-def _numeric_delta(row: AssetPrint) -> str:
+def _row_quality_marker(row: AssetPrint, knowledge_as_of: datetime) -> str:
+    """Empty when fresh. Stale keeps its age. Anything else is the state name."""
+    label = format_quality_with_age(
+        row.data_quality,
+        observation_as_of=row.as_of,
+        reference_as_of=knowledge_as_of,
+    )
+    if label == "fresh":
+        return ""
+    return label
+
+
+def format_funding_annualised(rate: float | None) -> str:
+    """Hourly HL funding as an annualised percent."""
+    if rate is None:
+        return "n/a"
+    pct = rate * _FUNDING_HOURS_PER_YEAR * 100.0
+    return f"{pct:.2f}% ann"
+
+
+def _fmt_oi(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    return f"{round(value):,}"
+
+
+def _numeric_delta(row: AssetPrint, prior: PriorCaptureValue | None) -> str:
     if row.unit == "%":
         return f"{row.change_bp:+.1f}bp" if row.change_bp is not None else "n/a"
-    return fmt_pct(row.change_pct)
+    if row.change_pct is not None:
+        return fmt_pct(row.change_pct)
+    if prior is not None and prior.value not in (None, 0) and row.last is not None:
+        return fmt_pct((row.last - prior.value) / prior.value * 100.0)
+    return "n/a"
 
 
 def _change_cell(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> str:
@@ -198,11 +245,11 @@ def _change_cell(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> st
     observation date. A later as-of with an unchanged value is a real zero.
     Crypto always prints the computed change. No prior keeps that change.
     """
-    numeric = _numeric_delta(row)
     symbol = row.symbol.upper()
+    prior = read_prior(prior_reader, symbol, _CLOSE_METRIC)
+    numeric = _numeric_delta(row, prior)
     if symbol in _CRYPTO_SLOTS or row.last is None:
         return numeric
-    prior = read_prior(prior_reader, symbol, _CLOSE_METRIC)
     if prior is None or prior.observation_as_of is None or row.as_of is None:
         return numeric
     current_day = _observation_date(row.as_of)
@@ -214,14 +261,6 @@ def _change_cell(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> st
     if symbol in _SESSION_SLOTS:
         return f"{NO_NEW_SESSION_PREFIX} {current_day.isoformat()}"
     return numeric
-
-
-def _label(row: AssetPrint) -> str:
-    name = row.name.strip() or row.symbol
-    shown = display_symbol(row)
-    if shown.upper() != row.symbol.upper() and "proxy" not in name.lower():
-        return f"{name} (proxy for {row.symbol})"
-    return name
 
 
 def _positioning(
@@ -242,8 +281,8 @@ def _positioning(
         for metric_name, label in _POSITION_METRICS:
             current = _metric_value(state, metric_name)
             prior = read_prior(prior_reader, state.instrument, metric_name)
-            if _show_metric(current, prior):
-                lines.append(_metric_line(state, metric_name, label, current))
+            if _show_metric(metric_name, current, prior):
+                lines.append(_metric_line(state, metric_name, label, current, prior))
             else:
                 gaps.append(f"{state.instrument} {label}")
         basis_prior = read_prior(prior_reader, state.instrument, "basis")
@@ -261,8 +300,18 @@ def _positioning(
     return lines
 
 
-def _show_metric(current: float | None, prior: PriorCaptureValue | None) -> bool:
-    """Non-zero, or changed versus the prior capture. No prior → non-zero only."""
+def _show_metric(
+    metric_name: str,
+    current: float | None,
+    prior: PriorCaptureValue | None,
+) -> bool:
+    """Non-zero, or changed versus the prior capture.
+
+    Funding and open interest with no prior are gaps, even when non-zero.
+    A zero that matches the prior stays on the gaps line.
+    """
+    if metric_name in _PRIOR_REQUIRED_METRICS and prior is None:
+        return False
     if _nonzero(current):
         return True
     if prior is None:
@@ -299,24 +348,28 @@ def _metric_value(state: HLInstrumentState, metric_name: str) -> float | None:
         return None
 
 
-def _metric_line(state: HLInstrumentState, metric_name: str, label: str, current: float | None) -> str:
-    text = f"{state.instrument} {label}: {_fmt_metric(metric_name, current)}"
-    if metric_name == "open_interest":
-        delta = oi_change_pct(state)
-        if delta is not None:
-            text += f" Δ {delta:+.2f}%"
+def _metric_line(
+    state: HLInstrumentState,
+    metric_name: str,
+    label: str,
+    current: float | None,
+    prior: PriorCaptureValue | None,
+) -> str:
+    if metric_name == "funding":
+        text = f"{state.instrument} {label}: {format_funding_annualised(current)}"
+        if prior is not None:
+            text += f" (prior {format_funding_annualised(prior.value)})"
+    elif metric_name == "open_interest":
+        text = f"{state.instrument} {label}: {_fmt_oi(current)}"
+        if prior is not None and prior.value is not None and current is not None and prior.value != 0:
+            delta = (current - prior.value) / prior.value * 100.0
+            text += f" (prior {_fmt_oi(prior.value)}, Δ {delta:+.2f}%)"
+    else:
+        text = f"{state.instrument} {label}: {_fmt_num(current)}"
     obs = _metric_obs(state, metric_name)
     if obs:
         text += f" obs {obs}"
     return text
-
-
-def _fmt_metric(metric_name: str, value: float | None) -> str:
-    if value is None:
-        return "n/a"
-    if metric_name == "funding":
-        return f"{value:.6f}"
-    return _fmt_num(value)
 
 
 def _fmt_num(value: float | None) -> str:

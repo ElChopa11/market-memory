@@ -16,6 +16,15 @@ def test_escape_markdown_v2_covers_reserved_set() -> None:
     assert escape_markdown_v2("BTC 1.0") == "BTC 1\\.0"
 
 
+def test_fenced_pre_block_keeps_inner_text_literal() -> None:
+    raw = "UTC 2026-09-24T23:17:25+00:00\n```\nSPY 767.81  no new session since 2026-09-23\n```\n"
+    escaped = escape_markdown_v2(raw)
+    assert "```" in escaped
+    assert "SPY 767.81  no new session since 2026-09-23" in escaped
+    assert r"2026\-09\-24" in escaped
+    assert r"767\.81" not in escaped
+
+
 def test_short_message_is_single_unprefixed_chunk() -> None:
     chunks = chunk_markdown_v2("hello")
     assert chunks == ("hello",)

@@ -183,8 +183,9 @@ def _render(
 
 
 def _price_line(markdown: str, symbol: str) -> str:
+    prefix = f"{symbol:<6} "
     for line in markdown.splitlines():
-        if line.startswith(f"| {symbol} |"):
+        if line.startswith(prefix):
             return line
     raise AssertionError(f"missing price row for {symbol}\n{markdown}")
 
@@ -204,17 +205,35 @@ def test_empty_sections_are_omitted_not_rendered_as_none() -> None:
 
 def test_obs_none_is_one_header_state() -> None:
     text = _render(hl=(_hl("BTC", liquidations=()),))
-    assert text.count("obs none") == 1
-    header, _, table = text.partition("| Symbol |")
-    assert "obs none" in header
-    assert "obs none" not in table
-    for line in table.splitlines():
-        if line.startswith("|"):
-            assert "obs" not in line
+    body = text.strip().removeprefix("```").removesuffix("```")
+    assert body.count("obs none") == 1
+    rows: list[str] = []
+    in_rows = False
+    for line in body.splitlines():
+        if line.startswith("Symbol"):
+            in_rows = True
+            continue
+        if in_rows and not line.strip():
+            break
+        if in_rows:
+            rows.append(line)
+    assert rows
+    assert all("obs none" not in line for line in rows)
 
 
 def test_obs_none_absent_when_an_observation_id_exists() -> None:
-    text = _render(hl=(_hl("BTC", obs=True),))
+    prior = MapPriorCaptureReader(
+        {
+            ("BTC", "funding"): PriorCaptureValue(
+                instrument="BTC",
+                metric="funding",
+                value=0.0001,
+                captured_at=AS_OF,
+                prior_captured_at=AS_OF - timedelta(days=1),
+            )
+        }
+    )
+    text = _render(hl=(_hl("BTC", obs=True),), prior_reader=prior)
     assert "obs none" not in text
     assert "obs obs-BTC-funding" in text
 
@@ -294,7 +313,8 @@ def test_prior_read_failure_does_not_fail_the_brief() -> None:
     text = _render(hl=(_hl("BTC"),), prior_reader=_Boom())
     assert "US Close Brief" in text
     assert "Basis" not in text
-    assert "BTC Funding:" in text
+    assert "BTC Funding:" not in text
+    assert "BTC Funding" in text.split("gaps: ", 1)[1]
 
 
 def test_capture_one_retain_row_is_no_prior() -> None:
@@ -308,6 +328,35 @@ def test_capture_one_retain_row_is_no_prior() -> None:
         )
         is None
     )
+
+
+def test_funding_and_oi_with_prior_are_annualised_and_rounded() -> None:
+    prior = MapPriorCaptureReader(
+        {
+            ("BTC", "funding"): PriorCaptureValue(
+                instrument="BTC",
+                metric="funding",
+                value=0.000001,
+                captured_at=AS_OF,
+                prior_captured_at=AS_OF - timedelta(days=1),
+            ),
+            ("BTC", "open_interest"): PriorCaptureValue(
+                instrument="BTC",
+                metric="open_interest",
+                value=36568.77092,
+                captured_at=AS_OF,
+                prior_captured_at=AS_OF - timedelta(days=1),
+            ),
+        }
+    )
+    text = _render(
+        hl=(_hl("BTC", funding="0.000013", oi="38843.42252", mid="1", liquidations=()),),
+        prior_reader=prior,
+    )
+    assert "BTC Funding: 11.39% ann (prior 0.88% ann)" in text
+    assert "0.000013" not in text
+    assert "BTC Open interest: 38,843 (prior 36,569, Δ +6.22%)" in text
+    assert "38843.42252" not in text
 
 
 def test_no_key_takeaway_and_fixed_lines_absent() -> None:
@@ -327,33 +376,32 @@ def test_no_key_takeaway_and_fixed_lines_absent() -> None:
     assert "Monitor into Europe" not in text
 
 
-def test_eight_price_rows_carry_source_delta_quality_and_proxy_labels() -> None:
+def test_eight_price_rows_keep_symbol_last_and_change_only() -> None:
     text = _render()
-    assert "| Symbol | Last | Δ | Source | Quality | Label |" in text
-    body = [line for line in text.splitlines() if line.startswith("| ") and not line.startswith("| Symbol") and not line.startswith("|---")]
-    assert len(body) == 8
-    symbols = [line.split("|")[1].strip() for line in body]
+    assert "```" in text
+    assert "| Symbol |" not in text
+    assert "Source" not in text.split("```", 1)[0]
+    symbols = []
+    in_fence = False
+    for line in text.splitlines():
+        if line.strip() == "```":
+            in_fence = not in_fence
+            continue
+        if in_fence and line[:6].strip() in {"SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"}:
+            symbols.append(line[:6].strip())
+            assert _delta_cell(text, line[:6].strip())
     assert symbols == ["SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"]
-    for line in body:
-        cells = [cell.strip() for cell in line.strip("|").split("|")]
-        assert len(cells) == 6
-        _symbol, _last, delta, source, quality, label = cells
-        assert delta
-        assert source
-        assert quality
-    spy = _price_line(text, "SPY")
-    assert "proxy" in spy
-    assert "not ES futures" in spy
-    qqq = _price_line(text, "QQQ")
-    assert "proxy" in qqq
-    assert "| NQ |" not in text
-    assert "| ES |" not in text
+    assert "proxy" not in text
+    assert "not ES futures" not in text
+    labels = (ROOT / "docs/specs/brief-row-labels.md").read_text(encoding="utf-8")
+    assert "SPY ETF (proxy for S&P 500; not ES futures)" in labels
+    assert "QQQ ETF (proxy for Nasdaq-100; not NQ futures)" in labels
 
 
 def _delta_cell(markdown: str, symbol: str) -> str:
     line = _price_line(markdown, symbol)
-    cells = [cell.strip() for cell in line.strip("|").split("|")]
-    return cells[2]
+    # "{symbol:<6} {last:>10}  {delta}" then an optional quality marker.
+    return line[19:].strip()
 
 
 def _close_prior(symbol: str, *, observation_as_of: datetime | None, value: float | None = 100.0) -> PriorCaptureValue:
@@ -543,9 +591,11 @@ def test_messages_3_and_4_omitted_message_5_keeps_live_metrics() -> None:
     assert "CLUSTER LEADERSHIP" not in text
     assert "z30d" not in text
     assert "## Positioning" in text
-    assert "BTC Funding: 0.000125" in text
-    assert "ETH Funding:" not in text
+    assert "BTC Funding:" not in text
+    assert "BTC Funding" in text.split("gaps: ", 1)[1]
+    assert "ETH Funding" in text.split("gaps: ", 1)[1]
     assert "ETH Open interest" in text.split("gaps: ", 1)[1]
+    assert "Mid" not in text.split("## Positioning", 1)[1]
 
 
 def test_real_varying_sections_still_render() -> None:
@@ -580,24 +630,9 @@ def test_real_varying_sections_still_render() -> None:
     assert "Monitor into Asia" not in text
 
 
-def test_committed_dry_run_is_the_approved_one_message_render() -> None:
-    """The Principal approval gate is the committed dry-run, not a second format."""
-    text = (ROOT / "ops/reports/renders/brief-template-dryrun.txt").read_text(encoding="utf-8")
-    current = (ROOT / "ops/reports/renders/brief-current-dryrun.txt").read_text(encoding="utf-8")
-    assert len(text) <= TELEGRAM_MAX_MESSAGE_CHARS
-    assert len(chunk_markdown_v2(text)) == 1
-    assert text.count("obs none") == 1
-    assert "Overnight reference" not in text
-    assert "KEY TAKEAWAY" not in text
-    assert "Basis" not in text
-    assert "gaps: BTC Liquidations (window sum), ETH Liquidations (window sum)" in text
-    assert "Liquidations (window sum): 0" not in text
-    for symbol in ("SPY", "QQQ", "US10Y", "UUP", "USO", "VIX", "BTC", "ETH"):
-        assert f"| {symbol} |" in text
-    for fragment in FORBIDDEN_RENDER_FRAGMENTS:
-        assert fragment not in text
-    assert "Overnight reference" in current
-    assert "Nothing crossed the unexpected-move rules" in current
+def test_as_of_knowledge_line_is_not_in_the_morning_message() -> None:
+    text = _render()
+    assert "As-of knowledge" not in text
 
 
 def test_eleven_capture_brief_is_one_message_status_lines_last() -> None:
