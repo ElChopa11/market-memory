@@ -8,7 +8,7 @@ The catalog anchor is `grok.sydney_morning` in `config/schedules/routines.yaml`:
 
 `workflow_dispatch` on workflow file `hybrid-sydney-morning.yml`.
 
-Draft PR [#124](https://github.com/ElChopa11/market-memory/pull/124) is **open and unmerged**. It strips `workflow_dispatch` from `promote-gate.yml` and allowlists that trigger to `hybrid-sydney-morning.yml` only. This host matches what #124 specifies: `workflow_dispatch`, not `repository_dispatch`. Until #124 merges, `promote-gate.yml` on `main` still declares `workflow_dispatch`. The dispatch script refuses any workflow name other than `hybrid-sydney-morning.yml`, so it does not call promote-gate. After #124 merges, the allowlist test is what keeps a later pull request from adding `workflow_dispatch` anywhere else.
+[#124](https://github.com/ElChopa11/market-memory/pull/124) is merged on `main`. It strips `workflow_dispatch` from `promote-gate.yml` and allowlists that trigger to `hybrid-sydney-morning.yml` only (`tests/unit/test_workflow_dispatch_allowlist.py`). This host uses `workflow_dispatch`, not `repository_dispatch`. The dispatch script refuses any workflow name other than `hybrid-sydney-morning.yml`.
 
 The script POSTs:
 
@@ -27,7 +27,7 @@ Do not remove or edit these lines in `.github/workflows/hybrid-sydney-morning.ym
 - `30 20 * * 0-4` — weekday 06:30 Australia/Sydney while AEST (UTC+10) is in force
 - `30 22 * * 0-4` — weekday 08:30 Australia/Sydney while AEST (UTC+10) is in force
 
-GitHub evaluates `schedule` in UTC. Sydney daylight saving starts Sunday 4 Oct 2026 (02:00 AEST becomes 03:00 AEDT, UTC+11). Those two cron lines then land an hour earlier in Sydney wall time. Leave them. The host cron is the Sydney wall-clock trigger. Idempotency makes the second trigger a no-op for the DM: the deliver receipt is one per `scheduled_anchor_ts` (the catalog 06:30 anchor of that Sydney date, not `run_id`). The first successful send writes the receipt. A later Actions cron or a second host fire for that same anchor exits 0 with `already_delivered` and does not POST Telegram. Completion rows are separate: each trigger keeps its own row (see below). A failed send writes no receipt, so a later trigger may still deliver once.
+GitHub evaluates `schedule` in UTC. Sydney daylight saving starts Sunday 4 Oct 2026 (02:00 AEST becomes 03:00 AEDT, UTC+11). Those two cron lines then land an hour earlier in Sydney wall time. Leave them. The host cron is the Sydney wall-clock trigger. While AEST is in force, `30 20 * * 0-4` is the same 06:30 Sydney instant as this host. The workflow concurrency group `hybrid-sydney-morning` with `cancel-in-progress: false` queues the second run instead of cancelling it. The queued run checks out the branch tip and calls `decide_deliver` before brief or Telegram. If the first run pushed a deliver receipt for that `scheduled_anchor_ts`, the second logs `already_delivered` and does not POST. Each run still writes its own completion file. A failed send writes no receipt, so the queued run can still deliver once.
 
 ## DST wall clock
 

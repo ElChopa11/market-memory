@@ -258,5 +258,5 @@ def test_alembic_revision_ids_fit_version_num_varchar32() -> None:
     for rev in script.walk_revisions():
         assert len(rev.revision) <= 32, rev.revision
     head = alembic_head()
-    assert head == "0013_completion_per_run"
+    assert head == "0012_heartbeat_if_not_exists"
     assert len(head) <= 32

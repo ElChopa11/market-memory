@@ -509,14 +509,13 @@ class ScheduleHeartbeat(Base):
     __tablename__ = "schedule_heartbeat"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('ok','early','late','missed','skipped','wrong_anchor')",
+            "status IN ('ok','late','missed','skipped','wrong_anchor')",
             name="schedule_heartbeat_status_check",
         ),
         UniqueConstraint(
             "routine_id",
             "scheduled_anchor_ts",
-            "run_id",
-            name="schedule_heartbeat_routine_anchor_run_uidx",
+            name="schedule_heartbeat_routine_anchor_uidx",
         ),
         Index("schedule_heartbeat_as_of_idx", "as_of_knowledge"),
         Index("schedule_heartbeat_routine_idx", "routine_id"),

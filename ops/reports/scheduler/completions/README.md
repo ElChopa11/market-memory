@@ -38,7 +38,7 @@ Override: `--completions-dir` or `MM_SCHEDULE_COMPLETIONS_DIR`.
 
 1. CI / fixture clock: `--fixture tests/fixtures/scheduler/ci_clock.yaml` does **not** load this directory (isolated). Pass `--completions-dir` to merge disk rows into a fixture catalog (tests).
 2. Operator / Hive box: `lab schedule miss-check --no-db` loads this directory (and DB unless `--no-db`).
-3. Disk evidence is append-only per `run_id`. Two triggers on the same anchor are two files; the earlier file is not rewritten. Miss-sweep still indexes one row per `(routine_id, scheduled_anchor_ts)` for the closed-window check (best rank: `ok` > `late` > `early` > `skipped` > `missed`) and does not delete the other files. The optional `schedule_heartbeat` table uses the same per-run_id key. A refused wrong-anchor stamp is not a row. Deliver receipts stay one per anchor (`already_delivered`).
+3. Disk evidence is append-only per `run_id`. Two triggers on the same anchor are two files; the earlier file is not rewritten. Miss-sweep still indexes one row per `(routine_id, scheduled_anchor_ts)` for the closed-window check (best rank: `ok` > `late` > `early` > `skipped` > `missed`) and does not delete the other files. The optional `schedule_heartbeat` table stays one row per `(routine_id, scheduled_anchor_ts)`. The Sydney Morning Actions jobs pass `--no-db` and do not write that table. A refused wrong-anchor stamp is not a row. Deliver receipts stay one per anchor (`already_delivered`).
 4. `lab schedule miss-check --baseline-before today` writes `ops/reports/scheduler/known-missed-baseline.yaml` (pre-today Australia/Sydney windows labeled, not deleted).
 
 Hive clocks (catalog in `config/schedules/routines.yaml`):

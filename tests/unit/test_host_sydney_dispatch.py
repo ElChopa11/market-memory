@@ -71,12 +71,13 @@ def test_wall_clock_holds_across_4_oct_2026_dst_start() -> None:
     assert 'cron: "30 22 * * 0-4"' in workflow
 
 
-def test_runbook_matches_unmerged_124_workflow_dispatch() -> None:
+def test_runbook_matches_merged_124_workflow_dispatch() -> None:
     text = RUNBOOK.read_text(encoding="utf-8")
     assert "workflow_dispatch" in text
     assert "repository_dispatch" in text
     assert "#124" in text or "124" in text
-    assert "unmerged" in text
+    assert "merged" in text
+    assert "unmerged" not in text.lower()
     assert "hybrid-sydney-morning.yml" in text
     assert "i_mean_it_deliver" in text
     assert "CRON_TZ=Australia/Sydney" in text

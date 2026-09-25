@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dispatch hybrid-sydney-morning via the GitHub workflow_dispatch API.
 #
-# Draft PR #124 (unmerged) allowlists workflow_dispatch to this workflow only.
+# PR #124 (merged on main) allowlists workflow_dispatch to this workflow only.
 # This script matches that mechanism. It does not send repository_dispatch.
 # Execution (fetch, brief, capture, DM) stays on GitHub Actions.
 #
