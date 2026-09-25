@@ -3,33 +3,43 @@ US Close 2026-09-24
 
 Prior 2026-09-24T06:58:31Z
 RECORDED DATA, --no-send
+Crypto live HL 2026-09-25 08:12Z
 
 UTC 2026-09-24 23:17Z
 NY 2026-09-24 19:17 EDT
 SYD 2026-09-25 09:17 AEST
-Health 43% stale Equities USD Oil; n/a Vol
+Health 86% n/a Vol
+EQUITY T-1 BY DESIGN (close 2026-09-23)
 obs none
 
-SPY 767.81 no new session since 2026-09-23
-QQQ 741.21 no new session since 2026-09-23
+SPY 767.81 -0.72%
+QQQ 741.21 -0.84%
 US10Y 5.11 +15.0bp
-UUP 28.65 no new session since 2026-09-23
-USO 148.83 no new session since 2026-09-23
-BTC 84314.50 +0.23%
-ETH 2686.25 -0.06%
+UUP 28.65 +0.60%
+USO 148.83 +3.30%
+BTC 84096.50 -0.33%
+ETH 2677.45 -0.39%
+SOL 116.495 +1.11%
+HYPE 93.0205 -0.37%
+NEAR 4.54335 +5.00%
+ARB 0.21738 +0.69%
+UNI 9.14685 -0.42%
+VVV 31.5525 +1.76%
+ZEC 1584.85 +4.40%
+DOGE 0.095509 +1.23%
+XMR 571.3 +2.05%
+CHIP 0.046764 +9.76%
+LTC 71.2885 +3.24%
+PURR 0.13287 -0.33%
 
 Positioning
-BTC OI 38,843
- prior 36,569 +6.22%
-BTC basis -22.4
- prior -37.1
-ETH OI 1,064,527
- prior 1,075,430 -1.01%
-ETH basis -0.48
- prior 0.07
-gaps: VIX, BTC Funding, BTC Liquidations
-(window sum), ETH Funding, ETH
-Liquidations (window sum)
+VVV fund 38.74% ann
+ZEC fund 52.40% ann
+LTC fund 15.77% ann
+gaps: VIX, BTC Funding, ETH Funding, SOL
+Funding, HYPE Funding, NEAR Funding, ARB
+Funding, UNI Funding, DOGE Funding, XMR
+Funding, CHIP Funding, PURR Funding
 
 Earlier pair, not this session.
 2026-09-23T23:02:17Z

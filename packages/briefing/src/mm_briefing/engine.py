@@ -33,6 +33,7 @@ from mm_briefing.hl import (
     hl_has_metrics,
 )
 from mm_briefing.models import (
+    MORNING_HL_PERPS,
     AlertDecision,
     BriefDocument,
     HLInstrumentState,
@@ -355,7 +356,17 @@ def generate_from_sources(
             client = HyperliquidInfoClient()
             owns_client = True
         try:
-            hl = hl_from_live_info(client, captured_at=generated)
+            # Close uses the one metaAndAssetCtxs body for all morning perps.
+            # recentTrades stays on the pre-open path only.
+            if kind == "close":
+                hl = hl_from_live_info(
+                    client,
+                    instruments=MORNING_HL_PERPS,
+                    captured_at=generated,
+                    include_liquidations=False,
+                )
+            else:
+                hl = hl_from_live_info(client, captured_at=generated)
             hl_origin = LIVE_INFO_SOURCE
         finally:
             if owns_client:

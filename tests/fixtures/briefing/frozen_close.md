@@ -27,8 +27,6 @@ ETH fund -87.60% ann obs
 01FROZENETHFUNDING00000001
 ETH levels session_high=3580,
 session_low=3460
-gaps: BTC Open interest, ETH Open
-interest, ETH Liquidations (window sum)
 
 Unexpected
 

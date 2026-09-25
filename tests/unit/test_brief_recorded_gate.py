@@ -11,6 +11,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from mm_briefing.hl import hl_states_from_ctx_snapshot
 from mm_briefing.models import AssetPrint, HLInstrumentState, HLMetric, MacroSnapshot
 from mm_briefing.morning import PHONE_LINE_MAX, _change_cell, render_morning_close
 from mm_briefing.prior import MapPriorCaptureReader, PriorCaptureValue
@@ -20,6 +21,7 @@ from mm_delivery.format import TELEGRAM_MAX_MESSAGE_CHARS, chunk_markdown_v2
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "tests" / "fixtures" / "briefing" / "recorded_sydney_morning_20260924.json"
+LIVE_HL = ROOT / "tests" / "fixtures" / "briefing" / "hl_perps_live_20260925.json"
 TEMPLATE = ROOT / "ops" / "reports" / "renders" / "brief-template-dryrun.txt"
 CURRENT = ROOT / "ops" / "reports" / "renders" / "brief-current-dryrun.txt"
 UTC = timezone.utc
@@ -85,7 +87,13 @@ def _hl(name: str, spec: dict, *, as_of: datetime) -> HLInstrumentState:
     )
 
 
-def _prior_reader(payload: dict) -> MapPriorCaptureReader:
+def _live_hl() -> tuple[dict, tuple[HLInstrumentState, ...]]:
+    payload = json.loads(LIVE_HL.read_text(encoding="utf-8"))
+    states = hl_states_from_ctx_snapshot(payload, captured_at=_dt(payload["fetched_at"]))
+    return payload, states
+
+
+def _prior_reader(payload: dict, *, include_hl: bool = True) -> MapPriorCaptureReader:
     prior = payload["gate_prior"]
     captured = _dt(prior["generated_at"])
     values: dict[tuple[str, str], PriorCaptureValue] = {}
@@ -98,6 +106,12 @@ def _prior_reader(payload: dict) -> MapPriorCaptureReader:
             prior_captured_at=captured,
             observation_as_of=_dt(spec["observation_as_of"]),
         )
+    if include_hl:
+        _copy_hl_priors(prior, captured, values)
+    return MapPriorCaptureReader(values)
+
+
+def _copy_hl_priors(prior: dict, captured: datetime, values: dict) -> None:
     for name, spec in prior["hl"].items():
         for metric in ("funding", "open_interest", "basis"):
             values[(name, metric)] = PriorCaptureValue(
@@ -107,7 +121,6 @@ def _prior_reader(payload: dict) -> MapPriorCaptureReader:
                 captured_at=captured,
                 prior_captured_at=captured,
             )
-    return MapPriorCaptureReader(values)
 
 
 def gate_markdown(payload: dict | None = None) -> str:
@@ -124,10 +137,8 @@ def gate_markdown(payload: dict | None = None) -> str:
         data_quality="unavailable",
         source="recorded",
     )
-    hl = tuple(
-        _hl(name, spec, as_of=generated)
-        for name, spec in current["hl"].items()
-    )
+    live, hl = _live_hl()
+    live_stamp = _dt(live["fetched_at"])
     us10y = fred["us10y"]
     fred_row = AssetPrint(
         symbol="US10Y",
@@ -170,11 +181,12 @@ def gate_markdown(payload: dict | None = None) -> str:
         assumptions=(),
         hl=hl,
         data_quality="unavailable",
-        prior_reader=_prior_reader(payload),
+        prior_reader=_prior_reader(payload, include_hl=False),
         lead_lines=(
             "Prior 2026-09-24T06:58:31Z",
             "Now 2026-09-24T23:17:25Z",
             "RECORDED DATA, --no-send",
+            f"Crypto live HL {live_stamp.strftime('%Y-%m-%d %H:%MZ')}",
         ),
         closing_lines=closing,
     )
@@ -231,14 +243,24 @@ def test_recorded_gate_matches_committed_telegram_bytes() -> None:
     assert "Now " not in text
     assert "UTC 2026-09-24 23:17Z" in text
     assert "Earlier pair, not this session." in text
-    assert "no new session since 2026-09-23" in text
+    assert "EQUITY T-1 BY DESIGN (close 2026-09-23)" in text
+    assert "no new session since" not in text
     assert "no new print since 2026-09-22" in text
     assert "+15.0bp" in text
     assert "767.81" in text
-    assert "84314.50" in text
+    assert "SPY 767.81 -0.72%" in text
+    assert "84096.50" in text
+    assert "84314.50" not in text
+    assert "SOL 116.495 +1.11%" in text
+    assert "CHIP 0.046764 +9.76%" in text
+    assert "VVV fund 38.74% ann" in text
+    assert "ZEC fund 52.40% ann" in text
+    assert "LTC fund 15.77% ann" in text
+    assert " OI " not in text
+    assert "basis" not in text
     assert "11.39% ann" not in text
     assert "0.000013" not in text
-    assert "Health 43% stale Equities USD Oil; n/a Vol" in text
+    assert "Health 86% n/a Vol" in text
     assert "Rates fresh" not in text
     assert "Crypto fresh" not in text
     assert "Hyperliquid fresh" not in text

@@ -12,6 +12,7 @@ from mm_briefing.config import load_briefing_settings
 from mm_briefing.engine import generate_from_fixture, load_fixture_file
 from mm_briefing.models import (
     ASSET_ORDER,
+    MORNING_HL_PERPS,
     AssetPrint,
     CalendarEvent,
     HLInstrumentState,
@@ -289,10 +290,10 @@ def test_no_overnight_reference_block() -> None:
 
 def test_zero_metric_moves_to_gaps_and_returns_when_nonzero() -> None:
     zero = _render(hl=(_hl("BTC", funding="0.0000125", oi="0", mid="0", liquidations=()),))
-    assert "Liquidations (window sum)" not in zero.split("gaps:", 1)[0]
+    assert "Liquidations" not in zero
+    assert "Open interest" not in zero
     assert "fund " not in zero
     assert "gaps:" in zero
-    assert "BTC Liquidations (window sum)" in _joined(zero)
     assert "BTC Funding" in _joined(zero)
 
     back = _render(hl=(_hl("BTC", funding="0.0000125", oi="0", mid="0", liquidations=("2.5",)),))
@@ -330,11 +331,13 @@ def test_unchanged_zero_stays_on_gaps_and_changed_zero_returns() -> None:
         prior_captured_at=AS_OF - timedelta(days=1),
     )
     quiet = _render(
-        hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=()),),
+        hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=("0",)),),
         prior_reader=MapPriorCaptureReader({("BTC", "liquidations"): same}),
     )
     assert "Liquidations (window sum)" not in quiet.split("gaps:", 1)[0]
     assert "BTC Liquidations (window sum)" in _joined(quiet)
+    unobserved = _render(hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=()),))
+    assert "Liquidations" not in unobserved
 
     changed = PriorCaptureValue(
         instrument="BTC",
@@ -344,7 +347,7 @@ def test_unchanged_zero_stays_on_gaps_and_changed_zero_returns() -> None:
         prior_captured_at=AS_OF - timedelta(days=1),
     )
     moved = _render(
-        hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=()),),
+        hl=(_hl("BTC", funding="0.0001", oi="1", mid="1", liquidations=("0",)),),
         prior_reader=MapPriorCaptureReader({("BTC", "liquidations"): changed}),
     )
     assert "BTC Liquidations (window sum) 0" in moved
@@ -401,8 +404,9 @@ def test_funding_and_oi_with_prior_are_annualised_and_rounded() -> None:
     assert "11.39% ann" not in on_baseline
     assert "0.000013" not in on_baseline
     assert "BTC Funding" in on_baseline.split("gaps:", 1)[1]
-    assert "BTC OI 38,843" in on_baseline
-    assert " prior 36,569 +6.22%" in on_baseline
+    assert "BTC OI +6.22%" in on_baseline
+    assert "38,843" not in on_baseline
+    assert " prior 36,569" not in on_baseline
     assert "38843.42252" not in on_baseline
 
     off = _render(
@@ -473,8 +477,10 @@ def _close_prior(symbol: str, *, observation_as_of: datetime | None, value: floa
 
 
 def test_same_equity_bar_date_prints_no_new_session() -> None:
-    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
-    earlier_same_day = datetime(2026, 9, 22, 13, 30, tzinfo=UTC)
+    # Knowledge is 2026-09-22 16:15 ET, so the expected bar is 2026-09-21.
+    # 2026-09-18 is older than that. Same-day-as-prior is not the stall test.
+    bar = datetime(2026, 9, 18, 20, 0, tzinfo=UTC)
+    earlier_same_day = datetime(2026, 9, 18, 13, 30, tzinfo=UTC)
     assets = list(_eight())
     assets[0] = _print(
         "ES",
@@ -492,7 +498,8 @@ def test_same_equity_bar_date_prints_no_new_session() -> None:
         ),
     )
     delta = _delta_cell(text, "SPY")
-    assert delta == "no new session since 2026-09-22"
+    assert delta == "no new session since 2026-09-18"
+    assert "EQUITY T-1" not in text
     assert "0.00%" not in delta
     assert "+0.0bp" not in delta
 
@@ -651,7 +658,7 @@ def test_messages_3_and_4_omitted_message_5_keeps_live_metrics() -> None:
     assert "## Positioning" not in text
     assert "BTC fund 109.50% ann" in text
     assert "ETH fund 0.00% ann" in text
-    assert "ETH Open interest" in _joined(text)
+    assert "Open interest" not in text
     assert "Mid" not in text.split("Positioning", 1)[1]
 
 
@@ -721,8 +728,9 @@ def test_missing_last_moves_to_gaps() -> None:
 
 
 def test_repeated_session_is_stale_on_the_health_line_and_not_fresh() -> None:
-    bar = datetime(2026, 9, 22, 20, 0, tzinfo=UTC)
-    later = bar + timedelta(days=1)
+    # Older than the expected 2026-09-21 bar. Expected T-1 is not this case.
+    bar = datetime(2026, 9, 18, 20, 0, tzinfo=UTC)
+    later = datetime(2026, 9, 23, 20, 0, tzinfo=UTC)
     assets = list(_eight())
     session_slots = {"ES", "NQ", "DXY", "CL"}
     names = {
@@ -781,7 +789,8 @@ def test_repeated_session_is_stale_on_the_health_line_and_not_fresh() -> None:
     assert "Hyperliquid fresh" not in text
     assert "100%" not in text
     assert "fresh" not in text
-    assert "no new session since 2026-09-22" in text
+    assert "no new session since 2026-09-18" in text
+    assert "EQUITY T-1" not in text
     health_lines = [line for line in _fence_lines(text) if line.startswith("Health") or line.startswith("n/a ")]
     assert len(health_lines) <= 2
     _assert_phone(text)
@@ -871,6 +880,79 @@ def test_earlier_pair_block_is_absent_from_a_live_close() -> None:
     doc, _ = generate_from_fixture("close", load_fixture_file(FIXTURE), settings=settings)
     assert doc is not None
     assert "Earlier pair" not in doc.markdown
+
+
+def test_expected_t1_equities_are_a_header_and_not_stale() -> None:
+    expected = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
+    assets = list(_eight())
+    for index, symbol in enumerate(ASSET_ORDER):
+        if symbol not in {"ES", "NQ", "DXY", "CL"}:
+            continue
+        assets[index] = _print(
+            symbol,
+            last=100.0,
+            prior=99.0,
+            source="polygon",
+            quality="fresh",
+            name=assets[index].name,
+            quoted_symbol=assets[index].quoted_symbol,
+            as_of=expected,
+        )
+    text = _render(assets=tuple(assets), hl=(_hl("BTC", funding="0.0000125", quality="ok"),))
+    assert "EQUITY T-1 BY DESIGN (close 2026-09-21)" in text
+    assert "no new session since" not in text
+    assert "SPY 100.00 +1.01%" in text
+    assert "Health 100%" in text
+    assert "stale" not in text
+
+
+def test_oi_change_is_printed_only_beside_a_prior() -> None:
+    bare = _render(hl=(_hl("BTC", oi="110"),))
+    assert "OI" not in bare
+    assert "Open interest" not in bare
+    shown = _render(
+        hl=(_hl("BTC", oi="110"),),
+        prior_reader=MapPriorCaptureReader(
+            {
+                ("BTC", "open_interest"): PriorCaptureValue(
+                    instrument="BTC",
+                    metric="open_interest",
+                    value=100.0,
+                    captured_at=AS_OF,
+                    prior_captured_at=AS_OF - timedelta(days=1),
+                )
+            }
+        ),
+    )
+    assert "BTC OI +10.00%" in shown
+    assert "BTC OI 110" not in shown
+
+
+def test_hyperliquid_health_uses_the_worst_morning_perp() -> None:
+    states = tuple(
+        _hl(name, quality="unavailable" if name == "PURR" else "ok", funding="0.0000125")
+        for name in MORNING_HL_PERPS
+    )
+    text = _render(hl=states)
+    assert "Health 86% n/a Hyperliquid" in text
+    assert len(MORNING_HL_PERPS) == 14
+
+
+def test_perp_with_no_print_is_a_gap_and_not_zero() -> None:
+    empty = HLInstrumentState(
+        instrument="SOL",
+        metrics={},
+        liquidations=(),
+        levels=(),
+        data_quality="unavailable",
+        as_of_knowledge=AS_OF,
+    )
+    text = _render(hl=(empty,))
+    assert "SOL 0" not in text
+    assert "0.00%" not in text.split("gaps:", 1)[1]
+    gaps = text.split("gaps:", 1)[1]
+    assert "SOL" in gaps
+    assert "SOL Funding" not in gaps
 
 
 def test_as_of_knowledge_line_is_not_in_the_morning_message() -> None:

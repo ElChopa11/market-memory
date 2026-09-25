@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from mm_common.time import as_utc
@@ -18,6 +18,7 @@ from mm_briefing.health import load_presentation_config, score_data_health
 from mm_briefing.hl import basis_mark_oracle, funding_value, liquidation_size_sum
 from mm_briefing.models import (
     ASSET_ORDER,
+    MORNING_HL_PERPS,
     AssetPrint,
     BriefDocument,
     CalendarEvent,
@@ -56,13 +57,15 @@ _STATIC_ASSUMPTION = "No named macro assumption flipped vs the overnight tape"
 
 # Price-row Δ is decided by the observation date, not by whether the number moved.
 _CRYPTO_SLOTS = frozenset({"BTC", "ETH"})
-_SESSION_SLOTS = frozenset({"ES", "NQ", "DXY", "CL"})
+_SESSION_SLOTS = ("ES", "NQ", "DXY", "CL")
 _CLOSE_METRIC = "close"
 NO_NEW_SESSION_PREFIX = "no new session since"
 NO_NEW_PRINT_PREFIX = "no new print since"
+# The user's longer parenthetical is 43 characters. The fence cap is 42.
+EQUITY_T1_PREFIX = "EQUITY T-1 BY DESIGN"
 
 # (reader metric, label). Mid is the headline last, so it is not repeated here.
-# Funding and open interest need a prior capture; otherwise they are gaps.
+# Open interest is a change, and only when a prior capture exists.
 _POSITION_METRICS = (
     ("funding", "Funding"),
     ("open_interest", "Open interest"),
@@ -119,7 +122,7 @@ def render_morning_close(
     syd = generated_at.astimezone(SYDNEY_TZ)
     presentation = load_presentation_config()
     health = score_data_health(
-        _assets_for_health(session.assets, prior_reader),
+        _assets_for_health(session.assets, prior_reader, as_of),
         hl,
         config=presentation,
     )
@@ -131,15 +134,18 @@ def render_morning_close(
         lines.append("")
     lines.extend(_clock_lines(generated_at, ny, syd))
     lines.extend(_health_lines(health))
+    lines.extend(_equity_t1_lines(session.assets, as_of))
     if not _has_observation(session, hl):
         lines.append("obs none")
     lines.append("")
     price_lines, price_gaps = _price_rows(
-        session.assets, knowledge_as_of=as_of, prior_reader=prior_reader
+        session.assets, knowledge_as_of=as_of, prior_reader=prior_reader, hl=hl
     )
+    perp_lines, perp_gaps = _perp_rows(hl)
     lines.extend(price_lines)
+    lines.extend(perp_lines)
     positioning, pos_gaps = _positioning(hl, prior_reader=prior_reader, knowledge_as_of=as_of)
-    gaps = [*price_gaps, *pos_gaps]
+    gaps = [*price_gaps, *perp_gaps, *pos_gaps]
     if positioning or gaps:
         lines.append("")
         if positioning:
@@ -282,25 +288,64 @@ def _lead_restates_generated_at(lead: str, generated_at: datetime) -> bool:
 def _assets_for_health(
     assets: tuple[AssetPrint, ...],
     prior_reader: PriorCaptureReader | None,
+    knowledge_as_of: datetime,
 ) -> tuple[AssetPrint, ...]:
     """Health states for the morning line.
 
     A missing last is unavailable, including a structural slot, so it is
-    listed and weighted 0. It is not omitted and not fresh. An observation
-    date that did not roll since the prior capture is stale. That phrase is
-    the right change cell; the health line must not call the slot fresh.
-    Stale is not a failure. Crypto is never marked stale for a repeated as-of.
+    listed and weighted 0. It is not omitted and not fresh. Polygon equities
+    (ES, NQ, DXY, CL) at the expected T-1 session are not stale. An as-of
+    older than that session is stale. FRED stays stale when its observation
+    date matches the prior capture. Crypto is never marked stale for a
+    repeated as-of. Stale is not a failure.
     """
+    expected = expected_equity_session(knowledge_as_of)
     adjusted: list[AssetPrint] = []
     for row in assets:
         if row.last is None:
             adjusted.append(replace(row, data_quality="unavailable", structural_unavailable=False))
+            continue
+        symbol = row.symbol.upper()
+        if symbol in _SESSION_SLOTS:
+            day = _observation_date(row.as_of)
+            if day is not None and day < expected:
+                adjusted.append(replace(row, data_quality="stale"))
+            else:
+                adjusted.append(row)
             continue
         if _did_not_roll(row, prior_reader):
             adjusted.append(replace(row, data_quality="stale"))
             continue
         adjusted.append(row)
     return tuple(adjusted)
+
+
+def expected_equity_session(knowledge_as_of: datetime) -> date:
+    """Weekday before the New York calendar date of this brief.
+
+    Grouped-daily for the session in progress, or the session that just
+    closed, is not on our Polygon tier at capture. The expected bar is the
+    weekday before that New York date. Weekends are not sessions. There is
+    no holiday list.
+    """
+    day = as_utc(knowledge_as_of).astimezone(NY_TZ).date() - timedelta(days=1)
+    while day.weekday() >= 5:
+        day -= timedelta(days=1)
+    return day
+
+
+def _equity_t1_lines(assets: tuple[AssetPrint, ...], knowledge_as_of: datetime) -> list[str]:
+    """One header when every Polygon equity slot is the expected prior session."""
+    expected = expected_equity_session(knowledge_as_of)
+    by_symbol = {row.symbol.upper(): row for row in assets}
+    for symbol in _SESSION_SLOTS:
+        row = by_symbol.get(symbol)
+        if row is None or row.last is None:
+            return []
+        if _observation_date(row.as_of) != expected:
+            return []
+    text = f"{EQUITY_T1_PREFIX} (close {expected.isoformat()})"
+    return _phone_wrap(text)
 
 
 def _did_not_roll(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> bool:
@@ -376,27 +421,42 @@ def _price_rows(
     *,
     knowledge_as_of: datetime,
     prior_reader: PriorCaptureReader | None,
+    hl: tuple[HLInstrumentState, ...] = (),
 ) -> tuple[list[str], list[str]]:
     """Headline rows. A slot with no last goes to the gaps list, not a row.
 
     Labels live in ``docs/specs/brief-row-labels.md``. A quality marker is
     appended only when the row is not fresh and the change cell is not
-    already the no-new-session / no-new-print phrase.
+    already the no-new-session / no-new-print phrase. BTC and ETH use the
+    Hyperliquid mid and ``prevDayPx`` when both are on the state.
     """
     by_symbol = {row.symbol.upper(): row for row in assets}
+    by_hl = {state.instrument.upper(): state for state in hl}
     body: list[str] = []
     gaps: list[str] = []
     for symbol in ASSET_ORDER:
         row = by_symbol.get(symbol)
+        hl_line, hl_gap = _hl_price_line(symbol, by_hl.get(symbol))
+        if hl_line is not None:
+            body.append(hl_line)
+            if hl_gap:
+                gaps.append(hl_gap)
+            continue
+        if hl_gap and (row is None or row.last is None):
+            gaps.append(hl_gap)
+            continue
         if row is None or row.last is None:
             gaps.append(symbol if row is None else display_symbol(row))
             continue
-        delta = _change_cell(row, prior_reader)
+        delta = _change_cell(row, prior_reader, knowledge_as_of=knowledge_as_of)
         marker = ""
         if not delta.startswith((NO_NEW_SESSION_PREFIX, NO_NEW_PRINT_PREFIX)):
             marker = _row_quality_marker(row, knowledge_as_of)
         head = f"{display_symbol(row)} {fmt_px(row.last)}"
-        same = f"{head} {delta}" + (f" {marker}" if marker else "")
+        if not delta and not marker:
+            body.append(head)
+            continue
+        same = f"{head} {delta}".rstrip() + (f" {marker}" if marker else "")
         if len(same) <= PHONE_LINE_MAX:
             body.append(same)
         else:
@@ -406,6 +466,76 @@ def _price_rows(
             if marker and len(rest) > PHONE_LINE_MAX:
                 body.append(marker)
     return body, gaps
+
+
+def _hl_price_line(symbol: str, state: HLInstrumentState | None) -> tuple[str | None, str | None]:
+    """BTC/ETH from mid and prevDayPx. No prevDayPx leaves the asset row in place."""
+    if symbol not in _CRYPTO_SLOTS or state is None:
+        return None, None
+    mid = _metric_float(state, "mid_px")
+    prev = _metric_float(state, "prev_day_px")
+    if mid is None or prev in (None, 0):
+        return None, None
+    delta = fmt_pct((mid - prev) / prev * 100.0)
+    return f"{symbol} {_fmt_mid(mid)} {delta}", None
+
+
+def _perp_rows(hl: tuple[HLInstrumentState, ...]) -> tuple[list[str], list[str]]:
+    """The twelve names after ETH. Absent from ``hl`` means this brief did not ask."""
+    by_hl = {state.instrument.upper(): state for state in hl}
+    body: list[str] = []
+    gaps: list[str] = []
+    for symbol in MORNING_HL_PERPS:
+        if symbol in _CRYPTO_SLOTS:
+            continue
+        state = by_hl.get(symbol)
+        if state is None:
+            continue
+        line, gap = _named_perp_line(state)
+        if line:
+            body.append(line)
+        if gap:
+            gaps.append(gap)
+    return body, gaps
+
+
+def _named_perp_line(state: HLInstrumentState) -> tuple[str | None, str | None]:
+    mid = _metric_float(state, "mid_px")
+    prev = _metric_float(state, "prev_day_px")
+    if mid is None:
+        return None, state.instrument
+    if prev in (None, 0):
+        return f"{state.instrument} {_fmt_mid(mid)}", f"{state.instrument} 24h"
+    delta = fmt_pct((mid - prev) / prev * 100.0)
+    return f"{state.instrument} {_fmt_mid(mid)} {delta}", None
+
+
+def _metric_float(state: HLInstrumentState | None, name: str) -> float | None:
+    if state is None:
+        return None
+    metric = state.metric(name)
+    if metric is None or metric.value is None or metric.value == "":
+        return None
+    try:
+        return float(metric.value)
+    except ValueError:
+        return None
+
+
+def _fmt_mid(value: float) -> str:
+    """Keep sub-dollar perps from collapsing to two decimals."""
+    abs_value = abs(value)
+    if abs_value >= 1000:
+        return f"{value:.2f}"
+    if abs_value >= 100:
+        text = f"{value:.3f}"
+    elif abs_value >= 1:
+        text = f"{value:.5f}"
+    else:
+        text = f"{value:.6f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text or "0"
 
 
 def _observation_date(value: datetime | date | None) -> date | None:
@@ -453,17 +583,34 @@ def _numeric_delta(row: AssetPrint, prior: PriorCaptureValue | None) -> str:
     return "n/a"
 
 
-def _change_cell(row: AssetPrint, prior_reader: PriorCaptureReader | None) -> str:
+def _change_cell(
+    row: AssetPrint,
+    prior_reader: PriorCaptureReader | None,
+    *,
+    knowledge_as_of: datetime | None = None,
+) -> str:
     """Δ cell. Same observation date as the prior capture is not a 0.00% move.
 
-    Equities use the vendor bar date (``market_time``). FRED uses the
-    observation date. A later as-of with an unchanged value is a real zero.
-    Crypto always prints the computed change. No prior keeps that change.
+    Polygon equities at the expected T-1 session print the move versus the
+    close before that bar. An as-of older than that session is
+    ``no new session since``. FRED uses the observation date. A later as-of
+    with an unchanged value is a real zero. Crypto always prints the
+    computed change. No prior keeps that change.
     """
     symbol = row.symbol.upper()
     prior = read_prior(prior_reader, symbol, _CLOSE_METRIC)
     numeric = _numeric_delta(row, prior)
     if symbol in _CRYPTO_SLOTS or row.last is None:
+        return numeric
+    if symbol in _SESSION_SLOTS and knowledge_as_of is not None:
+        current_day = _observation_date(row.as_of)
+        expected = expected_equity_session(knowledge_as_of)
+        if current_day is not None and current_day < expected:
+            return f"{NO_NEW_SESSION_PREFIX} {current_day.isoformat()}"
+        if current_day == expected:
+            if row.change_pct is None:
+                return ""
+            return fmt_pct(row.change_pct)
         return numeric
     if prior is None or prior.observation_as_of is None or row.as_of is None:
         return numeric
@@ -490,10 +637,17 @@ def _positioning(
     lines: list[str] = []
     gaps: list[str] = []
     for state in hl:
+        if _hl_has_no_print(state):
+            continue
         flag = _quality_flag(state.data_quality)
         if flag:
             lines.append(f"{state.instrument} {flag}")
         for metric_name, label in _POSITION_METRICS:
+            if metric_name == "open_interest":
+                _append_oi(state, prior_reader, lines, gaps)
+                continue
+            if metric_name == "liquidations" and not state.liquidations:
+                continue
             current = _metric_value(state, metric_name)
             prior = read_prior(prior_reader, state.instrument, metric_name)
             if _show_metric(metric_name, current, prior):
@@ -547,12 +701,41 @@ def _same_number(left: float | None, right: float | None) -> bool:
     return abs(left - right) <= 1e-9 * scale
 
 
+def _hl_has_no_print(state: HLInstrumentState) -> bool:
+    """No mid, funding, open interest, or liquidation print."""
+    if state.liquidations:
+        return False
+    for name in ("mid_px", "prev_day_px", "funding", "open_interest"):
+        metric = state.metric(name)
+        if metric is not None and metric.value not in (None, ""):
+            return False
+    return True
+
+
+def _append_oi(
+    state: HLInstrumentState,
+    prior_reader: PriorCaptureReader | None,
+    lines: list[str],
+    gaps: list[str],
+) -> None:
+    """OI is a change versus the prior capture. No prior is silence, not a level."""
+    prior = read_prior(prior_reader, state.instrument, "open_interest")
+    if prior is None:
+        return
+    current = _metric_value(state, "open_interest")
+    if current is None or prior.value in (None, 0):
+        gaps.append(f"{state.instrument} Open interest")
+        return
+    delta = (current - prior.value) / prior.value * 100.0
+    lines.append(f"{state.instrument} OI {delta:+.2f}%")
+
+
 def _metric_value(state: HLInstrumentState, metric_name: str) -> float | None:
     if metric_name == "funding":
         return funding_value(state)
     if metric_name == "liquidations":
         if not state.liquidations:
-            return 0.0
+            return None
         return liquidation_size_sum(state)
     metric = state.metric(metric_name)
     if metric is None or metric.value is None:
@@ -578,9 +761,6 @@ def _metric_lines(
             lines.append(f" prior {format_funding_annualised(prior.value)}")
     elif metric_name == "open_interest":
         lines = [f"{state.instrument} OI {_fmt_oi(current)}"]
-        if prior is not None and prior.value not in (None, 0) and current is not None:
-            delta = (current - prior.value) / prior.value * 100.0
-            lines.append(f" prior {_fmt_oi(prior.value)} {delta:+.2f}%")
     else:
         lines = [f"{state.instrument} {label} {_fmt_num(current)}"]
     if obs_suffix:

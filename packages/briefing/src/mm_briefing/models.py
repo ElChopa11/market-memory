@@ -9,6 +9,24 @@ from typing import Any
 
 ASSET_ORDER = ("ES", "NQ", "US10Y", "DXY", "CL", "VIX", "BTC", "ETH")
 HL_BRIEF_INSTRUMENTS = ("BTC", "ETH")
+# Close-path perps. BTC and ETH stay in the price table; the other twelve follow.
+# Pre-open keeps HL_BRIEF_INSTRUMENTS so a missing name is not invented there.
+MORNING_HL_PERPS = (
+    "BTC",
+    "ETH",
+    "SOL",
+    "HYPE",
+    "NEAR",
+    "ARB",
+    "UNI",
+    "VVV",
+    "ZEC",
+    "DOGE",
+    "XMR",
+    "CHIP",
+    "LTC",
+    "PURR",
+)
 
 # Principal Phase 2 required snapshot slots. Symbols are proxies; missing stays listed.
 REQUIRED_SLOTS = ("crypto", "equity-index proxy", "rates", "USD", "oil", "vol")

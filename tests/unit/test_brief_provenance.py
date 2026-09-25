@@ -183,3 +183,29 @@ def test_live_hl_posts_only_allowlisted_types() -> None:
     eth_oi = by_inst["ETH"].metric("open_interest")
     assert eth_oi is not None
     assert eth_oi.value is None
+    assert by_inst["BTC"].metric("prev_day_px") is not None
+    assert by_inst["BTC"].metric("prev_day_px").value == "64000.0"
+
+
+def test_close_live_hl_is_one_meta_call() -> None:
+    fixture = json.loads(HL_WINDOW.read_text(encoding="utf-8"))
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        seen.append(str(body.get("type")))
+        if body.get("type") == "metaAndAssetCtxs":
+            return httpx.Response(200, json=fixture["metaAndAssetCtxs"])
+        return httpx.Response(500, json={"error": "unexpected type"})
+
+    client = HyperliquidInfoClient(transport=httpx.MockTransport(handler))
+    states = hl_from_live_info(
+        client,
+        instruments=("BTC", "SOL"),
+        captured_at=AS_OF,
+        include_liquidations=False,
+    )
+    assert seen == ["metaAndAssetCtxs"]
+    assert [row.instrument for row in states] == ["BTC", "SOL"]
+    assert states[0].liquidations == ()
+    assert states[0].metric("prev_day_px") is not None
