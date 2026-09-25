@@ -12,7 +12,7 @@ A morning scores Y if the Principal can name one specific line in the brief that
 
 ## 3. Scoring
 
-The Principal scores alone. No desk scores a brief. Each morning gets Y or N plus the quoted line, on the same day before 10:00 AEST, which is before that session plays out. A score recorded later doesn't count. The Principal commits the row to the scoresheet table in this file, and the commit timestamp is the evidence that the score was on time.
+The Principal scores alone. No desk scores a brief. Each morning gets Y or N plus the quoted line, on the same day before 10:00 AEST, which is before that session plays out. A score recorded later doesn't count. The Principal commits the row to the scoresheet table in this file. The git commit date is untrusted: whoever makes the commit sets it, and it can be backdated, so it is not evidence. The evidence is GitHub's server-side push time for the commit that adds the row, as shown in the repository activity log or the push event. A score whose push time is later than 10:00 AEST on that day doesn't count.
 
 ## 4. Which ten count
 
