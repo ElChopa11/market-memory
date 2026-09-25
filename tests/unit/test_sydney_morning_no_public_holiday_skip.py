@@ -11,6 +11,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import yaml
+
 from mm_briefing.schedule import us_session_status
 from mm_desks.deliver_receipt import PROCEED, decide_deliver
 from mm_desks.scheduler import load_catalog, local_anchor, scheduled_slot, stamp_fire
@@ -21,6 +23,23 @@ UTC = timezone.utc
 CRONTAB = ROOT / "ops" / "host" / "crontab"
 WORKFLOW = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
 ROUTINE = "grok.sydney_morning"
+# #132. True for schedule and for every dispatch except mode=capture_proof.
+# The host payload omits mode, so the workflow default (normal) still stamps.
+STAGE1_IF = "github.event_name != 'workflow_dispatch' || inputs.mode != 'capture_proof'"
+
+
+def _stage1_stamp_runs(expr: str, *, event_name: str, mode: str | None) -> bool:
+    """Evaluate the one allowed stage1 if. Any other expression is refused.
+
+    ``mode is None`` is an omitted workflow_dispatch input. That is not
+    capture_proof, so the stamp runs. A schedule event ignores mode.
+    """
+    left, sep, right = expr.partition(" || ")
+    assert sep == " || ", expr
+    assert left == "github.event_name != 'workflow_dispatch'", expr
+    assert right == "inputs.mode != 'capture_proof'", expr
+    return event_name != "workflow_dispatch" or mode != "capture_proof"
+
 
 # Paths that decide whether the morning job runs or what it stamps.
 PATHS = (
@@ -77,6 +96,14 @@ def test_host_cron_fires_mon_5_oct_2026_at_sydney_anchor() -> None:
     assert date(2026, 10, 5).day <= 7
     assert "CRON_TZ=Australia/Sydney" in CRONTAB.read_text(encoding="utf-8")
     assert host_cron_fires(labour) is True
+    # Host dispatch does not send mode. Omitted mode is the workflow default
+    # (normal), so this cron reaches stage1-stamp. capture_proof is not sent.
+    dispatch = (ROOT / "ops" / "host" / "dispatch-sydney-morning.sh").read_text(encoding="utf-8")
+    payload_lines = [line for line in dispatch.splitlines() if line.startswith("PAYLOAD=")]
+    assert payload_lines == [
+        """PAYLOAD="$(printf '{"ref":"%s","inputs":{"i_mean_it_deliver":"true"}}' "$REF")\""""
+    ]
+    assert "capture_proof" not in dispatch
     anchor = local_anchor(routine, labour.date())
     assert labour.astimezone(UTC) == anchor
     assert anchor == datetime(2026, 10, 4, 19, 30, tzinfo=UTC)
@@ -122,7 +149,25 @@ def test_brief_and_deliver_do_not_special_case_labour_day(tmp_path) -> None:
     assert "--ignore-quiet-hours" in workflow
     stage1, brief = workflow.split("\n  brief-and-deliver:\n", 1)
     assert "stage1-stamp:" in stage1
-    assert "\n    if:" not in stage1.split("steps:", 1)[0]
+    # The only stage1 gate is the capture_proof skip. A second if, or any
+    # extra clause (calendar, holiday, date, weekday, quiet hours), fails.
+    header = stage1.split("steps:", 1)[0]
+    if_lines = [line.strip() for line in header.splitlines() if line.strip().startswith("if:")]
+    assert if_lines == [f"if: {STAGE1_IF}"]
+    parsed = yaml.safe_load(workflow)
+    job = parsed["jobs"]["stage1-stamp"]
+    assert job["if"] == STAGE1_IF
+    assert [step for step in job["steps"] if "if" in step] == []
+    # Schedule is not workflow_dispatch, so the left clause stamps every cron
+    # fire. A dispatch stamps unless mode is capture_proof. Omitted mode is
+    # the workflow default, normal, which is not capture_proof.
+    # PyYAML loads the GitHub `on:` key as boolean True.
+    on_block = parsed[True] if True in parsed else parsed["on"]
+    assert on_block["workflow_dispatch"]["inputs"]["mode"]["default"] == "normal"
+    assert _stage1_stamp_runs(job["if"], event_name="schedule", mode=None) is True
+    assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="normal") is True
+    assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode=None) is True
+    assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="capture_proof") is False
     assert "github.event_name == 'schedule'" in brief
     assert "i_mean_it_deliver" in brief
     for rel in PATHS:
