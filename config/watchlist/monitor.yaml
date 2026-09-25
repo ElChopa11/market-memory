@@ -45,6 +45,10 @@ rounds:
       - PONSUSD
       - CHIPIUSD
       - DOGEUSD
+      - JUP
+      - LIT
+      - NIL
+      - DRV
   base:
     local_time: "23:00"
     tz: Australia/Sydney
@@ -221,6 +225,26 @@ resolution:
       Principal confirmed CHIPIUSD display → HL:CHIP (perp, USD). Intel snapshot:
       CHIPI absent on HL meta, CHIP present. Do not invent a CHIPI listing.
   DOGEUSD: { status: resolved, qualified_id: "CRYPTO:DOGE", venue: unspecified, note: "identity resolved; venue not guessed" }
+  JUP: { status: resolved, qualified_id: "HL:JUP", venue: hyperliquid, kind: perp, quote: USD, note: "HL perp; symbol JUP from mvp_retain bound_perps" }
+  LIT: { status: resolved, qualified_id: "HL:LIT", venue: hyperliquid, kind: perp, quote: USD, note: "HL perp; symbol LIT from mvp_retain bound_perps" }
+  NIL: { status: resolved, qualified_id: "HL:NIL", venue: hyperliquid, kind: perp, quote: USD, note: "HL perp; symbol NIL from mvp_retain bound_perps" }
+  # DRV is Hyperliquid spot, price-only, spot index 700 (mvp_retain hl.price_only).
+  # mm_desks.monitor.MonitorName loads only status, qualified_id, and venue.
+  # price_only and spot_index are recorded here; the loader does not read them.
+  # kind: spot is the resolution key this file already uses for instrument type;
+  # the loader does not read kind either.
+  DRV:
+    status: resolved
+    qualified_id: "HL:DRV"
+    venue: hyperliquid
+    kind: spot
+    quote: USDC
+    coin: DRV
+    pair: DRV/USDC
+    spot_index: 700
+    price_only: true
+    metrics: [mid_px]
+    note: "HL spot DRV/USDC price-only mid_px at spot index 700; not a perp"
   SPX: { status: resolved, qualified_id: "INDEX:SPX", venue: index }
   NQ1!: { status: resolved, qualified_id: "CME:NQ1!", venue: cme }
   QQQ: { status: resolved, qualified_id: "NASDAQ:QQQ", venue: nasdaq }
@@ -304,6 +328,10 @@ names:
   - { ticker: PONSUSD, membership_key: PONS, tape_alias: PONS, round: crypto, tier: blocked, cluster: meme_t3 }
   - { ticker: CHIPIUSD, membership_key: CHIP, tape_alias: CHIP, round: crypto, tier: monitor, cluster: meme_t3, resolution_note: "display CHIPIUSD → HL:CHIP; no CHIPI listing invented" }
   - { ticker: DOGEUSD, membership_key: DOGE, tape_alias: DOGE, round: crypto, tier: monitor, cluster: meme_t3 }
+  - { ticker: JUP, membership_key: JUP, tape_alias: JUP, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: LIT, membership_key: LIT, tape_alias: LIT, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: NIL, membership_key: NIL, tape_alias: NIL, round: crypto, tier: monitor, cluster: crypto_alt }
+  - { ticker: DRV, membership_key: DRV, tape_alias: DRV, round: crypto, tier: monitor, cluster: crypto_alt }
   - { ticker: SPX, membership_key: SPX, tape_alias: SPX, round: base, tier: monitor, cluster: index_futures }
   - { ticker: NQ1!, membership_key: NQ1!, tape_alias: NQ1!, round: base, tier: monitor, cluster: index_futures }
   - { ticker: QQQ, membership_key: QQQ, tape_alias: QQQ, round: base, tier: monitor, cluster: index_futures }

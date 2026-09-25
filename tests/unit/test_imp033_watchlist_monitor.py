@@ -42,6 +42,10 @@ CRYPTO = (
     "PONSUSD",
     "CHIPIUSD",
     "DOGEUSD",
+    "JUP",
+    "LIT",
+    "NIL",
+    "DRV",
 )
 BASE = (
     "SPX",
@@ -75,7 +79,7 @@ def test_monitor_yaml_is_the_complete_review_list() -> None:
     assert_monitor_invariants(ROOT)
     tickers = monitor_tickers(ROOT)
     assert tickers == CRYPTO + BASE
-    assert len(tickers) == 39
+    assert len(tickers) == 43
     by = {row.ticker: row for row in monitor_names(ROOT)}
     assert by["BTCUSD"].tier == "universe"
     assert by["BTCUSD"].membership == "in_universe"
