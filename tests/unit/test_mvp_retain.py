@@ -520,14 +520,24 @@ def test_capture_posts_spot_meta_through_the_info_client() -> None:
     assert "KNT" not in {e.instrument for e in envelopes}
 
 
-def test_no_cron_or_migrate_workflow_wires_retain() -> None:
+def test_only_sydney_morning_wires_retain() -> None:
     workflows = ROOT / ".github" / "workflows"
     names = [path.name for path in workflows.glob("*.yml")]
     assert "migrate-neon.yml" not in names
+    wired = []
     for path in workflows.glob("*.yml"):
         text = path.read_text(encoding="utf-8")
-        assert "lab retain" not in text
-        assert "mvp_retain" not in text
+        if "lab retain" in text or "mvp_retain" in text:
+            wired.append(path.name)
+    assert wired == ["hybrid-sydney-morning.yml"]
+    hybrid = (workflows / "hybrid-sydney-morning.yml").read_text(encoding="utf-8")
+    stage1_key = "\n  stage1-stamp:\n"
+    brief_key = "\n  brief-and-deliver:\n"
+    stage1 = hybrid[hybrid.index(stage1_key) : hybrid.index(brief_key)]
+    brief = hybrid[hybrid.index(brief_key) :]
+    assert "lab retain" not in stage1
+    assert "lab retain morning" in brief
+    assert brief.index("lab retain morning") < brief.index("uv run lab deliver pack")
     assert "spotMetaAndAssetCtxs" in ALLOWED_INFO_TYPES
     assert "spotMetaAndAssetCtxs" not in FORBIDDEN_INFO_TYPES
     assert "metaAndAssetCtxs" in ALLOWED_INFO_TYPES

@@ -38,6 +38,13 @@
 # does not success-ping and writes no receipt. already_delivered success-pings
 # only (no DM, receipt unchanged) and logs the outcome. A ping failure never
 # fails the job or blocks the DM or receipt. The ping URL is not printed.
+# On that same send path, before the POST, lab retain morning writes one MVP
+# capture for the stamp's Sydney anchor date (SCHEDULED_FOR) into Neon
+# (existing POSTGRES_DSN). One capture per anchor date. The read-back row
+# count is one CAPTURE line on that same DM, after LATE and DEADMAN.
+# Capture failure, a missing DSN, a DB error, or the 90s cap does not fail
+# the job (continue-on-error plus an in-process catch). already_delivered
+# does not capture. No second Telegram message.
 # A failed send writes no receipt (anchor stays open). A later trigger for
 # that anchor is a silent no-op, not a failure or miss. Receipt commit-back
 # is hard-scoped to completions/receipts/*.deliver.json (same fail-loud
@@ -466,6 +473,46 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Morning MVP retain (non-fatal; one capture per Sydney anchor)
+        id: retain
+        if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
+        continue-on-error: true
+        env:
+          SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
+          POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
+        run: |
+          set +e
+          uv run lab retain morning --scheduled-for "${SCHEDULED_FOR}" > /tmp/retain-morning.json
+          set -e
+          uv run python - <<'PY'
+          """Always emit a CAPTURE line. Capture must not fail the job."""
+          import json
+          import os
+          from pathlib import Path
+
+          line = "CAPTURE: FAILED capture step"
+          rows = ""
+          path = Path("/tmp/retain-morning.json")
+          try:
+              raw = path.read_text(encoding="utf-8") if path.is_file() else ""
+              start = raw.find("{")
+              end = raw.rfind("}")
+              payload = json.loads(raw[start : end + 1]) if start >= 0 and end >= start else {}
+              got = str(payload.get("line") or "").replace("\n", " ").replace("\r", " ").strip()
+              if got.startswith("CAPTURE:"):
+                  line = got
+              count = payload.get("capture_rows")
+              if isinstance(count, int) and not isinstance(count, bool) and count >= 0:
+                  rows = str(count)
+          except Exception:
+              line = "CAPTURE: FAILED capture step"
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as fh:
+              fh.write(f"capture_line={line}\n")
+              fh.write(f"capture_rows={rows}\n")
+          print(line)
+          PY
+          exit 0
+
       - name: Deliver pack to Principal DM (--to-principal-dm --i-mean-it)
         id: deliver
         if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
@@ -476,6 +523,8 @@ jobs:
           RUN_ID: ${{ needs.stage1-stamp.outputs.run_id }}
           # Start ping before the POST, success ping after sent true. Not printed.
           HEALTHCHECKS_PING_URL: ${{ secrets.HEALTHCHECKS_PING_URL }}
+          CAPTURE_LINE: ${{ steps.retain.outputs.capture_line }}
+          CAPTURE_ROWS: ${{ steps.retain.outputs.capture_rows }}
         run: |
           set -euo pipefail
           if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
@@ -491,16 +540,20 @@ jobs:
           OUT="/tmp/sydney-dm-${GITHUB_RUN_ID}"
           mkdir -p "${OUT}"
           echo "lab deliver pack --to-principal-dm --i-mean-it --no-db (as_of=${AS_OF})"
+          if [ -z "${CAPTURE_LINE}" ]; then
+            CAPTURE_LINE="CAPTURE: FAILED capture step"
+          fi
           set +e
           # Same POST. --scheduled-for / --run-id are this step's existing stamp
-          # outputs. The pack appends one LATE line only when this send is more
-          # than 30 minutes after the anchor, then at most one DEADMAN line.
+          # outputs. Status lines on that message, in order: LATE, DEADMAN, CAPTURE.
           # HEALTHCHECKS_PING_URL is step env. The pack reads it and does not print it.
+          # CAPTURE is the retain step's line.
           uv run lab deliver pack \
             --from-markdown "${BRIEF_PATH}" \
             --as-of "${AS_OF}" \
             --scheduled-for "${SCHEDULED_FOR}" \
             --run-id "${RUN_ID}" \
+            --capture-line "${CAPTURE_LINE}" \
             --desk ops \
             --to-principal-dm \
             --i-mean-it \
@@ -547,6 +600,8 @@ jobs:
           # Success-ping outcome from deliver stdout. Missing or invalid fields
           # are omitted; the receipt is still written. The ping URL is not stored.
           fields = deadman_receipt_fields(parsed)
+          raw_rows = (os.environ.get("CAPTURE_ROWS") or "").strip()
+          capture_rows = int(raw_rows) if raw_rows.isdigit() else None
           path, created = write_deliver_receipt(
               completions_dir=root / "ops" / "reports" / "scheduler" / "completions",
               routine_id="grok.sydney_morning",
@@ -554,6 +609,7 @@ jobs:
               run_id=run_id,
               sent=True,
               source="github.actions",
+              capture_rows=capture_rows,
               **fields,
           )
           if path is None or not created:

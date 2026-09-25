@@ -108,9 +108,9 @@ Local compose uses `lab`/`lab` for Postgres and `minioadmin` for MinIO. Those ar
 
 Standing Data desk report (not a brief): `uv run lab data source-health`. See [source-health.md](source-health.md).
 
-## MVP retain (draft, gated)
+## MVP retain
 
-Forward-only observation retain for one capture. It writes the existing `observation` table through `persist_envelopes` when a caller invokes that helper. The CLI does not open Postgres.
+Forward-only observation retain for one capture. Rows go to the existing `observation` table through `persist_envelopes`. The fixture CLI does not open Postgres. The Sydney morning job does: `lab retain morning --scheduled-for <stamp>` on the send path, one capture per Sydney anchor date. See [mvp-retain.md](mvp-retain.md).
 
 ```bash
 uv run lab retain --fixture PATH --no-db
@@ -126,7 +126,7 @@ Three calls, 37 instruments. DRV is PRICE-ONLY (no open interest, no funding, no
 
 Allowlist: `config/ingest/mvp_retain.yaml`. Existing `lab ingest` membership (BTC, ETH, UNI, AAVE) is unchanged. Venue queue SPX, NQ1!, CL1!, BTC1!, SAMSUN, KOSDA is not retained. KNT is absent. PURR is a bound perp.
 
-Captures store the given timestamp. There is no fixed slot window and no default sample clock. When `prior_captured_at` is set, each row records `interval_seconds` for a later delta. This command does not compute a quadrant label and does not backfill history.
+Captures store the given timestamp on `published_at`, `ingested_at`, and `as_of_knowledge` (lockstep). There is no fixed slot window and no default sample clock. When `prior_captured_at` is set, each row records `interval_seconds`. This command does not compute a quadrant label and does not backfill history.
 
-**Do not run against Neon.** `LIVE_NEON_ENABLED` stays false. `lab retain` without `--fixture --no-db` exits 2. No cron calls it. Friday's dual-cron prove is the receipt gate, not a hold on this spot call.
+`lab retain` without `--fixture --no-db` and without `--morning` exits 2. `LIVE_NEON_ENABLED` stays false for that dry-run. The morning job is the persist path. Proof-of-write SQL is in [mvp-retain.md](mvp-retain.md).
 
