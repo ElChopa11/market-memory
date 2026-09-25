@@ -42,6 +42,10 @@ CRYPTO = (
     "PONSUSD",
     "CHIPIUSD",
     "DOGEUSD",
+    "JUP",
+    "LIT",
+    "NIL",
+    "DRV",
 )
 BASE = (
     "SPX",
@@ -75,7 +79,7 @@ def test_monitor_yaml_is_the_complete_review_list() -> None:
     assert_monitor_invariants(ROOT)
     tickers = monitor_tickers(ROOT)
     assert tickers == CRYPTO + BASE
-    assert len(tickers) == 39
+    assert len(tickers) == 43
     by = {row.ticker: row for row in monitor_names(ROOT)}
     assert by["BTCUSD"].tier == "universe"
     assert by["BTCUSD"].membership == "in_universe"
@@ -133,6 +137,23 @@ def test_resolution_hl_and_nasdaq_and_unresolved() -> None:
     assert by["SAMSUN"].qualified_id == "KRX:005930"
     assert by["KOSDA"].resolution_status == "resolved"
     assert by["KOSDA"].qualified_id == "KRX:KQ11"
+    assert by["JUP"].qualified_id == "HL:JUP"
+    assert by["JUP"].tier == "monitor"
+    assert by["JUP"].membership == "not_in_membership"
+    assert by["LIT"].qualified_id == "HL:LIT"
+    assert by["LIT"].membership_key == "LIT"
+    assert by["LIT"].tape_alias == "LIT"
+    assert by["LTCUSD"].qualified_id == "CRYPTO:LTC"
+    assert by["LTCUSD"].membership_key == "LTC"
+    assert by["LTCUSD"].tape_alias == "LTC"
+    assert by["LIT"].qualified_id != by["LTCUSD"].qualified_id
+    assert by["LIT"].membership_key != by["LTCUSD"].membership_key
+    assert "Lighter" in spec_text
+    assert "Not Litecoin" in spec_text
+    assert "Not Lighter" in spec_text
+    assert by["NIL"].qualified_id == "HL:NIL"
+    assert by["DRV"].qualified_id == "HL:DRV"
+    assert by["DRV"].venue == "hyperliquid"
 
 
 def test_lockup_confirmed_not_flat_180d() -> None:
