@@ -24,7 +24,11 @@ Each morning the Principal also records whether he ACTED on anything in the brie
 
 ## 6. Decision at session eleven
 
-3 or more Y out of 10: continue. 1 or fewer: stop building panels and rethink what the system is for. The bar won't be extended or moved. 2 of 10: OPEN, Principal to rule before capture 1.
+0 to 2 Y out of 10: STOP building panels and pivot. 3 or more Y out of 10: continue. There is no middle band and no review band, because a test with a review band is a test that gets argued. The bar won't be extended or moved.
+
+Why 2 is a stop, recorded so it isn't relitigated: the bar was set against P0's honest count of 1 in 10. Two is one morning better than changing nothing. If eleven captures and a persistence layer only move the count from 1 to 2, the next month of building doesn't pay for itself.
+
+What STOP means: it does not mean shutting down. It means stopping work on the signal generator and redirecting to measuring the Principal's own trading, meaning expectancy by setup type, by instrument and by regime, from his actual fills. That is the shorter project, and it answers a question about his money rather than about the market. The infrastructure stays. The direction changes.
 
 ## 7. Scoresheet
 
