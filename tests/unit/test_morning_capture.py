@@ -660,9 +660,10 @@ def test_workflow_capture_runs_before_send_and_is_nonfatal() -> None:
     assert brief.count(deliver_name) == 1
     assert "capture_rows=capture_rows" in brief
     proof_key = "\n  capture-proof:\n"
-    assert proof_key in text
-    assert text.index(brief_key) < text.index(proof_key)
-    proof = text[text.index(proof_key) :]
+    render_key = "\n  render-proof:\n"
+    assert proof_key in text and render_key in text
+    assert text.index(brief_key) < text.index(proof_key) < text.index(render_key)
+    proof = text[text.index(proof_key) : text.index(render_key)]
     assert "needs:" not in proof
     assert "inputs.mode == 'capture_proof'" in proof
     assert "uv run lab retain proof" in proof
