@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 import sys
 from argparse import Namespace
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from mm_common.env import CHAT_ID_ENV, PRINCIPAL_DM_CHAT_ID_ENV
 from mm_common.naming import require_publishing_desk, require_route_slug, route_slugs_help
-from mm_common.time import parse_utc, utcnow
+from mm_common.time import as_utc, parse_utc, utcnow
 from mm_delivery.deliver import deliver
 from mm_delivery.inbound import handle_inbound
 from mm_delivery.payload import SEND_ENABLED
@@ -25,6 +26,7 @@ def add_deliver_parser(sub) -> None:
     pack_p = deliver_sub.add_parser("pack", help="build Telegram payload from an Ops pack or markdown")
     _add_pack_args(pack_p)
     _add_principal_dm_args(pack_p, subject="pack")
+    _add_scheduled_for_arg(pack_p)
 
     test_p = deliver_sub.add_parser(
         "test",
@@ -101,6 +103,7 @@ def add_deliver_parser(sub) -> None:
 
     _add_pack_args(deliver_p)
     _add_principal_dm_args(deliver_p, subject="pack")
+    _add_scheduled_for_arg(deliver_p)
 
 
 def _add_pack_args(parser) -> None:
@@ -115,6 +118,19 @@ def _add_pack_args(parser) -> None:
     parser.add_argument("--no-db", action="store_true")
     parser.add_argument("--ignore-quiet-hours", action="store_true")
     add_completion_args(parser)
+
+
+def _add_scheduled_for_arg(parser) -> None:
+    parser.add_argument(
+        "--scheduled-for",
+        default="",
+        help=(
+            "UTC catalog anchor for this Principal DM. On an actual "
+            "--to-principal-dm --i-mean-it send, append one LATE line to that "
+            "same message when send time is more than 30 minutes after the "
+            "anchor. The line's run_id is --run-id (the deliver-receipt id)."
+        ),
+    )
 
 
 def _add_principal_dm_args(parser, *, subject: str) -> None:
@@ -282,6 +298,56 @@ def _payload_path(payload: dict) -> str | None:
     return None
 
 
+_LATE_AFTER = timedelta(minutes=30)
+_SYDNEY_MORNING = "grok.sydney_morning"
+
+
+def sydney_morning_late_line(
+    scheduled_for: str | datetime | None,
+    sent_at: datetime,
+    run_id: str | None,
+) -> str | None:
+    """One LATE line when a Principal DM send is more than 30 minutes after the anchor.
+
+    Delta is send-time UTC minus ``scheduled_for``. Exactly 30 minutes, any
+    smaller delta, and an early (negative) delta return None. Hours are whole
+    hours. Remaining minutes are floored. ``run_id`` is the deliver-receipt id.
+    """
+    raw_anchor = scheduled_for.strip() if isinstance(scheduled_for, str) else scheduled_for
+    rid = str(run_id or "").strip()
+    if not raw_anchor or not rid:
+        return None
+    anchor = as_utc(raw_anchor) if isinstance(raw_anchor, datetime) else parse_utc(str(raw_anchor))
+    sent = as_utc(sent_at)
+    delta_seconds = (sent - anchor).total_seconds()
+    if delta_seconds <= _LATE_AFTER.total_seconds():
+        return None
+    whole_minutes = int(delta_seconds // 60)
+    hours, minutes = divmod(whole_minutes, 60)
+    return f"LATE: {_SYDNEY_MORNING} fired +{hours}h {minutes}m past anchor. run_id {rid}."
+
+
+def apply_sydney_morning_late_line(
+    markdown: str,
+    *,
+    scheduled_for: str | datetime | None,
+    sent_at: datetime,
+    run_id: str | None,
+) -> str:
+    """Append the LATE line once. The same markdown when this send is not late."""
+    try:
+        line = sydney_morning_late_line(scheduled_for, sent_at, run_id)
+    except ValueError:
+        return markdown
+    if not line:
+        return markdown
+    if markdown.endswith("\n"):
+        return f"{markdown}{line}\n"
+    if markdown:
+        return f"{markdown}\n{line}\n"
+    return f"{line}\n"
+
+
 def _want_send(args: Namespace) -> bool | None:
     send = bool(getattr(args, "send", False))
     no_send = bool(getattr(args, "no_send", False))
@@ -308,6 +374,14 @@ def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
     to_dm = bool(getattr(args, "to_principal_dm", False))
     # Match lab deliver test: live POST only when --to-principal-dm and --i-mean-it.
     live = to_dm and bool(getattr(args, "i_mean_it", False))
+    if live:
+        # Same DM. Send-time is this clock, immediately before the existing POST.
+        markdown = apply_sydney_morning_late_line(
+            markdown,
+            scheduled_for=getattr(args, "scheduled_for", "") or "",
+            sent_at=utcnow(),
+            run_id=getattr(args, "run_id", "") or "",
+        )
     result = deliver(
         markdown,
         desk=desk,

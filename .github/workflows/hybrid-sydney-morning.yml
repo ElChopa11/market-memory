@@ -21,6 +21,12 @@
 # → exit 0, already_delivered, no Telegram. No receipt → lab brief close
 # --live --no-db then lab deliver pack --to-principal-dm --i-mean-it.
 # Write the receipt only after deliver exits 0 and stdout JSON has sent: true.
+# When that pack actually POSTs, delta is send-time UTC minus scheduled_for.
+# Delta > 30 minutes appends one line to the same DM (no second message):
+# LATE: grok.sydney_morning fired +Xh Ym past anchor. run_id <id>.
+# X is whole hours. Y is remaining whole minutes (floor). <id> is the stamp
+# run_id written on the deliver receipt. Delta <= 30m or early adds no line.
+# already_delivered does not reach this send.
 # A failed send writes no receipt (anchor stays open). A later trigger for
 # that anchor is a silent no-op, not a failure or miss. Receipt commit-back
 # is hard-scoped to completions/receipts/*.deliver.json (same fail-loud
@@ -464,9 +470,14 @@ jobs:
           mkdir -p "${OUT}"
           echo "lab deliver pack --to-principal-dm --i-mean-it --no-db (as_of=${AS_OF})"
           set +e
+          # Same POST. --scheduled-for / --run-id are this step's existing stamp
+          # outputs (no new env). The pack appends one LATE line only when this
+          # send is more than 30 minutes after the anchor.
           uv run lab deliver pack \
             --from-markdown "${BRIEF_PATH}" \
             --as-of "${AS_OF}" \
+            --scheduled-for "${SCHEDULED_FOR}" \
+            --run-id "${RUN_ID}" \
             --desk ops \
             --to-principal-dm \
             --i-mean-it \
