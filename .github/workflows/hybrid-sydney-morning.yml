@@ -27,6 +27,17 @@
 # X is whole hours. Y is remaining whole minutes (floor). <id> is the stamp
 # run_id written on the deliver receipt. Delta <= 30m or early adds no line.
 # already_delivered does not reach this send.
+# Before that POST (only the path that will send), ping HEALTHCHECKS_PING_URL/start
+# once with a short timeout. Anything other than HTTP 200 with body OK (404 /
+# not found, other status, timeout, network error, empty or unset secret)
+# appends one line to the same DM, after LATE when both apply:
+# DEADMAN: MISSING
+# No second Telegram message. After exit 0 and sent true, ping
+# HEALTHCHECKS_PING_URL once and store deadman_ping (OK | not_found | error |
+# unset) plus deadman_ping_at (UTC ISO) on the deliver receipt. A failed send
+# does not success-ping and writes no receipt. already_delivered success-pings
+# only (no DM, receipt unchanged) and logs the outcome. A ping failure never
+# fails the job or blocks the DM or receipt. The ping URL is not printed.
 # A failed send writes no receipt (anchor stays open). A later trigger for
 # that anchor is a silent no-op, not a failure or miss. Receipt commit-back
 # is hard-scoped to completions/receipts/*.deliver.json (same fail-loud
@@ -38,7 +49,8 @@
 # input is true. Both crons stay. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
 #
 # Secret names only (Principal adds values): TELEGRAM_BOT_TOKEN (second bot),
-# TELEGRAM_CHAT_ID_PRINCIPAL_DM. Never TELEGRAM_CHAT_ID.
+# TELEGRAM_CHAT_ID_PRINCIPAL_DM, HEALTHCHECKS_PING_URL (dead-man ping).
+# Never TELEGRAM_CHAT_ID. Never print HEALTHCHECKS_PING_URL.
 # Optional data richness (not required for stamp or DM): POLYGON_API_KEY,
 # FRED_API_KEY. Absent secrets resolve to empty; brief marks those slots
 # unavailable. The job does not fail when they are missing.
@@ -364,6 +376,8 @@ jobs:
         env:
           SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
           BRANCH: ${{ github.ref_name }}
+          # Success ping only. Not printed. Not passed to brief, stamp, or commit.
+          HEALTHCHECKS_PING_URL: ${{ secrets.HEALTHCHECKS_PING_URL }}
         run: |
           set -euo pipefail
           # Queued runs keep the event SHA. A prior run's receipt lives on the branch tip.
@@ -375,6 +389,7 @@ jobs:
           from pathlib import Path
 
           from mm_desks.deliver_receipt import ALREADY_DELIVERED, decide_deliver, find_receipt, relative_receipt_path
+          from mm_lab_cli.deadman import ping_success_if_already_delivered
 
           root = Path(".").resolve()
           completions = root / "ops" / "reports" / "scheduler" / "completions"
@@ -393,6 +408,11 @@ jobs:
               print('{"outcome":"already_delivered","telegram":false}')
               with out.open("a", encoding="utf-8") as fh:
                   fh.write("already_delivered=true\n")
+              # Success ping only. No DM, no receipt write. A ping failure stays exit 0.
+              try:
+                  ping_success_if_already_delivered(decision)
+              except Exception:
+                  print("deadman success ping: error")
               sys.exit(0)
           print(f"no deliver receipt for scheduled_anchor={scheduled_for}; will brief then deliver")
           with out.open("a", encoding="utf-8") as fh:
@@ -454,6 +474,8 @@ jobs:
           AS_OF: ${{ steps.brief.outputs.as_of }}
           SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
           RUN_ID: ${{ needs.stage1-stamp.outputs.run_id }}
+          # Start ping before the POST, success ping after sent true. Not printed.
+          HEALTHCHECKS_PING_URL: ${{ secrets.HEALTHCHECKS_PING_URL }}
         run: |
           set -euo pipefail
           if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
@@ -471,8 +493,9 @@ jobs:
           echo "lab deliver pack --to-principal-dm --i-mean-it --no-db (as_of=${AS_OF})"
           set +e
           # Same POST. --scheduled-for / --run-id are this step's existing stamp
-          # outputs (no new env). The pack appends one LATE line only when this
-          # send is more than 30 minutes after the anchor.
+          # outputs. The pack appends one LATE line only when this send is more
+          # than 30 minutes after the anchor, then at most one DEADMAN line.
+          # HEALTHCHECKS_PING_URL is step env. The pack reads it and does not print it.
           uv run lab deliver pack \
             --from-markdown "${BRIEF_PATH}" \
             --as-of "${AS_OF}" \
@@ -501,6 +524,7 @@ jobs:
               parse_deliver_stdout,
               write_deliver_receipt,
           )
+          from mm_lab_cli.deadman import deadman_receipt_fields
 
           root = Path(".").resolve()
           stdout_path = Path(f"/tmp/sydney-deliver-{os.environ['GITHUB_RUN_ID']}.json")
@@ -520,6 +544,9 @@ jobs:
               sys.exit(1)
           scheduled_for = os.environ.get("SCHEDULED_FOR") or ""
           run_id = os.environ.get("RUN_ID") or ""
+          # Success-ping outcome from deliver stdout. Missing or invalid fields
+          # are omitted; the receipt is still written. The ping URL is not stored.
+          fields = deadman_receipt_fields(parsed)
           path, created = write_deliver_receipt(
               completions_dir=root / "ops" / "reports" / "scheduler" / "completions",
               routine_id="grok.sydney_morning",
@@ -527,6 +554,7 @@ jobs:
               run_id=run_id,
               sent=True,
               source="github.actions",
+              **fields,
           )
           if path is None or not created:
               print(

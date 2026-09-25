@@ -30,6 +30,9 @@ KIND = "deliver_receipt"
 ALREADY_DELIVERED = "already_delivered"
 PROCEED = "proceed"
 NOT_SENT = "not_sent"
+# Success-ping outcome stored on a new receipt. Absent on receipts written
+# before the dead-man ping existed; those remain valid.
+DEADMAN_OUTCOMES = frozenset({"OK", "not_found", "error", "unset"})
 
 RECEIPT_KEYS = frozenset(
     {
@@ -40,6 +43,8 @@ RECEIPT_KEYS = frozenset(
         "sent",
         "delivered_at_ts",
         "source",
+        "deadman_ping",
+        "deadman_ping_at",
     }
 )
 # Split so the desks tree does not contain the signing snippet the import-boundary
@@ -124,7 +129,37 @@ def validate_receipt_payload(raw: dict) -> dict:
         raise ValueError("deliver receipt routine_id missing")
     # Re-parse so a bad anchor fails closed instead of counting as delivered.
     anchor_utc(str(raw.get("scheduled_anchor_ts") or ""))
+    _validate_deadman(raw)
     return raw
+
+
+def _validate_deadman(raw: dict) -> None:
+    """Both dead-man fields, or neither. Values are an outcome and a UTC timestamp, never the URL."""
+    has_ping = "deadman_ping" in raw
+    has_at = "deadman_ping_at" in raw
+    if not has_ping and not has_at:
+        return
+    if not has_ping or not has_at:
+        raise ValueError("deadman_ping and deadman_ping_at must be written together")
+    if raw.get("deadman_ping") not in DEADMAN_OUTCOMES:
+        raise ValueError("deadman_ping outcome invalid")
+    try:
+        as_utc(parse_utc(str(raw.get("deadman_ping_at") or "")))
+    except ValueError as exc:
+        raise ValueError("deadman_ping_at is not UTC ISO") from exc
+
+
+def stored_deadman(deadman_ping: str | None, deadman_ping_at: str | None) -> dict[str, str]:
+    """Receipt fields for a success ping. An invalid pair is omitted so the receipt can still be written."""
+    if deadman_ping is None and deadman_ping_at is None:
+        return {}
+    if deadman_ping not in DEADMAN_OUTCOMES or not isinstance(deadman_ping_at, str) or not deadman_ping_at.strip():
+        return {}
+    try:
+        when = as_utc(parse_utc(deadman_ping_at)).isoformat()
+    except ValueError:
+        return {}
+    return {"deadman_ping": str(deadman_ping), "deadman_ping_at": when}
 
 
 def load_receipt(path: Path) -> dict:
@@ -180,6 +215,8 @@ def _receipt_body(
     run_id: str,
     source: str,
     delivered_at: datetime | None,
+    deadman_ping: str | None = None,
+    deadman_ping_at: str | None = None,
 ) -> str:
     anchor = anchor_utc(scheduled_anchor_ts)
     when = as_utc(delivered_at or utcnow())
@@ -192,6 +229,7 @@ def _receipt_body(
         "delivered_at_ts": when.isoformat(),
         "source": str(source or "github.actions"),
     }
+    payload.update(stored_deadman(deadman_ping, deadman_ping_at))
     validate_receipt_payload(payload)
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
@@ -205,6 +243,8 @@ def write_deliver_receipt(
     sent: bool,
     source: str = "github.actions",
     delivered_at: datetime | None = None,
+    deadman_ping: str | None = None,
+    deadman_ping_at: str | None = None,
 ) -> tuple[Path | None, bool]:
     """Write a receipt only when ``sent`` is true.
 
@@ -224,6 +264,8 @@ def write_deliver_receipt(
         run_id=run_id,
         source=source,
         delivered_at=delivered_at,
+        deadman_ping=deadman_ping,
+        deadman_ping_at=deadman_ping_at,
     )
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
     try:
