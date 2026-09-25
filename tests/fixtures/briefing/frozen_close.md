@@ -4,14 +4,7 @@ US Close 2026-03-10
 UTC 2026-03-10 20:15Z
 NY 2026-03-10 16:15 EDT
 SYD 2026-03-11 07:15 AEDT
-Health 93%
-Equities fresh
-Rates fresh
-USD fresh
-Oil fresh
-Vol fresh
-Crypto fresh
-Hyperliquid degraded
+Health 93% degraded Hyperliquid
 
 ES 5780.00 +1.05%
 NQ 20620.00 +1.08%

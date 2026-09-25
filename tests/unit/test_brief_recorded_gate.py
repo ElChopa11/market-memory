@@ -228,7 +228,9 @@ def test_recorded_gate_matches_committed_telegram_bytes() -> None:
     assert len(text.splitlines()) < 80
     assert "RECORDED DATA, --no-send" in text
     assert "Prior 2026-09-24T06:58:31Z" in text
-    assert "Now 2026-09-24T23:17:25Z" in text
+    assert "Now " not in text
+    assert "UTC 2026-09-24 23:17Z" in text
+    assert "Earlier pair, not this session." in text
     assert "no new session since 2026-09-23" in text
     assert "no new print since 2026-09-22" in text
     assert "+15.0bp" in text
@@ -236,10 +238,10 @@ def test_recorded_gate_matches_committed_telegram_bytes() -> None:
     assert "84314.50" in text
     assert "11.39% ann" not in text
     assert "0.000013" not in text
-    assert "Health 43%" in text
-    assert "Equities stale" in text
-    assert "Vol unavailable" in text
-    assert "Rates fresh" in text
+    assert "Health 43% stale Equities USD Oil; n/a Vol" in text
+    assert "Rates fresh" not in text
+    assert "Crypto fresh" not in text
+    assert "Hyperliquid fresh" not in text
     assert "100%" not in text
     assert "VIX " not in text
     assert "gaps:" in text and "VIX" in text.split("gaps:", 1)[1]

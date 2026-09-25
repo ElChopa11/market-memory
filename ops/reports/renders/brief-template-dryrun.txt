@@ -2,20 +2,12 @@
 US Close 2026-09-24
 
 Prior 2026-09-24T06:58:31Z
-Now 2026-09-24T23:17:25Z
 RECORDED DATA, --no-send
 
 UTC 2026-09-24 23:17Z
 NY 2026-09-24 19:17 EDT
 SYD 2026-09-25 09:17 AEST
-Health 43%
-Equities stale
-Rates fresh
-USD stale
-Oil stale
-Vol unavailable
-Crypto fresh
-Hyperliquid fresh
+Health 43% stale Equities USD Oil; n/a Vol
 obs none
 
 SPY 767.81 no new session since 2026-09-23

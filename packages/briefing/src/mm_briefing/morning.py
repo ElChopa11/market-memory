@@ -6,6 +6,7 @@ The send path is one Telegram message. Card split stays deferred.
 
 from __future__ import annotations
 
+import re
 from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
@@ -85,6 +86,12 @@ _HL_FUNDING_HALF_QUANTUM = Decimal(str(HL_FUNDING_PRINT_QUANTUM)) / Decimal(2)
 _FUNDING_HOURS_PER_YEAR = 24 * 365
 # Monospace block. A phone wraps past this. Asserted on the gate render.
 PHONE_LINE_MAX = 42
+# Health names only non-fresh domains. Unavailable is written n/a.
+_HEALTH_EXCEPTION_ORDER = ("stale", "degraded", "unavailable")
+_HEALTH_EXCEPTION_WORD = {"stale": "stale", "degraded": "degraded", "unavailable": "n/a"}
+_STAMP_RE = re.compile(
+    r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})?"
+)
 
 
 def render_morning_close(
@@ -117,9 +124,10 @@ def render_morning_close(
         config=presentation,
     )
     lines: list[str] = [f"US Close {session_date.isoformat()}", ""]
-    for lead in lead_lines:
+    kept_leads = [lead for lead in lead_lines if not _lead_restates_generated_at(lead, generated_at)]
+    for lead in kept_leads:
         lines.extend(_phone_wrap(lead))
-    if lead_lines:
+    if kept_leads:
         lines.append("")
     lines.extend(_clock_lines(generated_at, ny, syd))
     lines.extend(_health_lines(health))
@@ -189,15 +197,86 @@ def _clock_lines(generated_at: datetime, ny: datetime, syd: datetime) -> list[st
 
 
 def _health_lines(health) -> list[str]:
-    """One state per domain. Stale and missing are named, not called fresh."""
+    """One line of exceptions. Fresh domains are omitted.
+
+    ``Health 100%`` when every scored domain is fresh. Otherwise the percentage
+    plus the domains that are not fresh, grouped by state. Unavailable is
+    written ``n/a``. At most two lines, each within the phone width.
+    """
     if health.insufficient or health.pct is None:
         return []
-    lines = [f"Health {health.pct}%"]
+    grouped: dict[str, list[str]] = {}
     for row in health.domains:
-        if row.excluded:
+        if row.excluded or row.state == "fresh":
             continue
-        lines.append(f"{row.label} {row.state}")
-    return lines
+        grouped.setdefault(row.state, []).append(row.label)
+    parts: list[str] = []
+    seen: set[str] = set()
+    for state in _HEALTH_EXCEPTION_ORDER:
+        names = grouped.get(state) or []
+        if not names:
+            continue
+        seen.add(state)
+        word = _HEALTH_EXCEPTION_WORD.get(state, state)
+        parts.append(f"{word} {' '.join(names)}")
+    for state, names in grouped.items():
+        if state in seen or not names:
+            continue
+        parts.append(f"{state} {' '.join(names)}")
+    if not parts:
+        return [f"Health {health.pct}%"]
+    text = f"Health {health.pct}% " + "; ".join(parts)
+    wrapped = _phone_wrap(text)
+    if len(wrapped) <= 2:
+        return wrapped
+    return _pack_two(text)
+
+
+def _pack_two(text: str) -> list[str]:
+    """Two lines of at most PHONE_LINE_MAX. Used when a health line is long."""
+    words = [word for word in text.split(" ") if word]
+    first: list[str] = []
+    index = 0
+    while index < len(words):
+        trial = words[index] if not first else f"{' '.join(first)} {words[index]}"
+        if len(trial) > PHONE_LINE_MAX:
+            break
+        first.append(words[index])
+        index += 1
+    if not first:
+        first = [words[0][:PHONE_LINE_MAX]]
+        index = 1
+    rest = " ".join(words[index:])
+    if not rest:
+        return [" ".join(first)]
+    if len(rest) <= PHONE_LINE_MAX:
+        return [" ".join(first), rest]
+    return [" ".join(first), rest[:PHONE_LINE_MAX].rstrip()]
+
+
+def _lead_restates_generated_at(lead: str, generated_at: datetime) -> bool:
+    """A lead whose only fact is this capture's clock is the UTC line.
+
+    ``Now 2026-09-24T23:17:25Z`` and ``UTC 2026-09-24 23:17Z`` are one instant.
+    A prior stamp, or any other words, stays.
+    """
+    stamps = list(_STAMP_RE.finditer(lead))
+    if len(stamps) != 1:
+        return False
+    raw = stamps[0].group(0)
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00").replace(" ", "T"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=generated_at.tzinfo)
+    left = as_utc(parsed).replace(second=0, microsecond=0)
+    right = as_utc(generated_at).replace(second=0, microsecond=0)
+    if left != right:
+        return False
+    residue = _STAMP_RE.sub(" ", lead)
+    words = [word.strip(" :,").lower() for word in residue.split() if word.strip(" :,")]
+    return words in ([], ["now"], ["utc"])
 
 
 def _assets_for_health(

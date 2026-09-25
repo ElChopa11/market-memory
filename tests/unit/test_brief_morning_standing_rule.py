@@ -19,11 +19,14 @@ from mm_briefing.models import (
     MacroSnapshot,
     ThesisHook,
 )
+from mm_briefing.health import DomainHealth, HealthReport
 from mm_briefing.morning import (
     FORBIDDEN_RENDER_FRAGMENTS,
     HL_FUNDING_BASELINE_HOURLY,
     PHONE_LINE_MAX,
+    _health_lines,
     funding_on_baseline,
+    render_morning_close,
 )
 from mm_briefing.prior import MapPriorCaptureReader, PriorCaptureValue, prior_value_from_retain
 from mm_briefing.render import render_close
@@ -710,7 +713,10 @@ def test_missing_last_moves_to_gaps() -> None:
     text = _render(assets=tuple(assets))
     assert not any(line.startswith("VIX ") or line == "VIX" for line in _fence_lines(text))
     assert "VIX" in text.split("gaps:", 1)[1]
-    assert "n/a" not in text
+    for line in _fence_lines(text):
+        if line.startswith("Health") or line.startswith("n/a "):
+            continue
+        assert "n/a" not in line
     _assert_phone(text)
 
 
@@ -769,19 +775,102 @@ def test_repeated_session_is_stale_on_the_health_line_and_not_fresh() -> None:
         hl=(_hl("BTC", funding="0.000013", quality="ok"),),
         prior_reader=MapPriorCaptureReader(priors),
     )
-    assert "Health 43%" in text
-    assert "Equities stale" in text
-    assert "Rates fresh" in text
-    assert "USD stale" in text
-    assert "Oil stale" in text
-    assert "Vol unavailable" in text
-    assert "Crypto fresh" in text
-    assert "Hyperliquid fresh" in text
+    assert "Health 43% stale Equities USD Oil; n/a Vol" in text
+    assert "Rates fresh" not in text
+    assert "Crypto fresh" not in text
+    assert "Hyperliquid fresh" not in text
     assert "100%" not in text
-    assert "Equities fresh" not in text
+    assert "fresh" not in text
     assert "no new session since 2026-09-22" in text
-    assert "Vol fresh" not in text
+    health_lines = [line for line in _fence_lines(text) if line.startswith("Health") or line.startswith("n/a ")]
+    assert len(health_lines) <= 2
     _assert_phone(text)
+
+
+def _health_report(states: tuple[tuple[str, str, str], ...], pct: int) -> HealthReport:
+    domains = tuple(
+        DomainHealth(domain_id, label, state, False, "") for domain_id, label, state in states
+    )
+    return HealthReport("test", domains, pct, len(domains), (), False)
+
+
+def test_health_line_is_exceptions_only_or_100() -> None:
+    mixed = _health_report(
+        (
+            ("equities", "Equities", "stale"),
+            ("rates", "Rates", "fresh"),
+            ("usd", "USD", "stale"),
+            ("oil", "Oil", "stale"),
+            ("vol", "Vol", "unavailable"),
+            ("crypto", "Crypto", "fresh"),
+            ("hyperliquid", "Hyperliquid", "fresh"),
+        ),
+        43,
+    )
+    assert _health_lines(mixed) == ["Health 43% stale Equities USD Oil; n/a Vol"]
+    fresh = _health_report(
+        (
+            ("equities", "Equities", "fresh"),
+            ("rates", "Rates", "fresh"),
+            ("usd", "USD", "fresh"),
+            ("oil", "Oil", "fresh"),
+            ("vol", "Vol", "fresh"),
+            ("crypto", "Crypto", "fresh"),
+            ("hyperliquid", "Hyperliquid", "fresh"),
+        ),
+        100,
+    )
+    assert _health_lines(fresh) == ["Health 100%"]
+    crowded = _health_report(
+        (
+            ("equities", "Equities", "degraded"),
+            ("rates", "Rates", "degraded"),
+            ("usd", "USD", "degraded"),
+            ("oil", "Oil", "degraded"),
+            ("vol", "Vol", "degraded"),
+            ("crypto", "Crypto", "degraded"),
+            ("hyperliquid", "Hyperliquid", "degraded"),
+        ),
+        50,
+    )
+    lines = _health_lines(crowded)
+    assert len(lines) <= 2
+    assert all(len(line) <= PHONE_LINE_MAX for line in lines)
+    assert lines[0].startswith("Health 50% degraded ")
+    rendered = _render(hl=(_hl("BTC"), _hl("ETH")))
+    assert "Health 100%" in rendered
+    assert " fresh" not in rendered
+
+
+def test_now_lead_matching_the_utc_clock_is_dropped() -> None:
+    doc = render_morning_close(
+        generated_at=GENERATED,
+        as_of=AS_OF,
+        overnight=_session(_eight()),
+        session=_session(_eight()),
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=(),
+        hl=(),
+        data_quality="ok",
+        lead_lines=(
+            f"Now {GENERATED.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+            "Prior 2026-09-21T20:00:00Z",
+        ),
+    )
+    assert "Now " not in doc.markdown
+    assert f"UTC {GENERATED.strftime('%Y-%m-%d %H:%MZ')}" in doc.markdown
+    assert "Prior 2026-09-21T20:00:00Z" in doc.markdown
+
+
+def test_earlier_pair_block_is_absent_from_a_live_close() -> None:
+    """The two-run FRED note is a recorded-gate closing line, not the live brief."""
+    assert "Earlier pair" not in _render()
+    settings = load_briefing_settings(ROOT)
+    doc, _ = generate_from_fixture("close", load_fixture_file(FIXTURE), settings=settings)
+    assert doc is not None
+    assert "Earlier pair" not in doc.markdown
 
 
 def test_as_of_knowledge_line_is_not_in_the_morning_message() -> None:
