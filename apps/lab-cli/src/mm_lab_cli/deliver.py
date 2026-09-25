@@ -416,7 +416,7 @@ def _cmd_pack(args: Namespace) -> tuple[int, str | None]:
     if live:
         # Same DM. One append, fixed order LATE, DEADMAN, CAPTURE, before the POST.
         # /start only on the path that will send. Anything but HTTP 200 OK
-        # is the DEADMAN line. The URL is not logged.
+        # is the DEADMAN: MISSING line. The URL is not logged.
         try:
             late = sydney_morning_late_line(
                 getattr(args, "scheduled_for", "") or "",

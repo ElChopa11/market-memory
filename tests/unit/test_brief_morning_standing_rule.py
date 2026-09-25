@@ -24,6 +24,7 @@ from mm_briefing.prior import MapPriorCaptureReader, PriorCaptureValue, prior_va
 from mm_briefing.render import render_close
 from mm_delivery.format import TELEGRAM_MAX_MESSAGE_CHARS, chunk_markdown_v2
 from mm_delivery.payload import prepare_payload
+from mm_lab_cli.deadman import DEADMAN_MISSING_LINE
 from mm_lab_cli.deliver import append_brief_status_lines
 
 UTC = timezone.utc
@@ -34,7 +35,6 @@ GENERATED = AS_OF
 PRIOR_CLOSE = datetime(2026, 9, 21, 20, 0, tzinfo=UTC)
 
 LATE = "LATE: grok.sydney_morning fired +2h 46m past anchor. run_id actions-b1-1."
-DEADMAN = "DEADMAN: grok.sydney_morning anchor window had no fire. run_id actions-b1-1."
 CAPTURE = "CAPTURE: grok.sydney_morning capture 1 of 11. run_id actions-b1-1."
 
 
@@ -442,12 +442,12 @@ def test_eleven_capture_brief_is_one_message_status_lines_last() -> None:
     message = append_brief_status_lines(
         doc.markdown,
         late=LATE,
-        deadman=DEADMAN,
+        deadman=DEADMAN_MISSING_LINE,
         capture=CAPTURE,
     )
-    assert message.rstrip().endswith("\n".join((LATE, DEADMAN, CAPTURE)))
+    assert message.rstrip().endswith("\n".join((LATE, DEADMAN_MISSING_LINE, CAPTURE)))
     tail = message.strip().splitlines()[-3:]
-    assert tail == [LATE, DEADMAN, CAPTURE]
+    assert tail == [LATE, DEADMAN_MISSING_LINE, CAPTURE]
     assert len(message) <= TELEGRAM_MAX_MESSAGE_CHARS
     payload = prepare_payload(message)
     assert payload.reason == "no_send"
