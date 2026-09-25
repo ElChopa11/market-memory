@@ -32,7 +32,7 @@ from mm_lab_cli.quant_review import add_quant_review_parser, dispatch_quant_revi
 from mm_lab_cli.research import dispatch_skeptic, dispatch_thesis, run_research_command
 from mm_lab_cli.source_health import add_source_health_parser, dispatch_source_health
 from mm_memory.db import dsn_from_env, session_scope
-from mm_memory.migrate import current_revision, upgrade_head
+from mm_memory.migrate import MigrationDsnError, current_revision, render_upgrade_sql, upgrade_head
 from mm_memory.queries import what_did_we_know
 
 
@@ -41,7 +41,20 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd")
 
     sub.add_parser("status", help="show phase and hard-gates")
-    sub.add_parser("migrate", help="apply Alembic migrations to Postgres")
+    migrate = sub.add_parser(
+        "migrate",
+        help="apply Alembic migrations to Postgres, or render SQL with --sql (no connection)",
+    )
+    migrate.add_argument(
+        "--sql",
+        action="store_true",
+        help="print the Postgres upgrade plan and do not connect (ignores POSTGRES_DSN)",
+    )
+    migrate.add_argument(
+        "--sql-out",
+        type=Path,
+        help="write the Postgres upgrade plan to this path and do not connect",
+    )
 
     ingest = sub.add_parser("ingest", help="read-only public ingest (HL /info, Polygon, FRED/calendar)")
     ingest.add_argument("--window", default="7d", help="lookback window, e.g. 7d, 24h")
@@ -134,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd is None or args.cmd == "status":
         return cmd_status()
     if args.cmd == "migrate":
-        return cmd_migrate()
+        return cmd_migrate(args)
     if args.cmd == "ingest":
         return cmd_ingest(args)
     if args.cmd == "what-did-we-know":
@@ -205,6 +218,7 @@ def cmd_status() -> int:
     print("Paper: lab paper open|close|list (cannot open without invalidation + max loss)")
     print("Quant review: lab quant-review --fixture PATH --no-db (decision board; not a call generator)")
     print("Schedule: lab schedule miss-check (control: closed window + no completion → escalate). heartbeat-check is an alias. Hive CLI writes ops/reports/scheduler/completions/ (lab schedule heartbeat). Heartbeat-on-fire is a log. --baseline-before today labels pre-today (Australia/Sydney) misses as known-missed.")
+    print("Migrate: lab migrate applies Postgres DDL (POSTGRES_DSN, direct Neon host, not the pooler). lab migrate --sql renders the plan and does not connect.")
     print("Source health: lab data source-health (alias: lab dq report) — ops/reports/source-health/")
     print("Equities screen: lab equities reclaim-screen --fixture PATH --no-db (Post-IPO / reclaim triage; not a trading decision)")
     print("Desk run: lab desk run --all --fixture PATH --no-send (deterministic pack; default dry-run)")
@@ -229,10 +243,26 @@ def cmd_status() -> int:
     return 0
 
 
-def cmd_migrate() -> int:
-    dsn = dsn_from_env()
-    upgrade_head(dsn)
-    rev = current_revision(dsn)
+def cmd_migrate(args: argparse.Namespace) -> int:
+    if args.sql or args.sql_out is not None:
+        sql = render_upgrade_sql()
+        if args.sql_out is not None:
+            args.sql_out.parent.mkdir(parents=True, exist_ok=True)
+            args.sql_out.write_text(sql, encoding="utf-8")
+            print(
+                f"wrote offline upgrade SQL to {args.sql_out} "
+                f"({sql.count(chr(10))} lines; no connection; POSTGRES_DSN not read)"
+            )
+        if args.sql:
+            sys.stdout.write(sql)
+        return 0
+    try:
+        dsn = dsn_from_env()
+        upgrade_head(dsn)
+        rev = current_revision(dsn)
+    except MigrationDsnError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     print(f"migrated to {rev}")
     return 0
 

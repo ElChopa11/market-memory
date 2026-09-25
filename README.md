@@ -54,7 +54,7 @@ Live trading is **hard-gated** (`config/risk/environments/live.yaml` → `live_t
 
 Requires Docker Compose and [uv](https://docs.astral.sh/uv/) (Python 3.12).
 
-**`docker-compose.yml` is local development only** — for a machine that can run Docker. It is **not** the deployment path for the Grok Bot box / pod environment (those boxes are themselves containers with no local Docker host). For real Market Memory, operators use **managed Postgres + an S3-compatible object store** (Neon + Cloudflare R2 decided); do not treat compose as production.
+**`docker-compose.yml` is local development only** — for a machine that can run Docker. It is **not** the deployment path for the Grok Bot box / pod environment (those boxes are themselves containers with no local Docker host). For real Market Memory, operators use **managed Postgres + an S3-compatible object store** (Neon + Cloudflare R2 decided). That wire is prepare-only until Principal supplies Actions secrets: [docs/runbooks/persistence-neon-r2.md](docs/runbooks/persistence-neon-r2.md). Do not treat compose as production.
 
 ```bash
 # 1. Object store + database of record (local-dev only — not bot-box deploy)

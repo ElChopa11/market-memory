@@ -86,7 +86,7 @@ Why:
 
 Follow-on decisions (record only; not built here):
 
-- Neon/R2 credentials go to Actions secrets, not the box.
+- Neon/R2 credentials go to Actions secrets, not the box. Prepare-only names, offline `lab migrate --sql`, and the blocked-on-Principal list: [persistence-neon-r2.md](persistence-neon-r2.md). The Sydney morning job is still `--no-db`.
 - A separate Telegram bot for Actions stands (two credential stores, two blast radii).
 - Stage 2 is the right next build: Actions delivering a real pack to the Principal DM.
 - Minutes of Actions cron drift on the 06:30 digest are accepted as drift. They are not a skip.
