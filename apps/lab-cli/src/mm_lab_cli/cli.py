@@ -77,6 +77,10 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="stamp scheduled_anchor_ts (UTC)",
     )
+    retain_sub.add_parser(
+        "proof",
+        help="one Neon proof capture (capture_kind=proof); not the morning slot; exits non-zero on failure",
+    )
 
     know = sub.add_parser("what-did-we-know", help="point-in-time observations (as_of_knowledge <= T)")
     know.add_argument("--at", required=True, help="UTC instant (ISO-8601)")
@@ -249,7 +253,8 @@ def cmd_status() -> int:
     print(
         "Retain: lab retain --fixture PATH --no-db (dry-run). "
         "Morning job: lab retain morning --scheduled-for STAMP "
-        "(one Neon capture; failure does not fail delivery)"
+        "(one Neon capture; failure does not fail delivery). "
+        "Proof: lab retain proof (capture_kind=proof; not the morning slot)"
     )
     print("Rejected theses remain queryable learning records.")
     print(f"UTC now: {utcnow().isoformat()}")
@@ -367,6 +372,8 @@ def cmd_retain(args: argparse.Namespace) -> int:
     """Fixture dry-run, or the morning persist path. Bare retain does not open Postgres."""
     if getattr(args, "retain_cmd", None) == "morning":
         return cmd_retain_morning(args)
+    if getattr(args, "retain_cmd", None) == "proof":
+        return cmd_retain_proof(args)
     if not getattr(args, "fixture", None) or not getattr(args, "no_db", False):
         print(
             "DO NOT RUN. lab retain does not open Neon (LIVE_NEON_ENABLED is false). "
@@ -398,6 +405,23 @@ def cmd_retain_morning(args: argparse.Namespace) -> int:
     except Exception:
         print(json.dumps({"line": capture_failed_line("capture"), "capture_rows": None, "wrote": False}))
     return 0
+
+
+def cmd_retain_proof(_args: argparse.Namespace) -> int:
+    """Persist one proof capture. Non-zero when the Neon write did not land."""
+    from mm_ingest.mvp_retain import format_proof_report, run_proof_capture
+
+    raw_dsn = os.environ.get("POSTGRES_DSN")
+    dsn = raw_dsn.strip() if isinstance(raw_dsn, str) and raw_dsn.strip() else None
+    try:
+        result = run_proof_capture(dsn=dsn)
+    except Exception:
+        print("CAPTURE_PROOF: FAILED capture")
+        return 1
+    print(format_proof_report(result), end="")
+    if result.wrote and isinstance(result.capture_rows, int) and result.capture_rows > 0:
+        return 0
+    return 1
 
 
 def cmd_what_did_we_know(args: argparse.Namespace) -> int:

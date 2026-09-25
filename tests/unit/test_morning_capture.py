@@ -17,10 +17,17 @@ from mm_delivery.format import escape_markdown_v2
 from mm_delivery.telegram import TelegramApiResult
 from mm_desks.deliver_receipt import ALREADY_DELIVERED, decide_deliver, write_deliver_receipt
 from mm_ingest.mvp_retain import (
+    ANCHOR_EXISTS_SQL,
     CAPTURE_ROWS_SQL,
     EXPECTED_INSTRUMENTS,
+    PRIOR_CAPTURE_SQL,
+    PROOF_CAPTURE_KIND,
     morning_capture_if_sending,
+    proof_anchor_exclusion_sql,
+    proof_count_sql,
+    proof_prior_exclusion_sql,
     run_morning_capture,
+    run_proof_capture,
     sydney_anchor_date,
     us_cash_session_date,
 )
@@ -46,13 +53,18 @@ class MemStore:
         self.writes = 0
         self.readback: int | None = None
         self.fail: str | None = None
+        self.last_envelopes: list = []
 
     def count_for_anchor(self, anchor_date: str) -> int:
         if self.fail == "count":
             raise RuntimeError("password=secret connection failed")
         if self.fail == "slow":
             time.sleep(0.4)
-        return sum(1 for row in self.rows if row.get("anchor_date") == anchor_date)
+        return sum(
+            1
+            for row in self.rows
+            if row.get("capture_kind") != PROOF_CAPTURE_KIND and row.get("anchor_date") == anchor_date
+        )
 
     def prior_captured_at(self, anchor_date: str, before: str) -> str | None:
         if self.fail == "prior":
@@ -60,7 +72,8 @@ class MemStore:
         candidates = [
             str(row["captured_at"])
             for row in self.rows
-            if row.get("anchor_date") != anchor_date
+            if row.get("capture_kind") != PROOF_CAPTURE_KIND
+            and row.get("anchor_date") != anchor_date
             and row.get("captured_at")
             and str(row["captured_at"]) < before
         ]
@@ -70,8 +83,20 @@ class MemStore:
         if self.fail == "persist":
             raise RuntimeError("insert failed")
         self.writes += 1
+        self.last_envelopes = list(envelopes)
         for envelope in envelopes:
             self.rows.append(dict(envelope.payload))
+
+    def count_for_capture_id(self, capture_id: str) -> int:
+        if self.fail == "readback":
+            raise RuntimeError("select failed")
+        if self.readback is not None:
+            return self.readback
+        return sum(
+            1
+            for row in self.rows
+            if row.get("capture_id") == capture_id and row.get("capture_kind") == PROOF_CAPTURE_KIND
+        )
 
     def count_for_captured_at(self, captured_at: str) -> int:
         if self.fail == "readback":
@@ -363,6 +388,110 @@ def test_receipt_without_capture_rows_stays_valid(tmp_path: Path) -> None:
     assert "capture_rows" not in body
 
 
+PROOF_ID = "11111111-1111-4111-8111-111111111111"
+MONDAY_ANCHOR = "2026-09-27T20:30:00Z"
+MONDAY_NOW = datetime(2026, 9, 27, 20, 40, tzinfo=UTC)
+FRIDAY_PRIOR = "2026-09-25T20:32:00+00:00"
+SATURDAY_PROOF = "2026-09-26T04:00:00+00:00"
+
+
+def _proof(store: MemStore, **kwargs):
+    hl = kwargs.pop("hl", None) or HL()
+    poly = kwargs.pop("poly", None) or Poly()
+    return run_proof_capture(
+        dsn=kwargs.pop("dsn", "postgresql://example.invalid/market_memory"),
+        now=kwargs.pop("now", NOW),
+        scheduled_for=kwargs.pop("scheduled_for", ANCHOR),
+        timeout_s=kwargs.pop("timeout_s", 5),
+        store=store,
+        hl_client=hl,
+        polygon_adapter=poly,
+        capture_id=kwargs.pop("capture_id", PROOF_ID),
+        **kwargs,
+    )
+
+
+def test_proof_same_anchor_does_not_block_the_morning_write() -> None:
+    store = MemStore()
+    proof_now = datetime(2026, 9, 27, 20, 31, tzinfo=UTC)
+    proof = _proof(store, now=proof_now, scheduled_for=MONDAY_ANCHOR)
+    assert proof.wrote is True
+    assert proof.capture_rows == 75
+    assert proof.capture_id == PROOF_ID
+    assert proof.line == (
+        f"CAPTURE_PROOF: 75/37 rows @ {proof_now.isoformat()} capture_id {PROOF_ID}"
+    )
+    assert {row["capture_kind"] for row in store.rows} == {PROOF_CAPTURE_KIND}
+    assert {row["capture_id"] for row in store.rows} == {PROOF_ID}
+    assert {row["anchor_date"] for row in store.rows} == {"2026-09-28"}
+    assert all(env.identity.extras.get("capture_kind") == PROOF_CAPTURE_KIND for env in store.last_envelopes)
+    real = _capture(store, scheduled_for=MONDAY_ANCHOR, now=MONDAY_NOW)
+    assert real.wrote is True
+    assert store.writes == 2
+    assert "exists" not in real.line
+    assert real.line.startswith(f"CAPTURE: 75/37 rows @ {MONDAY_NOW.isoformat()}")
+    morning_rows = [row for row in store.rows if row.get("capture_kind") != PROOF_CAPTURE_KIND]
+    assert len(morning_rows) == 75
+    assert {row["anchor_date"] for row in morning_rows} == {"2026-09-28"}
+
+
+def test_proof_is_excluded_from_prior_selection() -> None:
+    store = MemStore()
+    store.rows.append(
+        {
+            "retain_series": "mvp_retain",
+            "anchor_date": "2026-09-26",
+            "captured_at": FRIDAY_PRIOR,
+            "capture_kind": "lab_snapshot",
+        }
+    )
+    store.rows.append(
+        {
+            "retain_series": "mvp_retain",
+            "anchor_date": "2026-09-27",
+            "captured_at": SATURDAY_PROOF,
+            "capture_kind": PROOF_CAPTURE_KIND,
+            "capture_id": PROOF_ID,
+        }
+    )
+    monday_now = datetime(2026, 9, 27, 20, 32, tzinfo=UTC)
+    result = _capture(store, scheduled_for=MONDAY_ANCHOR, now=monday_now)
+    assert result.wrote is True
+    assert result.prior_captured_at == FRIDAY_PRIOR
+    fresh = [row for row in store.rows if row.get("anchor_date") == "2026-09-28"]
+    assert fresh
+    assert {row["prior_captured_at"] for row in fresh} == {FRIDAY_PRIOR}
+    assert {row["interval_seconds"] for row in fresh} == {172800}
+    assert SATURDAY_PROOF not in {row.get("prior_captured_at") for row in fresh}
+
+
+def test_proof_sql_excludes_proof_from_anchor_and_prior() -> None:
+    assert "<> 'proof'" in ANCHOR_EXISTS_SQL
+    assert "<> 'proof'" in PRIOR_CAPTURE_SQL
+    count = proof_count_sql(PROOF_ID)
+    prior = proof_prior_exclusion_sql(PROOF_ID)
+    anchor = proof_anchor_exclusion_sql(PROOF_ID)
+    assert f"payload_json->>'capture_id' = '{PROOF_ID}'" in count
+    assert "capture_kind' = 'proof'" in count
+    assert "proof_rows_eligible_as_prior" in prior
+    assert "<> 'proof'" in prior
+    assert "proof_rows_on_anchor_key" in anchor
+    assert "anchor_date" in anchor
+
+
+def test_cli_proof_missing_dsn_exits_nonzero(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("POSTGRES_DSN", raising=False)
+
+    def boom(*_args, **_kwargs):
+        raise AssertionError("neon store opened")
+
+    monkeypatch.setattr("mm_ingest.mvp_retain.NeonRetainStore", boom)
+    assert main(["retain", "proof"]) == 1
+    out = capsys.readouterr().out
+    assert out.startswith("CAPTURE_PROOF: FAILED dsn missing")
+    assert "postgres" not in out.lower()
+
+
 def test_runbook_has_the_readback_sql() -> None:
     text = RUNBOOK.read_text(encoding="utf-8")
     assert "SELECT COUNT(*) AS capture_rows" in text
@@ -370,6 +499,9 @@ def test_runbook_has_the_readback_sql() -> None:
     assert "payload_json->>'captured_at' = '<captured_at>'" in text
     assert "payload_json->>'captured_at'" in CAPTURE_ROWS_SQL
     assert "payload_json->>'retain_series' = 'mvp_retain'" in CAPTURE_ROWS_SQL
+    assert "capture_kind' = 'proof'" in text
+    assert "proof_rows_eligible_as_prior" in text
+    assert "proof_rows_on_anchor_key" in text
 
 
 def test_workflow_capture_runs_before_send_and_is_nonfatal() -> None:
@@ -403,6 +535,26 @@ def test_workflow_capture_runs_before_send_and_is_nonfatal() -> None:
     assert "--i-mean-it" in command
     assert brief.count(deliver_name) == 1
     assert "capture_rows=capture_rows" in brief
+    proof_key = "\n  capture-proof:\n"
+    assert proof_key in text
+    assert text.index(brief_key) < text.index(proof_key)
+    proof = text[text.index(proof_key) :]
+    assert "needs:" not in proof
+    assert "inputs.mode == 'capture_proof'" in proof
+    assert "uv run lab retain proof" in proof
+    assert "secrets.POSTGRES_DSN" in proof
+    assert "secrets.POLYGON_API_KEY" in proof
+    assert "GITHUB_STEP_SUMMARY" in proof
+    assert "continue-on-error" not in proof
+    assert "TELEGRAM" not in proof
+    assert "HEALTHCHECKS" not in proof
+    assert "lab brief" not in proof
+    assert "lab deliver" not in proof
+    assert "write_deliver_receipt" not in proof
+    assert "git push" not in proof
+    assert "mode:" in text
+    assert "capture_proof" in text
+    assert text.count("workflow_dispatch:") == 1
 
 
 def _post_pack(

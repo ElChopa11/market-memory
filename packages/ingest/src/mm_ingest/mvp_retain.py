@@ -22,7 +22,10 @@ does not open Postgres. ``lab retain morning`` is the Sydney morning persist pat
 
 from __future__ import annotations
 
+import contextvars
+import re
 import threading
+import uuid
 from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -43,8 +46,17 @@ from mm_provenance.envelope import build_envelope
 from mm_provenance.normalize import HL_SOURCE_KIND, HL_SOURCE_NAME, SNAPSHOT_CAPTURE_KIND
 
 SERIES = "mvp_retain"
+PROOF_CAPTURE_KIND = "proof"
 HISTORY_BACKFILL_WIRED = False
 LIVE_NEON_ENABLED = False
+_CAPTURE_ID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+)
+# Set only while building one capture. Default is a real lab snapshot with no id.
+_CAPTURE_TAG: contextvars.ContextVar[tuple[str, str | None]] = contextvars.ContextVar(
+    "mvp_retain_capture_tag",
+    default=(SNAPSHOT_CAPTURE_KIND, None),
+)
 HL_INFO_TYPE = "metaAndAssetCtxs"
 SPOT_INFO_TYPE = "spotMetaAndAssetCtxs"
 PRICE_ONLY_SYMBOL = "DRV"
@@ -56,6 +68,8 @@ _CASH_CLOSE = time(16, 0)
 
 # Proof-of-write. The morning job counts rows for this capture's captured_at
 # after commit and puts that count in the DM. Substitute the stored timestamp.
+# Proof rows (capture_kind proof) are not the morning key and are not a prior.
+_NOT_PROOF_SQL = "COALESCE(payload_json->>'capture_kind', '') <> 'proof'"
 CAPTURE_ROWS_SQL = (
     "SELECT COUNT(*) FROM observation "
     "WHERE payload_json->>'retain_series' = 'mvp_retain' "
@@ -64,16 +78,24 @@ CAPTURE_ROWS_SQL = (
 ANCHOR_EXISTS_SQL = (
     "SELECT COUNT(*) FROM observation "
     "WHERE payload_json->>'retain_series' = 'mvp_retain' "
+    f"AND {_NOT_PROOF_SQL} "
     "AND payload_json->>'anchor_date' = :anchor_date"
 )
 PRIOR_CAPTURE_SQL = (
     "SELECT payload_json->>'captured_at' FROM observation "
     "WHERE payload_json->>'retain_series' = 'mvp_retain' "
+    f"AND {_NOT_PROOF_SQL} "
     "AND COALESCE(payload_json->>'anchor_date', '') <> :anchor_date "
     "AND payload_json->>'captured_at' IS NOT NULL "
     "AND payload_json->>'captured_at' < :before "
     "ORDER BY payload_json->>'captured_at' DESC "
     "LIMIT 1"
+)
+PROOF_ROWS_SQL = (
+    "SELECT COUNT(*) FROM observation "
+    "WHERE payload_json->>'retain_series' = 'mvp_retain' "
+    "AND payload_json->>'capture_kind' = 'proof' "
+    "AND payload_json->>'capture_id' = :capture_id"
 )
 
 _HL_FIELDS: dict[str, tuple[str, ...]] = {
@@ -287,6 +309,8 @@ def capture_mvp_retain(
     session_date: date,
     captured_at: datetime,
     prior_captured_at: datetime | None = None,
+    capture_kind: str = SNAPSHOT_CAPTURE_KIND,
+    capture_id: str | None = None,
 ) -> list[ObservationEnvelope]:
     """Perp meta, one grouped-daily read, then spot meta for DRV. No Postgres."""
     if isinstance(session_date, datetime) or not isinstance(session_date, date):
@@ -294,16 +318,20 @@ def capture_mvp_retain(
     ctxs = hl_client.meta_and_asset_ctxs()
     grouped, error = polygon_adapter.grouped_daily(session_date)
     spot = hl_client.spot_meta_and_asset_ctxs()
-    return build_retain_envelopes(
-        spec,
-        meta_and_asset_ctxs=ctxs,
-        grouped_daily=grouped,
-        grouped_error=error,
-        captured_at=captured_at,
-        prior_captured_at=prior_captured_at,
-        session_date=session_date,
-        spot_meta_and_asset_ctxs=spot,
-    )
+    token = _CAPTURE_TAG.set((capture_kind, capture_id))
+    try:
+        return build_retain_envelopes(
+            spec,
+            meta_and_asset_ctxs=ctxs,
+            grouped_daily=grouped,
+            grouped_error=error,
+            captured_at=captured_at,
+            prior_captured_at=prior_captured_at,
+            session_date=session_date,
+            spot_meta_and_asset_ctxs=spot,
+        )
+    finally:
+        _CAPTURE_TAG.reset(token)
 
 
 def persist_mvp_retain(session: Any, envelopes: list[ObservationEnvelope], **kwargs: Any) -> Any:
@@ -634,13 +662,17 @@ def _envelope(
 ) -> ObservationEnvelope:
     captured = as_utc(captured_at)
     captured_iso = captured.isoformat()
+    kind, capture_id = _CAPTURE_TAG.get()
     extras = {
-        "capture_kind": SNAPSHOT_CAPTURE_KIND,
+        "capture_kind": kind,
         "retain_series": SERIES,
         "captured_at": captured_iso,
     }
     payload = dict(payload)
     payload["captured_at"] = captured_iso
+    if capture_id:
+        extras["capture_id"] = capture_id
+        payload["capture_id"] = capture_id
     return build_envelope(
         source_name=source_name,
         source_kind=HL_SOURCE_KIND,
@@ -729,6 +761,9 @@ class MorningCaptureResult:
     captured_at: str | None
     prior_captured_at: str | None
     wrote: bool
+    capture_id: str | None = None
+    verify_sql: str | None = None
+    exclusion_sql: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -738,6 +773,7 @@ class MorningCaptureResult:
             "captured_at": self.captured_at,
             "prior_captured_at": self.prior_captured_at,
             "wrote": self.wrote,
+            "capture_id": self.capture_id,
         }
 
 
@@ -784,9 +820,84 @@ def capture_rows_line(*, rows: int, captured_at: str, prior_captured_at: str | N
     return f"CAPTURE: {rows}/{instruments} rows @ {captured_at} · prior {prior}"
 
 
-def _failed_result(reason: str, *, anchor_date: str | None = None) -> MorningCaptureResult:
+def capture_proof_line(*, rows: int, captured_at: str, capture_id: str, instruments: int) -> str:
+    return f"CAPTURE_PROOF: {rows}/{instruments} rows @ {captured_at} capture_id {capture_id}"
+
+
+def capture_proof_failed_line(reason: str) -> str:
+    text = " ".join(str(reason or "").split())
+    if text == "timeout":
+        return "CAPTURE_PROOF: FAILED timeout"
+    if not text:
+        text = "capture"
+    if len(text) > 80:
+        text = text[:80]
+    return f"CAPTURE_PROOF: FAILED {text}"
+
+
+def _require_capture_id(capture_id: str) -> str:
+    token = str(capture_id or "").strip().lower()
+    if not _CAPTURE_ID_RE.match(token):
+        raise ValueError("capture_id must be a uuid")
+    return token
+
+
+def proof_count_sql(capture_id: str) -> str:
+    """Read-back for one proof capture. Substitute nothing: the id is already in the text."""
+    token = _require_capture_id(capture_id)
+    return (
+        "SELECT COUNT(*) AS capture_rows\n"
+        "FROM observation\n"
+        "WHERE payload_json->>'retain_series' = 'mvp_retain'\n"
+        "  AND payload_json->>'capture_kind' = 'proof'\n"
+        f"  AND payload_json->>'capture_id' = '{token}';"
+    )
+
+
+def proof_prior_exclusion_sql(capture_id: str) -> str:
+    """Rows of this proof that the morning prior query can see. Expect 0."""
+    token = _require_capture_id(capture_id)
+    return (
+        "SELECT COUNT(*) AS proof_rows_eligible_as_prior\n"
+        "FROM observation\n"
+        "WHERE payload_json->>'retain_series' = 'mvp_retain'\n"
+        f"  AND {_NOT_PROOF_SQL}\n"
+        f"  AND payload_json->>'capture_id' = '{token}';"
+    )
+
+
+def proof_anchor_exclusion_sql(capture_id: str) -> str:
+    """Rows of this proof that count toward the one-capture-per-anchor-day key. Expect 0."""
+    token = _require_capture_id(capture_id)
+    return (
+        "SELECT COUNT(*) AS proof_rows_on_anchor_key\n"
+        "FROM observation\n"
+        "WHERE payload_json->>'retain_series' = 'mvp_retain'\n"
+        f"  AND {_NOT_PROOF_SQL}\n"
+        "  AND payload_json->>'anchor_date' IS NOT NULL\n"
+        f"  AND payload_json->>'capture_id' = '{token}';"
+    )
+
+
+def format_proof_report(result: MorningCaptureResult) -> str:
+    """Job log and step summary: the status line, then the verify SQL."""
+    parts = [result.line]
+    if result.verify_sql:
+        parts.append(result.verify_sql)
+    if result.exclusion_sql:
+        parts.append(result.exclusion_sql)
+    return "\n".join(parts) + "\n"
+
+
+def _failed_result(
+    reason: str,
+    *,
+    anchor_date: str | None = None,
+    proof: bool = False,
+) -> MorningCaptureResult:
+    line = capture_proof_failed_line(reason) if proof else capture_failed_line(reason)
     return MorningCaptureResult(
-        line=capture_failed_line(reason),
+        line=line,
         capture_rows=None,
         anchor_date=anchor_date,
         captured_at=None,
@@ -876,6 +987,13 @@ class NeonRetainStore:
             value = session.execute(text(CAPTURE_ROWS_SQL), {"captured_at": captured_at}).scalar()
         return _as_count(value)
 
+    def count_for_capture_id(self, capture_id: str) -> int:
+        from sqlalchemy import text
+
+        with _neon_session(self._dsn) as session:
+            value = session.execute(text(PROOF_ROWS_SQL), {"capture_id": capture_id}).scalar()
+        return _as_count(value)
+
 
 def _as_count(value: Any) -> int:
     """COUNT(*) may arrive as int or Decimal. Anything else is not a row count."""
@@ -898,9 +1016,14 @@ def _as_count(value: Any) -> int:
     return count
 
 
-def _run_bounded(fn: Callable[[], MorningCaptureResult], timeout_s: float) -> MorningCaptureResult:
+def _run_bounded(
+    fn: Callable[[], MorningCaptureResult],
+    timeout_s: float,
+    *,
+    proof: bool = False,
+) -> MorningCaptureResult:
     if timeout_s <= 0:
-        return _failed_result("timeout")
+        return _failed_result("timeout", proof=proof)
     box: dict[str, Any] = {}
 
     def target() -> None:
@@ -913,12 +1036,12 @@ def _run_bounded(fn: Callable[[], MorningCaptureResult], timeout_s: float) -> Mo
     thread.start()
     thread.join(timeout_s)
     if thread.is_alive():
-        return _failed_result("timeout")
+        return _failed_result("timeout", proof=proof)
     if "error" in box:
-        return _failed_result("capture")
+        return _failed_result("capture", proof=proof)
     result = box.get("result")
     if not isinstance(result, MorningCaptureResult):
-        return _failed_result("capture")
+        return _failed_result("capture", proof=proof)
     return result
 
 
@@ -932,21 +1055,31 @@ def run_morning_capture(
     hl_client: Any | None = None,
     polygon_adapter: Any | None = None,
     spec: MvpRetainSpec | None = None,
+    proof: bool = False,
+    capture_id: str | None = None,
 ) -> MorningCaptureResult:
     """Fetch, persist, and read back one capture for the Sydney anchor date.
 
     Any failure becomes a ``CAPTURE: FAILED`` line. The caller still delivers.
     A second call for the same anchor date does not write.
+
+    ``proof=True`` writes ``capture_kind=proof`` and does not take the anchor
+    slot. Those rows are excluded from the anchor key and from prior selection.
     """
     try:
         anchor = sydney_anchor_date(scheduled_for)
     except (TypeError, ValueError):
-        return _failed_result("anchor missing")
+        return _failed_result("anchor missing", proof=proof)
     anchor_token = anchor.isoformat()
+    if proof:
+        try:
+            capture_id = _require_capture_id(capture_id or str(uuid.uuid4()))
+        except ValueError:
+            return _failed_result("capture", proof=True)
     if store is None and not _dsn_present(dsn):
-        return _failed_result("dsn missing", anchor_date=anchor_token)
+        return _failed_result("dsn missing", anchor_date=anchor_token, proof=proof)
     if timeout_s <= 0:
-        return _failed_result("timeout", anchor_date=anchor_token)
+        return _failed_result("timeout", anchor_date=anchor_token, proof=proof)
 
     def body() -> MorningCaptureResult:
         return _morning_capture_body(
@@ -957,10 +1090,13 @@ def run_morning_capture(
             hl_client=hl_client,
             polygon_adapter=polygon_adapter,
             spec=spec,
+            proof=proof,
+            capture_id=capture_id,
         )
 
-    result = _run_bounded(body, timeout_s)
-    if result.anchor_date is None and result.line.startswith("CAPTURE: FAILED"):
+    result = _run_bounded(body, timeout_s, proof=proof)
+    failed_prefix = "CAPTURE_PROOF: FAILED" if proof else "CAPTURE: FAILED"
+    if result.anchor_date is None and result.line.startswith(failed_prefix):
         return MorningCaptureResult(
             line=result.line,
             capture_rows=result.capture_rows,
@@ -968,8 +1104,43 @@ def run_morning_capture(
             captured_at=result.captured_at,
             prior_captured_at=result.prior_captured_at,
             wrote=result.wrote,
+            capture_id=result.capture_id,
+            verify_sql=result.verify_sql,
+            exclusion_sql=result.exclusion_sql,
         )
     return result
+
+
+def run_proof_capture(
+    *,
+    dsn: str | None = None,
+    now: datetime | None = None,
+    scheduled_for: str | datetime | None = None,
+    timeout_s: float = CAPTURE_TIMEOUT_S,
+    store: Any | None = None,
+    hl_client: Any | None = None,
+    polygon_adapter: Any | None = None,
+    spec: MvpRetainSpec | None = None,
+    capture_id: str | None = None,
+) -> MorningCaptureResult:
+    """Same fetch and Neon write as the morning capture, tagged as a proof.
+
+    The anchor date is the Sydney date of ``now`` unless ``scheduled_for`` is
+    passed. Proof rows do not occupy that date's morning slot.
+    """
+    stamp = as_utc(now or utcnow())
+    return run_morning_capture(
+        scheduled_for=stamp if scheduled_for is None else scheduled_for,
+        dsn=dsn,
+        now=stamp,
+        timeout_s=timeout_s,
+        store=store,
+        hl_client=hl_client,
+        polygon_adapter=polygon_adapter,
+        spec=spec,
+        proof=True,
+        capture_id=capture_id,
+    )
 
 
 def _morning_capture_body(
@@ -981,28 +1152,31 @@ def _morning_capture_body(
     hl_client: Any | None,
     polygon_adapter: Any | None,
     spec: MvpRetainSpec | None,
+    proof: bool = False,
+    capture_id: str | None = None,
 ) -> MorningCaptureResult:
     anchor_token = anchor.isoformat()
     active = store if store is not None else NeonRetainStore(str(dsn))
-    try:
-        existing = active.count_for_anchor(anchor_token)
-    except Exception:
-        return _failed_result("db error", anchor_date=anchor_token)
-    if existing > 0:
-        return MorningCaptureResult(
-            line=capture_exists_line(anchor),
-            capture_rows=None,
-            anchor_date=anchor_token,
-            captured_at=None,
-            prior_captured_at=None,
-            wrote=False,
-        )
+    if not proof:
+        try:
+            existing = active.count_for_anchor(anchor_token)
+        except Exception:
+            return _failed_result("db error", anchor_date=anchor_token, proof=proof)
+        if existing > 0:
+            return MorningCaptureResult(
+                line=capture_exists_line(anchor),
+                capture_rows=None,
+                anchor_date=anchor_token,
+                captured_at=None,
+                prior_captured_at=None,
+                wrote=False,
+            )
     captured = as_utc(now or utcnow())
     captured_iso = captured.isoformat()
     try:
         prior_raw = active.prior_captured_at(anchor_token, captured_iso)
     except Exception:
-        return _failed_result("db error", anchor_date=anchor_token)
+        return _failed_result("db error", anchor_date=anchor_token, proof=proof)
     prior = _prior_or_none(prior_raw, captured)
     owned_hl = hl_client is None
     owned_poly = polygon_adapter is None
@@ -1025,19 +1199,24 @@ def _morning_capture_body(
                 session_date=us_cash_session_date(captured),
                 captured_at=captured,
                 prior_captured_at=prior,
+                capture_kind=PROOF_CAPTURE_KIND if proof else SNAPSHOT_CAPTURE_KIND,
+                capture_id=capture_id if proof else None,
             )
         except Exception:
-            return _failed_result("fetch", anchor_date=anchor_token)
+            return _failed_result("fetch", anchor_date=anchor_token, proof=proof)
         for envelope in envelopes:
             envelope.payload["anchor_date"] = anchor_token
         try:
             active.persist(envelopes)
         except Exception:
-            return _failed_result("db error", anchor_date=anchor_token)
+            return _failed_result("db error", anchor_date=anchor_token, proof=proof)
         try:
-            rows = active.count_for_captured_at(captured_iso)
+            if proof:
+                rows = active.count_for_capture_id(str(capture_id))
+            else:
+                rows = active.count_for_captured_at(captured_iso)
         except Exception:
-            return _failed_result("read-back mismatch", anchor_date=anchor_token)
+            return _failed_result("read-back mismatch", anchor_date=anchor_token, proof=proof)
     finally:
         if owned_hl and hl is not None:
             hl.close()
@@ -1047,18 +1226,36 @@ def _morning_capture_body(
     if spec is not None:
         instruments = spec.instrument_count
     prior_iso = as_utc(prior).isoformat() if prior is not None else None
-    return MorningCaptureResult(
-        line=capture_rows_line(
+    if proof:
+        ident = str(capture_id)
+        verify = proof_count_sql(ident)
+        exclusion = proof_prior_exclusion_sql(ident) + "\n" + proof_anchor_exclusion_sql(ident)
+        line = capture_proof_line(
+            rows=rows,
+            captured_at=captured_iso,
+            capture_id=ident,
+            instruments=instruments,
+        )
+    else:
+        ident = None
+        verify = None
+        exclusion = None
+        line = capture_rows_line(
             rows=rows,
             captured_at=captured_iso,
             prior_captured_at=prior_iso,
             instruments=instruments,
-        ),
+        )
+    return MorningCaptureResult(
+        line=line,
         capture_rows=rows,
         anchor_date=anchor_token,
         captured_at=captured_iso,
         prior_captured_at=prior_iso,
         wrote=True,
+        capture_id=ident,
+        verify_sql=verify,
+        exclusion_sql=exclusion,
     )
 
 

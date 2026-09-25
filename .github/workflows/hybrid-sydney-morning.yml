@@ -51,9 +51,11 @@
 # rebase-retry as the stamp; it does not stage completion rows).
 # Soft-skip (exit 0, later steps skipped) when either Telegram secret is absent — the
 # stamp still stands. Exit 1 if TELEGRAM_CHAT_ID is set. A dispatch with
-# i_mean_it_deliver left false skips this job (cannot send). stage1-stamp
-# has no if, so it still runs on every dispatch, then this job when the
-# input is true. Both crons stay. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
+# i_mean_it_deliver left false skips this job (cannot send). mode=normal
+# (the default) still stamps on every dispatch, then this job when
+# i_mean_it_deliver is true. mode=capture_proof skips stamp, brief, deliver,
+# Telegram, receipts, and the dead-man ping, and runs job capture-proof only.
+# Both crons stay. GROUP SEND_FROZEN. Paper only. Do not auto-merge.
 #
 # Secret names only (Principal adds values): TELEGRAM_BOT_TOKEN (second bot),
 # TELEGRAM_CHAT_ID_PRINCIPAL_DM, HEALTHCHECKS_PING_URL (dead-man ping).
@@ -79,8 +81,19 @@ on:
         description: >-
           Principal prove: stamp, then brief and POST to the Principal DM.
           Default false — Run workflow cannot send. The schedule path ignores this input.
+          Ignored when mode is capture_proof.
         type: boolean
         default: false
+        required: false
+      mode:
+        description: >-
+          normal (default) is the morning stamp and, when i_mean_it_deliver is true, the brief and DM.
+          capture_proof writes one Neon proof capture and skips stamp, brief, deliver, Telegram, receipts, and the ping.
+        type: choice
+        default: normal
+        options:
+          - normal
+          - capture_proof
         required: false
 
 # Push completion JSON and deliver receipts back to the run branch (GITHUB_TOKEN).
@@ -94,6 +107,8 @@ concurrency:
 
 jobs:
   stage1-stamp:
+    # mode=capture_proof skips the stamp. Schedule and mode=normal still stamp.
+    if: github.event_name != 'workflow_dispatch' || inputs.mode != 'capture_proof'
     runs-on: ubuntu-latest
     outputs:
       scheduled_for: ${{ steps.stamp.outputs.scheduled_for }}
@@ -324,7 +339,7 @@ jobs:
     needs: stage1-stamp
     # Schedule ignores the input (#104 path). Dispatch runs only on explicit true
     # (boolean inputs context, or string 'true' on the event payload). Default false matches neither.
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true'))
+    if: (github.event_name != 'workflow_dispatch' || inputs.mode != 'capture_proof') && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -719,3 +734,36 @@ jobs:
           echo "::error::DELIVER RECEIPT COMMIT-BACK FAILED: receipt JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. Job FAILS; a later trigger may retry only if this receipt is not on the branch."
           echo "::error::local receipt path: ${RECEIPT_PATH} scheduled_for=${SCHEDULED_FOR} run_id=${RUN_ID}"
           exit 1
+
+  # Weekend Neon proof. Same runner and the same retain path as the morning
+  # job. Does not stamp, brief, deliver, write a receipt, or ping.
+  # Proof rows are capture_kind=proof and do not occupy Monday's anchor slot.
+  capture-proof:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'capture_proof'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Sync workspace
+        run: uv sync --all-packages
+
+      - name: Proof capture (Neon write only)
+        env:
+          POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+        run: |
+          set +e
+          set -o pipefail
+          uv run lab retain proof | tee /tmp/retain-proof.txt
+          rc=$?
+          set -e
+          {
+            echo '## Capture proof'
+            echo
+            cat /tmp/retain-proof.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"

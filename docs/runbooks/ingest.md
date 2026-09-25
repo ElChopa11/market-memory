@@ -110,7 +110,7 @@ Standing Data desk report (not a brief): `uv run lab data source-health`. See [s
 
 ## MVP retain
 
-Forward-only observation retain for one capture. Rows go to the existing `observation` table through `persist_envelopes`. The fixture CLI does not open Postgres. The Sydney morning job does: `lab retain morning --scheduled-for <stamp>` on the send path, one capture per Sydney anchor date. See [mvp-retain.md](mvp-retain.md).
+Forward-only observation retain for one capture. Rows go to the existing `observation` table through `persist_envelopes`. The fixture CLI does not open Postgres. The Sydney morning job does: `lab retain morning --scheduled-for <stamp>` on the send path, one capture per Sydney anchor date. `lab retain proof` is the manual Neon proof (`capture_kind=proof`); it is not that morning slot. See [mvp-retain.md](mvp-retain.md).
 
 ```bash
 uv run lab retain --fixture PATH --no-db

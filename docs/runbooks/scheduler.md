@@ -117,7 +117,7 @@ Manual fire: Actions → **hybrid-sydney-morning** → **Run workflow** → sele
 
 ## B1 brief-and-deliver (same workflow, after the stamp)
 
-Job `brief-and-deliver` has `needs: stage1-stamp`. It runs when `github.event_name == 'schedule'`, or when `github.event_name == 'workflow_dispatch'` and `i_mean_it_deliver` is true. The input is a boolean and defaults to false. Both AEST crons stay (`30 20 * * 0-4` and `30 22 * * 0-4`). No ±900s guard. No `i_mean_it_stage2` input. `stage1-stamp` has no `if`, so a manual prove still stamps first.
+Job `brief-and-deliver` has `needs: stage1-stamp`. It runs when `github.event_name == 'schedule'`, or when `github.event_name == 'workflow_dispatch'` and `i_mean_it_deliver` is true and `mode` is not `capture_proof`. The deliver input is a boolean and defaults to false. `mode` defaults to `normal`. Both AEST crons stay (`30 20 * * 0-4` and `30 22 * * 0-4`). No ±900s guard. No `i_mean_it_stage2` input. A `normal` dispatch still stamps first. `mode=capture_proof` skips the stamp and the brief.
 
 | Scheduled run | What happens |
 |---|---|
@@ -136,8 +136,9 @@ Deliver receipt is first-writer-wins on the stamp's `scheduled_anchor_ts` (`sche
 
 | Dispatch | What happens |
 |---|---|
-| `i_mean_it_deliver` false (default) | `stage1-stamp` runs. `brief-and-deliver` does not run. No send. |
-| `i_mean_it_deliver` true | `stage1-stamp` runs first, then the same brief+DM gate as a scheduled fire. |
+| `mode=normal` (default) and `i_mean_it_deliver` false | `stage1-stamp` runs. `brief-and-deliver` does not run. No send. |
+| `mode=normal` and `i_mean_it_deliver` true | `stage1-stamp` runs first, then the same brief+DM gate as a scheduled fire. |
+| `mode=capture_proof` | Job `capture-proof` only. No stamp, no brief, no Telegram, no receipt, no ping. See [mvp-retain.md](mvp-retain.md). |
 
 Principal prove (once): Actions → **hybrid-sydney-morning** → **Run workflow** → branch of this change → set `i_mean_it_deliver` true. Default false cannot send.
 

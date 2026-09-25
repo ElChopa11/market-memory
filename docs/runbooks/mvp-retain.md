@@ -36,3 +36,44 @@ ORDER BY 2;
 ```
 
 Fixture dry-run (no Neon): `uv run lab retain --fixture PATH --no-db`.
+
+## Proof write
+
+`workflow_dispatch` input `mode=capture_proof` on `.github/workflows/hybrid-sydney-morning.yml` runs `lab retain proof` on the Actions runner. It does not stamp, brief, deliver, write a receipt, or ping. Rows are tagged `payload_json.capture_kind = 'proof'` and carry `capture_id`. No new column and no migration: both tags sit in the existing `payload_json`.
+
+Those rows are excluded from the morning anchor-day key and from prior selection (`capture_kind <> 'proof'`). A weekend proof does not become Monday's prior and does not block Monday's write.
+
+The job log and step summary print:
+
+`CAPTURE_PROOF: <n>/37 rows @ <captured_at UTC> capture_id <id>`
+
+and the SQL below. `<n>` is the Neon read-back for that `capture_id`.
+
+```sql
+SELECT COUNT(*) AS capture_rows
+FROM observation
+WHERE payload_json->>'retain_series' = 'mvp_retain'
+  AND payload_json->>'capture_kind' = 'proof'
+  AND payload_json->>'capture_id' = '<capture_id>';
+```
+
+Exclusion from prior selection (expect 0):
+
+```sql
+SELECT COUNT(*) AS proof_rows_eligible_as_prior
+FROM observation
+WHERE payload_json->>'retain_series' = 'mvp_retain'
+  AND COALESCE(payload_json->>'capture_kind', '') <> 'proof'
+  AND payload_json->>'capture_id' = '<capture_id>';
+```
+
+Exclusion from the one-capture-per-anchor-day key (expect 0):
+
+```sql
+SELECT COUNT(*) AS proof_rows_on_anchor_key
+FROM observation
+WHERE payload_json->>'retain_series' = 'mvp_retain'
+  AND COALESCE(payload_json->>'capture_kind', '') <> 'proof'
+  AND payload_json->>'anchor_date' IS NOT NULL
+  AND payload_json->>'capture_id' = '<capture_id>';
+```
