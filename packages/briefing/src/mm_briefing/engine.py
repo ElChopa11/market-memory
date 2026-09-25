@@ -23,7 +23,7 @@ from mm_briefing.fetchers import (
     live_macro_spec,
     snapshot_from_payload,
 )
-from mm_briefing.freshness import load_freshness_config
+from mm_briefing.freshness import gate_snapshot_freshness, load_freshness_config
 from mm_briefing.hl import (
     LIVE_INFO_SOURCE,
     ensure_hl_instruments,
@@ -140,7 +140,8 @@ def generate_preopen(
     calendar_source: str | None = None,
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
-    filled = complete_cross_asset(macro, freshness=load_freshness_config(settings.macro))
+    freshness = load_freshness_config(settings.macro)
+    filled = complete_cross_asset(macro, freshness=freshness)
     hl_filled = ensure_hl_instruments(hl, as_of=as_utc(as_of))
     filled = apply_crypto_pulse_from_hl(
         filled,
@@ -148,6 +149,7 @@ def generate_preopen(
         source_of_record=crypto_pulse_source_of_record(settings.macro),
         macro_config=settings.macro,
     )
+    filled = gate_snapshot_freshness(filled, config=freshness)
     cal_source = calendar_source or getattr(settings, "calendar_source", None) or DEFAULT_CALENDAR_SOURCE
     calendar = relevant_events(events_from_rows(settings.calendar_events, source=cal_source), as_of=as_of)
     divergences = evaluate_divergences(filled, settings.divergence_rules)
@@ -188,17 +190,23 @@ def generate_close(
     generated = as_utc(generated_at or as_of)
     freshness = load_freshness_config(settings.macro)
     sor = crypto_pulse_source_of_record(settings.macro)
-    overnight_gated = apply_crypto_pulse_from_hl(
-        complete_cross_asset(overnight, freshness=freshness),
-        hl,
-        source_of_record=sor,
-        macro_config=settings.macro,
+    overnight_gated = gate_snapshot_freshness(
+        apply_crypto_pulse_from_hl(
+            complete_cross_asset(overnight, freshness=freshness),
+            hl,
+            source_of_record=sor,
+            macro_config=settings.macro,
+        ),
+        config=freshness,
     )
-    session_gated = apply_crypto_pulse_from_hl(
-        complete_cross_asset(session, freshness=freshness),
-        hl,
-        source_of_record=sor,
-        macro_config=settings.macro,
+    session_gated = gate_snapshot_freshness(
+        apply_crypto_pulse_from_hl(
+            complete_cross_asset(session, freshness=freshness),
+            hl,
+            source_of_record=sor,
+            macro_config=settings.macro,
+        ),
+        config=freshness,
     )
     calendar = relevant_events(events_from_rows(settings.calendar_events), as_of=as_of, lookback_hours=0, horizon_hours=24)
     unexpected = unexpected_moves(session_gated, overnight_gated)

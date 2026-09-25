@@ -3,18 +3,25 @@
 mode: off
 fixture_path: tests/fixtures/briefing/frozen_day.json
 
-# Pulse quality vs observation age (not fetch success).
-# Age = calendar days between observation date (FRED `date` / AssetPrint.as_of)
-# and brief as_of_knowledge (capture / session as_of). Never published_at alone.
-# Beyond the resolved max_calendar_lag_days → stale (never fresh).
-# See docs/runbooks/market-pulse.md.
+# Pulse quality vs the source policy (not fetch success).
+# Knowledge clock = brief as_of_knowledge (capture / session as_of). Never published_at alone.
+# Every source the live brief turns on must appear here or config load fails.
+# There is no gated-source allow-list. See docs/runbooks/market-pulse.md.
 #
-# FRED lag is per-series with a default:
+# FRED lag is per-series calendar age (unchanged):
 #   - max_calendar_lag_days at the fred: level is the *daily default*
 #   - freshness.fred.series.<SYMBOL> overrides for monthly / low-cadence prints
 #     so CPI/NFP at 30–45d are not falsely stale under the daily rule.
+# Polygon is session-aware (newer US equity RTH bar due?), not a calendar-day lag.
+# grace_minutes 20 is vendor-stated, not stopwatched: 15-minute
+# Starter/Developer Plan Recency on GET /v2/aggs/ticker/.../range
+# (table read 2026-09-24) plus 5 minutes. POLYGON_API_KEY was unset.
+# Measure once a run can be observed (after the dual-cron prove).
+# Basic "End-of-day" has no minute in that table. Half-days at 13:00 ET
+# are not in the calendar.
 freshness:
   fred:
+    policy: calendar
     cadence: daily
     # Default for daily FRED (US10Y / DGS10 and any series without an override).
     # Incident 2026-09-22 brief with as-of 2026-09-18 (4d) must not be fresh.
@@ -35,6 +42,27 @@ freshness:
         cadence: monthly
         max_calendar_lag_days: 45
         fred_series_id: PAYEMS
+  # US equity RTH daily bars (SPY/QQQ/UUP/USO proxies). Product rule: has a
+  # newer session bar become due that we are not showing? Close is hard-coded
+  # 16:00 America/New_York. Not covered: Friday after Thanksgiving, weekday
+  # Christmas Eve, midweek July 3 (all 13:00 ET), and full weekday holidays.
+  polygon:
+    policy: session
+    cadence: us_rth_daily
+    session_timezone: America/New_York
+    rth_close: "16:00"
+    grace_minutes: 20
+  # simple/price has no vendor observation timestamp. The fetcher stamps capture
+  # time. A stamp older than this vs the brief clock is stale.
+  coingecko:
+    policy: snapshot
+    cadence: realtime
+    max_snapshot_lag_minutes: 20
+  # BTC/ETH SoR is a public /info perp mid captured on the brief clock.
+  hyperliquid:
+    policy: snapshot
+    cadence: realtime
+    max_snapshot_lag_minutes: 20
 
 # Source of record for BTC/ETH What-moved / cross-asset table slots.
 # Table prints HL mid_px (SoR). CoinGecko is ALWAYS fetched on --live as secondary DQ;

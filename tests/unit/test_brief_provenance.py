@@ -140,6 +140,7 @@ def test_dual_write_dod_and_legacy_paths(tmp_path: Path) -> None:
 
 def test_fred_missing_key_does_not_invent_us10y() -> None:
     spec = {
+        "freshness": {"fred": {"policy": "calendar", "cadence": "daily", "max_calendar_lag_days": 2}},
         "live": {
             "enabled": True,
             "fred": {"enabled": True, "api_key_env": "FRED_API_KEY", "series": {"US10Y": "DGS10"}},

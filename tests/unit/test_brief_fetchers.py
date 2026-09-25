@@ -59,8 +59,20 @@ POLYGON_AGGS = {
 }
 
 
+_FRED_FRESH = {"policy": "calendar", "cadence": "daily", "max_calendar_lag_days": 2}
+_STOOQ_FRESH = {"policy": "calendar", "cadence": "daily", "max_calendar_lag_days": 3}
+_POLYGON_FRESH = {
+    "policy": "session",
+    "cadence": "us_rth_daily",
+    "session_timezone": "America/New_York",
+    "rth_close": "16:00",
+    "grace_minutes": 20,
+}
+
+
 def _polygon_live_spec() -> dict:
     return {
+        "freshness": {"polygon": dict(_POLYGON_FRESH)},
         "live": {
             "enabled": True,
             "polygon": {
@@ -97,6 +109,7 @@ def test_off_mode_is_unavailable() -> None:
 
 def test_fred_missing_api_key_degrades() -> None:
     spec = {
+        "freshness": {"fred": dict(_FRED_FRESH)},
         "live": {
             "enabled": True,
             "fred": {"enabled": True, "api_key_env": "FRED_API_KEY", "series": {"US10Y": "DGS10"}},
@@ -122,6 +135,7 @@ def test_stooq_http_error_degrades() -> None:
     transport = httpx.MockTransport(handler)
     client = httpx.Client(transport=transport)
     spec = {
+        "freshness": {"stooq": dict(_STOOQ_FRESH)},
         "live": {
             "enabled": True,
             "stooq": {"enabled": True, "symbols": {"ES": "es.f"}},
@@ -144,6 +158,7 @@ def test_stooq_404_is_terminal_classified() -> None:
         return httpx.Response(404, text="no")
 
     spec = {
+        "freshness": {"stooq": dict(_STOOQ_FRESH)},
         "live": {
             "enabled": True,
             "stooq": {"enabled": True, "symbols": {"ES": "es.f", "NQ": "nq.f"}},
@@ -172,6 +187,7 @@ def test_stooq_retries_5xx_then_parses() -> None:
         return httpx.Response(200, text=STOOQ_CSV)
 
     spec = {
+        "freshness": {"stooq": dict(_STOOQ_FRESH)},
         "live": {
             "enabled": True,
             "stooq": {"enabled": True, "symbols": {"ES": "es.f"}},
@@ -312,6 +328,7 @@ def test_polygon_overwrites_stooq_same_slot_when_both_enabled() -> None:
         return httpx.Response(404, text="no")
 
     spec = {
+        "freshness": {"stooq": dict(_STOOQ_FRESH), "polygon": dict(_POLYGON_FRESH)},
         "live": {
             "enabled": True,
             "stooq": {"enabled": True, "symbols": {"ES": "es.f"}},

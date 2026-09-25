@@ -173,8 +173,8 @@ def complete_cross_asset(
 ) -> MacroSnapshot:
     """Fill required slots with unavailable rows so missing sources are visible.
 
-    Applies cadence freshness gates (FRED daily lag, etc.) so fetch-ok alone
-    cannot label an aged observation as fresh for all Pulse consumers.
+    Applies declared freshness policies (FRED calendar lag, Polygon session,
+    snapshot capture lag) so fetch-ok alone cannot label an aged observation fresh.
     """
     by_symbol = snapshot.by_symbol()
     filled: list[AssetPrint] = []
@@ -1074,9 +1074,11 @@ def _parse_polygon_aggs(
     bars.sort(key=lambda item: item[0])
     last_time, last, last_open = bars[-1]
     prior = bars[-2][1] if len(bars) >= 2 else last_open
+    # ``captured`` is the knowledge clock for the caller. Session freshness is
+    # applied by the gate, not by calendar age in this parser.
     quality = "ok"
-    if (captured.date() - last_time.date()).days > 3:
-        quality = "stale"
+    if captured.tzinfo is None:
+        raise ValueError("naive datetime is forbidden")
     return AssetPrint(
         symbol=symbol,
         name=label,
