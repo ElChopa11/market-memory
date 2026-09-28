@@ -1,0 +1,12 @@
+{
+  "capture_rows": 75,
+  "deadman_ping": "unset",
+  "deadman_ping_at": "2026-09-28T20:31:14.199033+00:00",
+  "delivered_at_ts": "2026-09-28T20:31:14.681330+00:00",
+  "kind": "deliver_receipt",
+  "routine_id": "grok.sydney_morning",
+  "run_id": "actions-b1-36479629926",
+  "scheduled_anchor_ts": "2026-09-28T20:30:00+00:00",
+  "sent": true,
+  "source": "github.actions"
+}
