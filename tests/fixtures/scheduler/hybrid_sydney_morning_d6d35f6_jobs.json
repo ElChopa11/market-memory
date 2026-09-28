@@ -1,0 +1,175 @@
+{
+  "commit": "d6d35f64003f274f51c386f805f981be85b34a10",
+  "jobs": {
+    "brief-and-deliver": {
+      "env": {
+        "FRED_API_KEY": "${{ secrets.FRED_API_KEY }}",
+        "MM_DELIVERY_ENV_FILE": "/tmp/mm-actions-brief-no-delivery.env",
+        "POLYGON_API_KEY": "${{ secrets.POLYGON_API_KEY }}",
+        "TELEGRAM_BOT_TOKEN": "${{ secrets.TELEGRAM_BOT_TOKEN }}",
+        "TELEGRAM_CHAT_ID_PRINCIPAL_DM": "${{ secrets.TELEGRAM_CHAT_ID_PRINCIPAL_DM }}"
+      },
+      "if": "(github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.i_mean_it_deliver == true || github.event.inputs.i_mean_it_deliver == 'true')))",
+      "needs": "stage1-stamp",
+      "permissions": {
+        "contents": "write"
+      },
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "id": "gate",
+          "name": "Gate \u2014 group chat unset; soft-skip when DM secrets are absent",
+          "run": "set -euo pipefail\nif [ -n \"${TELEGRAM_CHAT_ID:-}\" ]; then\n  echo \"::error::TELEGRAM_CHAT_ID must remain UNSET (DM-only; GROUP SEND_FROZEN). Refusing brief and deliver.\"\n  exit 1\nfi\nif [ -z \"${TELEGRAM_BOT_TOKEN:-}\" ] || [ -z \"${TELEGRAM_CHAT_ID_PRINCIPAL_DM:-}\" ]; then\n  echo \"ready=false\" >> \"$GITHUB_OUTPUT\"\n  echo \"::notice::Telegram secrets absent (TELEGRAM_BOT_TOKEN and/or TELEGRAM_CHAT_ID_PRINCIPAL_DM). Soft skip. Stage 1 stamp already succeeded. No brief. No deliver.\"\n  exit 0\nfi\necho \"ready=true\" >> \"$GITHUB_OUTPUT\"\necho \"DM secrets present (values not printed). TELEGRAM_CHAT_ID unset. Will brief then deliver to Principal DM.\"\n"
+        },
+        {
+          "if": "steps.gate.outputs.ready == 'true'",
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "persist-credentials": true,
+            "ref": "${{ github.ref_name }}"
+          }
+        },
+        {
+          "if": "steps.gate.outputs.ready == 'true'",
+          "uses": "astral-sh/setup-uv@v6",
+          "with": {
+            "python-version": "3.12"
+          }
+        },
+        {
+          "if": "steps.gate.outputs.ready == 'true'",
+          "name": "Sync workspace",
+          "run": "uv sync --all-packages"
+        },
+        {
+          "env": {
+            "BRANCH": "${{ github.ref_name }}",
+            "HEALTHCHECKS_PING_URL": "${{ secrets.HEALTHCHECKS_PING_URL }}",
+            "SCHEDULED_FOR": "${{ needs.stage1-stamp.outputs.scheduled_for }}"
+          },
+          "id": "receipt",
+          "if": "success() && steps.gate.outputs.ready == 'true'",
+          "name": "Deliver-receipt gate (scheduled_anchor, before brief or Telegram)",
+          "run": "set -euo pipefail\n# Queued runs keep the event SHA. A prior run's receipt lives on the branch tip.\ngit fetch origin \"${BRANCH}\"\ngit checkout -B \"${BRANCH}\" \"origin/${BRANCH}\"\nuv run python - <<'PY'\nimport os\nimport sys\nfrom pathlib import Path\n\nfrom mm_desks.deliver_receipt import ALREADY_DELIVERED, decide_deliver, find_receipt, relative_receipt_path\nfrom mm_lab_cli.deadman import ping_success_if_already_delivered\n\nroot = Path(\".\").resolve()\ncompletions = root / \"ops\" / \"reports\" / \"scheduler\" / \"completions\"\nscheduled_for = os.environ.get(\"SCHEDULED_FOR\") or \"\"\nroutine = \"grok.sydney_morning\"\ntry:\n    decision = decide_deliver(completions, routine, scheduled_for)\nexcept ValueError as exc:\n    print(f\"::error::{exc}\", file=sys.stderr)\n    sys.exit(1)\nout = Path(os.environ[\"GITHUB_OUTPUT\"])\nif decision == ALREADY_DELIVERED:\n    path = find_receipt(completions, routine, scheduled_for)\n    rel = relative_receipt_path(path, repo_root=root) if path is not None else \"\"\n    print(f\"already_delivered scheduled_anchor={scheduled_for} receipt={rel}\")\n    print('{\"outcome\":\"already_delivered\",\"telegram\":false}')\n    with out.open(\"a\", encoding=\"utf-8\") as fh:\n        fh.write(\"already_delivered=true\\n\")\n    # Success ping only. No DM, no receipt write. A ping failure stays exit 0.\n    try:\n        ping_success_if_already_delivered(decision)\n    except Exception:\n        print(\"deadman success ping: error\")\n    sys.exit(0)\nprint(f\"no deliver receipt for scheduled_anchor={scheduled_for}; will brief then deliver\")\nwith out.open(\"a\", encoding=\"utf-8\") as fh:\n    fh.write(\"already_delivered=false\\n\")\nPY\n"
+        },
+        {
+          "env": {
+            "MM_LOG_RATE_LIMIT_HEADERS": "1"
+          },
+          "id": "brief",
+          "if": "success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'",
+          "name": "Live US-close brief (lab brief close --live --no-db)",
+          "run": "set -euo pipefail\nAS_OF=\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\nexport AS_OF\nOUT=\"/tmp/sydney-brief-${GITHUB_RUN_ID}\"\nmkdir -p \"${OUT}\"\necho \"P0.4 rate-limit headers enabled (MM_LOG_RATE_LIMIT_HEADERS=1). Compare stderr status=200 vs status=429 with box CoinGecko / Hyperliquid limits.\"\nuv run lab brief close --live --no-db --as-of \"${AS_OF}\" --repo-root . --out \"${OUT}\" | tee /tmp/brief-close.json\nuv run python - <<'PY'\nimport json, os\nfrom pathlib import Path\nraw = Path(\"/tmp/brief-close.json\").read_text(encoding=\"utf-8\")\nstart = raw.find(\"{\")\nend = raw.rfind(\"}\")\nif start < 0 or end < start:\n    raise SystemExit(\"brief close did not print a JSON object\")\npayload = json.loads(raw[start : end + 1])\npath = str(payload.get(\"path\") or \"\")\nif not path or not Path(path).is_file():\n    raise SystemExit(f\"brief path missing: {path}\")\nwith Path(os.environ[\"GITHUB_OUTPUT\"]).open(\"a\", encoding=\"utf-8\") as fh:\n    fh.write(f\"brief_path={path}\\n\")\n    fh.write(f\"as_of={os.environ['AS_OF']}\\n\")\n    fh.write(f\"data_quality={payload.get('data_quality') or ''}\\n\")\nprint(json.dumps({\n    \"brief_path\": path,\n    \"as_of\": os.environ[\"AS_OF\"],\n    \"data_quality\": payload.get(\"data_quality\"),\n}))\nPY\n"
+        },
+        {
+          "if": "success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'",
+          "name": "Upload brief markdown (no Telegram payload)",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "if-no-files-found": "error",
+            "name": "sydney-morning-brief-${{ github.run_id }}",
+            "path": "${{ steps.brief.outputs.brief_path }}",
+            "retention-days": 14
+          }
+        },
+        {
+          "continue-on-error": true,
+          "env": {
+            "POSTGRES_DSN": "${{ secrets.POSTGRES_DSN }}",
+            "SCHEDULED_FOR": "${{ needs.stage1-stamp.outputs.scheduled_for }}"
+          },
+          "id": "retain",
+          "if": "success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'",
+          "name": "Morning MVP retain (non-fatal; one capture per Sydney anchor)",
+          "run": "set +e\nuv run lab retain morning --scheduled-for \"${SCHEDULED_FOR}\" > /tmp/retain-morning.json\nset -e\nuv run python - <<'PY'\n\"\"\"Always emit a CAPTURE line. Capture must not fail the job.\"\"\"\nimport json\nimport os\nfrom pathlib import Path\n\nline = \"CAPTURE: FAILED capture step\"\nrows = \"\"\npath = Path(\"/tmp/retain-morning.json\")\ntry:\n    raw = path.read_text(encoding=\"utf-8\") if path.is_file() else \"\"\n    start = raw.find(\"{\")\n    end = raw.rfind(\"}\")\n    payload = json.loads(raw[start : end + 1]) if start >= 0 and end >= start else {}\n    got = str(payload.get(\"line\") or \"\").replace(\"\\n\", \" \").replace(\"\\r\", \" \").strip()\n    if got.startswith(\"CAPTURE:\"):\n        line = got\n    count = payload.get(\"capture_rows\")\n    if isinstance(count, int) and not isinstance(count, bool) and count >= 0:\n        rows = str(count)\nexcept Exception:\n    line = \"CAPTURE: FAILED capture step\"\nwith Path(os.environ[\"GITHUB_OUTPUT\"]).open(\"a\", encoding=\"utf-8\") as fh:\n    fh.write(f\"capture_line={line}\\n\")\n    fh.write(f\"capture_rows={rows}\\n\")\nprint(line)\nPY\nexit 0\n"
+        },
+        {
+          "env": {
+            "AS_OF": "${{ steps.brief.outputs.as_of }}",
+            "BRIEF_PATH": "${{ steps.brief.outputs.brief_path }}",
+            "CAPTURE_LINE": "${{ steps.retain.outputs.capture_line }}",
+            "CAPTURE_ROWS": "${{ steps.retain.outputs.capture_rows }}",
+            "HEALTHCHECKS_PING_URL": "${{ secrets.HEALTHCHECKS_PING_URL }}",
+            "RUN_ID": "${{ needs.stage1-stamp.outputs.run_id }}",
+            "SCHEDULED_FOR": "${{ needs.stage1-stamp.outputs.scheduled_for }}"
+          },
+          "id": "deliver",
+          "if": "success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'",
+          "name": "Deliver pack to Principal DM (--to-principal-dm --i-mean-it)",
+          "run": "set -euo pipefail\nif [ -n \"${TELEGRAM_CHAT_ID:-}\" ]; then\n  echo \"::error::TELEGRAM_CHAT_ID must remain UNSET (DM-only; GROUP SEND_FROZEN).\"\n  exit 1\nfi\nif [ -z \"${BRIEF_PATH}\" ] || [ ! -f \"${BRIEF_PATH}\" ]; then\n  echo \"::error::brief markdown missing; refusing deliver\"\n  exit 1\nfi\n# 06:30 Australia/Sydney is inside quiet_hours 22:00\u201307:00.\n# This scheduled digest is the morning brief, so quiet hours do not apply.\nOUT=\"/tmp/sydney-dm-${GITHUB_RUN_ID}\"\nmkdir -p \"${OUT}\"\necho \"lab deliver pack --to-principal-dm --i-mean-it --no-db (as_of=${AS_OF})\"\nif [ -z \"${CAPTURE_LINE}\" ]; then\n  CAPTURE_LINE=\"CAPTURE: FAILED capture step\"\nfi\nset +e\n# Same POST. --scheduled-for / --run-id are this step's existing stamp\n# outputs. Status lines on that message, in order: LATE, DEADMAN, CAPTURE.\n# HEALTHCHECKS_PING_URL is step env. The pack reads it and does not print it.\n# CAPTURE is the retain step's line.\nuv run lab deliver pack \\\n  --from-markdown \"${BRIEF_PATH}\" \\\n  --as-of \"${AS_OF}\" \\\n  --scheduled-for \"${SCHEDULED_FOR}\" \\\n  --run-id \"${RUN_ID}\" \\\n  --capture-line \"${CAPTURE_LINE}\" \\\n  --desk ops \\\n  --to-principal-dm \\\n  --i-mean-it \\\n  --ignore-quiet-hours \\\n  --no-db \\\n  --repo-root . \\\n  --out \"${OUT}\" \\\n  > \"/tmp/sydney-deliver-${GITHUB_RUN_ID}.json\"\nDELIVER_RC=$?\nset -e\nexport DELIVER_RC\nuv run python - <<'PY'\n\"\"\"Write a deliver receipt only when exit 0 and sent is true.\"\"\"\nimport os\nimport sys\nfrom pathlib import Path\n\nfrom mm_desks.deliver_receipt import (\n    accept_delivery,\n    assert_receipt_committable,\n    parse_deliver_stdout,\n    write_deliver_receipt,\n)\nfrom mm_lab_cli.deadman import deadman_receipt_fields\n\nroot = Path(\".\").resolve()\nstdout_path = Path(f\"/tmp/sydney-deliver-{os.environ['GITHUB_RUN_ID']}.json\")\nstdout = stdout_path.read_text(encoding=\"utf-8\") if stdout_path.is_file() else \"\"\nrc = int(os.environ[\"DELIVER_RC\"])\nparsed = parse_deliver_stdout(stdout) or {}\nprint({\n    \"deliver_rc\": rc,\n    \"sent\": parsed.get(\"sent\"),\n    \"reason\": parsed.get(\"reason\"),\n})\nif not accept_delivery(stdout, rc):\n    print(\n        \"::error::deliver did not report sent: true; no receipt written; anchor stays open\",\n        file=sys.stderr,\n    )\n    sys.exit(1)\nscheduled_for = os.environ.get(\"SCHEDULED_FOR\") or \"\"\nrun_id = os.environ.get(\"RUN_ID\") or \"\"\n# Success-ping outcome from deliver stdout. Missing or invalid fields\n# are omitted; the receipt is still written. The ping URL is not stored.\nfields = deadman_receipt_fields(parsed)\nraw_rows = (os.environ.get(\"CAPTURE_ROWS\") or \"\").strip()\ncapture_rows = int(raw_rows) if raw_rows.isdigit() else None\npath, created = write_deliver_receipt(\n    completions_dir=root / \"ops\" / \"reports\" / \"scheduler\" / \"completions\",\n    routine_id=\"grok.sydney_morning\",\n    scheduled_anchor_ts=scheduled_for,\n    run_id=run_id,\n    sent=True,\n    source=\"github.actions\",\n    capture_rows=capture_rows,\n    **fields,\n)\nif path is None or not created:\n    print(\n        \"::warning::sent was true but receipt already existed; not overwriting (first writer wins)\"\n    )\n    sys.exit(0)\nrel = assert_receipt_committable(path, repo_root=root)\nwith Path(os.environ[\"GITHUB_OUTPUT\"]).open(\"a\", encoding=\"utf-8\") as fh:\n    fh.write(\"wrote=true\\n\")\n    fh.write(f\"receipt_path={rel}\\n\")\nprint(f\"wrote deliver receipt {rel}\")\nPY\n"
+        },
+        {
+          "env": {
+            "BRANCH": "${{ github.ref_name }}",
+            "RECEIPT_PATH": "${{ steps.deliver.outputs.receipt_path }}",
+            "RUN_ID": "${{ needs.stage1-stamp.outputs.run_id }}",
+            "SCHEDULED_FOR": "${{ needs.stage1-stamp.outputs.scheduled_for }}"
+          },
+          "if": "success() && steps.deliver.outputs.wrote == 'true'",
+          "name": "Commit + push deliver receipt (durable first-writer-wins)",
+          "run": "set -euo pipefail\nRECEIPTS_DIR=\"ops/reports/scheduler/completions/receipts\"\nROUTINE_ID=\"grok.sydney_morning\"\n\n# HARD SCOPE: path must live under completions/receipts/ only.\ncase \"${RECEIPT_PATH}\" in\n  \"${RECEIPTS_DIR}\"/grok.sydney_morning__*.deliver.json) ;;\n  *)\n    echo \"::error::SCOPE VIOLATION: refusing path outside ${RECEIPTS_DIR}: ${RECEIPT_PATH}\"\n    exit 1\n    ;;\nesac\ntest -f \"${RECEIPT_PATH}\"\n\nuv run python - <<'PY'\nimport os\nimport sys\nfrom pathlib import Path\n\nfrom mm_desks.deliver_receipt import assert_receipt_committable\n\ntry:\n    rel = assert_receipt_committable(Path(os.environ[\"RECEIPT_PATH\"]), repo_root=Path(\".\").resolve())\nexcept ValueError as exc:\n    print(f\"::error::{exc}\", file=sys.stderr)\n    sys.exit(1)\nif rel != os.environ[\"RECEIPT_PATH\"]:\n    print(f\"::error::receipt path mismatch: {rel}\", file=sys.stderr)\n    sys.exit(1)\nprint(\"deliver receipt field check OK (non-secret, sent true, anchor-keyed)\")\nPY\n\ngit config user.name \"github-actions[bot]\"\ngit config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n\n# HARD SCOPE: git add path-filtered to receipts/ ONLY \u2014 never completion rows.\ngit add -- \"${RECEIPTS_DIR}/$(basename -- \"${RECEIPT_PATH}\")\"\nmapfile -t STAGED_ALL < <(git diff --cached --name-only)\nmapfile -t STAGED_OK < <(git diff --cached --name-only -- \"${RECEIPTS_DIR}/\")\nif [[ \"${#STAGED_ALL[@]}\" -eq 0 ]]; then\n  echo \"No new receipt bytes to commit.\"\n  exit 0\nfi\nif [[ \"${#STAGED_ALL[@]}\" -ne \"${#STAGED_OK[@]}\" ]]; then\n  echo \"::error::SCOPE VIOLATION: staged files outside ${RECEIPTS_DIR}:\"\n  printf '%s\\n' \"${STAGED_ALL[@]}\"\n  git reset HEAD -- . || true\n  exit 1\nfi\nfor staged in \"${STAGED_ALL[@]}\"; do\n  case \"${staged}\" in\n    \"${RECEIPTS_DIR}/\"*.deliver.json) ;;\n    *)\n      echo \"::error::SCOPE VIOLATION: staged non-receipt or path escape: ${staged}\"\n      git reset HEAD -- . || true\n      exit 1\n      ;;\n  esac\ndone\nif [[ \"${#STAGED_ALL[@]}\" -ne 1 || \"${STAGED_ALL[0]}\" != \"${RECEIPT_PATH}\" ]]; then\n  echo \"::error::SCOPE VIOLATION: expected sole staged path ${RECEIPT_PATH}, got:\"\n  printf '%s\\n' \"${STAGED_ALL[@]}\"\n  git reset HEAD -- . || true\n  exit 1\nfi\n\nMSG=\"scheduler(deliver-receipt): ${ROUTINE_ID} scheduled_for=${SCHEDULED_FOR} run_id=${RUN_ID} sent=true\"\ngit commit -m \"${MSG}\"\necho \"Commit message: ${MSG}\"\necho \"Push target branch: ${BRANCH} (github.ref_name)\"\n\n# HARD RETRY: non-fast-forward \u2192 git pull --rebase \u2192 retry. Exhausted \u2192 FAIL LOUDLY.\nfor attempt in 1 2 3 4 5; do\n  if git push origin \"HEAD:${BRANCH}\"; then\n    echo \"Pushed deliver receipt to origin/${BRANCH} (attempt ${attempt})\"\n    exit 0\n  fi\n  echo \"::warning::push rejected / non-fast-forward (attempt ${attempt}/5); git pull --rebase origin ${BRANCH}\"\n  if ! git pull --rebase origin \"${BRANCH}\"; then\n    echo \"::error::git pull --rebase origin ${BRANCH} FAILED on attempt ${attempt}\"\n    git rebase --abort 2>/dev/null || true\n  fi\n  sleep $((attempt * 3))\ndone\necho \"::error::DELIVER RECEIPT COMMIT-BACK FAILED: receipt JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. Job FAILS; a later trigger may retry only if this receipt is not on the branch.\"\necho \"::error::local receipt path: ${RECEIPT_PATH} scheduled_for=${SCHEDULED_FOR} run_id=${RUN_ID}\"\nexit 1\n"
+        }
+      ]
+    },
+    "stage1-stamp": {
+      "if": "github.event_name != 'workflow_dispatch' || (inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')",
+      "outputs": {
+        "run_id": "${{ steps.stamp.outputs.run_id }}",
+        "scheduled_for": "${{ steps.stamp.outputs.scheduled_for }}"
+      },
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "fetch-depth": 0,
+            "persist-credentials": true
+          }
+        },
+        {
+          "uses": "astral-sh/setup-uv@v6",
+          "with": {
+            "python-version": "3.12"
+          }
+        },
+        {
+          "name": "Sync workspace",
+          "run": "uv sync --all-packages"
+        },
+        {
+          "env": {
+            "GITHUB_RUN_ID": "${{ github.run_id }}"
+          },
+          "id": "stamp",
+          "name": "Stage-1 canary \u2014 stamp grok.sydney_morning completion (--no-db, no Telegram)",
+          "run": "set -euo pipefail\nuv run python - <<'PY'\n\"\"\"Stamp grok.sydney_morning. No anchor guard. No Telegram.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport subprocess\nimport sys\nfrom pathlib import Path\n\nROOT = Path(\".\").resolve()\nROUTINE = \"grok.sydney_morning\"\nout = Path(os.environ[\"GITHUB_OUTPUT\"])\n\ndef write_out(**kwargs: str) -> None:\n    with out.open(\"a\", encoding=\"utf-8\") as fh:\n        for key, value in kwargs.items():\n            fh.write(f\"{key}={value}\\n\")\n\nrun_id = f\"actions-b1-{os.environ['GITHUB_RUN_ID']}\"\ndest = ROOT / \"ops\" / \"reports\" / \"scheduler\" / \"completions\"\ndest.mkdir(parents=True, exist_ok=True)\ncmd = [\n    \"uv\",\n    \"run\",\n    \"lab\",\n    \"schedule\",\n    \"heartbeat\",\n    \"--routine-id\",\n    ROUTINE,\n    \"--run-id\",\n    run_id,\n    \"--exit-status\",\n    \"0\",\n    \"--no-db\",\n    \"--source\",\n    \"github.actions\",\n    \"--cli\",\n    \"lab schedule heartbeat (actions-b1)\",\n    \"--repo-root\",\n    str(ROOT),\n    \"--completions-dir\",\n    str(dest),\n]\nprint(json.dumps({\"cmd\": cmd}, indent=2))\nproc = subprocess.run(cmd, check=False)\nif proc.returncode != 0:\n    sys.exit(proc.returncode)\nrows = sorted(dest.glob(f\"{ROUTINE}__*.json\"))\nif not rows:\n    print(\"::error::heartbeat exited 0 but wrote no completion JSON\", file=sys.stderr)\n    sys.exit(1)\n# Prefer the row for this run_id (idempotent re-runs may leave older files).\nlatest = None\nfor path in reversed(rows):\n    try:\n        payload = json.loads(path.read_text(encoding=\"utf-8\"))\n    except (OSError, json.JSONDecodeError):\n        continue\n    if payload.get(\"run_id\") == run_id:\n        latest = path\n        break\nif latest is None:\n    latest = rows[-1]\n    payload = json.loads(latest.read_text(encoding=\"utf-8\"))\nelse:\n    payload = json.loads(latest.read_text(encoding=\"utf-8\"))\nprint(json.dumps(payload, indent=2, sort_keys=True))\nrel = latest.resolve().relative_to(ROOT).as_posix()\nif not rel.startswith(\"ops/reports/scheduler/completions/\") or not rel.endswith(\".json\"):\n    print(f\"::error::refusing unexpected completion path {rel}\", file=sys.stderr)\n    sys.exit(1)\nwrite_out(\n    completion_path=rel,\n    run_id=str(payload.get(\"run_id\") or run_id),\n    scheduled_for=str(payload.get(\"scheduled_anchor_ts\") or \"\"),\n    actual=str(payload.get(\"fired_at_ts\") or \"\"),\n    delta_seconds=str(payload.get(\"delta_seconds\") if payload.get(\"delta_seconds\") is not None else \"\"),\n    status=str(payload.get(\"status\") or \"\"),\n    routine_id=str(payload.get(\"routine_id\") or ROUTINE),\n)\nPY\n"
+        },
+        {
+          "name": "Upload completion artifact (secondary)",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "if-no-files-found": "error",
+            "name": "sydney-morning-completion-${{ github.run_id }}",
+            "path": "${{ steps.stamp.outputs.completion_path }}",
+            "retention-days": 30
+          }
+        },
+        {
+          "env": {
+            "ACTUAL": "${{ steps.stamp.outputs.actual }}",
+            "BRANCH": "${{ github.ref_name }}",
+            "COMPLETION_PATH": "${{ steps.stamp.outputs.completion_path }}",
+            "DELTA_SECONDS": "${{ steps.stamp.outputs.delta_seconds }}",
+            "ROUTINE_ID": "${{ steps.stamp.outputs.routine_id }}",
+            "RUN_ID": "${{ steps.stamp.outputs.run_id }}",
+            "SCHEDULED_FOR": "${{ steps.stamp.outputs.scheduled_for }}",
+            "STATUS": "${{ steps.stamp.outputs.status }}"
+          },
+          "name": "Commit + push completion JSON (durable for box miss-check)",
+          "run": "set -euo pipefail\nCOMPLETIONS_DIR=\"ops/reports/scheduler/completions\"\n\n# HARD SCOPE: path must live under completions/ only.\ncase \"${COMPLETION_PATH}\" in\n  \"${COMPLETIONS_DIR}\"/grok.sydney_morning__*.json) ;;\n  *)\n    echo \"::error::SCOPE VIOLATION: refusing path outside ${COMPLETIONS_DIR}: ${COMPLETION_PATH}\"\n    exit 1\n    ;;\nesac\ntest -f \"${COMPLETION_PATH}\"\n\n# Non-secret fields only (routine id, run_id, anchors, delta, exit, source, \u2026).\nuv run python - <<'PY'\nimport json, os, sys\npath = os.environ[\"COMPLETION_PATH\"]\nallowed = {\n    \"routine_id\", \"run_id\", \"scheduled_anchor_ts\", \"fired_at_ts\",\n    \"delta_seconds\", \"status\", \"exit_status\", \"source\", \"cli\",\n    \"as_of_knowledge\", \"payload_path\", \"payload_json\", \"reason\",\n}\nsecretish = (\"token\", \"secret\", \"password\", \"private_key\", \"api_key\", \"telegram\")\nraw = json.loads(open(path, encoding=\"utf-8\").read())\nif not isinstance(raw, dict):\n    print(\"::error::completion JSON must be an object\", file=sys.stderr)\n    sys.exit(1)\nbad_keys = [k for k in raw if k not in allowed]\nif bad_keys:\n    print(f\"::error::unexpected completion keys (refuse commit): {bad_keys}\", file=sys.stderr)\n    sys.exit(1)\nfor k in raw:\n    if any(s in k.lower() for s in secretish):\n        print(f\"::error::secret-like key in completion JSON: {k}\", file=sys.stderr)\n        sys.exit(1)\nblob = json.dumps(raw).lower()\nfor needle in (\"telegram_bot_token\", \"begin rsa private\", \"begin openssh private\", \"private_key\"):\n    if needle in blob:\n        print(f\"::error::secret-like material in completion JSON ({needle})\", file=sys.stderr)\n        sys.exit(1)\nprint(\"completion JSON field check OK (non-secret only)\")\nPY\n\ngit config user.name \"github-actions[bot]\"\ngit config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n\n# HARD SCOPE: git add path-filtered to completions/ ONLY \u2014 never the rest of the tree.\ngit add -- \"${COMPLETIONS_DIR}/$(basename -- \"${COMPLETION_PATH}\")\"\nmapfile -t STAGED_ALL < <(git diff --cached --name-only)\nmapfile -t STAGED_OK < <(git diff --cached --name-only -- \"${COMPLETIONS_DIR}/\")\nif [[ \"${#STAGED_ALL[@]}\" -eq 0 ]]; then\n  echo \"No new completion bytes to commit (idempotent re-run; stamp already on branch).\"\n  exit 0\nfi\nif [[ \"${#STAGED_ALL[@]}\" -ne \"${#STAGED_OK[@]}\" ]]; then\n  echo \"::error::SCOPE VIOLATION: staged files outside ${COMPLETIONS_DIR}:\"\n  printf '%s\\n' \"${STAGED_ALL[@]}\"\n  git reset HEAD -- . || true\n  exit 1\nfi\nfor staged in \"${STAGED_ALL[@]}\"; do\n  case \"${staged}\" in\n    \"${COMPLETIONS_DIR}/\"*.json) ;;\n    *)\n      echo \"::error::SCOPE VIOLATION: staged non-JSON or path escape: ${staged}\"\n      git reset HEAD -- . || true\n      exit 1\n      ;;\n  esac\ndone\nif [[ \"${#STAGED_ALL[@]}\" -ne 1 || \"${STAGED_ALL[0]}\" != \"${COMPLETION_PATH}\" ]]; then\n  echo \"::error::SCOPE VIOLATION: expected sole staged path ${COMPLETION_PATH}, got:\"\n  printf '%s\\n' \"${STAGED_ALL[@]}\"\n  git reset HEAD -- . || true\n  exit 1\nfi\n\nMSG=\"scheduler(completion): ${ROUTINE_ID} run_id=${RUN_ID} scheduled_for=${SCHEDULED_FOR} actual=${ACTUAL} delta_seconds=${DELTA_SECONDS} status=${STATUS}\"\ngit commit -m \"${MSG}\"\necho \"Commit message: ${MSG}\"\necho \"Push target branch: ${BRANCH} (github.ref_name \u2014 select PR branch for draft canary)\"\n\n# HARD RETRY: non-fast-forward \u2192 git pull --rebase \u2192 retry. Exhausted \u2192 FAIL LOUDLY.\n# Never exit 0 if the stamp commit did not land on origin (silent drop is the failure class).\nfor attempt in 1 2 3 4 5; do\n  if git push origin \"HEAD:${BRANCH}\"; then\n    echo \"Pushed completion to origin/${BRANCH} (attempt ${attempt})\"\n    exit 0\n  fi\n  echo \"::warning::push rejected / non-fast-forward (attempt ${attempt}/5); git pull --rebase origin ${BRANCH}\"\n  if ! git pull --rebase origin \"${BRANCH}\"; then\n    echo \"::error::git pull --rebase origin ${BRANCH} FAILED on attempt ${attempt}\"\n    git rebase --abort 2>/dev/null || true\n  fi\n  sleep $((attempt * 3))\ndone\necho \"::error::STAMP COMMIT-BACK FAILED: completion JSON was written locally but could not be pushed to origin/${BRANCH} after 5 pull --rebase retries. This is the silent-drop failure class \u2014 job FAILS; do not treat the fire as durable.\"\necho \"::error::local stamp path: ${COMPLETION_PATH} run_id=${RUN_ID}\"\nexit 1\n"
+        }
+      ]
+    }
+  }
+}

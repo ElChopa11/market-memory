@@ -23,12 +23,13 @@ UTC = timezone.utc
 CRONTAB = ROOT / "ops" / "host" / "crontab"
 WORKFLOW = ROOT / ".github" / "workflows" / "hybrid-sydney-morning.yml"
 ROUTINE = "grok.sydney_morning"
-# True for schedule and for every dispatch except mode=capture_proof or
-# mode=render_proof. The host payload omits mode, so the workflow default
-# (normal) still stamps. No holiday, date, or quiet-hours clause.
+# True for schedule and for every dispatch except mode=capture_proof,
+# mode=render_proof, or mode=delta_proof. The host payload omits mode, so the
+# workflow default (normal) still stamps. No holiday, date, or quiet-hours clause.
 STAGE1_IF = (
     "github.event_name != 'workflow_dispatch' || "
-    "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')"
+    "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof') && "
+    "inputs.mode != 'delta_proof'"
 )
 
 
@@ -36,13 +37,21 @@ def _stage1_stamp_runs(expr: str, *, event_name: str, mode: str | None) -> bool:
     """Evaluate the one allowed stage1 if. Any other expression is refused.
 
     ``mode is None`` is an omitted workflow_dispatch input. That is not
-    capture_proof or render_proof, so the stamp runs. A schedule event ignores mode.
+    capture_proof, render_proof, or delta_proof, so the stamp runs. A schedule
+    event ignores mode.
     """
     left, sep, right = expr.partition(" || ")
     assert sep == " || ", expr
     assert left == "github.event_name != 'workflow_dispatch'", expr
-    assert right == "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof')", expr
-    return event_name != "workflow_dispatch" or mode not in {"capture_proof", "render_proof"}
+    assert right == (
+        "(inputs.mode != 'capture_proof' && inputs.mode != 'render_proof') && "
+        "inputs.mode != 'delta_proof'"
+    ), expr
+    return event_name != "workflow_dispatch" or mode not in {
+        "capture_proof",
+        "render_proof",
+        "delta_proof",
+    }
 
 
 # Paths that decide whether the morning job runs or what it stamps.
@@ -153,8 +162,8 @@ def test_brief_and_deliver_do_not_special_case_labour_day(tmp_path) -> None:
     assert "--ignore-quiet-hours" in workflow
     stage1, brief = workflow.split("\n  brief-and-deliver:\n", 1)
     assert "stage1-stamp:" in stage1
-    # The only stage1 gate skips capture_proof and render_proof. A second if,
-    # or any extra clause (calendar, holiday, date, weekday, quiet hours), fails.
+    # The only stage1 gate skips capture_proof, render_proof, and delta_proof.
+    # A second if, or any extra clause (calendar, holiday, date, weekday, quiet hours), fails.
     header = stage1.split("steps:", 1)[0]
     if_lines = [line.strip() for line in header.splitlines() if line.strip().startswith("if:")]
     assert if_lines == [f"if: {STAGE1_IF}"]
@@ -163,7 +172,7 @@ def test_brief_and_deliver_do_not_special_case_labour_day(tmp_path) -> None:
     assert job["if"] == STAGE1_IF
     assert [step for step in job["steps"] if "if" in step] == []
     # Schedule is not workflow_dispatch, so the left clause stamps every cron
-    # fire. A dispatch stamps unless mode is capture_proof or render_proof.
+    # fire. A dispatch stamps unless mode is capture_proof, render_proof, or delta_proof.
     # Omitted mode is the workflow default, normal, which is neither.
     # PyYAML loads the GitHub `on:` key as boolean True.
     on_block = parsed[True] if True in parsed else parsed["on"]
@@ -173,6 +182,7 @@ def test_brief_and_deliver_do_not_special_case_labour_day(tmp_path) -> None:
     assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode=None) is True
     assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="capture_proof") is False
     assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="render_proof") is False
+    assert _stage1_stamp_runs(job["if"], event_name="workflow_dispatch", mode="delta_proof") is False
     assert "github.event_name == 'schedule'" in brief
     assert "i_mean_it_deliver" in brief
     for rel in PATHS:
