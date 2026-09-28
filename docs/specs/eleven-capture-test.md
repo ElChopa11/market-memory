@@ -48,7 +48,8 @@ What STOP means: it does not mean shutting down. It means stopping work on the s
 
 **DST note, captures 7–10 (Principal ruling 2026-09-28: the brief stays at 06:30 Australia/Sydney through the DST change on Sun 4 Oct 2026):**
 Captures 7 (Tue 6 Oct 2026), 8 (Wed 7 Oct 2026), 9 (Thu 8 Oct 2026) and 10 (Fri 9 Oct 2026) carry this label:
-"equity data pre-close by design — NY market still open at 06:30 AEST capture time."
+"equity data pre-close by design — NY market still open at 06:30 AEDT capture time."
+This label is recorded on a separate notes line for the capture, never in the WHY cell. The WHY cell is the Principal's scoring evidence, not a system caveat.
 Sydney local time is AEDT (UTC+11) from Sun 4 Oct 2026, so 06:30 local is 19:30Z, which is 15:30 EDT, 30 minutes before the 16:00 NY cash close.
 This is not a defect and not a missed capture. It gets the same treatment as the `EQUITY T-1 BY DESIGN` label: the morning is still delivered, counted and scored Y/N on the normal §2 bar, and a pre-close equity row is not "stale or wrong" for scoring.
 Captures 6 (Mon 5 Oct) and 11 (Mon 12 Oct) are not affected, because 06:30 local on a Monday is Sunday afternoon in New York.
