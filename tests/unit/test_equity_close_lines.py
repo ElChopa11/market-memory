@@ -52,6 +52,9 @@ SET1_SHA256 = {
         "c73f23e1bf7f23e3792f829e8e18fc35348d709dc0d1644c71b87aeaafae2cb7",
 }
 FORMAT_FREEZE_SHA256 = "c693f077010d84e3f06a75495d3c91289c5ae679f1a702fd7d4b77227d5c413d"
+# DONCAPO A1 Day-7 dry-run. Box path, not in this git checkout:
+# /workspace/drafts/ops/dry-runs/6d5fab42cc6884b4/ping-mvp-a1.md
+DONCAPO_A1_SHA256 = "b5f33450ad9222d031b70cf060949688506dc59e906444dfb01a1930b78e86f1"
 
 FENCE = """```
 US Close 2026-09-29
@@ -391,6 +394,9 @@ def test_set1_bodies_and_format_freeze_artifact_stay() -> None:
     freeze = ROOT / "ops/reports/renders/brief-template-dryrun.txt"
     assert hashlib.sha256(freeze.read_bytes()).hexdigest() == FORMAT_FREEZE_SHA256
     assert freeze.read_text(encoding="utf-8").startswith("```\nUS Close unavailable\n")
+    assert len(DONCAPO_A1_SHA256) == 64
+    assert all(char in "0123456789abcdef" for char in DONCAPO_A1_SHA256)
+    # CI cannot read the box file. Pin the digest; do not copy A1 into git.
     assert not (ROOT / "drafts/ops/dry-runs/6d5fab42cc6884b4/ping-mvp-a1.md").exists()
     assert list(ROOT.rglob("ping-mvp-a1.md")) == []
     # The format-freeze file is its own artifact. It is not rewritten with the 16 lines.
