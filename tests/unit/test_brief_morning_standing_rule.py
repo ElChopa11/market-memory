@@ -184,6 +184,7 @@ def _render(
     theses: tuple[ThesisHook, ...] = (),
     assumptions: tuple[str, ...] = ("No named macro assumption flipped vs the overnight tape",),
     prior_reader=None,
+    equity_envelopes=None,
 ) -> str:
     doc = render_close(
         generated_at=GENERATED,
@@ -197,6 +198,7 @@ def _render(
         hl=hl,
         data_quality="ok",
         prior_reader=prior_reader,
+        equity_envelopes=equity_envelopes,
     )
     return doc.markdown
 
@@ -1134,3 +1136,62 @@ def test_eleven_capture_brief_is_one_message_status_lines_last() -> None:
     tail = message[fence_end:]
     assert LATE in tail and DEADMAN_MISSING_LINE in tail and CAPTURE in tail
     _assert_phone(doc.markdown)
+
+
+def test_no_equity_payload_matches_the_morning_body() -> None:
+    """Absent retain file: render_close is the morning body, byte for byte."""
+    bare = _render()
+    from mm_briefing.morning import render_morning_close
+
+    morning = render_morning_close(
+        generated_at=GENERATED,
+        as_of=AS_OF,
+        overnight=_session(_eight()),
+        session=_session(_eight()),
+        calendar=(),
+        unexpected=(),
+        theses=(),
+        assumptions=("No named macro assumption flipped vs the overnight tape",),
+        hl=(),
+        data_quality="ok",
+    )
+    assert bare == morning.markdown
+    assert "CRCL " not in bare
+
+
+def test_equity_payload_fits_one_message_and_leaves_nqt_alone() -> None:
+    from mm_briefing.equity_close_lines import RANK_ELIGIBLE_EQUITIES
+    from mm_briefing.morning import expected_equity_session
+
+    header = expected_equity_session(AS_OF)
+    rows = []
+    for index, ticker in enumerate(RANK_ELIGIBLE_EQUITIES):
+        rows.append(
+            {
+                "instrument": ticker,
+                "metric": "close",
+                "market_time": f"{header.isoformat()}T20:00:00+00:00",
+                "source_name": "polygon",
+                "source_url_or_id": f"grouped_daily:{ticker}",
+                "as_of_knowledge": AS_OF.isoformat(),
+                "payload": {
+                    "value": f"{50 + index}.5",
+                    "session_date": header.isoformat(),
+                    "resolution": "grouped_daily",
+                    "capture_kind": "lab_snapshot",
+                },
+            }
+        )
+    text = _render(hl=tuple(_hl(name) for name in MORNING_HL_PERPS), equity_envelopes=rows)
+    _assert_phone(text)
+    assert len(text) <= TELEGRAM_MAX_MESSAGE_CHARS
+    assert len(chunk_markdown_v2(text)) == 1
+    fence = _fence_lines(text)
+    heads = [line.split(" ", 1)[0] for line in fence]
+    assert heads[heads.index("QQQ") + 1 : heads.index("QQQ") + 1 + 16] == list(RANK_ELIGIBLE_EQUITIES)
+    assert heads.count("QQQ") == 1
+    assert "Entry" not in text
+    assert " SL" not in text
+    assert "TP" not in text
+    assert "NO QUALIFIED TRADE" not in text
+    assert "0.00%" not in text

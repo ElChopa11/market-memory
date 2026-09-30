@@ -186,6 +186,7 @@ def generate_close(
     theses: tuple[ThesisHook, ...],
     generated_at: datetime | None = None,
     prior_reader: object | None = None,
+    equity_envelopes: Any | None = None,
 ) -> BriefDocument:
     generated = as_utc(generated_at or as_of)
     freshness = load_freshness_config(settings.macro)
@@ -224,6 +225,7 @@ def generate_close(
         session_tz=settings.schedule.session_timezone,
         lab_tz=settings.schedule.lab_timezone,
         prior_reader=prior_reader,
+        equity_envelopes=equity_envelopes,
     )
 
 
@@ -260,6 +262,7 @@ def generate_from_fixture(
     as_of: datetime | None = None,
     generated_at: datetime | None = None,
     alert_settings: AlertSettings | None = None,
+    equity_envelopes: Any | None = None,
 ) -> tuple[BriefDocument | None, AlertDecision | None]:
     cfg = settings or load_briefing_settings()
     moment = as_of_for_kind(kind, fixture, as_of or utcnow())
@@ -293,6 +296,7 @@ def generate_from_fixture(
                 hl=hl,
                 theses=theses,
                 generated_at=generated,
+                equity_envelopes=equity_envelopes,
             ),
             None,
         )
@@ -321,6 +325,7 @@ def generate_from_sources(
     live: bool = False,
     hl_client=None,
     live_trace: dict[str, Any] | None = None,
+    equity_envelopes: Any | None = None,
 ) -> tuple[BriefDocument | None, AlertDecision | None]:
     if fixture is not None:
         return generate_from_fixture(
@@ -330,6 +335,7 @@ def generate_from_sources(
             as_of=as_of,
             generated_at=generated_at,
             alert_settings=alert_settings,
+            equity_envelopes=equity_envelopes,
         )
     generated = as_utc(generated_at or as_of)
     prior = prior_us_cash_close(as_of)
@@ -398,6 +404,7 @@ def generate_from_sources(
                 hl=hl,
                 theses=theses,
                 generated_at=generated_at,
+                equity_envelopes=equity_envelopes,
             ),
             None,
         )

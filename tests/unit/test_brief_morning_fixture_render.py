@@ -43,7 +43,7 @@ def _load(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def render_fixture_morning(*, fred_path: Path, prior_reader=None) -> tuple[str, object]:
+def render_fixture_morning(*, fred_path: Path, prior_reader=None, equity_envelopes=None) -> tuple[str, object]:
     """Parse saved Polygon, FRED, and metaAndAssetCtxs bodies. No live HTTP."""
     settings = load_briefing_settings(ROOT)
     spec = live_macro_spec(settings.macro)
@@ -97,6 +97,7 @@ def render_fixture_morning(*, fred_path: Path, prior_reader=None) -> tuple[str, 
         theses=(),
         generated_at=AS_OF,
         prior_reader=prior_reader,
+        equity_envelopes=equity_envelopes,
     )
     assert set(seen) <= {"api.polygon.io", "api.stlouisfed.org", "metaAndAssetCtxs"}
     assert "spotMetaAndAssetCtxs" not in seen
@@ -219,3 +220,50 @@ def test_us10y_asof_label_keeps_single_message_within_limits() -> None:
     assert text.count("```") == 2
     fence = _fence_lines(text)
     assert [line for line in fence if "US10Y" in line] == ["US10Y 4.11 +2.0bp (as of 09-23)"]
+
+
+def test_fixture_without_equity_file_matches_golden_and_with_payload_fits() -> None:
+    """No retain file stays the golden bytes. A payload may add the 16 lines."""
+    from mm_briefing.equity_close_lines import RANK_ELIGIBLE_EQUITIES
+
+    text, _snap = render_fixture_morning(fred_path=FRED_ROLLED)
+    assert text == GOLDEN_ROLLED.read_text(encoding="utf-8")
+    assert "CRCL " not in text
+    rows = []
+    for index, ticker in enumerate(RANK_ELIGIBLE_EQUITIES):
+        rows.append(
+            {
+                "instrument": ticker,
+                "metric": "close",
+                "market_time": "2026-09-24T20:00:00+00:00",
+                "source_name": "polygon",
+                "source_url_or_id": f"grouped_daily:{ticker}",
+                "as_of_knowledge": "2026-09-25T08:30:00+00:00",
+                "payload": {
+                    "value": f"{20 + index}.5",
+                    "session_date": "2026-09-24",
+                    "resolution": "grouped_daily_prior_session",
+                    "capture_kind": "lab_snapshot",
+                    "requested_session_date": "2026-09-25",
+                },
+            }
+        )
+    printed, _snap = render_fixture_morning(fred_path=FRED_ROLLED, equity_envelopes={"envelopes": rows})
+    assert printed != text
+    assert GOLDEN_ROLLED.read_text(encoding="utf-8") == text
+    _assert_common_budget(printed)
+    fence = _fence_lines(printed)
+    heads = [line.split(" ", 1)[0] for line in fence]
+    qqq = heads.index("QQQ")
+    assert heads[qqq + 1 : qqq + 17] == list(RANK_ELIGIBLE_EQUITIES)
+    assert heads.count("QQQ") == 1
+    assert "Entry" not in printed
+    assert "NO QUALIFIED TRADE" not in printed
+    assert len(chunk_markdown_v2(printed)) == 1
+    assert len(printed) <= TELEGRAM_MAX_MESSAGE_CHARS
+
+
+def _assert_common_budget(text: str) -> None:
+    assert len(text) <= TELEGRAM_MAX_MESSAGE_CHARS
+    for line in _fence_lines(text):
+        assert len(line) <= PHONE_LINE_MAX, line

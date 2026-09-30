@@ -77,6 +77,12 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="stamp scheduled_anchor_ts (UTC)",
     )
+    morning.add_argument(
+        "--equity-out",
+        type=Path,
+        default=None,
+        help="write this capture's polygon close envelopes to PATH (runner temp; not a git commit)",
+    )
     retain_sub.add_parser(
         "proof",
         help="one Neon proof capture (capture_kind=proof); not the morning slot; exits non-zero on failure",
@@ -394,13 +400,18 @@ def cmd_retain(args: argparse.Namespace) -> int:
 
 def cmd_retain_morning(args: argparse.Namespace) -> int:
     """Persist one morning capture. Always exit 0 so delivery still runs."""
-    from mm_ingest.mvp_retain import capture_failed_line, run_morning_capture
+    from mm_briefing.equity_close_lines import EquityCaptureWriter
+    from mm_ingest.mvp_retain import NeonRetainStore, capture_failed_line, run_morning_capture
 
     scheduled = str(getattr(args, "scheduled_for", "") or "")
     raw_dsn = os.environ.get("POSTGRES_DSN")
     dsn = raw_dsn.strip() if isinstance(raw_dsn, str) and raw_dsn.strip() else None
+    equity_out = getattr(args, "equity_out", None)
+    store = None
+    if equity_out and dsn:
+        store = EquityCaptureWriter(NeonRetainStore(dsn), Path(equity_out))
     try:
-        result = run_morning_capture(scheduled_for=scheduled, dsn=dsn)
+        result = run_morning_capture(scheduled_for=scheduled, dsn=dsn, store=store)
         print(json.dumps(result.as_dict()))
     except Exception:
         print(json.dumps({"line": capture_failed_line("capture"), "capture_rows": None, "wrote": False}))
