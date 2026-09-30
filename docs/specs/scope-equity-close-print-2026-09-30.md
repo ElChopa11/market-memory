@@ -25,7 +25,7 @@ IC accepted Quant adjacency. These binds govern any later build. They are not op
 ### IC/Risk Skeptic
 
 1. Levels are as-of the capture's equity session date. A later Neon pull of a newer bar is look-ahead.
-2. Do not rewrite set1 bodies (C1–C3, and the A1 dry-run the freeze already locked). Set1 stays equity DEGRADED n=0. Set2 is a new print generation.
+2. Do not rewrite set1 bodies (C1–C3, and the DONCAPO A1 Day-7 dry-run). That locked artifact is box path `/workspace/drafts/ops/dry-runs/6d5fab42cc6884b4/ping-mvp-a1.md`, sha256 `b5f33450ad9222d031b70cf060949688506dc59e906444dfb01a1930b78e86f1`. It is not in this git checkout. Full pack `425ef905…` and A2 archive `7ddac5e1…` stay separate. The format-freeze dry-run `ops/reports/renders/brief-template-dryrun.txt` (sha256 prefix `c693f077…`) is its own artifact. Set1 stays equity DEGRADED n=0. Set2 is a new print generation.
 3. Rank-eligible adds never authorize Entry, SL, or TP, and never clear NO QUALIFIED TRADE.
 4. Feed, as-of field, and set1/set2 capture ids are named in this memo before any code is cleared.
 
@@ -170,14 +170,14 @@ No Entry, SL, TP, or "qualified trade" line is added. NO QUALIFIED TRADE stays a
 | One chunk | `docs/specs/brief-v2.md`, `docs/specs/brief-card-split-deferred.md` | Morning path is one message. `chunk_markdown_v2` can split at 4096 with `[i/n]`; the morning product does not use that split. Cards stay deferred through capture 11. |
 | Test fence `splitlines() < 80` | `tests/unit/test_brief_recorded_gate.py` | Test only. Not a Telegram cap. |
 
-There is no separate character budget named "Snapshot", "close segment", or "A1 P1" in code. A1 here is the frozen single-message close (`brief-format-freeze.md`, dry-run `ops/reports/renders/brief-template-dryrun.txt`). The retain capture kind is `lab_snapshot` (`packages/provenance/src/mm_provenance/normalize.py` `SNAPSHOT_CAPTURE_KIND`). The close segment is the one pre block plus the `LATE` / `DEADMAN` / `CAPTURE` lines that `append_dm_status_lines` adds **outside** the fence (`apps/lab-cli/src/mm_lab_cli/deliver.py`).
+There is no separate character budget named "Snapshot", "close segment", or "A1 P1" in code. The one-message close shape is `docs/specs/brief-format-freeze.md` plus in-repo dry-run `ops/reports/renders/brief-template-dryrun.txt`. That file is the format-freeze brief bytes. It is not the DONCAPO A1 Day-7 dry-run (bind 2). The retain capture kind is `lab_snapshot` (`packages/provenance/src/mm_provenance/normalize.py` `SNAPSHOT_CAPTURE_KIND`). The close segment is the one pre block plus the `LATE` / `DEADMAN` / `CAPTURE` lines that `append_dm_status_lines` adds **outside** the fence (`apps/lab-cli/src/mm_lab_cli/deliver.py`).
 
 ### Measured and modeled
 
 | Body | Characters | Lines |
 |---|---|---|
-| Frozen failure dry-run `brief-template-dryrun.txt` (Polygon/FRED missing) | 572 | 32 (max fence line 41) |
-| Legacy comparison `brief-current-dryrun.txt` | 4923 | 75 — this is the **old** layout, already over 4096, not the shipped A1 body |
+| Format-freeze failure dry-run `brief-template-dryrun.txt` (Polygon/FRED missing; not A1) | 572 | 32 (max fence line 41) |
+| Legacy comparison `brief-current-dryrun.txt` | 4923 | 75 — this is the **old** layout, already over 4096, not the format-freeze morning body |
 | Recorded pattern line `SPY 767.81 -0.72%` | 17 | 1 |
 
 Modeled rank-eligible line, same shape, 8-character price (`#####.##`) and 7-character percent (`-##.##%`):
@@ -301,9 +301,15 @@ Phase 6e `lab scorecard compare` is a different scorer (`docs/runbooks/scorecard
 
 ### Do not rewrite set1
 
-Set1 bodies stay equity **DEGRADED n=0**. The A1 dry-run locked by `docs/specs/brief-format-freeze.md` stays. Stored Neon closes for C1–C3 (the 75-row captures) are not a licence to reprint those mornings or to recompute set1 ranks.
+Set1 bodies stay equity **DEGRADED n=0**. The locked A1 artifact stays. Stored Neon closes for C1–C3 (the 75-row captures) are not a licence to reprint those mornings or to recompute set1 ranks.
 
-`b5f33450…` is not in this checkout. Searched the tree and the SHA-256 prefixes of `brief-template-dryrun.txt` (`c693f077010d84e3`) and `recorded_sydney_morning_20260924.json` (`e50610a8dbda611e`). The frozen A1 bytes on disk are `ops/reports/renders/brief-template-dryrun.txt`. The recorded approval pair in `tests/fixtures/briefing/recorded_sydney_morning_20260924.json` is Actions runs `35967088240` then `36071921289` (those runs are before capture 1).
+Frozen A1 is the DONCAPO A1 Day-7 dry-run, not the format-freeze brief. Principal/Hive lock:
+
+| Artifact | Path | sha256 |
+|---|---|---|
+| A1 Day-7 dry-run (set1 lock) | `/workspace/drafts/ops/dry-runs/6d5fab42cc6884b4/ping-mvp-a1.md` | `b5f33450ad9222d031b70cf060949688506dc59e906444dfb01a1930b78e86f1` |
+
+That path is the box working surface. It is not in this git checkout (`drafts/` is absent here). Ops confirms the file on the box. Full pack `425ef905…` and A2 archive `7ddac5e1…` stay separate and are not this lock. Format-freeze bytes stay `ops/reports/renders/brief-template-dryrun.txt` (sha256 prefix `c693f077010d84e3`). Do not treat that file as A1. The recorded approval pair in `tests/fixtures/briefing/recorded_sydney_morning_20260924.json` is Actions runs `35967088240` then `36071921289` (those runs are before capture 1).
 
 Morning rows do not get a `capture_id`. `run_morning_capture` sets `capture_id` only for proof (`mvp_retain.py`: `capture_id=capture_id if proof else None`). Set identity is the Sydney anchor plus the deliver receipt `run_id`.
 
@@ -365,6 +371,7 @@ Quant adjacency still applies inside whatever set2 exists: one printed morning d
 | Seam date | 2026-09-30 (this scope). Implementation seam date = the Sydney date of the first set2 morning, written when that fire exists. |
 | Set1 ids | C1 `actions-b1-36348252592`, C2 `actions-b1-36479629926`, C3 `actions-b1-36626767952` |
 | Set1 equity | DEGRADED n=0. Bodies not rewritten. |
+| Set1 A1 | `ping-mvp-a1.md` sha256 `b5f33450ad9222d031b70cf060949688506dc59e906444dfb01a1930b78e86f1` (box path, not in git) |
 | Set2 ids | empty until the first printed morning |
 | Bar | same 3-of-10 rule, scored independently, denominator = mornings in that set |
 | Ranks | equity Top5/Bottom5 stay DEGRADED until the first adjacent set2 pair |
