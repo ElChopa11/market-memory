@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
+from typing import Any
 
 from mm_common.hashing import sha256_hex
 from mm_briefing.divergences import fmt_pct, fmt_px
@@ -209,15 +211,19 @@ def render_close(
     session_tz: str = "America/New_York",
     lab_tz: str = "Australia/Sydney",
     prior_reader: object | None = None,
+    equity_envelopes: Any | None = None,
 ) -> BriefDocument:
     """US close / Sydney morning brief. One message. Standing rule is inside the renderer.
 
     ``prior_reader`` is the Neon MVP prior-capture seam (#122). None, capture 1,
     and a read failure are all "no prior" and must not fail the brief.
-    """
-    from mm_briefing.morning import render_morning_close
 
-    return render_morning_close(
+    ``equity_envelopes`` is this capture's retain rows, already in hand.
+    ``None`` leaves the morning body byte-for-byte. The insert does not fetch.
+    """
+    from mm_briefing.morning import expected_equity_session, render_morning_close
+
+    doc = render_morning_close(
         generated_at=generated_at,
         as_of=as_of,
         overnight=overnight,
@@ -232,6 +238,18 @@ def render_close(
         lab_tz=lab_tz,
         prior_reader=prior_reader,
     )
+    if equity_envelopes is None:
+        return doc
+    from mm_briefing.equity_close_lines import apply_equity_close
+
+    markdown = apply_equity_close(
+        doc.markdown,
+        equity_envelopes,
+        header_date=expected_equity_session(as_of),
+    )
+    if markdown == doc.markdown:
+        return doc
+    return replace(doc, markdown=markdown, content_hash=brief_hash(markdown))
 
 
 def render_close_legacy(

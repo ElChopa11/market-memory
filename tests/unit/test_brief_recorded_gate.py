@@ -300,3 +300,66 @@ def test_recorded_fixture_is_one_message_and_not_the_live_file() -> None:
     assert "SPY ETF" not in text
     assert CURRENT.read_text(encoding="utf-8") == legacy_markdown(payload)
     assert "Overnight reference" in CURRENT.read_text(encoding="utf-8")
+
+
+def test_no_equity_payload_stays_the_recorded_bytes() -> None:
+    """No retain file: the recorded morning body is unchanged, including its hash."""
+    import hashlib
+
+    text = gate_markdown()
+    assert hashlib.sha256(text.encode()).hexdigest() == (
+        "9e7fe0980ab442bcaefcc3b53a37b3807b579ea9951864a4b2e475989ba534d6"
+    )
+    assert "CRCL " not in text
+    assert len(text.splitlines()) < 80
+
+
+def test_equity_payload_on_recorded_body_fits_one_message() -> None:
+    """With this capture's envelopes, the 16 lines fit. The no-payload file does not change."""
+    from datetime import date
+
+    from mm_briefing.equity_close_lines import RANK_ELIGIBLE_EQUITIES, apply_equity_close
+
+    payload = _load()
+    base = gate_markdown(payload)
+    rows = []
+    for index, ticker in enumerate(RANK_ELIGIBLE_EQUITIES):
+        rows.append(
+            {
+                "instrument": ticker,
+                "metric": "close",
+                "market_time": "2026-09-23T20:00:00+00:00",
+                "source_name": "polygon",
+                "source_url_or_id": f"grouped_daily:{ticker}",
+                "as_of_knowledge": "2026-09-24T23:17:25+00:00",
+                "payload": {
+                    "value": f"{100 + index}.25",
+                    "session_date": "2026-09-23",
+                    "resolution": "grouped_daily",
+                    "capture_kind": "lab_snapshot",
+                },
+            }
+        )
+    text = apply_equity_close(base, rows, header_date=date(2026, 9, 23))
+    assert text != base
+    assert gate_markdown(payload) == base
+    fence = []
+    inside = False
+    for line in text.splitlines():
+        if line.strip() == "```":
+            inside = not inside
+            continue
+        if inside:
+            fence.append(line)
+            assert len(line) <= PHONE_LINE_MAX, line
+    heads = [line.split(" ", 1)[0] for line in fence]
+    qqq = heads.index("QQQ")
+    us10y = heads.index("US10Y")
+    block = heads[qqq + 1 : us10y]
+    assert block == list(RANK_ELIGIBLE_EQUITIES)
+    assert heads.count("QQQ") == 1
+    assert "Entry" not in text
+    assert "NO QUALIFIED TRADE" not in base
+    assert "NO QUALIFIED TRADE" not in text
+    assert len(text) <= TELEGRAM_MAX_MESSAGE_CHARS
+    assert len(chunk_markdown_v2(text)) == 1

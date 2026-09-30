@@ -30,6 +30,16 @@ def add_brief_parser(sub) -> None:
         p.add_argument("--repo-root", type=Path, default=Path("."))
         p.add_argument("--dsn")
         p.add_argument("--no-db", action="store_true")
+        if name == "close":
+            p.add_argument(
+                "--equity-from",
+                type=Path,
+                default=None,
+                help=(
+                    "JSON retain envelopes already in hand (no fetch, no Neon). "
+                    "Omit the flag to leave the close body unchanged."
+                ),
+            )
         p.add_argument(
             "--live",
             action="store_true",
@@ -90,6 +100,13 @@ def _run_brief(args: Namespace, kind: str) -> tuple[int, str | None]:
     elif kind == "alert":
         alert_settings = load_alert_settings(root / "config" / "briefing" / "alerts.yaml")
 
+    equity_envelopes = None
+    equity_from = getattr(args, "equity_from", None)
+    if kind == "close" and equity_from:
+        from mm_briefing.equity_close_lines import load_equity_capture_file
+
+        equity_envelopes = load_equity_capture_file(equity_from)
+
     session_cm = None
     session = None
     if not args.no_db and fixture is None:
@@ -106,6 +123,7 @@ def _run_brief(args: Namespace, kind: str) -> tuple[int, str | None]:
             generated_at=generated_at,
             alert_settings=alert_settings,
             live=live,
+            equity_envelopes=equity_envelopes,
         )
     finally:
         if session_cm is not None:

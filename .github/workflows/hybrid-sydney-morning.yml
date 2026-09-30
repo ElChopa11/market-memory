@@ -38,9 +38,12 @@
 # does not success-ping and writes no receipt. already_delivered success-pings
 # only (no DM, receipt unchanged) and logs the outcome. A ping failure never
 # fails the job or blocks the DM or receipt. The ping URL is not printed.
-# On that same send path, before the POST, lab retain morning writes one MVP
-# capture for the stamp's Sydney anchor date (SCHEDULED_FOR) into Neon
-# (existing POSTGRES_DSN). One capture per anchor date. The read-back row
+# On that same send path, before the brief and before the POST, lab retain
+# morning writes one MVP capture for the stamp's Sydney anchor date
+# (SCHEDULED_FOR) into Neon (existing POSTGRES_DSN). One capture per anchor
+# date. The in-memory polygon close envelopes go to a runner temp file (not a
+# git commit). lab brief close reads that file with --equity-from when it
+# exists. A missing file leaves the close body unchanged. The read-back row
 # count is one CAPTURE line on that same DM, after LATE and DEADMAN.
 # Capture failure, a missing DSN, a DB error, or the 90s cap does not fail
 # the job (continue-on-error plus an in-process catch). already_delivered
@@ -447,6 +450,46 @@ jobs:
               fh.write("already_delivered=false\n")
           PY
 
+      - name: Morning MVP retain (non-fatal; one capture per Sydney anchor)
+        id: retain
+        if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
+        continue-on-error: true
+        env:
+          SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
+          POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
+        run: |
+          set +e
+          uv run lab retain morning --scheduled-for "${SCHEDULED_FOR}" --equity-out "/tmp/sydney-equity-${GITHUB_RUN_ID}.json" > /tmp/retain-morning.json
+          set -e
+          uv run python - <<'PY'
+          """Always emit a CAPTURE line. Capture must not fail the job."""
+          import json
+          import os
+          from pathlib import Path
+
+          line = "CAPTURE: FAILED capture step"
+          rows = ""
+          path = Path("/tmp/retain-morning.json")
+          try:
+              raw = path.read_text(encoding="utf-8") if path.is_file() else ""
+              start = raw.find("{")
+              end = raw.rfind("}")
+              payload = json.loads(raw[start : end + 1]) if start >= 0 and end >= start else {}
+              got = str(payload.get("line") or "").replace("\n", " ").replace("\r", " ").strip()
+              if got.startswith("CAPTURE:"):
+                  line = got
+              count = payload.get("capture_rows")
+              if isinstance(count, int) and not isinstance(count, bool) and count >= 0:
+                  rows = str(count)
+          except Exception:
+              line = "CAPTURE: FAILED capture step"
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as fh:
+              fh.write(f"capture_line={line}\n")
+              fh.write(f"capture_rows={rows}\n")
+          print(line)
+          PY
+          exit 0
+
       - name: Live US-close brief (lab brief close --live --no-db)
         id: brief
         if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
@@ -461,7 +504,12 @@ jobs:
           OUT="/tmp/sydney-brief-${GITHUB_RUN_ID}"
           mkdir -p "${OUT}"
           echo "P0.4 rate-limit headers enabled (MM_LOG_RATE_LIMIT_HEADERS=1). Compare stderr status=200 vs status=429 with box CoinGecko / Hyperliquid limits."
-          uv run lab brief close --live --no-db --as-of "${AS_OF}" --repo-root . --out "${OUT}" | tee /tmp/brief-close.json
+          EQUITY_FILE="/tmp/sydney-equity-${GITHUB_RUN_ID}.json"
+          EQUITY_ARGS=()
+          if [ -f "${EQUITY_FILE}" ]; then
+            EQUITY_ARGS=(--equity-from "${EQUITY_FILE}")
+          fi
+          uv run lab brief close --live --no-db --as-of "${AS_OF}" --repo-root . --out "${OUT}" "${EQUITY_ARGS[@]}" | tee /tmp/brief-close.json
           uv run python - <<'PY'
           import json, os
           from pathlib import Path
@@ -493,46 +541,6 @@ jobs:
           path: ${{ steps.brief.outputs.brief_path }}
           if-no-files-found: error
           retention-days: 14
-
-      - name: Morning MVP retain (non-fatal; one capture per Sydney anchor)
-        id: retain
-        if: success() && steps.gate.outputs.ready == 'true' && steps.receipt.outputs.already_delivered != 'true'
-        continue-on-error: true
-        env:
-          SCHEDULED_FOR: ${{ needs.stage1-stamp.outputs.scheduled_for }}
-          POSTGRES_DSN: ${{ secrets.POSTGRES_DSN }}
-        run: |
-          set +e
-          uv run lab retain morning --scheduled-for "${SCHEDULED_FOR}" > /tmp/retain-morning.json
-          set -e
-          uv run python - <<'PY'
-          """Always emit a CAPTURE line. Capture must not fail the job."""
-          import json
-          import os
-          from pathlib import Path
-
-          line = "CAPTURE: FAILED capture step"
-          rows = ""
-          path = Path("/tmp/retain-morning.json")
-          try:
-              raw = path.read_text(encoding="utf-8") if path.is_file() else ""
-              start = raw.find("{")
-              end = raw.rfind("}")
-              payload = json.loads(raw[start : end + 1]) if start >= 0 and end >= start else {}
-              got = str(payload.get("line") or "").replace("\n", " ").replace("\r", " ").strip()
-              if got.startswith("CAPTURE:"):
-                  line = got
-              count = payload.get("capture_rows")
-              if isinstance(count, int) and not isinstance(count, bool) and count >= 0:
-                  rows = str(count)
-          except Exception:
-              line = "CAPTURE: FAILED capture step"
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as fh:
-              fh.write(f"capture_line={line}\n")
-              fh.write(f"capture_rows={rows}\n")
-          print(line)
-          PY
-          exit 0
 
       - name: Deliver pack to Principal DM (--to-principal-dm --i-mean-it)
         id: deliver

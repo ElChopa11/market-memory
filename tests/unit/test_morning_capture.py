@@ -644,7 +644,10 @@ def test_workflow_capture_runs_before_send_and_is_nonfatal() -> None:
     deliver_name = "uv run lab deliver pack"
     assert retain_name in brief
     assert brief.index(retain_name) < brief.index(deliver_name)
-    assert brief.index("uv run lab brief close") < brief.index(retain_name)
+    assert brief.index(retain_name) < brief.index("uv run lab brief close")
+    assert "--equity-out" in brief[brief.index(retain_name) : brief.index("uv run lab brief close")]
+    assert "--equity-from" in brief
+    assert "/tmp/sydney-equity-" in brief
     step = brief[brief.index(retain_name) : brief.index("- name: Deliver pack")]
     assert "continue-on-error: true" in step
     assert "steps.receipt.outputs.already_delivered != 'true'" in step
