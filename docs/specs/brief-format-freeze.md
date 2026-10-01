@@ -18,6 +18,10 @@ That list is `config/ingest/mvp_retain.yaml` `polygon.tickers` minus `QQQ`. Leve
 
 Nothing else is added. Coinglass stays HELD. Chart stays STAND_BY. No Entry, SL, or TP. Solitary NO QUALIFIED TRADE stays as it is. Message shape stays one message. GMGN stays parked. The exception ends at capture 11.
 
+### Align: morning retain equity session_date is the T-1 header
+
+Principal, 2026-10-01, Option A inside the #145 exception. C4 (Actions run 36773057250, tip `cce6e8f`) kept CAPTURE 75/75 and listed all 16 names on `gaps:` because morning retain stamped `session_date` from the last completed cash session while the brief qualifies the T-1 header date. Morning retain now stamps equity `session_date` with that same weekday-before-New-York-date. `_qualify` stays strict. `morning.py`, the deliver path, and the 06:30 workflow cron stay untouched. Nothing else through capture 11.
+
 ### Day-7 dry-run checklist
 
 Before Day-7 scoring, re-hash the box A1 file and compare it to `DONCAPO_A1_SHA256` in `tests/unit/test_equity_close_lines.py`:

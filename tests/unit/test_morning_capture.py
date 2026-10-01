@@ -205,17 +205,23 @@ def test_readback_lower_than_written_shows_the_real_count() -> None:
 
 
 def test_empty_grouped_daily_keeps_prior_session_closes_and_counts_them() -> None:
-    """A shut US session is an empty grouped-daily body, not a holiday calendar.
+    """An empty T-1 grouped-daily body walks to the earlier weekday.
 
-    The earlier session's vendor bar time stays on market_time. as_of_knowledge
-    stays the capture. Crypto still runs. The DM line counts the equity rows.
+    Monday 16:32 ET morning retain requests Friday (the T-1 header date).
+    When that body is empty, the earlier session's vendor bar time stays on
+    market_time. as_of_knowledge stays the capture. Crypto still runs. The
+    DM line counts the equity rows.
     """
+    from mm_common.time import expected_equity_session
+
     spec = load_mvp_retain_spec()
     shut = date(2026, 9, 28)
-    prior = date(2026, 9, 25)
+    requested = date(2026, 9, 25)
+    earlier = date(2026, 9, 24)
     now = datetime(2026, 9, 28, 20, 32, tzinfo=UTC)
     assert us_cash_session_date(now) == shut
-    bar = datetime(2026, 9, 25, 20, 0, tzinfo=UTC)
+    assert expected_equity_session(now) == requested
+    bar = datetime(2026, 9, 24, 20, 0, tzinfo=UTC)
     bar_ms = int(bar.timestamp() * 1000)
 
     class _ShutPoly:
@@ -225,9 +231,9 @@ def test_empty_grouped_daily_keeps_prior_session_closes_and_counts_them() -> Non
 
         def grouped_daily(self, session_date: date):
             self.dates.append(session_date)
-            if session_date == shut:
+            if session_date == requested:
                 return {"results": [], "resultsCount": 0}, ERROR_NONE
-            if session_date == prior:
+            if session_date == earlier:
                 results = [
                     {"T": ticker, "c": 100 + index, "t": bar_ms}
                     for index, ticker in enumerate(spec.equity_symbols)
@@ -266,7 +272,7 @@ def test_empty_grouped_daily_keeps_prior_session_closes_and_counts_them() -> Non
     assert result.line == _line(75, now)
     assert result.capture_rows == 75
     assert hl.calls == ["metaAndAssetCtxs", "spotMetaAndAssetCtxs"]
-    assert poly.dates == [shut, prior]
+    assert poly.dates == [requested, earlier]
     closes = [env for env in store.last_envelopes if env.metric == "close"]
     assert len(closes) == 17
     assert all(env.market_time == from_unix_ms(bar_ms) for env in closes)
@@ -275,8 +281,8 @@ def test_empty_grouped_daily_keeps_prior_session_closes_and_counts_them() -> Non
     assert all(env.market_time < env.as_of_knowledge for env in closes)
     assert all(env.data_quality is DataQuality.STALE for env in closes)
     assert all(env.identity.value is not None for env in closes)
-    assert {env.payload["session_date"] for env in closes} == {"2026-09-25"}
-    assert {env.payload["requested_session_date"] for env in closes} == {"2026-09-28"}
+    assert {env.payload["session_date"] for env in closes} == {"2026-09-24"}
+    assert {env.payload["requested_session_date"] for env in closes} == {"2026-09-25"}
     crypto = [env for env in store.last_envelopes if env.metric != "close"]
     assert len(crypto) == 58
 

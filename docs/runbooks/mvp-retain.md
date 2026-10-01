@@ -10,7 +10,7 @@ The DM line uses the **read-back** row count:
 
 `captured_at` is the actual capture time (UTC) and is lockstep on `published_at`, `ingested_at`, and `as_of_knowledge`. `prior_captured_at` is the latest capture for a different anchor date, or null. When it is earlier, each row stores `interval_seconds`. The anchor date is the Sydney calendar date of the stamp's `SCHEDULED_FOR`.
 
-Every weekday captures. There is no holiday calendar. Crypto is read on every capture. When the US cash session's grouped-daily body is empty, equity closes come from the most recent earlier weekday whose body has bars. `market_time` is that vendor bar time. `as_of_knowledge` stays the capture time. Those equity rows are `STALE`. An empty equity lane does not fail the capture and does not change the DM line to `CAPTURE: FAILED`.
+Every weekday captures. There is no holiday calendar. Crypto is read on every capture. Morning equity `session_date` is the T-1 header date: the weekday before the capture's New York calendar date, the same rule as the brief's `expected_equity_session`. Proof captures request the last completed 16:00 America/New_York cash session. When the requested grouped-daily body is empty, equity closes come from the most recent earlier weekday whose body has bars. `market_time` is that vendor bar time. `as_of_knowledge` stays the capture time. Those walked equity rows are `STALE`. An empty equity lane does not fail the capture and does not change the DM line to `CAPTURE: FAILED`.
 
 The whole capture — both Hyperliquid calls, every Polygon grouped-daily read, the Neon write, and the read-back — has one 90-second wall clock. Exceeding it prints `CAPTURE: FAILED timeout` and the brief still sends.
 
