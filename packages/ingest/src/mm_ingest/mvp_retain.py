@@ -38,7 +38,7 @@ from mm_common.enums import DataQuality
 from mm_common.hashing import normalize_numeric
 from mm_common.http import ERROR_NONE
 from mm_common.schemas import ObservationEnvelope
-from mm_common.time import OPS_TZ, as_utc, from_unix_ms, parse_utc, utcnow
+from mm_common.time import OPS_TZ, as_utc, expected_equity_session, from_unix_ms, parse_utc, utcnow
 from mm_ingest.config import load_yaml, repo_root
 from mm_ingest.equities.polygon import GROUPED_DAILY_PATH
 from mm_ingest.pipeline import persist_envelopes
@@ -857,7 +857,12 @@ def sydney_anchor_date(scheduled_for: str | datetime) -> date:
 
 
 def us_cash_session_date(ts: datetime) -> date:
-    """Last completed US cash session date (16:00 America/New_York, weekdays)."""
+    """Last completed US cash session date (16:00 America/New_York, weekdays).
+
+    ``run_proof_capture`` requests this date. Sydney morning retain stamps
+    ``expected_equity_session`` so the brief T-1 header and the stored equity
+    ``session_date`` name the same day.
+    """
     local = as_utc(ts).astimezone(NY_TZ)
     day = local.date()
     if local.time() < _CASH_CLOSE:
@@ -1287,11 +1292,15 @@ def _morning_capture_body(
                     hl = HyperliquidInfoClient(timeout=20.0, max_attempts=2)
                 if owned_poly:
                     polygon = PolygonEquitiesAdapter(timeout=20.0, max_attempts=2)
+            # Morning print qualifies T-1. Proof keeps the last completed cash session.
+            session_date = (
+                us_cash_session_date(captured) if proof else expected_equity_session(captured)
+            )
             envelopes = capture_mvp_retain(
                 resolved,
                 hl_client=hl,
                 polygon_adapter=polygon,
-                session_date=us_cash_session_date(captured),
+                session_date=session_date,
                 captured_at=captured,
                 prior_captured_at=prior,
                 capture_kind=PROOF_CAPTURE_KIND if proof else SNAPSHOT_CAPTURE_KIND,

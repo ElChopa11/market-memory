@@ -1,12 +1,19 @@
-"""UTC-only datetime helpers. Naive datetimes are rejected."""
+"""UTC datetime helpers. Naive datetimes are rejected.
+
+``expected_equity_session`` is the morning equity T-1 date: the weekday before
+the America/New_York calendar date. It is lockstep with
+``mm_briefing.morning.expected_equity_session`` (that module stays the print
+copy; tests assert the two dates match).
+"""
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 OPS_TZ = ZoneInfo("Australia/Sydney")
+NY_TZ = ZoneInfo("America/New_York")
 
 
 def utcnow() -> datetime:
@@ -62,3 +69,18 @@ def parse_window(spec: str, *, now: datetime | None = None) -> tuple[datetime, d
     else:
         raise ValueError(f"unsupported window unit in {spec!r}; use Nd, Nh, or Nm")
     return end - delta, end
+
+
+def expected_equity_session(knowledge_as_of: datetime) -> date:
+    """Weekday before the New York calendar date of this instant.
+
+    Same rule as ``mm_briefing.morning.expected_equity_session``, which the
+    brief header and equity qualification already use. Morning retain stamps
+    this date onto equity ``session_date``. Weekends are not sessions. There
+    is no holiday list. Clock time on a given New York date does not change
+    the result.
+    """
+    day = as_utc(knowledge_as_of).astimezone(NY_TZ).date() - timedelta(days=1)
+    while day.weekday() >= 5:
+        day -= timedelta(days=1)
+    return day
