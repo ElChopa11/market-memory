@@ -48,6 +48,10 @@ What STOP means: it does not mean shutting down. It means stopping work on the s
 
 C5 score filed post-window as MISSED→N per Principal 2026-10-02; push after 10:00 AEST by design for a miss log.
 
+**Standing checkpoint, interim read at capture 5 or 6 (Principal ruling 2026-10-03, written before any C6 data exists):**
+At capture 5 or capture 6, whichever lands next, the Principal takes a short honest interim read. It is not a formal re-score. Across the mornings so far: did anything in the brief feel like it told something real, even informally, even outside the strict Y/N scoring rule in §2? This is not a shortcut around the full ten-morning test. It does not change the 3-of-10 bar in §6. It does not let anyone relitigate a score already logged. It is a cheap five-minute gut-check, so that if the honest signal is clearly weak early, that shows up before more infrastructure is built on an unconfirmed signal, rather than only at capture 11. This checkpoint influences nothing automatically. It is informational only, for the Principal's awareness. It is not a trigger for any action.
+C5 is already scored MISSED→N (informative). Equity-print PASS and set2 are separate lanes. The interim gut-check is about brief informativeness across mornings, not the equity-print gate.
+
 **DST note, captures 7–10 (Principal ruling 2026-09-28: the brief stays at 06:30 Australia/Sydney through the DST change on Sun 4 Oct 2026):**
 Captures 7 (Tue 6 Oct 2026), 8 (Wed 7 Oct 2026), 9 (Thu 8 Oct 2026) and 10 (Fri 9 Oct 2026) carry this label:
 "equity data pre-close by design — NY market still open at 06:30 AEDT capture time."
