@@ -1,0 +1,16 @@
+{
+  "as_of_knowledge": "2026-10-02T01:44:00.088395+00:00",
+  "cli": "lab schedule heartbeat (actions-b1)",
+  "delta_seconds": 18840,
+  "exit_status": 0,
+  "fired_at_ts": "2026-10-02T01:44:00.088395+00:00",
+  "payload_json": {
+    "cli": "lab schedule heartbeat (actions-b1)",
+    "exit_status": 0
+  },
+  "routine_id": "grok.sydney_morning",
+  "run_id": "actions-b1-36952322652",
+  "scheduled_anchor_ts": "2026-10-01T20:30:00+00:00",
+  "source": "github.actions",
+  "status": "late"
+}
