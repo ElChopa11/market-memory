@@ -38,13 +38,15 @@ What STOP means: it does not mean shutting down. It means stopping work on the s
 | 2 | | | | | | | |
 | 3 | | | | | | | |
 | 4 | | | | | | | |
-| 5 | | | | | | | |
+| 5 | 2026-10-02 | Y | N | — (none; score MISSED) | No pre-10:00 AEST Principal score existed; missed morning counts as N per §4. | | Y |
 | 6 | | | | | | | |
 | 7 | | | | | | | |
 | 8 | | | | | | | |
 | 9 | | | | | | | |
 | 10 | | | | | | | |
 | 11 | | | | | | | |
+
+C5 score filed post-window as MISSED→N per Principal 2026-10-02; push after 10:00 AEST by design for a miss log.
 
 **DST note, captures 7–10 (Principal ruling 2026-09-28: the brief stays at 06:30 Australia/Sydney through the DST change on Sun 4 Oct 2026):**
 Captures 7 (Tue 6 Oct 2026), 8 (Wed 7 Oct 2026), 9 (Thu 8 Oct 2026) and 10 (Fri 9 Oct 2026) carry this label:
