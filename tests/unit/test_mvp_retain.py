@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import json
+from dataclasses import replace
 from datetime import date, datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -14,7 +15,7 @@ import pytest
 from mm_common.enums import DataQuality
 from mm_common.hashing import claim_hash
 from mm_common.http import ERROR_MISSING_ENV
-from mm_ingest.config import load_instruments
+from mm_ingest.config import load_instruments, load_yaml
 from mm_ingest.equities.polygon import GROUPED_DAILY_PATH, PolygonEquitiesAdapter
 from mm_ingest.hl_info import ALLOWED_INFO_TYPES, FORBIDDEN_INFO_TYPES, HyperliquidInfoClient
 from mm_ingest.mvp_retain import (
@@ -25,6 +26,7 @@ from mm_ingest.mvp_retain import (
     http_plan,
     load_mvp_retain_spec,
     persist_mvp_retain,
+    _validate_spec,
 )
 from mm_lab_cli.cli import main
 
@@ -159,7 +161,12 @@ def test_allowlist_is_19_plus_drv_plus_17() -> None:
     assert "DRV" not in spec.bound_symbols
     assert spec.venue_queue == VENUE_QUEUE
     assert spec.blocked == {"CASHCAT", "PONS"}
-    assert spec.monitor == {"JUP", "NIL", "DRV"}
+    assert spec.universe == {"BTC", "NVDA"}
+    retained = set(BOUND) | {"DRV"} | set(EQUITIES)
+    assert spec.blocked.isdisjoint(spec.monitor)
+    assert spec.blocked.isdisjoint(spec.universe)
+    assert spec.monitor.isdisjoint(spec.universe)
+    assert spec.blocked | spec.monitor | spec.universe == retained
     assert HISTORY_BACKFILL_WIRED is False
     assert LIVE_NEON_ENABLED is False
     assert load_instruments() == ["BTC", "ETH", "UNI", "AAVE"]
@@ -199,7 +206,7 @@ def test_bound_rows_price_only_drv_and_equity_closes() -> None:
     jup = next(e for e in envelopes if e.instrument == "JUP" and e.metric == "mid_px")
     assert jup.payload["watch_tier"] == "monitor"
     btc = next(e for e in envelopes if e.instrument == "BTC" and e.metric == "mid_px")
-    assert btc.payload["watch_tier"] is None
+    assert btc.payload["watch_tier"] == "universe"
     qqq = next(e for e in envelopes if e.instrument == "QQQ")
     assert qqq.metric == "close"
     assert qqq.market_time == BAR
@@ -541,3 +548,97 @@ def test_only_sydney_morning_wires_retain() -> None:
     assert "spotMetaAndAssetCtxs" in ALLOWED_INFO_TYPES
     assert "spotMetaAndAssetCtxs" not in FORBIDDEN_INFO_TYPES
     assert "metaAndAssetCtxs" in ALLOWED_INFO_TYPES
+
+
+def _retained_symbols(spec) -> set[str]:
+    return set(spec.bound_symbols) | {spec.price_only_symbol} | set(spec.equity_symbols)
+
+
+def _spec_tiers(spec) -> dict[str, str]:
+    tiers: dict[str, str] = {}
+    for name, members in (
+        ("universe", spec.universe),
+        ("monitor", spec.monitor),
+        ("blocked", spec.blocked),
+    ):
+        for symbol in members:
+            assert symbol not in tiers, symbol
+            tiers[symbol] = name
+    return tiers
+
+
+def _monitor_tiers_by_membership_key() -> dict[str, str]:
+    """Retain symbol is monitor.yaml membership_key (CHIP for CHIPIUSD, PONS for PONSUSD)."""
+    data = load_yaml(ROOT / "config" / "watchlist" / "monitor.yaml")
+    out: dict[str, str] = {}
+    for row in data["names"]:
+        key = str(row["membership_key"]).upper()
+        assert key not in out, key
+        out[key] = str(row["tier"])
+    return out
+
+
+def test_retain_watch_tier_matches_monitor_yaml_for_every_retained_symbol() -> None:
+    spec = load_mvp_retain_spec()
+    monitor = load_yaml(ROOT / "config" / "watchlist" / "monitor.yaml")
+    by_ticker = {str(row["ticker"]): row for row in monitor["names"]}
+    assert by_ticker["CHIPIUSD"]["membership_key"] == "CHIP"
+    assert by_ticker["PONSUSD"]["membership_key"] == "PONS"
+    by_key = _monitor_tiers_by_membership_key()
+    retained = _retained_symbols(spec)
+    stamped = _spec_tiers(spec)
+    assert len(retained) == 37
+    assert set(stamped) == retained
+    for symbol in sorted(retained):
+        assert stamped[symbol] == by_key[symbol], symbol
+
+
+def test_no_retained_symbol_stamps_null_watch_tier() -> None:
+    envelopes = _build(spot=_spot_payload())
+    retained = set(BOUND) | {"DRV"} | set(EQUITIES)
+    assert {envelope.instrument for envelope in envelopes} == retained
+    assert len(envelopes) == 19 * 3 + 1 + 17
+    for envelope in envelopes:
+        assert envelope.payload["watch_tier"] in {"universe", "monitor", "blocked"}
+
+
+def test_lit_stamps_monitor_and_ltc_stamps_its_own_tier() -> None:
+    envelopes = _build(spot=_spot_payload())
+    by_key = _monitor_tiers_by_membership_key()
+    lit_rows = [envelope for envelope in envelopes if envelope.instrument == "LIT"]
+    ltc_rows = [envelope for envelope in envelopes if envelope.instrument == "LTC"]
+    assert len(lit_rows) == 3
+    assert len(ltc_rows) == 3
+    assert by_key["LIT"] == "monitor"
+    assert all(envelope.payload["watch_tier"] == "monitor" for envelope in lit_rows)
+    assert all(envelope.payload["watch_tier"] == by_key["LTC"] for envelope in ltc_rows)
+    lit = next(envelope for envelope in lit_rows if envelope.metric == "mid_px")
+    ltc = next(envelope for envelope in ltc_rows if envelope.metric == "mid_px")
+    assert lit.instrument != ltc.instrument
+    assert lit.identity.value != ltc.identity.value
+
+
+def test_blocked_names_stamp_blocked_and_never_monitor() -> None:
+    spec = load_mvp_retain_spec()
+    by_key = _monitor_tiers_by_membership_key()
+    retained = _retained_symbols(spec)
+    blocked_names = {symbol for symbol in retained if by_key[symbol] == "blocked"}
+    assert blocked_names == {"CASHCAT", "PONS"}
+    assert blocked_names.isdisjoint(spec.monitor)
+    assert blocked_names.isdisjoint(spec.universe)
+    assert spec.blocked == blocked_names
+    envelopes = _build(spot=_spot_payload())
+    for symbol in blocked_names:
+        rows = [envelope for envelope in envelopes if envelope.instrument == symbol]
+        assert len(rows) == 3
+        assert {envelope.payload["watch_tier"] for envelope in rows} == {"blocked"}
+
+
+def test_tier_validation_rejects_overlap_and_missing_symbol() -> None:
+    spec = load_mvp_retain_spec()
+    with pytest.raises(ValueError, match="blocked names must stay out of monitor and universe"):
+        _validate_spec(replace(spec, monitor=spec.monitor | {"CASHCAT"}))
+    with pytest.raises(ValueError, match="watch tiers must be disjoint"):
+        _validate_spec(replace(spec, universe=spec.universe | {"LIT"}))
+    with pytest.raises(ValueError, match="exactly one watch tier"):
+        _validate_spec(replace(spec, monitor=spec.monitor - {"LIT"}))

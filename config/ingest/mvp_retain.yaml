@@ -61,9 +61,46 @@ hl:
       metrics: [mid_px]
       quadrant_eligible: false
   dropped: [KNT, KNTQ, KNTUSDC]
+  # Watch tier for every retained symbol: bound perps, DRV, and Polygon tickers.
+  # Keyed by the retain/fetch symbol (CHIP for CHIPIUSD, PONS for PONSUSD).
+  # Copied from config/watchlist/monitor.yaml membership_key tiers. Not read at runtime.
   tiers:
+    universe: [BTC, NVDA]
     blocked: [CASHCAT, PONS]
-    monitor: [JUP, NIL, DRV]
+    monitor:
+      - ETH
+      - SOL
+      - JUP
+      - HYPE
+      - LIT
+      - NEAR
+      - ARB
+      - UNI
+      - VVV
+      - ZEC
+      - DOGE
+      - XMR
+      - CHIP
+      - LTC
+      - NIL
+      - PURR
+      - DRV
+      - QQQ
+      - CRCL
+      - TSLA
+      - SPCX
+      - BB
+      - GLXY
+      - IBIT
+      - BMNR
+      - MRNA
+      - GOOG
+      - HOOD
+      - NOW
+      - CBRS
+      - MSTR
+      - STRC
+      - AMD
 
 polygon:
   metric: close
