@@ -32,8 +32,9 @@ OLD_STATUSES = "('ok','late','missed','skipped')"
 
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    bind.execute(
+    # op.execute (not bind.execute) so offline ``lab migrate --sql`` emits this
+    # without a connection. Online behaviour is unchanged.
+    op.execute(
         text(
             f"""
             CREATE TABLE IF NOT EXISTS {TABLE} (
@@ -54,11 +55,11 @@ def upgrade() -> None:
             """
         )
     )
-    bind.execute(text(f"CREATE INDEX IF NOT EXISTS schedule_heartbeat_as_of_idx ON {TABLE} (as_of_knowledge)"))
-    bind.execute(text(f"CREATE INDEX IF NOT EXISTS schedule_heartbeat_routine_idx ON {TABLE} (routine_id)"))
+    op.execute(text(f"CREATE INDEX IF NOT EXISTS schedule_heartbeat_as_of_idx ON {TABLE} (as_of_knowledge)"))
+    op.execute(text(f"CREATE INDEX IF NOT EXISTS schedule_heartbeat_routine_idx ON {TABLE} (routine_id)"))
     # Table may already exist from 0011 with the narrower CHECK. Replace it.
-    bind.execute(text(f"ALTER TABLE {TABLE} DROP CONSTRAINT IF EXISTS {STATUS_CHECK}"))
-    bind.execute(
+    op.execute(text(f"ALTER TABLE {TABLE} DROP CONSTRAINT IF EXISTS {STATUS_CHECK}"))
+    op.execute(
         text(f"ALTER TABLE {TABLE} ADD CONSTRAINT {STATUS_CHECK} CHECK (status IN {NEW_STATUSES})")
     )
 
