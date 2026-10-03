@@ -154,6 +154,7 @@ class S3ObjectStore:
         import boto3
 
         self.bucket = bucket
+        self.region = region
         self._client = boto3.client(
             "s3",
             endpoint_url=endpoint_url,
@@ -197,6 +198,15 @@ def _env(*names: str) -> str:
         if value:
             return value
     return ""
+
+
+def s3_region_from_env() -> str:
+    """Region passed to the S3 client.
+
+    Unset keeps ``us-east-1`` (local MinIO). Cloudflare R2 needs ``auto``;
+    the ingest-persist job sets ``S3_REGION=auto`` as plain env, not a secret.
+    """
+    return _env("S3_REGION", "AWS_DEFAULT_REGION", "AWS_REGION") or "us-east-1"
 
 
 def object_store_from_env(*, enabled: bool = True) -> ObjectStore:
@@ -252,8 +262,15 @@ def object_store_from_env(*, enabled: bool = True) -> ObjectStore:
             "For development-only in-memory bytes, set MM_OBJECT_STORE=memory. "
             "For a durable local directory, set MM_OBJECT_STORE=filesystem and MM_OBJECT_STORE_PATH."
         )
-    logger.info("object store backend=s3 endpoint=%s bucket=%s", endpoint, bucket)
-    return S3ObjectStore(endpoint_url=endpoint, bucket=bucket, access_key=access, secret_key=secret)
+    region = s3_region_from_env()
+    logger.info("object store backend=s3 endpoint=%s bucket=%s region=%s", endpoint, bucket, region)
+    return S3ObjectStore(
+        endpoint_url=endpoint,
+        bucket=bucket,
+        access_key=access,
+        secret_key=secret,
+        region=region,
+    )
 
 
 def raw_object_key(*, source: str, instrument: str, metric: str, claim_hash: str, ingested_at_iso: str) -> str:
