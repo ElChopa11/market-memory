@@ -41,7 +41,7 @@ What STOP means: it does not mean shutting down. It means stopping work on the s
 | 5 | 2026-10-02 | Y | N | — (none; score MISSED) | No pre-10:00 AEST Principal score existed; missed morning counts as N per §4. | | Y |
 | 6 | 2026-10-05 | Y | N | — (none; score MISSED) | No pre-10:00 AEDT Principal score existed; missed morning counts as N per §4. | | Y |
 | 7 | 2026-10-06 | N | N | — (none; score MISSED) | Brief did not arrive; a brief that does not arrive is N per §4, and an outage is not an excused absence. | | Y |
-| 8 | | | | | | | |
+| 8 | 2026-10-07 | Y | N | — (none; score MISSED) | No pre-10:00 AEDT Principal score existed; missed morning counts as N per §4. | | Y |
 | 9 | | | | | | | |
 | 10 | | | | | | | |
 | 11 | | | | | | | |
@@ -54,6 +54,9 @@ C6 observation: GitHub-cron backup runs 37243560492 and 37249891043 wrote comple
 C7 score filed post-window as MISSED→N per Principal 2026-10-06; push after 10:00 AEDT by design for a miss log.
 C7 observation: Host dispatch run 37363787185 fired at 19:30:03Z (06:30 AEDT) but stage1-stamp never got a runner (runner_id 0, no steps) and was cancelled at 19:45:07Z; render-proof, capture-proof and brief-and-deliver were skipped; no completion or deliver receipt. Cause: GitHub status incident 3q1yb5m7ltvb, Incident with Actions, roughly 19:11Z to 22:49Z on 5 Oct (06:11 to 09:49 AEDT 6 Oct), runner assignment delays escalating to major outage.
 C7: equity data pre-close by design — NY market still open at 06:30 AEDT capture time.
+
+C8 score filed post-window as MISSED→N per Principal window close 2026-10-07; push after 10:00 AEDT by design for a miss log.
+C8: equity data pre-close by design — NY market still open at 06:30 AEDT capture time.
 
 **Standing checkpoint, interim read at capture 5 or 6 (Principal ruling 2026-10-03, written before any C6 data exists):**
 At capture 5 or capture 6, whichever lands next, the Principal takes a short honest interim read. It is not a formal re-score. Across the mornings so far: did anything in the brief feel like it told something real, even informally, even outside the strict Y/N scoring rule in §2? This is not a shortcut around the full ten-morning test. It does not change the 3-of-10 bar in §6. It does not let anyone relitigate a score already logged. It is a cheap five-minute gut-check, so that if the honest signal is clearly weak early, that shows up before more infrastructure is built on an unconfirmed signal, rather than only at capture 11. This checkpoint influences nothing automatically. It is informational only, for the Principal's awareness. It is not a trigger for any action.
