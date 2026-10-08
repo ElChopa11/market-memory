@@ -1,0 +1,30 @@
+{
+  "schema": "crm-scan/v1",
+  "producer": "chart",
+  "source_md": "/workspace/drafts/chart/2026-10-09-watchlist-crm-scan.md",
+  "source_md_sha256": "74365a8824cab628c0d58b2f848586815f3e419d513d74c1d1c87e62d3671f69",
+  "captured_at": "2026-10-08T14:35:00Z",
+  "timeframe": "1W",
+  "forming_bar": "UNREAD",
+  "symbols_scanned": 35,
+  "nearest": [
+    {"symbol": "DOGE", "cr": 42, "label": "Neutral", "sigma": -0.81, "to_deep_value_pct": -11.2, "below_realized": true, "buy_26w_n": 1, "buy_26w_pct": -30, "buy_26w_hit_pct": 0},
+    {"symbol": "XRP", "cr": 37, "label": "Neutral", "sigma": -0.45, "to_deep_value_pct": -13.2, "below_realized": true, "buy_26w_n": 1, "buy_26w_pct": -28, "buy_26w_hit_pct": 0},
+    {"symbol": "ETH", "cr": 66, "label": "Neutral", "sigma": 0.29, "to_deep_value_pct": -17.4, "buy_26w_n": 6, "buy_26w_pct": 32, "buy_26w_hit_pct": 50},
+    {"symbol": "BTC", "cr": 46, "label": "Neutral", "sigma": 0.43, "to_deep_value_pct": -20.2, "buy_26w_n": 5, "buy_26w_pct": -8, "buy_26w_hit_pct": 20},
+    {"symbol": "SOL", "cr": 57, "label": "Neutral", "sigma": 0.35, "to_deep_value_pct": null, "buy_26w_n": 2, "buy_26w_pct": 32, "buy_26w_hit_pct": 50}
+  ],
+  "warming": [
+    {"symbol": "XPL-P", "sigma": -0.79},
+    {"symbol": "DOGE-P", "sigma": -0.72},
+    {"symbol": "XRP-P", "sigma": -0.43}
+  ],
+  "stretched": [
+    {"symbol": "QNT-P", "cr": 73, "label": "Elevated", "note": "Euphoria"},
+    {"symbol": "BP", "sigma": 4.78, "note": "Overextended"},
+    {"symbol": "ZEC", "sigma": 1.93},
+    {"symbol": "JUP", "sigma": 1.87},
+    {"symbol": "HYPE-P", "sigma": 1.75}
+  ],
+  "insufficient": ["XMR", "CASHCAT", "GRAM", "KNTQ", "CHIP", "LIT", "HYPE"]
+}
