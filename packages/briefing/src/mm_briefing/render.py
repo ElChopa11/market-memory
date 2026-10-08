@@ -212,6 +212,7 @@ def render_close(
     lab_tz: str = "Australia/Sydney",
     prior_reader: object | None = None,
     equity_envelopes: Any | None = None,
+    crm_scan: Any | None = None,
 ) -> BriefDocument:
     """US close / Sydney morning brief. One message. Standing rule is inside the renderer.
 
@@ -220,6 +221,11 @@ def render_close(
 
     ``equity_envelopes`` is this capture's retain rows, already in hand.
     ``None`` leaves the morning body byte-for-byte. The insert does not fetch.
+
+    ``crm_scan`` is Chart's watchlist CRM scan, already loaded
+    (``mm_briefing.crm_scan.load_crm_scan``). ``None`` leaves the body
+    byte-for-byte. A bad scan renders ``CRM scan unavailable`` and never
+    blocks the brief. Words, sigma and percent only.
     """
     from mm_briefing.morning import expected_equity_session, render_morning_close
 
@@ -238,15 +244,21 @@ def render_close(
         lab_tz=lab_tz,
         prior_reader=prior_reader,
     )
-    if equity_envelopes is None:
+    if equity_envelopes is None and crm_scan is None:
         return doc
-    from mm_briefing.equity_close_lines import apply_equity_close
+    markdown = doc.markdown
+    if equity_envelopes is not None:
+        from mm_briefing.equity_close_lines import apply_equity_close
 
-    markdown = apply_equity_close(
-        doc.markdown,
-        equity_envelopes,
-        header_date=expected_equity_session(as_of),
-    )
+        markdown = apply_equity_close(
+            markdown,
+            equity_envelopes,
+            header_date=expected_equity_session(as_of),
+        )
+    if crm_scan is not None:
+        from mm_briefing.crm_scan import apply_crm_scan
+
+        markdown = apply_crm_scan(markdown, crm_scan, generated_at=generated_at)
     if markdown == doc.markdown:
         return doc
     return replace(doc, markdown=markdown, content_hash=brief_hash(markdown))

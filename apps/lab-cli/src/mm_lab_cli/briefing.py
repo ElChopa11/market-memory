@@ -40,6 +40,16 @@ def add_brief_parser(sub) -> None:
                     "Omit the flag to leave the close body unchanged."
                 ),
             )
+            p.add_argument(
+                "--crm-scan",
+                type=Path,
+                default=None,
+                help=(
+                    "Chart's watchlist CRM scan (crm-scan/v1 JSON). Words, sigma and % only. "
+                    "Missing, stale or level-shaped renders 'CRM scan unavailable' and never "
+                    "blocks the brief. Omit the flag to leave the close body unchanged."
+                ),
+            )
         p.add_argument(
             "--live",
             action="store_true",
@@ -107,6 +117,13 @@ def _run_brief(args: Namespace, kind: str) -> tuple[int, str | None]:
 
         equity_envelopes = load_equity_capture_file(equity_from)
 
+    crm_scan = None
+    crm_scan_path = getattr(args, "crm_scan", None)
+    if kind == "close" and crm_scan_path is not None:
+        from mm_briefing.crm_scan import load_crm_scan
+
+        crm_scan = load_crm_scan(crm_scan_path)
+
     session_cm = None
     session = None
     if not args.no_db and fixture is None:
@@ -124,6 +141,7 @@ def _run_brief(args: Namespace, kind: str) -> tuple[int, str | None]:
             alert_settings=alert_settings,
             live=live,
             equity_envelopes=equity_envelopes,
+            crm_scan=crm_scan,
         )
     finally:
         if session_cm is not None:
