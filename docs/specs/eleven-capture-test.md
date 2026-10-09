@@ -43,7 +43,7 @@ What STOP means: it does not mean shutting down. It means stopping work on the s
 | 7 | 2026-10-06 | N | N | — (none; score MISSED) | Brief did not arrive; a brief that does not arrive is N per §4, and an outage is not an excused absence. | | Y |
 | 8 | 2026-10-07 | Y | N | — (none; score MISSED) | No pre-10:00 AEDT Principal score existed; missed morning counts as N per §4. | | Y |
 | 9 | 2026-10-08 | Y | Y | "NEAR fund 45.42% ann" | NEAR rallied +5.5% against a falling tape with longs paying 45% annualised — the move is crowded leverage, not visible on a price chart. | N | Y |
-| 10 | | | | | | | |
+| 10 | 2026-10-09 | Y | N | — (none; score MISSED) | No pre-10:00 AEDT Principal score existed; missed morning counts as N per §4. | | Y |
 | 11 | | | | | | | |
 
 C5 score filed post-window as MISSED→N per Principal 2026-10-02; push after 10:00 AEST by design for a miss log.
@@ -60,6 +60,10 @@ C8: equity data pre-close by design — NY market still open at 06:30 AEDT captu
 
 C9 scored Y by the Principal at 08:42 AEDT on 2026-10-08, before the 10:00 window close. Brief delivered 06:31:04 AEDT (run 37674941386, receipt e0fd5d7).
 C9: equity data pre-close by design — NY market still open at 06:30 AEDT capture time.
+
+C10 score filed post-window as MISSED→N per Principal window close 2026-10-09; push after 10:00 AEDT by design for a miss log.
+C10 delivery: run 37832406914, receipt actions-b1-37832406914, sent 06:31 AEDT (sent=true).
+C10: equity data pre-close by design — NY market still open at 06:30 AEDT capture time.
 
 **Standing checkpoint, interim read at capture 5 or 6 (Principal ruling 2026-10-03, written before any C6 data exists):**
 At capture 5 or capture 6, whichever lands next, the Principal takes a short honest interim read. It is not a formal re-score. Across the mornings so far: did anything in the brief feel like it told something real, even informally, even outside the strict Y/N scoring rule in §2? This is not a shortcut around the full ten-morning test. It does not change the 3-of-10 bar in §6. It does not let anyone relitigate a score already logged. It is a cheap five-minute gut-check, so that if the honest signal is clearly weak early, that shows up before more infrastructure is built on an unconfirmed signal, rather than only at capture 11. This checkpoint influences nothing automatically. It is informational only, for the Principal's awareness. It is not a trigger for any action.
